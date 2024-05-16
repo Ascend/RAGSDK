@@ -1,0 +1,507 @@
+diff -uprN text-embeddings-inference-main/backends/grpc-client/src/client.rs text-embeddings-inference-patch/backends/grpc-client/src/client.rs
+--- text-embeddings-inference-main/backends/grpc-client/src/client.rs	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/grpc-client/src/client.rs	2024-05-16 13:44:22.736345000 +0800
+@@ -64,4 +64,25 @@ impl Client {
+         let response = self.stub.embed(request).await?.into_inner();
+         Ok(response.embeddings)
+     }
++
++    #[instrument(skip_all)]
++    pub async fn predict(
++        &mut self,
++        input_ids: Vec<u32>,
++        token_type_ids: Vec<u32>,
++        position_ids: Vec<u32>,
++        cu_seq_lengths: Vec<u32>,
++        max_length: u32,
++    ) -> Result<Vec<Prediction>> {
++        let request = tonic::Request::new(PredictRequest {
++            input_ids,
++            token_type_ids,
++            position_ids,
++            max_length,
++            cu_seq_lengths,
++        })
++        .inject_context();
++        let response = self.stub.predict(request).await?.into_inner();
++        Ok(response.predictions)
++    }
+ }
+diff -uprN text-embeddings-inference-main/backends/proto/embed.proto text-embeddings-inference-patch/backends/proto/embed.proto
+--- text-embeddings-inference-main/backends/proto/embed.proto	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/proto/embed.proto	2024-05-16 13:44:22.746310900 +0800
+@@ -5,6 +5,7 @@ package embedding.v1;
+ service EmbeddingService {
+     /// Decode token for a list of prefilled batches
+     rpc Embed (EmbedRequest) returns (EmbedResponse);
++    rpc Predict (PredictRequest) returns (PredictResponse);
+     /// Health check
+     rpc Health (HealthRequest) returns (HealthResponse);
+ }
+@@ -12,6 +13,23 @@ service EmbeddingService {
+ message HealthRequest {}
+ message HealthResponse {}
+ 
++message PredictRequest {
++    repeated uint32 input_ids = 1;
++    repeated uint32 token_type_ids = 2;
++    repeated uint32 position_ids = 3;
++    repeated uint32 cu_seq_lengths = 4;
++    /// Length of the longest request
++    uint32 max_length = 5;
++}
++
++message Prediction {
++    repeated float values = 1;
++}
++
++message PredictResponse {
++    repeated Prediction predictions = 1;
++}
++
+ message EmbedRequest {
+     repeated uint32 input_ids = 1;
+     repeated uint32 token_type_ids = 2;
+diff -uprN text-embeddings-inference-main/backends/python/server/Makefile text-embeddings-inference-patch/backends/python/server/Makefile
+--- text-embeddings-inference-main/backends/python/server/Makefile	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/Makefile	2024-05-16 13:44:22.756955000 +0800
+@@ -19,7 +19,7 @@ install: gen-server
+ 	pip install -e .
+ 
+ run-dev:
+-	python text_embeddings_server/cli.py serve BAAI/bge-small-en
++	python text_embeddings_server/cli.py BAAI/bge-small-en
+ 
+ export-requirements:
+ 	poetry export -o requirements.txt --without-hashes
+diff -uprN text-embeddings-inference-main/backends/python/server/pyproject.toml text-embeddings-inference-patch/backends/python/server/pyproject.toml
+--- text-embeddings-inference-main/backends/python/server/pyproject.toml	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/pyproject.toml	2024-05-16 13:44:22.763933900 +0800
+@@ -20,7 +20,7 @@ loguru = "^0.6.0"
+ opentelemetry-api = "^1.15.0"
+ opentelemetry-exporter-otlp = "^1.15.0"
+ opentelemetry-instrumentation-grpc = "^0.36b0"
+-torch = { version = "^2.0.1" }
++torch = { version = "^2.1.0" }
+ 
+ [tool.poetry.extras]
+ 
+@@ -29,9 +29,9 @@ grpcio-tools = "^1.51.1"
+ pytest = "^7.3.0"
+ 
+ [[tool.poetry.source]]
+-name = "pytorch-gpu-src"
+-url = "https://download.pytorch.org/whl/cu118"
+-priority = "explicit"
++name = "mirrors"
++url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
++priority = "default"
+ 
+ [tool.pytest.ini_options]
+ markers = ["private: marks tests as requiring an admin hf token (deselect with '-m \"not private\"')"]
+diff -uprN text-embeddings-inference-main/backends/python/server/requirements.txt text-embeddings-inference-patch/backends/python/server/requirements.txt
+--- text-embeddings-inference-main/backends/python/server/requirements.txt	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/requirements.txt	2024-05-16 13:44:22.767915600 +0800
+@@ -11,7 +11,7 @@ grpc-interceptor==0.15.3 ; python_versio
+ grpcio-reflection==1.58.0 ; python_version >= "3.9" and python_version < "3.13"
+ grpcio-status==1.58.0 ; python_version >= "3.9" and python_version < "3.13"
+ grpcio==1.58.0 ; python_version >= "3.9" and python_version < "3.13"
+-huggingface-hub==0.16.4 ; python_version >= "3.9" and python_version < "3.13"
++huggingface-hub==0.23.0 ; python_version >= "3.9" and python_version < "3.13"
+ idna==3.4 ; python_version >= "3.9" and python_version < "3.13"
+ jinja2==3.1.2 ; python_version >= "3.9" and python_version < "3.13"
+ loguru==0.6.0 ; python_version >= "3.9" and python_version < "3.13"
+@@ -31,13 +31,14 @@ packaging==23.1 ; python_version >= "3.9
+ protobuf==4.24.3 ; python_version >= "3.9" and python_version < "3.13"
+ pyyaml==6.0.1 ; python_version >= "3.9" and python_version < "3.13"
+ requests==2.31.0 ; python_version >= "3.9" and python_version < "3.13"
+-safetensors==0.3.3 ; python_version >= "3.9" and python_version < "3.13"
++safetensors==0.4.3 ; python_version >= "3.9" and python_version < "3.13"
+ setuptools==68.2.0 ; python_version >= "3.9" and python_version < "3.13"
+ sympy==1.12 ; python_version >= "3.9" and python_version < "3.13"
+-torch==2.0.1 ; python_version >= "3.9" and python_version < "3.13"
++torch==2.1.0 ; python_version >= "3.9" and python_version < "3.13"
+ tqdm==4.66.1 ; python_version >= "3.9" and python_version < "3.13"
+ typer==0.6.1 ; python_version >= "3.9" and python_version < "3.13"
+ typing-extensions==4.7.1 ; python_version >= "3.9" and python_version < "3.13"
+ urllib3==2.0.4 ; python_version >= "3.9" and python_version < "3.13"
+ win32-setctime==1.1.0 ; python_version >= "3.9" and python_version < "3.13" and sys_platform == "win32"
+ wrapt==1.15.0 ; python_version >= "3.9" and python_version < "3.13"
++poetry==1.8.3 ; python_version >= "3.9" and python_version < "3.13"
+diff -uprN text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/__init__.py text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/__init__.py
+--- text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/__init__.py	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/__init__.py	2024-05-16 13:44:22.771906000 +0800
+@@ -1,5 +1,6 @@
++import os
+ import torch
+-
++import torch_npu
+ from loguru import logger
+ from pathlib import Path
+ from typing import Optional
+@@ -8,6 +9,7 @@ from transformers.models.bert import Ber
+ 
+ from text_embeddings_server.models.model import Model
+ from text_embeddings_server.models.default_model import DefaultModel
++from text_embeddings_server.models.rerank_model import RerankModel
+ 
+ __all__ = ["Model"]
+ 
+@@ -37,6 +39,14 @@ def get_model(model_path: Path, dtype: O
+ 
+     if torch.cuda.is_available():
+         device = torch.device("cuda")
++    elif torch.npu.is_available():
++        device = torch.device("npu")
++        torch.npu.set_compile_mode(jit_compile=False)
++        option = {"NPU_FUZZY_COMPILE_BLACKLIST": "ReduceProd"}
++        torch.npu.set_option(option)
++        deviceIdx = os.environ.get('TEI_NPU_DEVICE')
++        if deviceIdx != None and deviceIdx.isdigit() and int(deviceIdx) >= 0 and int(deviceIdx) <= 7:
++            torch.npu.set_device(torch.device(f"npu:{deviceIdx}"))
+     else:
+         if dtype != torch.float32:
+             raise ValueError("CPU device only supports float32 dtype")
+@@ -44,10 +54,12 @@ def get_model(model_path: Path, dtype: O
+ 
+     config = AutoConfig.from_pretrained(model_path)
+ 
+-    if config.model_type == "bert":
+-        config: BertConfig
++    if config.architectures[0].endswith("Classification"):
++        return RerankModel(model_path, device, dtype)
++    else:
+         if (
+-            device.type == "cuda"
++            config.model_type == "bert"
++            and device.type == "cuda"
+             and config.position_embedding_type == "absolute"
+             and dtype in [torch.float16, torch.bfloat16]
+             and FLASH_ATTENTION
+@@ -55,5 +67,6 @@ def get_model(model_path: Path, dtype: O
+             return FlashBert(model_path, device, dtype)
+         else:
+             return DefaultModel(model_path, device, dtype)
++        
+ 
+     raise NotImplementedError
+diff -uprN text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/default_model.py text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/default_model.py
+--- text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/default_model.py	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/default_model.py	2024-05-16 13:44:22.777884600 +0800
+@@ -1,20 +1,20 @@
+ import inspect
+ import torch
+-
++import torch_npu
+ from pathlib import Path
+ from typing import Type, List
+ from transformers import AutoModel
+ from opentelemetry import trace
+ 
+ from text_embeddings_server.models import Model
+-from text_embeddings_server.models.types import PaddedBatch, Embedding
++from text_embeddings_server.models.types import PaddedBatch, Embedding, Prediction
+ 
+ tracer = trace.get_tracer(__name__)
+ 
+ 
+ class DefaultModel(Model):
+     def __init__(self, model_path: Path, device: torch.device, dtype: torch.dtype):
+-        model = AutoModel.from_pretrained(model_path).to(dtype).to(device)
++        model = AutoModel.from_pretrained(model_path).to(dtype).to(device).eval()
+         self.hidden_size = model.config.hidden_size
+ 
+         self.has_position_ids = (
+@@ -41,7 +41,7 @@ class DefaultModel(Model):
+             kwargs["position_ids"] = batch.position_ids
+ 
+         output = self.model(**kwargs)
+-        embedding = output[0][:, 0]
++        embedding = output[0][:, 0].contiguous()
+         cpu_results = embedding.view(-1).tolist()
+ 
+         return [
+@@ -50,3 +50,7 @@ class DefaultModel(Model):
+             )
+             for i in range(len(batch))
+         ]
++    
++    @tracer.start_as_current_span("predict")
++    def predict(self, batch: PaddedBatch) -> List[Prediction]:
++        print("embedding model is not support predict")
+diff -uprN text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/flash_bert.py text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/flash_bert.py
+--- text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/flash_bert.py	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/flash_bert.py	2024-05-16 13:44:22.780876000 +0800
+@@ -12,7 +12,7 @@ from opentelemetry import trace
+ import dropout_layer_norm
+ 
+ from text_embeddings_server.models import Model
+-from text_embeddings_server.models.types import FlashBatch, Embedding
++from text_embeddings_server.models.types import FlashBatch, Embedding, Prediction
+ from text_embeddings_server.utils.flash_attn import attention
+ 
+ tracer = trace.get_tracer(__name__)
+@@ -251,3 +251,8 @@ class FlashBert(Model):
+             )
+             for i in range(len(batch))
+         ]
++    
++    @tracer.start_as_current_span("predict")
++    def predict(self, batch: PaddedBatch) -> List[Prediction]:
++        print("embedding model is not support predict")
++    
+\ No newline at end of file
+diff -uprN text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/model.py text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/model.py
+--- text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/model.py	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/model.py	2024-05-16 13:44:22.788378200 +0800
+@@ -3,7 +3,7 @@ import torch
+ from abc import ABC, abstractmethod
+ from typing import List, TypeVar, Type
+ 
+-from text_embeddings_server.models.types import Batch, Embedding
++from text_embeddings_server.models.types import Batch, Embedding, Prediction
+ 
+ B = TypeVar("B", bound=Batch)
+ 
+@@ -27,3 +27,7 @@ class Model(ABC):
+     @abstractmethod
+     def embed(self, batch: B) -> List[Embedding]:
+         raise NotImplementedError
++    
++    @abstractmethod
++    def predict(self, batch: B) -> List[Prediction]:
++        raise NotImplementedError
+diff -uprN text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/rerank_model.py text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/rerank_model.py
+--- text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/rerank_model.py	1970-01-01 08:00:00.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/rerank_model.py	2024-05-16 13:44:22.793928900 +0800
+@@ -0,0 +1,53 @@
++import inspect
++import torch
++import torch_npu
++from pathlib import Path
++from typing import Type, List
++from transformers import AutoModel, AutoModelForSequenceClassification
++from opentelemetry import trace
++
++from text_embeddings_server.models import Model
++from text_embeddings_server.models.types import PaddedBatch, Embedding, Prediction
++
++tracer = trace.get_tracer(__name__)
++
++
++class RerankModel(Model):
++    def __init__(self, model_path: Path, device: torch.device, dtype: torch.dtype):
++        model = AutoModelForSequenceClassification.from_pretrained(model_path).to(dtype).to(device).eval()
++
++        self.has_position_ids = (
++            inspect.signature(model.forward).parameters.get("position_ids", None)
++            is not None
++        )
++        self.has_token_type_ids = (
++            inspect.signature(model.forward).parameters.get("token_type_ids", None)
++            is not None
++        )
++
++        super(RerankModel, self).__init__(model=model, dtype=dtype, device=device)
++
++    @property
++    def batch_type(self) -> Type[PaddedBatch]:
++        return PaddedBatch
++
++    @tracer.start_as_current_span("embed")
++    def embed(self, batch: PaddedBatch) -> List[Embedding]:
++        print("rerank model is not support embed")
++
++    @tracer.start_as_current_span("predict")
++    def predict(self, batch: PaddedBatch) -> List[Prediction]:
++        kwargs = {"input_ids": batch.input_ids, "attention_mask": batch.attention_mask}
++        if self.has_token_type_ids:
++            kwargs["token_type_ids"] = batch.token_type_ids
++        if self.has_position_ids:
++            kwargs["position_ids"] = batch.position_ids
++
++        scores = self.model(**kwargs).logits.view(-1,).tolist()
++
++        return [
++            Prediction(
++                values=scores[i:i+1]
++            )
++            for i in range(len(batch))
++        ]
+diff -uprN text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/types.py text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/types.py
+--- text-embeddings-inference-main/backends/python/server/text_embeddings_server/models/types.py	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/text_embeddings_server/models/types.py	2024-05-16 13:44:22.795939000 +0800
+@@ -5,7 +5,7 @@ from dataclasses import dataclass
+ from opentelemetry import trace
+ 
+ from text_embeddings_server.pb import embed_pb2
+-from text_embeddings_server.pb.embed_pb2 import Embedding
++from text_embeddings_server.pb.embed_pb2 import Embedding, Prediction
+ 
+ tracer = trace.get_tracer(__name__)
+ 
+diff -uprN text-embeddings-inference-main/backends/python/server/text_embeddings_server/server.py text-embeddings-inference-patch/backends/python/server/text_embeddings_server/server.py
+--- text-embeddings-inference-main/backends/python/server/text_embeddings_server/server.py	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/server/text_embeddings_server/server.py	2024-05-16 13:44:22.805720600 +0800
+@@ -31,6 +31,13 @@ class EmbeddingService(embed_pb2_grpc.Em
+         embeddings = self.model.embed(batch)
+ 
+         return embed_pb2.EmbedResponse(embeddings=embeddings)
++    
++    async def Predict(self, request, context):
++        batch = self.model.batch_type.from_pb(request, self.model.device)
++
++        predictions = self.model.predict(batch)
++
++        return embed_pb2.PredictResponse(predictions=predictions)
+ 
+ 
+ def serve(
+diff -uprN text-embeddings-inference-main/backends/python/src/lib.rs text-embeddings-inference-patch/backends/python/src/lib.rs
+--- text-embeddings-inference-main/backends/python/src/lib.rs	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/backends/python/src/lib.rs	2024-05-16 13:44:22.814290700 +0800
+@@ -25,9 +25,8 @@ impl PythonBackend {
+     ) -> Result<Self, BackendError> {
+         match model_type {
+             ModelType::Classifier => {
+-                return Err(BackendError::Start(
+-                    "`classifier` model type is not supported".to_string(),
+-                ))
++                let pool = Pool::Cls;
++                pool
+             }
+             ModelType::Embedding(pool) => {
+                 if pool != Pool::Cls {
+@@ -103,9 +102,28 @@ impl Backend for PythonBackend {
+         Ok(embeddings)
+     }
+ 
+-    fn predict(&self, _batch: Batch) -> Result<Predictions, BackendError> {
+-        Err(BackendError::Inference(
+-            "`predict` is not implemented".to_string(),
+-        ))
++    fn predict(&self, batch: Batch) -> Result<Predictions, BackendError> {
++        let batch_size = batch.len();
++
++        let results = self
++            .tokio_runtime
++            .block_on(self.backend_client.clone().predict(
++                batch.input_ids,
++                batch.token_type_ids,
++                batch.position_ids,
++                batch.cumulative_seq_lengths,
++                batch.max_length,
++            ))
++            .map_err(|err| BackendError::Inference(err.to_string()))?;
++        
++        let predictions_result: Vec<Vec<f32>> = results.into_iter().map(|r| r.values).collect();
++
++        let mut predictions =
++            HashMap::with_capacity_and_hasher(batch_size, BuildNoHashHasher::default());
++        for (i, r) in predictions_result.into_iter().enumerate() {
++            predictions.insert(i, r);
++        }
++
++        Ok(predictions)
+     }
+ }
+diff -uprN text-embeddings-inference-main/core/src/infer.rs text-embeddings-inference-patch/core/src/infer.rs
+--- text-embeddings-inference-main/core/src/infer.rs	2024-04-25 16:47:38.000000000 +0800
++++ text-embeddings-inference-patch/core/src/infer.rs	2024-05-16 13:47:27.231137700 +0800
+@@ -37,11 +37,6 @@ impl Infer {
+             notify_batching_task.clone(),
+             embed_sender.clone(),
+         ));
+-        tokio::spawn(batching_task(
+-            queue.clone(),
+-            notify_batching_task.clone(),
+-            embed_sender,
+-        ));
+ 
+         // Create embed task to communicate with backend
+         tokio::spawn(backend_task(backend.clone(), embed_receiver));
+diff -uprN text-embeddings-inference-main/NPU_ADAPT.md text-embeddings-inference-patch/NPU_ADAPT.md
+--- text-embeddings-inference-main/NPU_ADAPT.md	1970-01-01 08:00:00.000000000 +0800
++++ text-embeddings-inference-patch/NPU_ADAPT.md	2024-05-16 13:44:22.821329900 +0800
+@@ -0,0 +1,81 @@
++# NPU ADAPT TEI BASED ON PYTHON
++
++A Python gRPC server for Text Embeddings Inference
++
++## Prepare Environment
++First, you need to install rust and protobuf
++Instructions for installing rust,
++```shell
++curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
++```
++See the following example for how to install protobuf:
++https://blog.csdn.net/j8267643/article/details/134133091
++
++## Install Router
++locate in /tei-npu
++```shell
++cargo install --path router -F python -F http --no-default-features
++```
++
++## Install Python Backend
++locate in /tei-npu/backends/python/server
++### Setup Python Environment & Make Local Grpc
++```shell
++make install
++```
++### Verify Python Backend
++If you plan to use an online model, modify the model path of the run-dev entry in the Makefile.
++For example,
++```shell
++run-dev:
++    python text_embeddings_server/cli.py /home/bge-large-zh-v1.5
++```
++then, you can verify python backend based the model.
++```shell
++make run-dev
++```
++If python-backends does not start normally, rectify the fault according to the error stack
++
++### Setup Python Cli
++```shell
++poetry install
++```
++
++## Run
++### Set device
++If you want to specify an NPU device, specify it in the environment TEI_NPU_DEVICE before starting the server.
++For example,
++```shell
++export TEI_NPU_DEVICE=3
++```
++### Server
++locate in /tei-npu
++```shell
++text-embeddings-router --model-id $model --revision $revision --port 8080
++```
++For example, if you want to use the embed service
++```shell
++text-embeddings-router --model-id /home/bge-large-zh-v1.5  --dtype float32 --pooling cls --max-concurrent-requests 2048 --max-batch-requests 2048 --max-batch-tokens 1100000 --max-client-batch-size 256 --port 8080
++```
++For example, if you want to use the rerank service
++```shell
++text-embeddings-router --model-id /home/bge-reranker-large  --max-concurrent-requests 2048 --max-batch-tokens 163840 --max-batch-requests 1 --port 8080
++```
++### Client
++For example, if you want to use the embed service
++```bash
++curl 127.0.0.1:8080/embed \
++    -X POST \
++    -d '{"inputs":"What is Deep Learning?"}' \
++    -H 'Content-Type: application/json'
++```
++For example, if you want to use the embed service
++```bash
++curl 127.0.0.1:8080/rerank \
++    -X POST \
++    -d '{"query":"What is Deep Learning?", "texts": ["Deep Learning is not...", "Deep learning is..."]}' \
++    -H 'Content-Type: application/json'
++```
++
++## Attention
++If Python-Backend cannot start normally, run the make run-dev command in backends/python/server to check whether python backends can be started, and modify it using the error stack.
