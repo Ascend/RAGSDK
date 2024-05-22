@@ -1,0 +1,1 @@
+from mx_rag.version import __version__
