@@ -1,9 +1,6 @@
-#!/usr/bin/python3
-# coding: utf-8
-#  Copyright (C)  2024. Huawei Technologies Co., Ltd. All rights reserved.
-"""
-build config
-"""
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+
 import glob
 import os
 import shutil
@@ -55,10 +52,11 @@ required_package = []
 
 package_data = {'': ['document/loader/*.so']}
 
-excluded = ['mx_rag/document/loader/docx_section_loader.py',
-            'mx_rag/document/loader/docx_loader.py',
-            'mx_rag/document/loader/data_clean.py'
-            ]
+excluded = [
+    'mx_rag/document/loader/docx_section_loader.py',
+    'mx_rag/document/loader/docx_loader.py',
+    'mx_rag/document/loader/data_clean.py'
+]
 
 
 class BuildBy(build_py_orig):

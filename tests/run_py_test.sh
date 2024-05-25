@@ -19,6 +19,7 @@ function run_test_cases() {
 }
 
 pip3 install -r  ../requirements.txt
+pip3 install langchain
 echo "************************************* Start mxRAG LLT Test *************************************"
 start=$(date +%s)
 run_test_cases

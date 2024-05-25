@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+
 import re
 
 from loguru import logger
@@ -7,17 +10,17 @@ repeat_punc = set("!\"#$%&'()*,-./:;<=>?@[\]^_`{|}~.,;《》？！“”‘’@#
 
 
 def is_alpha_or_digit_or_punc(char: str):
-    if 'a' <= char <= 'z' or 'A' <= char <= 'Z':  # 英文字符范围（包括大小写字母）
+    if char.isalpha():
         return True
-    elif char.isdigit():  # 数字字符范围
+    elif char.isdigit():
         return True
     elif '\u4e00' <= char <= '\u9fff':  # 中文字符范围
         return True
-    elif char in punctuation:  # 标点符号
+    elif char in punctuation:
         return True
     else:
         logger.warning(f"remove char {char}")
-        return False  # 其他字符
+        return False
 
 
 def remove_special_char(sentence: str):

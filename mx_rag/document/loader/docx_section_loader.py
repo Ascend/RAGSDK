@@ -1,6 +1,5 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import re
 from dataclasses import dataclass
@@ -29,7 +28,7 @@ def iter_block_items(parent: Document):
     if isinstance(parent, Document):
         parent_elm = parent.element.body
     else:
-        raise TypeError(f"对象类型{type(parent)}错误, 应为Document类型")
+        raise TypeError(f"TypeError {type(parent)}, should be Document")
 
     for child in parent_elm.iterchildren():
         if isinstance(child, CT_P):
@@ -89,6 +88,8 @@ class DocxLoaderByHead(DocxLoader):
         """
         将最小级别heading下的内容拼接生成Doc对象
         """
+        if not self._check():
+            return []
 
         all_contents = [ContentsHeading()]
         stack = []
@@ -97,7 +98,7 @@ class DocxLoaderByHead(DocxLoader):
         for block in iter_block_items(doc):
             logger.debug(f"block is {block}")
             if isinstance(block, Table):
-                res = self.handle_table(block)
+                res = self._handle_table(block)
                 all_contents[-1].sub_content += res
             if not isinstance(block, Paragraph):
                 logger.warning("skip current block")
