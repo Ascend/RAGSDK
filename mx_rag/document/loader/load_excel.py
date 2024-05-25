@@ -1,20 +1,33 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-from openpyxl import load_workbook
+from datetime import datetime, timedelta
+import csv
 import xlrd
 from loguru import logger
+from openpyxl import load_workbook
 from mx_rag.utils import file_check
-from mx_rag.utils.file_check import FileBrokenException
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
+CSV_EXTENSION = (".csv",)
 
 
 class ExcelLoader:
     def __init__(self, file_path, max_size_mb=100):
         self.file_path = file_path
         self.max_size_mb = max_size_mb
+
+    @staticmethod
+    def _exceltime_to_datetime(exceltime):
+        """
+        将excel储存的时间格式转换为可读的格式
+        :param exceltime: (0,1)区间的浮点数，表示时间在一天中的位置
+        :return: 以 时：分 的格式返回字符串
+        """
+        base_date = datetime(1899, 12, 30)
+        time = base_date + timedelta(exceltime)
+        return time.strftime('%H:%M')
 
     @staticmethod
     def _cleanup_xlsx(worksheet):
@@ -68,14 +81,13 @@ class ExcelLoader:
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
             return self._load_xlsx()
+        elif self.file_path.endswith(CSV_EXTENSION):
+            return self._load_csv()
         else:
             raise TypeError(f"{self.file_path} file type is not correct")
 
     def _load_xls(self):
-        try:
-            wb = xlrd.open_workbook(self.file_path)
-        except Exception as e:
-            raise FileBrokenException(f"{self.file_path} is broken cannot load") from e
+        wb = xlrd.open_workbook(self.file_path)
         res = []
         for i in range(wb.nsheets):
             ws = wb.sheet_by_index(i)
@@ -88,18 +100,22 @@ class ExcelLoader:
                 text_line = ""
                 line_list = ws.row_values(line_ind)
                 for ind, ti in enumerate(title):
+                    if ti == '':
+                        ti = 'None'
                     ind += start_col
-                    text_line += str(ti) + ": " + str(line_list[ind]) + "; "
+                    if line_list[ind] == '':
+                        line_list[ind] = 'None'
+                    if ti in ["time"]:
+                        text_line += str(ti) + ":" + str(self._exceltime_to_datetime(float(line_list[ind]))) + ";"
+                    else:
+                        text_line += str(ti) + ":" + str(line_list[ind]) + ";"
                 text_line += "--" + str(ws.name)
                 res.append(text_line)
         logger.info(f"file {self.file_path} Loading completed")
         return res
 
     def _load_xlsx(self):
-        try:
-            wb = load_workbook(self.file_path)
-        except Exception as e:
-            raise FileBrokenException(f"{self.file_path} is broken cannot load") from e
+        wb = load_workbook(self.file_path)
         res = []
         for sheet_name in wb.sheetnames:
             ws_init = wb[sheet_name]
@@ -113,8 +129,28 @@ class ExcelLoader:
             for line in list(rows[1:]):
                 text_line = ""
                 for ind, ti in enumerate(title):
-                    text_line += str(ti.value) + ": " + str(line[ind].value) + "; "
+                    text_line += str(ti.value) + ":" + str(line[ind].value) + ";"
                 text_line += "--" + str(sheet_name)
                 res.append(text_line)
         logger.info(f"file {self.file_path} Loading completed")
+        return res
+
+    def _load_csv(self):
+        res = []
+        with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
+            reader = csv.reader(file)
+            try:
+                headers = next(reader)  # 读取第一行标题
+            except UnicodeDecodeError:
+                logger.info(f"file {self.file_path} is empty")
+                return res
+            for row in reader:
+                text_line = ""
+                for ind, ti in enumerate(headers):
+                    if ti == "":
+                        ti = "None"
+                    if row[ind] == "":
+                        row[ind] = "None"
+                    text_line += str(ti) + ":" + str(row[ind]) + ";"
+                res.append(text_line)
         return res

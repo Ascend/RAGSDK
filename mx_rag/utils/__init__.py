@@ -5,9 +5,7 @@ __all__ = [
     "SizeOverLimitException",
     "PathNotFileException",
     "SecFileCheck",
-    "excel_file_check",
-    "FileBrokenException"
+    "excel_file_check"
 ]
 
-from mx_rag.utils.file_check import SizeOverLimitException, PathNotFileException, SecFileCheck, excel_file_check, \
-    FileBrokenException
+from mx_rag.utils.file_check import SizeOverLimitException, PathNotFileException, SecFileCheck, excel_file_check

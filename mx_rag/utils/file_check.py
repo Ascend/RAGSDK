@@ -4,10 +4,6 @@
 import os
 
 
-class FileBrokenException(Exception):
-    pass
-
-
 class SizeOverLimitException(Exception):
     pass
 
