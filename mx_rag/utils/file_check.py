@@ -19,7 +19,7 @@ class PathNotFileException(Exception):
 class SecFileCheck:
     def __init__(self, file_path, size):
         self.file_path = file_path
-        self.size = size
+        self.size = size * 1024 * 1024
 
     def check(self):
         if not os.path.isfile(self.file_path):
