@@ -72,7 +72,7 @@ class ExcelLoader:
         ：返回：逐行读取表,返回 string list
         """
         try:
-            file_check.excel_file_check(self.file_path, self.max_size_mb * 1024 * 1024)
+            file_check.excel_file_check(self.file_path, self.max_size_mb)
         except Exception as e:
             logger.error(e)
             return []
@@ -86,31 +86,37 @@ class ExcelLoader:
         else:
             raise TypeError(f"{self.file_path} file type is not correct")
 
+    def _load_xls_sheet(self, ws):
+        res = []
+        start_row, start_col = self._table_location_xls(ws)
+        if ws.nrows - start_row < 2:
+            logger.info(f"In file {self.file_path} sheet *{ws.name}* is empty")
+            return res
+        title = ws.row_values(start_row)[start_col:]  # 默认第一排为列名称
+        for line_ind in range(start_row + 1, ws.nrows):
+            text_line = ""
+            line_list = ws.row_values(line_ind)
+            for ind, ti in enumerate(title):
+                if ti == '':
+                    ti = 'None'
+                ind += start_col
+                if line_list[ind] == '':
+                    line_list[ind] = 'None'
+                if ti in ["time"]:
+                    text_line += str(ti) + ":" + str(self._exceltime_to_datetime(float(line_list[ind]))) + ";"
+                else:
+                    text_line += str(ti) + ":" + str(line_list[ind]) + ";"
+            text_line += "--" + str(ws.name)
+            res.append(text_line)
+        return res
+
     def _load_xls(self):
         wb = xlrd.open_workbook(self.file_path)
         res = []
-        for i in range(wb.nsheets):
+        for i in range(wb.nsheets):  # 对于每一张表
             ws = wb.sheet_by_index(i)
-            start_row, start_col = self._table_location_xls(ws)
-            if ws.nrows - start_row < 2:
-                logger.info(f"In file {self.file_path} sheet *{ws.name}* is empty")
-                continue
-            title = ws.row_values(start_row)[start_col:]
-            for line_ind in range(start_row + 1, ws.nrows):
-                text_line = ""
-                line_list = ws.row_values(line_ind)
-                for ind, ti in enumerate(title):
-                    if ti == '':
-                        ti = 'None'
-                    ind += start_col
-                    if line_list[ind] == '':
-                        line_list[ind] = 'None'
-                    if ti in ["time"]:
-                        text_line += str(ti) + ":" + str(self._exceltime_to_datetime(float(line_list[ind]))) + ";"
-                    else:
-                        text_line += str(ti) + ":" + str(line_list[ind]) + ";"
-                text_line += "--" + str(ws.name)
-                res.append(text_line)
+            ws_texts = self._load_xls_sheet(ws)
+            res = res + ws_texts
         logger.info(f"file {self.file_path} Loading completed")
         return res
 
@@ -139,18 +145,18 @@ class ExcelLoader:
         res = []
         with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
             reader = csv.reader(file)
-            try:
-                headers = next(reader)  # 读取第一行标题
-            except UnicodeDecodeError:
-                logger.info(f"file {self.file_path} is empty")
-                return res
-            for row in reader:
-                text_line = ""
-                for ind, ti in enumerate(headers):
-                    if ti == "":
-                        ti = "None"
-                    if row[ind] == "":
-                        row[ind] = "None"
-                    text_line += str(ti) + ":" + str(row[ind]) + ";"
-                res.append(text_line)
+        try:
+            headers = next(reader)  # 读取第一行标题
+        except UnicodeDecodeError:
+            logger.info(f"file {self.file_path} is empty")
+            return res
+        for row in reader:
+            text_line = ""
+            for ind, ti in enumerate(headers):
+                if ti == "":
+                    ti = "None"
+                if row[ind] == "":
+                    row[ind] = "None"
+                text_line += str(ti) + ":" + str(row[ind]) + ";"
+            res.append(text_line)
         return res
