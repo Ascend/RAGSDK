@@ -67,6 +67,17 @@ class ExcelLoader:
                 start_col += 1
         return start_row, start_col
 
+    @staticmethod
+    def _load_csv_line(row, headers):
+        text_line = ""
+        for ind, ti in enumerate(headers):
+            if ti == "":
+                ti = "None"
+            if row[ind] == "":
+                row[ind] = "None"
+            text_line += str(ti) + ":" + str(row[ind]) + ";"
+        return text_line
+
     def load(self):
         """
         ：返回：逐行读取表,返回 string list
@@ -145,18 +156,12 @@ class ExcelLoader:
         res = []
         with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
             reader = csv.reader(file)
-        try:
-            headers = next(reader)  # 读取第一行标题
-        except UnicodeDecodeError:
-            logger.info(f"file {self.file_path} is empty")
-            return res
-        for row in reader:
-            text_line = ""
-            for ind, ti in enumerate(headers):
-                if ti == "":
-                    ti = "None"
-                if row[ind] == "":
-                    row[ind] = "None"
-                text_line += str(ti) + ":" + str(row[ind]) + ";"
-            res.append(text_line)
+            try:
+                headers = next(reader)  # 读取第一行标题
+            except UnicodeDecodeError:
+                logger.info(f"file {self.file_path} is empty")
+                return res
+            for row in reader:
+                text_line = self._load_csv_line(row, headers)
+                res.append(text_line)
         return res
