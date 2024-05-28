@@ -42,7 +42,7 @@ function package()
     echo "clean ci package output dir"
 
     # package
-    mkdir -p -m 500 "${CI_PACKAGE_DIR}"
+    mkdir -p -m 700 "${CI_PACKAGE_DIR}"
     echo "start build output package"
     cd "${OUTPUT_DIR}"
     cp -r ./* "${CI_PACKAGE_DIR}"
