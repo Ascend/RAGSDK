@@ -26,17 +26,18 @@ class Doc:
 class DocxLoader:
     """Loading logic for loading documents from docx."""
 
-    def __init__(self, file_path: str, image_inline=False, max_size_mb=100):
+    def __init__(self, file_path: str, image_inline=False, max_size_mb=100, max_page_num=1000):
         """Initialize with filepath and options."""
         self.doc_path = file_path
         self.do_ocr = image_inline
         self.table_index = 0
         self.max_size_mb = max_size_mb
+        self.max_page_num = max_page_num
 
     def load(self) -> List[Doc]:
         """Load documents."""
 
-        if not self._check():
+        if not self._is_document_valid():
             return []
 
         docs: List[Doc] = list()
@@ -46,7 +47,6 @@ class DocxLoader:
             if element.tag.endswith("tbl"):
                 table_text = self._handle_table(doc.tables[self.table_index])
                 self.table_index += 1
-                logger.debug(f"table: {table_text}")
                 all_text.append(table_text)
             elif element.tag.endswith("p"):
                 if "pic:pic" in str(element.xml) and self.do_ocr:
@@ -54,7 +54,6 @@ class DocxLoader:
                     pic_texts = ''
                     all_text.extend(pic_texts)
                 paragraph = docx.text.paragraph.Paragraph(element, doc)
-                logger.debug(f"paragraph: {paragraph.text}")
                 para_text = paragraph.text
                 all_text.append(para_text)
 
@@ -73,9 +72,13 @@ class DocxLoader:
         res = '；'.join(result)
         return res + '。'
 
-    def _check(self):
+    def _is_document_valid(self):
         try:
             SecFileCheck(self.doc_path, self.max_size_mb).check()
+            doc = docx.Document(self.doc_path)
+            if len(doc.paragraphs) > self.max_page_num:
+                logger.error(f"too many pages {len(doc.paragraphs)}")
+                return False
             return True
         except Exception as e:
             logger.error(f"check file failed, {str(e)}")

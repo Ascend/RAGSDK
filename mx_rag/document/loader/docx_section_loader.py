@@ -49,10 +49,9 @@ class DocxLoaderByHead(DocxLoader):
     def _extract_hyperlink(block):
         try:
             hyperlink_rid = re.findall(r'<w:hyperlink r:id="(rId\d+)"', str(block.paragraph_format.element.xml))[0]
-            logger.debug(f"hyperlink_rid is {hyperlink_rid}, block.text is {block.text}")
             return f' {block.part.rels[hyperlink_rid].target_ref} '
         except Exception as e:
-            logger.info(f"_extract_hyperlink {str(e)}, {block.paragraph_format.element.xml}")
+            logger.warning(f"_extract_hyperlink {str(e)}")
             return ""
 
     @classmethod
@@ -64,19 +63,15 @@ class DocxLoaderByHead(DocxLoader):
         if block.style.name.startswith('Heading'):
             try:
                 title_level = int(block.style.name.split()[-1])
-                logger.info(f"title_level is {block.style.name} -> {title_level}")
             except Exception as ex:
-                logger.debug(f"_handle_paragraph_heading {str(ex)}")
+                logger.warning(f"_handle_paragraph_heading {str(ex)}")
                 return False
-            logger.debug(f"stack is {stack}")
             while stack and stack[-1][0] >= title_level:
                 stack.pop()
             if stack:
                 parent_title = ''.join(stack[-1][1])
                 current_title = block.text
                 block.text = parent_title + '-' + block.text
-                logger.warning(
-                    f"modify block text {block.text}: parent_title={parent_title}, current_title={current_title}")
             else:
                 current_title = block.text
             stack.append((title_level, current_title.strip()))
@@ -88,7 +83,7 @@ class DocxLoaderByHead(DocxLoader):
         """
         将最小级别heading下的内容拼接生成Doc对象
         """
-        if not self._check():
+        if not self._is_document_valid():
             return []
 
         all_contents = [ContentsHeading()]
@@ -96,7 +91,6 @@ class DocxLoaderByHead(DocxLoader):
 
         doc = DocxDocument(self.doc_path)
         for block in iter_block_items(doc):
-            logger.debug(f"block is {block}")
             if isinstance(block, Table):
                 res = self._handle_table(block)
                 all_contents[-1].sub_content += res
@@ -107,7 +101,6 @@ class DocxLoaderByHead(DocxLoader):
             handle_head = self._handle_paragraph_heading(all_contents, block, stack)
 
             if block.style.name.lower().startswith('title'):
-                logger.warning(f"block style is title {block.style.name.lower()}")
                 all_contents[-1].title = block.text
                 stack.append((0, block.text.strip()))
             elif not handle_head:
@@ -117,14 +110,12 @@ class DocxLoaderByHead(DocxLoader):
 
         docs = []
         for content in all_contents:
-            logger.debug(f"final process {content}")
             # 转化无意义特殊字符为标准字符
             plain_text = unicodedata.normalize('NFKD', content.sub_content).strip()
             # 过滤掉纯标题的document
             if len(plain_text) > 1:
                 # 按定长切分进行分组
                 grouped_text = text_splitter.split_text(plain_text)
-                logger.debug(f"grouped_text is {grouped_text}")
                 docs += [Doc(page_content=f"{unicodedata.normalize('NFKD', content.title).strip()} {text}",
                              metadata={'source': self.doc_path}) for text in grouped_text]
         return docs
