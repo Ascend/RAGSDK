@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
+import datetime
 import glob
 import os
 import shutil
 import stat
 from pathlib import Path
 
+import yaml
+from loguru import logger
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py as build_py_orig
 
 this_directory = Path(__file__).parent
-version = (this_directory / "version.txt").read_text().replace("\n", "")
 long_description = (this_directory / "README.md").read_text()
 build_folder = ('build/bdist*', 'build/lib')
 cache_folder = ('mx_rag.egg-info', '_package_output')
@@ -19,8 +21,22 @@ pwd = os.path.dirname(os.path.realpath(__file__))
 pkg_dir = os.path.join(pwd, "build/lib")
 
 
-def _write_version(file):
-    file.write(f"__version__ = '{version}'\n")
+def get_ci_version_info():
+    """
+    Get version information from ci config file
+    :return: version number
+    """
+    src_path = this_directory.parent
+    ci_version_file = src_path.joinpath('mindxsdk', 'build', 'conf', 'config.yaml')
+    version = '6.0.RC2'
+    logger.info(f"get version from {ci_version_file}")
+    try:
+        with open(ci_version_file, 'r') as f:
+            config = yaml.safe_load(f)
+            version = config['version']['mindx_sdk']
+    except Exception as ex:
+        logger.warning(f"get version failed, {str(ex)}")
+    return version
 
 
 def build_dependencies():
@@ -31,7 +47,8 @@ def build_dependencies():
         os.makedirs(version_file_dir, exist_ok=True)
 
     with os.fdopen(os.open(version_file, os.O_WRONLY | os.O_CREAT, mode=stat.S_IRUSR | stat.S_IWUSR), 'w') as f:
-        _write_version(f)
+        f.write(f"__version__ = '{get_ci_version_info()}'\n")
+        f.write(f"__build_time__ = '{datetime.date.today()}'\n")
 
 
 def clean():
@@ -71,7 +88,7 @@ class BuildBy(build_py_orig):
 
 setup(
     name='mx_rag',
-    version=version,
+    version=get_ci_version_info(),
     platforms=['linux', ],
     description='MindX RAG is library to build RAG system',
     python_requires='>= 3.7',
