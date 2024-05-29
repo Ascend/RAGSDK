@@ -1,0 +1,91 @@
+diff -Nru whisper/__init__.py whisper_new/__init__.py
+--- whisper/__init__.py	2024-05-27 15:35:10.039566592 +0000
++++ whisper_new/__init__.py	2024-05-27 15:41:35.415566592 +0000
+@@ -4,6 +4,7 @@
+ import urllib
+ import warnings
+ from typing import List, Optional, Union
++import torch_npu
+ 
+ import torch
+ from tqdm import tqdm
+@@ -124,7 +125,7 @@
+     """
+ 
+     if device is None:
+-        device = "cuda" if torch.cuda.is_available() else "cpu"
++        device = "npu" if torch_npu.npu.is_available() else "cpu"
+     if download_root is None:
+         default = os.path.join(os.path.expanduser("~"), ".cache")
+         download_root = os.path.join(os.getenv("XDG_CACHE_HOME", default), "whisper")
+@@ -153,4 +154,4 @@
+     if alignment_heads is not None:
+         model.set_alignment_heads(alignment_heads)
+ 
+-    return model.to(device)
++    return model.npu()
+diff -Nru whisper/decoding.py whisper_new/decoding.py
+--- whisper/decoding.py	2024-05-27 15:35:10.399566592 +0000
++++ whisper_new/decoding.py	2024-05-27 15:41:04.711566592 +0000
+@@ -470,18 +470,18 @@
+                     logits[k, self.tokenizer.timestamp_begin :] = -np.inf
+                 else:  # cannot be normal text tokens
+                     logits[k, : self.tokenizer.eot] = -np.inf
+-
+-            timestamps = sampled_tokens[
+-                sampled_tokens.ge(self.tokenizer.timestamp_begin)
+-            ]
+-            if timestamps.numel() > 0:
+-                # timestamps shouldn't decrease; forbid timestamp tokens smaller than the last
+-                # also force each segment to have a nonzero length, to prevent infinite looping
+-                if last_was_timestamp and not penultimate_was_timestamp:
+-                    timestamp_last = timestamps[-1]
+-                else:
+-                    timestamp_last = timestamps[-1] + 1
+-                logits[k, self.tokenizer.timestamp_begin : timestamp_last] = -np.inf
++            if sampled_tokens.numel() > 0:
++                timestamps = sampled_tokens[
++                    sampled_tokens.ge(self.tokenizer.timestamp_begin)
++                ]
++                if timestamps.numel() > 0:
++                    # timestamps shouldn't decrease; forbid timestamp tokens smaller than the last
++                    # also force each segment to have a nonzero length, to prevent infinite looping
++                    if last_was_timestamp and not penultimate_was_timestamp:
++                        timestamp_last = timestamps[-1]
++                    else:
++                        timestamp_last = timestamps[-1] + 1
++                    logits[k, self.tokenizer.timestamp_begin : timestamp_last] = -np.inf
+ 
+         if tokens.shape[1] == self.sample_begin:
+             # suppress generating non-timestamp tokens at the beginning
+diff -Nru whisper/transcribe.py whisper_new/transcribe.py
+--- whisper/transcribe.py	2024-05-27 15:35:10.695566592 +0000
++++ whisper_new/transcribe.py	2024-05-27 15:39:41.923566592 +0000
+@@ -5,6 +5,7 @@
+ from typing import TYPE_CHECKING, Optional, Tuple, Union
+ 
+ import numpy as np
++import torch_npu
+ import torch
+ import tqdm
+ 
+@@ -109,8 +110,8 @@
+     """
+     dtype = torch.float16 if decode_options.get("fp16", True) else torch.float32
+     if model.device == torch.device("cpu"):
+-        if torch.cuda.is_available():
+-            warnings.warn("Performing inference on CPU when CUDA is available")
++        if torch_npu.npu.is_available():
++            warnings.warn("Performing inference on CPU when NPU is not available")
+         if dtype == torch.float16:
+             warnings.warn("FP16 is not supported on CPU; using FP32 instead")
+             dtype = torch.float32
+@@ -396,7 +397,7 @@
+     parser.add_argument("audio", nargs="+", type=str, help="audio file(s) to transcribe")
+     parser.add_argument("--model", default="small", type=valid_model_name, help="name of the Whisper model to use")
+     parser.add_argument("--model_dir", type=str, default=None, help="the path to save model files; uses ~/.cache/whisper by default")
+-    parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu", help="device to use for PyTorch inference")
++    parser.add_argument("--device", default="npu" if torch_npu.npu.is_available() else "cpu", help="device to use for PyTorch inference")
+     parser.add_argument("--output_dir", "-o", type=str, default=".", help="directory to save the outputs")
+     parser.add_argument("--output_format", "-f", type=str, default="all", choices=["txt", "vtt", "srt", "tsv", "json", "all"], help="format of the output file; if not specified, all available formats will be produced")
+     parser.add_argument("--verbose", type=str2bool, default=True, help="whether to print out the progress and debug messages")
