@@ -120,7 +120,7 @@ class ExcelLoader:
                     text_line += str(ti) + ":" + str(self._exceltime_to_datetime(float(line_list[ind]))) + ";"
                 else:
                     text_line += str(ti) + ":" + str(line_list[ind]) + ";"
-            text_line += self.LINE_SEP
+            text_line += self.line_sep
             res += text_line
         return res
 
@@ -154,7 +154,7 @@ class ExcelLoader:
                 text_line = ""
                 for ind, ti in enumerate(title):
                     text_line += str(ti.value) + ":" + str(line[ind].value) + ";"
-                content += text_line + self.LINE_SEP
+                content += text_line + self.line_sep
             doc = Doc(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
             docs.append(doc)
         logger.info(f"file {self.file_path} Loading completed")
@@ -172,9 +172,8 @@ class ExcelLoader:
                 return []
             for row in reader:
                 text_line = self._load_csv_line(row, headers)
-                content += text_line + self.LINE_SEP
+                content += text_line + self.line_sep
             doc = Doc(page_content=content, metadata={"source": self.file_path})
             docs.append(doc)
         return docs
-
 
