@@ -66,7 +66,7 @@ class TestExcelLoader(unittest.TestCase):
         mock_load_csv.assert_called_once()
 
     def test_load_csv(self):
-        loader = ExcelLoader("D:\\project\\mxRAG\\tests\\mx_rag\\document\\loader\\files\\test.csv")
+        loader = ExcelLoader("./mx_rag/document/loader/files/test.csv")
         docs = loader.load()
         content = ('None:中文资讯;source:机器之心;link:入门|机器之心(jiqizhixin.com);count\n（3月15日为例）:9篇;SUM:24篇;**;'
                    'None:None;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count\n（3月15日为例）:'
