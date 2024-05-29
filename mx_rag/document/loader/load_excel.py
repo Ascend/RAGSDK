@@ -177,4 +177,3 @@ class ExcelLoader:
             docs.append(doc)
         return docs
 
-
