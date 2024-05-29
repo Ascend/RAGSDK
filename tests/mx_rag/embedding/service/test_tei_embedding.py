@@ -5,6 +5,7 @@ import json
 from typing import Dict
 import unittest
 from unittest import mock
+from unittest.mock import patch
 
 import numpy as np
 
@@ -35,18 +36,16 @@ class TestTEIEmbedding(unittest.TestCase):
             for i in range(len(data['inputs'])):
                 response_data.append(np.random.rand(test_embed_length).tolist())
             return TestTEIEmbedding.Result(True, json.dumps(response_data))
+        with patch("mx_rag.utils.RequestUtils.post", mock.Mock(side_effect=mock_post)):
+            embed = TEIEmbedding(url='http://localhost:8888')
 
-        RequestUtils.post = mock.Mock(side_effect=mock_post)
+            texts = ['abc'] * 100
+            encoded_texts = embed.encode(texts=texts)
+            self.assertEqual(len(texts), len(encoded_texts))
 
-        embed = TEIEmbedding(url='http://localhost:8888')
-
-        texts = ['abc'] * 100
-        encoded_texts = embed.encode(texts=texts)
-        self.assertEqual(len(texts), len(encoded_texts))
-
-        texts = ['abc'] * 1000
-        encoded_texts = embed.encode(texts=texts)
-        self.assertEqual(len(texts), len(encoded_texts))
+            texts = ['abc'] * 1000
+            encoded_texts = embed.encode(texts=texts)
+            self.assertEqual(len(texts), len(encoded_texts))
 
     def test_empty_texts(self):
         embed = TEIEmbedding(url='http://localhost:8888')
@@ -59,13 +58,12 @@ class TestTEIEmbedding(unittest.TestCase):
         def mock_post(*args, **kwargs):
             return TestTEIEmbedding.Result(False, "")
 
-        RequestUtils.post = mock.Mock(side_effect=mock_post)
+        with patch("mx_rag.utils.RequestUtils.post", mock.Mock(side_effect=mock_post)):
+            embed = TEIEmbedding(url='http://localhost:8888')
 
-        embed = TEIEmbedding(url='http://localhost:8888')
-
-        texts = ['abc'] * 100
-        encoded_texts = embed.encode(texts=texts)
-        self.assertEqual(0, len(encoded_texts))
+            texts = ['abc'] * 100
+            encoded_texts = embed.encode(texts=texts)
+            self.assertEqual(0, len(encoded_texts))
 
 
 if __name__ == '__main__':
