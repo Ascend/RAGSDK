@@ -163,17 +163,26 @@ class ExcelLoader:
     def _load_csv(self):
         docs: List[Doc] = list()
         content = ""
-        with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
-            reader = csv.reader(file)
-            try:
+        try:
+            with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
+                reader = csv.reader(file)
                 headers = next(reader)  # 读取第一行标题
-            except UnicodeDecodeError:
-                logger.info(f"file {self.file_path} is empty")
-                return []
-            for row in reader:
-                text_line = self._load_csv_line(row, headers)
-                content += text_line + self.line_sep
+
+                for row in reader:
+                    if len(row) > 0:
+                        text_line = self._load_csv_line(row, headers)
+                        content += text_line + self.line_sep
+                    else:
+                        break
+        except Exception as e:
+            raise e
+        if content != '':
             doc = Doc(page_content=content, metadata={"source": self.file_path})
             docs.append(doc)
+        else:
+            logger.info(f"file {self.file_path} is empty")
         return docs
 
+
+ww = ExcelLoader("D:\\project\\mxRAG\\tests\\mx_rag\\document\\loader\\files\\test.csv")
+ww.load()
