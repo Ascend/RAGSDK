@@ -19,7 +19,7 @@ def is_alpha_or_digit_or_punc(char: str):
     elif char in punctuation:
         return True
     else:
-        logger.warning(f"remove char {char}")
+        logger.warning("remove char")
         return False
 
 
