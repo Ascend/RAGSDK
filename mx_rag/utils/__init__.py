@@ -4,10 +4,17 @@
 __all__ = [
     "SizeOverLimitException",
     "PathNotFileException",
+    "FileBrokenException",
+    "PathNotDirException",
     "SecFileCheck",
     "excel_file_check",
-    "FileBrokenException"
+    "dir_check",
+
+    "RequestUtils"
 ]
 
-from mx_rag.utils.file_check import SizeOverLimitException, PathNotFileException, SecFileCheck, excel_file_check, \
-    FileBrokenException
+from mx_rag.utils.file_check import \
+    SizeOverLimitException, PathNotFileException, FileBrokenException, PathNotDirException, \
+    SecFileCheck, excel_file_check, dir_check
+
+from mx_rag.utils.url import RequestUtils
