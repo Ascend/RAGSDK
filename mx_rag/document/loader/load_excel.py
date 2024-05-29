@@ -2,11 +2,13 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 from datetime import datetime, timedelta
+from typing import List
 import csv
 import xlrd
 from loguru import logger
 from openpyxl import load_workbook
 from mx_rag.utils import file_check
+from mx_rag.document.loader.docx_loader import Doc
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
@@ -14,9 +16,10 @@ CSV_EXTENSION = (".csv",)
 
 
 class ExcelLoader:
-    def __init__(self, file_path, max_size_mb=100):
+    def __init__(self, file_path, max_size_mb=100, line_sep="**;"):
         self.file_path = file_path
         self.max_size_mb = max_size_mb
+        self.LINE_SEP = line_sep
 
     @staticmethod
     def _exceltime_to_datetime(exceltime):
@@ -98,7 +101,7 @@ class ExcelLoader:
             raise TypeError(f"{self.file_path} file type is not correct")
 
     def _load_xls_sheet(self, ws):
-        res = []
+        res = ""
         start_row, start_col = self._table_location_xls(ws)
         if ws.nrows - start_row < 2:
             logger.info(f"In file {self.file_path} sheet *{ws.name}* is empty")
@@ -113,28 +116,32 @@ class ExcelLoader:
                 ind += start_col
                 if line_list[ind] == '':
                     line_list[ind] = 'None'
-                if ti in ["time"]:
+                if ti in ["time"] and 0 <= float(line_list[ind]) <= 1:
                     text_line += str(ti) + ":" + str(self._exceltime_to_datetime(float(line_list[ind]))) + ";"
                 else:
                     text_line += str(ti) + ":" + str(line_list[ind]) + ";"
-            text_line += "--" + str(ws.name)
-            res.append(text_line)
+            text_line += self.LINE_SEP
+            res += text_line
         return res
 
     def _load_xls(self):
+        docs: List[Doc] = list()
         wb = xlrd.open_workbook(self.file_path)
-        res = []
         for i in range(wb.nsheets):  # 对于每一张表
+            content = ""
             ws = wb.sheet_by_index(i)
             ws_texts = self._load_xls_sheet(ws)
-            res = res + ws_texts
+            content += ws_texts
+            doc = Doc(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
+            docs.append(doc)
         logger.info(f"file {self.file_path} Loading completed")
-        return res
+        return docs
 
     def _load_xlsx(self):
+        docs: List[Doc] = list()
         wb = load_workbook(self.file_path)
-        res = []
-        for sheet_name in wb.sheetnames:
+        for sheet_name in wb.sheetnames:  # 每张表单
+            content = ""
             ws_init = wb[sheet_name]
             ws = self._cleanup_xlsx(ws_init)
             rows = list(ws.rows)
@@ -147,21 +154,27 @@ class ExcelLoader:
                 text_line = ""
                 for ind, ti in enumerate(title):
                     text_line += str(ti.value) + ":" + str(line[ind].value) + ";"
-                text_line += "--" + str(sheet_name)
-                res.append(text_line)
+                content += text_line + self.LINE_SEP
+            doc = Doc(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
+            docs.append(doc)
         logger.info(f"file {self.file_path} Loading completed")
-        return res
+        return docs
 
     def _load_csv(self):
-        res = []
+        docs: List[Doc] = list()
+        content = ""
         with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
             reader = csv.reader(file)
             try:
                 headers = next(reader)  # 读取第一行标题
             except UnicodeDecodeError:
                 logger.info(f"file {self.file_path} is empty")
-                return res
+                return []
             for row in reader:
                 text_line = self._load_csv_line(row, headers)
-                res.append(text_line)
-        return res
+                content += text_line + self.LINE_SEP
+            doc = Doc(page_content=content, metadata={"source": self.file_path})
+            docs.append(doc)
+        return docs
+
+
