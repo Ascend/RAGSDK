@@ -1,0 +1,70 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+
+import io
+
+import unittest
+from unittest import mock
+from unittest.mock import patch
+
+import urllib3
+from PIL import Image, ImageChops
+
+from mx_rag.vision import MindieVision
+
+
+MOCK_IMAGE = Image.new("RGB", (200, 200), color=(73, 109, 137))
+
+
+class MockResponse:
+    def __init__(self, headers, status):
+        img_byte_arr = io.BytesIO()
+        img_format = "png"
+        MOCK_IMAGE.save(img_byte_arr, format=img_format)
+        img_byte_arr.seek(0)
+        self.content = img_byte_arr.getvalue()
+        self.headers = headers
+        self.status = status
+
+    def read(self, amt):
+        return self.content
+
+
+def compare_images(img1, img2):
+    """
+    比较两张 PIL 图像对象是否相同。
+    """
+    if img1.size != img2.size:
+        return False
+
+    diff = ImageChops.difference(img1, img2)
+    if diff.getbbox() is None:
+        return True
+    else:
+        return False
+
+
+class TestMindieVision(unittest.TestCase):
+    def test_img(self):
+        with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse({
+            "Content-Type": "application/json",
+            "Content-Length": 200
+        }, 200))):
+            sd_model = MindieVision(model_name="sd", url="http://test:8888")
+            img_data = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
+            image = Image.open(img_data)
+            self.assertTrue(compare_images(image, MOCK_IMAGE))
+            image.close()
+
+    def test_img_interrupt(self):
+        with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse({
+            "Content-Type": "application/json",
+            "Content-Length": 200
+        }, 404))):
+            sd_model = MindieVision(model_name="sd", url="http://test:8888")
+            img_data = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
+            self.assertEqual(img_data, None)
+
+
+if __name__ == "__main__":
+    unittest.main()
