@@ -19,7 +19,7 @@ class ExcelLoader:
     def __init__(self, file_path, max_size_mb=100, line_sep="**;"):
         self.file_path = file_path
         self.max_size_mb = max_size_mb
-        self.LINE_SEP = line_sep
+        self.line_sep = line_sep
 
     @staticmethod
     def _exceltime_to_datetime(exceltime):
