@@ -160,6 +160,16 @@ class ExcelLoader:
         logger.info(f"file {self.file_path} Loading completed")
         return docs
 
+    def _load_csv_lines(self, reader, headers):
+        content = ""
+        for row in reader:
+            if len(row) > 0:
+                text_line = self._load_csv_line(row, headers)
+                content += text_line + self.line_sep
+            else:
+                break
+        return content
+
     def _load_csv(self):
         docs: List[Doc] = list()
         content = ""
@@ -167,13 +177,7 @@ class ExcelLoader:
             with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
                 reader = csv.reader(file)
                 headers = next(reader)  # 读取第一行标题
-
-                for row in reader:
-                    if len(row) > 0:
-                        text_line = self._load_csv_line(row, headers)
-                        content += text_line + self.line_sep
-                    else:
-                        break
+                content = self._load_csv_lines(reader, headers)
         except Exception as e:
             raise e
         if content != '':
@@ -184,5 +188,3 @@ class ExcelLoader:
         return docs
 
 
-ww = ExcelLoader("D:\\project\\mxRAG\\tests\\mx_rag\\document\\loader\\files\\test.csv")
-ww.load()
