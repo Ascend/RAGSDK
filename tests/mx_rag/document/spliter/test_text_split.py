@@ -6,7 +6,7 @@ from mx_rag.document.spliter.text_split import TextSplitterBase
 from mx_rag.document.spliter.char_text_splitter import CharTextSplitter
 
 
-class TestExcelLoader(unittest.TestCase):
+class TestTextSplit(unittest.TestCase):
     def test_blank_space_odd_num_text_split(self):
         text = "123 \n 456 \n 789"
         text_splitter = TextSplitterBase(chunk_size=512, chunk_overlap=100, keep_separator=True)
