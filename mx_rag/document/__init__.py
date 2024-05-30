@@ -3,8 +3,8 @@
 
 __all__ = [
     "loader",
-    "spliter"
+    "splitter"
 ]
 
 from mx_rag.document import loader
-from mx_rag.document import spliter
+from mx_rag.document import splitter
