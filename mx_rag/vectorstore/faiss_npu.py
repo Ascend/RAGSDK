@@ -32,7 +32,7 @@ class MindFAISS:
             x_dim: Optional[int],
             index_type: Optional[str],
             document_store: Docstore,
-            embed_func: Callable[[Union[List[str], str]], np.ndarray],
+            embed_func: Callable[[List[str]], np.ndarray],
             load_local_index: bool = False,
             **kwargs
     ):

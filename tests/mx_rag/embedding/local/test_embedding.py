@@ -4,14 +4,11 @@
 import random
 from typing import Dict
 import unittest
-from unittest import mock
+from unittest.mock import patch
 
 import torch
-import transformers
-from transformers import AutoModel, AutoTokenizer
 
 from mx_rag.embedding.local import LocalEmbedding
-import mx_rag.utils as m_utils
 
 
 class TestLocalEmbedding(unittest.TestCase):
@@ -60,49 +57,66 @@ class TestLocalEmbedding(unittest.TestCase):
             attention_mask = torch.ones((len(batch_text), rand_token_len))
             return TestLocalEmbedding.BatchEncoding(input_ids=input_ids, attention_mask=attention_mask)
 
-    def test_encode_success_fp16_mean(self):
-        m_utils.dir_check = mock.Mock()
-        AutoModel.from_pretrained = mock.Mock(return_value=TestLocalEmbedding.Model(1024))
-        AutoTokenizer.from_pretrained = mock.Mock(return_value=TestLocalEmbedding.Tokenizer())
-        transformers.is_torch_npu_available = mock.Mock(return_value=False)
+    @patch("mx_rag.utils.dir_check")
+    @patch("transformers.AutoModel.from_pretrained")
+    @patch("transformers.AutoTokenizer.from_pretrained")
+    @patch("transformers.is_torch_npu_available")
+    def test_encode_success_fp16_mean(self,
+                                      torch_avail_mock,
+                                      tok_pre_mock,
+                                      model_pre_mock,
+                                      dir_check_mock):
+        model_pre_mock.return_value = TestLocalEmbedding.Model(1024)
+        tok_pre_mock.return_value = TestLocalEmbedding.Tokenizer()
+        torch_avail_mock.return_value = False
 
         embed = LocalEmbedding(model_name_or_path='/model/embedding',
                                pooling_method='mean')
 
         texts = ['test_txt'] * 100
         ret = embed.encode(texts=texts)
-        self.assertEqual(len(ret), len(texts))
-        self.assertEqual(len(ret[0]), 1024)
+        self.assertEqual(ret.shape, (len(texts), 1024))
 
         texts = ['test_txt'] * 1000
         ret = embed.encode(texts=texts)
-        self.assertEqual(len(ret), len(texts))
-        self.assertEqual(len(ret[0]), 1024)
+        self.assertEqual(ret.shape, (len(texts), 1024))
 
-    def test_encode_success_fp32_cls(self):
-        m_utils.dir_check = mock.Mock()
-        AutoModel.from_pretrained = mock.Mock(return_value=TestLocalEmbedding.Model(512))
-        AutoTokenizer.from_pretrained = mock.Mock(return_value=TestLocalEmbedding.Tokenizer())
-        transformers.is_torch_npu_available = mock.Mock(return_value=True)
+    @patch("mx_rag.utils.dir_check")
+    @patch("transformers.AutoModel.from_pretrained")
+    @patch("transformers.AutoTokenizer.from_pretrained")
+    @patch("transformers.is_torch_npu_available")
+    def test_encode_success_fp32_cls(self,
+                                     torch_avail_mock,
+                                     tok_pre_mock,
+                                     model_pre_mock,
+                                     dir_check_mock):
+        model_pre_mock.return_value = TestLocalEmbedding.Model(512)
+        tok_pre_mock.return_value = TestLocalEmbedding.Tokenizer()
+        torch_avail_mock.return_value = True
 
         embed = LocalEmbedding(model_name_or_path='/model/embedding',
                                use_fp16=False)
 
         texts = ['test_txt'] * 100
         ret = embed.encode(texts=texts)
-        self.assertEqual(len(ret), len(texts))
-        self.assertEqual(len(ret[0]), 512)
+        self.assertEqual(ret.shape, (len(texts), 512))
 
         texts = ['test_txt'] * 1000
         ret = embed.encode(texts=texts)
-        self.assertEqual(len(ret), len(texts))
-        self.assertEqual(len(ret[0]), 512)
+        self.assertEqual(ret.shape, (len(texts), 512))
 
-    def test_encode_failed_invalid_pooling(self):
-        m_utils.dir_check = mock.Mock()
-        AutoModel.from_pretrained = mock.Mock(return_value=TestLocalEmbedding.Model(1024))
-        AutoTokenizer.from_pretrained = mock.Mock(return_value=TestLocalEmbedding.Tokenizer())
-        transformers.is_torch_npu_available = mock.Mock(return_value=True)
+    @patch("mx_rag.utils.dir_check")
+    @patch("transformers.AutoModel.from_pretrained")
+    @patch("transformers.AutoTokenizer.from_pretrained")
+    @patch("transformers.is_torch_npu_available")
+    def test_encode_failed_invalid_pooling(self,
+                                           torch_avail_mock,
+                                           tok_pre_mock,
+                                           model_pre_mock,
+                                           dir_check_mock):
+        model_pre_mock.return_value = TestLocalEmbedding.Model(1024)
+        tok_pre_mock.return_value = TestLocalEmbedding.Tokenizer()
+        torch_avail_mock.return_value = True
 
         embed = LocalEmbedding(model_name_or_path='/model/embedding',
                                pooling_method='no valid')
