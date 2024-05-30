@@ -21,7 +21,7 @@ class MindieLLM:
         self.client = RequestUtils(timeout=timeout)
 
     def get_request_body(self, query: str, history: list[dict], role: str = "role", **kwargs):
-        history.insert(0, {"role": role, "content": query})
+        history.append({"role": role, "content": query})
 
         request_body = {
             "model": self.model_name,
