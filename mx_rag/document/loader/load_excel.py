@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import csv
 from datetime import datetime, timedelta
 from typing import List
-import csv
-import xlrd
 from loguru import logger
 from openpyxl import load_workbook
-from mx_rag.utils import file_check
+import xlrd
 from mx_rag.document.loader.docx_loader import Doc
+from mx_rag.utils import file_check
+
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
@@ -16,9 +16,10 @@ CSV_EXTENSION = (".csv",)
 
 
 class ExcelLoader:
-    def __init__(self, file_path, max_size_mb=100, line_sep="**;"):
+    def __init__(self, file_path, max_size_mb=100, max_sheet_num=1000, line_sep="**;"):
         self.file_path = file_path
         self.max_size_mb = max_size_mb
+        self.max_sheet_num = max_sheet_num
         self.line_sep = line_sep
 
     @staticmethod
@@ -127,6 +128,9 @@ class ExcelLoader:
     def _load_xls(self):
         docs: List[Doc] = list()
         wb = xlrd.open_workbook(self.file_path)
+        if wb.nsheets > self.max_sheet_num:
+            logger.error(f"file {self.file_path} sheets number more than limit")
+            return docs
         for i in range(wb.nsheets):  # 对于每一张表
             content = ""
             ws = wb.sheet_by_index(i)
@@ -140,6 +144,9 @@ class ExcelLoader:
     def _load_xlsx(self):
         docs: List[Doc] = list()
         wb = load_workbook(self.file_path)
+        if len(wb.sheetnames) > self.max_sheet_num:
+            logger.error(f"file {self.file_path} sheets number more than limit")
+            return docs
         for sheet_name in wb.sheetnames:  # 每张表单
             content = ""
             ws_init = wb[sheet_name]
