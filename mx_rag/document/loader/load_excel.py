@@ -30,7 +30,7 @@ class ExcelLoader:
         """
         base_date = datetime(1899, 12, 30)
         time = base_date + timedelta(exceltime)
-        return time.strftime('%H:%M')
+        return time.strftime("%H:%M")
 
     @staticmethod
     def _cleanup_xlsx(worksheet):
@@ -74,9 +74,9 @@ class ExcelLoader:
     def _load_csv_line(row, headers):
         text_line = ""
         for ind, ti in enumerate(headers):
-            if ti == "":
+            if not str(ti):
                 ti = "None"
-            if row[ind] == "":
+            if not str(row[ind]):
                 row[ind] = "None"
             text_line += str(ti) + ":" + str(row[ind]) + ";"
         return text_line
@@ -111,11 +111,11 @@ class ExcelLoader:
             text_line = ""
             line_list = ws.row_values(line_ind)
             for ind, ti in enumerate(title):
-                if ti == '':
-                    ti = 'None'
+                if not str(ti):
+                    ti = "None"
                 ind += start_col
-                if line_list[ind] == '':
-                    line_list[ind] = 'None'
+                if not str(line_list[ind]):
+                    line_list[ind] = "None"
                 if ti in ["time"] and 0 <= float(line_list[ind]) <= 1:
                     text_line += str(ti) + ":" + str(self._exceltime_to_datetime(float(line_list[ind]))) + ";"
                 else:
@@ -174,17 +174,15 @@ class ExcelLoader:
         docs: List[Doc] = list()
         content = ""
         try:
-            with open(self.file_path, mode='r', encoding='utf-8-sig') as file:
+            with open(self.file_path, mode="r", encoding="utf-8-sig") as file:
                 reader = csv.reader(file)
                 headers = next(reader)  # 读取第一行标题
                 content = self._load_csv_lines(reader, headers)
         except Exception as e:
             raise e
-        if content != '':
+        if content:
             doc = Doc(page_content=content, metadata={"source": self.file_path})
             docs.append(doc)
         else:
             logger.info(f"file {self.file_path} is empty")
         return docs
-
-
