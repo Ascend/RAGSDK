@@ -14,6 +14,6 @@ class EmbeddingModelType(Enum):
 
 
 TYPE_TO_EMBEDDING_MODEL: Dict = {
-    EmbeddingModelType.LOCAL: LocalEmbedding,
-    EmbeddingModelType.TEI: TEIEmbedding
+    EmbeddingModelType.LOCAL.value: LocalEmbedding,
+    EmbeddingModelType.TEI.value: TEIEmbedding
 }

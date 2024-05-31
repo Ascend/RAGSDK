@@ -9,13 +9,19 @@ __all__ = [
     "excel_file_check",
     "dir_check",
     "is_english",
+    "FileCheck",
     "RequestUtils"
 ]
 
-from mx_rag.utils.file_check import \
-    SizeOverLimitException, PathNotFileException, PathNotDirException, \
-    SecFileCheck, excel_file_check, dir_check
+from mx_rag.utils.file_check import (
+    SizeOverLimitException,
+    PathNotFileException,
+    PathNotDirException,
+    SecFileCheck,
+    excel_file_check,
+    dir_check,
+    FileCheck
+)
 
 from mx_rag.utils.url import RequestUtils
-
 from mx_rag.utils.sentence_check import is_english

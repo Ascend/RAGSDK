@@ -55,15 +55,15 @@ class ChunkModel(Base):
 
 class Docstore(ABC):
     @abstractmethod
-    def search(self, *args, **kwargs) -> Union[str, Document]:
+    def search(self, *args, **kwargs) -> Document:
         pass
 
     @abstractmethod
-    def delete(self, *args, **kwargs) -> None:
+    def delete(self, *args, **kwargs):
         pass
 
     @abstractmethod
-    def add(self, *args, **kwargs) -> None:
+    def add(self, *args, **kwargs):
         pass
 
 
@@ -121,3 +121,8 @@ class SQLiteDocstore(Docstore):
                     document_name=chunk.document_name
                 )
             return chunk
+
+    def check_document_exist(self, doc_name: str) -> bool:
+        with self.session() as session:
+            chunk = session.query(ChunkModel).filter_by(document_name=doc_name).first()
+            return True if chunk is not None else False

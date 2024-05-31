@@ -4,6 +4,7 @@
 from typing import Optional
 
 from loguru import logger
+import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
@@ -28,7 +29,7 @@ class LocalEmbedding:
             self.pooling_method = pooling_method
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-        self.model = AutoModel.from_pretrained(model_name_or_path)
+        self.model = AutoModel.from_pretrained(model_name_or_path, local_files_only=True)
 
         if use_fp16:
             self.model = self.model.half()
@@ -47,10 +48,10 @@ class LocalEmbedding:
                batch_size: int = 32,
                max_length: int = 512):
         if len(texts) == 0:
-            return []
+            return np.array([])
         elif len(texts) > LocalEmbedding.TEXT_MAX_LEN:
-            logger.error(f'texts len must less than {LocalEmbedding.TEXT_MAX_LEN}')
-            return []
+            logger.error(f'texts list length must less than {LocalEmbedding.TEXT_MAX_LEN}')
+            return np.array([])
 
         result = []
         for start_index in range(0, len(texts), batch_size):
@@ -66,10 +67,10 @@ class LocalEmbedding:
             last_hidden_state = model_output.last_hidden_state
 
             embeddings = self.pooling(last_hidden_state, encode_texts.attention_mask)
-            embeddings = torch.nn.functional.normalize(embeddings, dim=-1)
-            result = result + embeddings.cpu().numpy().tolist()
+            embeddings = torch.nn.functional.normalize(embeddings, dim=-1).cpu().numpy().tolist()
+            result = result + embeddings
 
-        return result
+        return np.array(result)
 
     def pooling(self,
                 last_hidden_state: torch.Tensor,
