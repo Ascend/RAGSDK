@@ -75,8 +75,6 @@ class MindFAISS:
 
     @classmethod
     def load_local(cls, index_path: str, document_store: Docstore, embed_func: Callable, **kwargs) -> MindFAISS:
-        if not os.path.exists(index_path):
-            raise MindFAISSError(f"index path {index_path} is not exist")
         if cls.DEVICES is None:
             raise MindFAISSError("set devices first")
 
@@ -118,7 +116,8 @@ class MindFAISS:
             num_removed = self.index.remove_ids(np.array(ids))
         except Exception as err:
             raise MindFAISSError(f"delete index failed {err}") from err
-        return num_removed
+        if len(ids) != num_removed:
+            raise MindFAISSError(f"the number of documents does not match the number of vectors")
 
     def similarity_search(
             self,
