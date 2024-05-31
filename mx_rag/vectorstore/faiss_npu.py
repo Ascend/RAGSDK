@@ -4,13 +4,13 @@ from __future__ import annotations
 import inspect
 import os
 from pathlib import Path
-from typing import Optional, List, Any, Union, Sized, Tuple, Callable, Type, NoReturn
+from typing import Optional, List, Any, Sized, Tuple, Callable, NoReturn
 
 import ascendfaiss
 import faiss
 import numpy as np
 
-from mx_rag.vectorstore.storage import Document, Docstore
+from mx_rag.storage import Document, Docstore
 
 
 class MindFAISSError(Exception):

@@ -1,30 +1,14 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-import inspect
 import os
-from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import List, Union, Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+from .base_storage import Docstore, Document, StorageError
+
 Base = declarative_base()
-
-
-class StorageError(Exception):
-    def __init__(self, err_msg: str):
-        self.err_msg = err_msg
-        info: inspect.FrameInfo = inspect.stack()[1]
-        msg = f"{info.function}({Path(info.filename).name}:{info.lineno})-{err_msg}"
-        super().__init__(msg)
-
-
-class Document(BaseModel):
-    page_content: str
-    metadata: dict = Field(default_factory=dict)
-    document_name: str
 
 
 class ChunkIdxModel(Base):
@@ -51,20 +35,6 @@ class ChunkModel(Base):
     reserved1 = Column(String, default=None, nullable=True, comment="预留字段1")
     reserved2 = Column(String, default=None, nullable=True, comment="预留字段2")
     reserved3 = Column(String, default=None, nullable=True, comment="预留字段3")
-
-
-class Docstore(ABC):
-    @abstractmethod
-    def search(self, *args, **kwargs) -> Document:
-        pass
-
-    @abstractmethod
-    def delete(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def add(self, *args, **kwargs):
-        pass
 
 
 class SQLiteDocstore(Docstore):

@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import builtins
 import os.path
-import sys
 import unittest
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import patch, MagicMock
 import numpy as np
 
 with patch("mx_rag.vectorstore.faiss_npu.ascendfaiss"):
     with patch("mx_rag.vectorstore.faiss_npu.faiss"):
         from mx_rag.vectorstore.faiss_npu import MindFAISS
-        from mx_rag.vectorstore.storage import SQLiteDocstore, Document
+        from  mx_rag.storage import SQLiteDocstore, Document
 
 
 class TestAscendFAISS(unittest.TestCase):
