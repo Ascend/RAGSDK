@@ -2,8 +2,8 @@ import unittest
 
 from langchain.text_splitter import CharacterTextSplitter
 
-from mx_rag.document.spliter.text_split import TextSplitterBase
-from mx_rag.document.spliter.char_text_splitter import CharTextSplitter
+from mx_rag.document.splitter.text_splitter import TextSplitterBase
+from mx_rag.document.splitter import CharTextSplitter
 
 
 class TestTextSplit(unittest.TestCase):

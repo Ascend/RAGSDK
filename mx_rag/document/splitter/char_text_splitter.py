@@ -4,7 +4,7 @@
 import re
 from typing import Any, List
 
-from mx_rag.document.spliter.text_split import TextSplitterBase
+from mx_rag.document.splitter.text_splitter import TextSplitterBase
 
 
 class CharTextSplitter(TextSplitterBase):

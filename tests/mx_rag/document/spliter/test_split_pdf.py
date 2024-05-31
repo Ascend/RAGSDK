@@ -7,8 +7,8 @@ import unittest
 
 from langchain.text_splitter import CharacterTextSplitter
 
-from mx_rag.document.loader.pdf_loader import PdfLoader
-from mx_rag.document.spliter.char_text_splitter import CharTextSplitter
+from mx_rag.document.loader import PdfLoader
+from mx_rag.document.splitter import CharTextSplitter
 
 
 class TestPdfSplit(unittest.TestCase):
