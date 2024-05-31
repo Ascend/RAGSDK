@@ -7,7 +7,6 @@ import unittest
 from unittest.mock import patch, MagicMock, Mock
 import numpy as np
 
-
 with patch("mx_rag.vectorstore.faiss_npu.ascendfaiss"):
     with patch("mx_rag.vectorstore.faiss_npu.faiss"):
         from mx_rag.vectorstore.faiss_npu import MindFAISS
@@ -23,6 +22,7 @@ class TestAscendFAISS(unittest.TestCase):
             if len(texts) > 1:
                 return total
             return query
+
         os.chmod = MagicMock()
         MindFAISS.set_device = MagicMock()
         MindFAISS.set_device(0)
@@ -36,16 +36,19 @@ class TestAscendFAISS(unittest.TestCase):
         ret = index.similarity_search(["1111"], k=1)
         self.assertEqual(ret[0][0].page_content, "1111")
 
-        index.similarity_search_by_vector = MagicMock(return_value=[[Document(page_content="1111", document_name="test.txt")]])
+        index.similarity_search_by_vector = MagicMock(
+            return_value=[[Document(page_content="1111", document_name="test.txt")]])
         ret = index.similarity_search_by_vector(query, k=1)
         self.assertEqual(ret[0][0].page_content, "1111")
 
         texts = ["4444", "5555", "6666"]
         index.add_texts("test-2.txt", texts, metadatas=[{"name": "sisisi"}, {"name": "wuwuwu"}, {"name": "liuliuliu"}])
+        index.index.remove_ids = MagicMock(return_value=len(texts))
         index.delete("test.txt")
         index.save_local("./faiss.index")
         index2 = MindFAISS.load_local = MagicMock(return_value=index)
-        index2.similarity_search_by_vector = MagicMock(return_value=[[Document(page_content="4444", document_name="test-2.txt")]])
+        index2.similarity_search_by_vector = MagicMock(
+            return_value=[[Document(page_content="4444", document_name="test-2.txt")]])
         ret = index2.similarity_search_by_vector(query, k=1)
         self.assertEqual(ret[0][0].page_content, "4444")
         MindFAISS.clear_device()

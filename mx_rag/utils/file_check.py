@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import inspect
 import os
+import re
+from pathlib import Path
 
 
 class SizeOverLimitException(Exception):
@@ -14,6 +16,15 @@ class PathNotFileException(Exception):
 
 class PathNotDirException(Exception):
     pass
+
+
+class FileCheckError(Exception):
+    def __init__(self, err_msg: str):
+        self.err_msg = err_msg
+        info: inspect.FrameInfo = inspect.stack()[1]
+        msg = f"{info.function}({Path(info.filename).name}:{info.lineno})-{err_msg}"
+        super().__init__(msg)
+
 
 
 class SecFileCheck:
@@ -42,3 +53,34 @@ def excel_file_check(file_path, size):
 def dir_check(file_path):
     if not os.path.isdir(file_path):
         raise PathNotDirException(f"PathNotDirException: [{file_path}] is not a valid dir")
+
+
+class FileCheck:
+    MAX_PATH_LENGTH = 1024
+
+    @staticmethod
+    def check_input_path_valid(path: str, check_real_path: bool = True):
+        if not path or not isinstance(path, str):
+            raise FileCheckError("Input path is not valid str")
+
+        if len(path) > FileCheck.MAX_PATH_LENGTH:
+            raise FileCheckError("Input path length over limit")
+
+        FileCheck._check_normal_file_path(path)
+
+        if check_real_path and os.path.islink(path):
+            raise FileCheckError("Input path is symbol link")
+
+    @staticmethod
+    def check_path_is_exist_and_valid(path: str, check_real_path: bool = True):
+        if not isinstance(path, str) or not os.path.exists(path):
+            raise FileCheckError("path is not exists")
+
+        FileCheck.check_input_path_valid(path, check_real_path)
+
+    @staticmethod
+    def _check_normal_file_path(path):
+        pattern_name = re.compile(r"[^0-9a-zA-Z_./-]")
+        match_name = pattern_name.findall(path)
+        if match_name or ".." in path:
+            raise FileCheckError("there are illegal characters in path")
