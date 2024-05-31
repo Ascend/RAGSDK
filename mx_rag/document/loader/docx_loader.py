@@ -7,11 +7,12 @@ import docx
 from loguru import logger
 from pydantic import Field
 
-from mx_rag.document.loader.document_loader import DocumentLoader, Doc
+from mx_rag.document.loader.base_loader import BaseLoader
+from mx_rag.document.doc import Doc
 from mx_rag.utils import SecFileCheck
 
 
-class DocxLoader(DocumentLoader):
+class DocxLoader(BaseLoader):
     """Loading logic for loading documents from docx."""
 
     def __init__(self, file_path: str, image_inline=False):
@@ -60,9 +61,9 @@ class DocxLoader(DocumentLoader):
 
     def _is_document_valid(self):
         try:
-            SecFileCheck(self.file_path, DocumentLoader.MAX_SIZE_MB).check()
+            SecFileCheck(self.file_path, BaseLoader.MAX_SIZE_MB).check()
             doc = docx.Document(self.file_path)
-            if len(doc.paragraphs) > DocumentLoader.MAX_PAGE_NUM:
+            if len(doc.paragraphs) > BaseLoader.MAX_PAGE_NUM:
                 logger.error(f"too many pages {len(doc.paragraphs)}")
                 return False
             return True

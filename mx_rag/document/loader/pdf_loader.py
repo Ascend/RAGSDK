@@ -7,11 +7,12 @@ from typing import List
 import fitz
 from loguru import logger
 
-from mx_rag.document.loader.document_loader import DocumentLoader, Doc
+from mx_rag.document.loader.base_loader import BaseLoader
+from mx_rag.document.doc import Doc
 from mx_rag.utils import SecFileCheck
 
 
-class PdfLoader(DocumentLoader):
+class PdfLoader(BaseLoader):
     def __init__(self, file_path: str, image_inline=False):
         super().__init__(file_path)
         self.do_ocr = image_inline
@@ -44,9 +45,9 @@ class PdfLoader(DocumentLoader):
 
     def _check(self):
         try:
-            SecFileCheck(self.file_path, DocumentLoader.MAX_SIZE_MB).check()
+            SecFileCheck(self.file_path, BaseLoader.MAX_SIZE_MB).check()
             _pdf_page_count = self._get_pdf_page_count()
-            if _pdf_page_count > DocumentLoader.MAX_PAGE_NUM:
+            if _pdf_page_count > BaseLoader.MAX_PAGE_NUM:
                 logger.error(f"too many pages {_pdf_page_count}")
                 return False
             return True

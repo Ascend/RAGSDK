@@ -14,7 +14,7 @@ from docx.table import Table
 from docx.text.paragraph import Paragraph
 from loguru import logger
 
-from mx_rag.document.loader.document_loader import Doc
+from mx_rag.document.doc import Doc
 from mx_rag.document.loader.docx_loader import DocxLoader
 
 

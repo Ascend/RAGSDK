@@ -3,16 +3,7 @@
 from abc import ABC, abstractmethod
 
 
-class Doc:
-    page_content: str
-    metadata: dict
-
-    def __init__(self, page_content: str, metadata: dict) -> None:
-        self.page_content = page_content
-        self.metadata = metadata
-
-
-class DocumentLoader(ABC):
+class BaseLoader(ABC):
     MAX_SIZE_MB = 100
     MAX_PAGE_NUM = 1000
 
