@@ -6,20 +6,17 @@ from typing import List
 from loguru import logger
 from openpyxl import load_workbook
 import xlrd
-from mx_rag.document.loader.docx_loader import Doc
+from mx_rag.document.loader.document_loader import DocumentLoader, Doc
 from mx_rag.utils import file_check
-
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
 CSV_EXTENSION = (".csv",)
 
 
-class ExcelLoader:
-    def __init__(self, file_path, max_size_mb=100, max_sheet_num=1000, line_sep="**;"):
-        self.file_path = file_path
-        self.max_size_mb = max_size_mb
-        self.max_sheet_num = max_sheet_num
+class ExcelLoader(DocumentLoader):
+    def __init__(self, file_path, line_sep="**;"):
+        super().__init__(file_path)
         self.line_sep = line_sep
 
     @staticmethod
@@ -87,7 +84,7 @@ class ExcelLoader:
         ：返回：逐行读取表,返回 string list
         """
         try:
-            file_check.excel_file_check(self.file_path, self.max_size_mb)
+            file_check.excel_file_check(self.file_path, DocumentLoader.MAX_SIZE_MB)
         except Exception as e:
             logger.error(e)
             return []
@@ -128,7 +125,7 @@ class ExcelLoader:
     def _load_xls(self):
         docs: List[Doc] = list()
         wb = xlrd.open_workbook(self.file_path)
-        if wb.nsheets > self.max_sheet_num:
+        if wb.nsheets > DocumentLoader.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
             return docs
         for i in range(wb.nsheets):  # 对于每一张表
@@ -144,7 +141,7 @@ class ExcelLoader:
     def _load_xlsx(self):
         docs: List[Doc] = list()
         wb = load_workbook(self.file_path)
-        if len(wb.sheetnames) > self.max_sheet_num:
+        if len(wb.sheetnames) > DocumentLoader.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
             return docs
         for sheet_name in wb.sheetnames:  # 每张表单

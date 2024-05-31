@@ -10,4 +10,4 @@ __all__ = [
 
 from mx_rag.document.loader.data_clean import process_sentence
 from mx_rag.document.loader.docx_loader import DocxLoader
-from mx_rag.document.loader.load_excel import ExcelLoader
+from mx_rag.document.loader.excel_loader import ExcelLoader

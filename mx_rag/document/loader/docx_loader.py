@@ -7,32 +7,18 @@ import docx
 from loguru import logger
 from pydantic import Field
 
+from mx_rag.document.loader.document_loader import DocumentLoader, Doc
 from mx_rag.utils import SecFileCheck
 
 
-class Doc:
-    """Class for storing a piece of text and associated metadata."""
-
-    page_content: str
-    metadata: dict = Field(default_factory=dict)
-    type: Literal["Doc"] = "Doc"
-
-    def __init__(self, page_content: str, metadata: dict) -> None:
-        """Pass page_content in as positional or named arg."""
-        self.page_content = page_content
-        self.metadata = metadata
-
-
-class DocxLoader:
+class DocxLoader(DocumentLoader):
     """Loading logic for loading documents from docx."""
 
-    def __init__(self, file_path: str, image_inline=False, max_size_mb=100, max_page_num=1000):
+    def __init__(self, file_path: str, image_inline=False):
         """Initialize with filepath and options."""
-        self.doc_path = file_path
+        super().__init__(file_path)
         self.do_ocr = image_inline
         self.table_index = 0
-        self.max_size_mb = max_size_mb
-        self.max_page_num = max_page_num
 
     def load(self) -> List[Doc]:
         """Load documents."""
@@ -42,7 +28,7 @@ class DocxLoader:
 
         docs: List[Doc] = list()
         all_text = []
-        doc = docx.Document(self.doc_path)
+        doc = docx.Document(self.file_path)
         for element in doc.element.body:
             if element.tag.endswith("tbl"):
                 table_text = self._handle_table(doc.tables[self.table_index])
@@ -58,7 +44,7 @@ class DocxLoader:
                 all_text.append(para_text)
 
         one_text = " ".join([t for t in all_text])
-        docs.append(Doc(page_content=one_text, metadata={"source": self.doc_path}))
+        docs.append(Doc(page_content=one_text, metadata={"source": self.file_path}))
         return docs
 
     def _handle_table(self, element):
@@ -74,9 +60,9 @@ class DocxLoader:
 
     def _is_document_valid(self):
         try:
-            SecFileCheck(self.doc_path, self.max_size_mb).check()
-            doc = docx.Document(self.doc_path)
-            if len(doc.paragraphs) > self.max_page_num:
+            SecFileCheck(self.file_path, DocumentLoader.MAX_SIZE_MB).check()
+            doc = docx.Document(self.file_path)
+            if len(doc.paragraphs) > DocumentLoader.MAX_PAGE_NUM:
                 logger.error(f"too many pages {len(doc.paragraphs)}")
                 return False
             return True

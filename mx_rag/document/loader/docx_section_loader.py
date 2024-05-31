@@ -14,7 +14,7 @@ from docx.table import Table
 from docx.text.paragraph import Paragraph
 from loguru import logger
 
-from mx_rag.document.loader.docx_loader import Doc
+from mx_rag.document.loader.document_loader import Doc
 from mx_rag.document.loader.docx_loader import DocxLoader
 
 
@@ -89,7 +89,7 @@ class DocxLoaderByHead(DocxLoader):
         all_contents = [ContentsHeading()]
         stack = []
 
-        doc = DocxDocument(self.doc_path)
+        doc = DocxDocument(self.file_path)
         for block in iter_block_items(doc):
             if isinstance(block, Table):
                 res = self._handle_table(block)
@@ -117,5 +117,5 @@ class DocxLoaderByHead(DocxLoader):
                 # 按定长切分进行分组
                 grouped_text = text_splitter.split_text(plain_text)
                 docs += [Doc(page_content=f"{unicodedata.normalize('NFKD', content.title).strip()} {text}",
-                             metadata={'source': self.doc_path}) for text in grouped_text]
+                             metadata={'source': self.file_path}) for text in grouped_text]
         return docs
