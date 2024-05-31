@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple
 from loguru import logger
 
 from mx_rag.document.loader import DocxLoader, ExcelLoader
-from mx_rag.vectorstore import SQLiteDocstore
+from mx_rag.storage import SQLiteDocstore
 from mx_rag.vectorstore import MindFAISS
 from mx_rag.utils import FileCheck
 
