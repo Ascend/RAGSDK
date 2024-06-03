@@ -18,7 +18,7 @@ CSV_EXTENSION = (".csv",)
 class ExcelLoader(BaseLoader):
     def __init__(self, file_path, line_sep="**;"):
         super().__init__(file_path)
-        self.line_sep = line_sep
+        self.line_sep = str(line_sep)
 
     @staticmethod
     def _exceltime_to_datetime(exceltime):
