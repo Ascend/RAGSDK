@@ -10,7 +10,7 @@ repeat_punc = set("!\"#$%&'()*,-./:;<=>?@[\]^_`{|}~.,;《》？！“”‘’@#
 
 
 def is_alpha_or_digit_or_punc(char: str):
-    if char.isalnum:
+    if char.isalnum():
         return True
     elif char in punctuation:
         return True
