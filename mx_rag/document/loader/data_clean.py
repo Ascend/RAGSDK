@@ -14,8 +14,6 @@ def is_alpha_or_digit_or_punc(char: str):
         return True
     elif char.isdigit():
         return True
-    elif "\u4e00" <= char <= "\u9fff":  # 中文字符范围
-        return True
     elif char in punctuation:
         return True
     else:
