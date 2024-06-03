@@ -11,7 +11,6 @@ if [ -d "$dist_packages_path" ]; then
     echo "do patch in: $dist_packages_path"
     cd $dist_packages_path
     patch -p0 < $PATCH_DIR/whisper.patch
-
 else
     echo "dist-packages path is invalid"
 fi
