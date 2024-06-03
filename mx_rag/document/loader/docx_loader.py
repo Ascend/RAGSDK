@@ -38,7 +38,7 @@ class DocxLoader(BaseLoader):
             elif element.tag.endswith("p"):
                 if "pic:pic" in str(element.xml) and self.do_ocr:
                     logger.debug("pic:pic set to empty str")
-                    pic_texts = ''
+                    pic_texts = ""
                     all_text.extend(pic_texts)
                 paragraph = docx.text.paragraph.Paragraph(element, doc)
                 para_text = paragraph.text
@@ -54,10 +54,10 @@ class DocxLoader(BaseLoader):
         logger.info(f"handle docx table {self.table_index}")
         rows = list(element.rows)
         headers = [cell.text for cell in rows[0].cells]
-        data = [[cell.text.replace('\n', ' ') for cell in row.cells] for row in rows[1:]]
-        result = ['，'.join([f"{x}: {y}" for x, y in zip(headers, subdata)]) for subdata in data]
-        res = '；'.join(result)
-        return res + '。'
+        data = [[cell.text.replace("\n", " ") for cell in row.cells] for row in rows[1:]]
+        result = ["，".join([f"{x}: {y}" for x, y in zip(headers, subdata)]) for subdata in data]
+        res = "；".join(result)
+        return res + "。"
 
     def _is_document_valid(self):
         try:

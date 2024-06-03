@@ -14,7 +14,7 @@ def is_alpha_or_digit_or_punc(char: str):
         return True
     elif char.isdigit():
         return True
-    elif '\u4e00' <= char <= '\u9fff':  # 中文字符范围
+    elif "\u4e00" <= char <= "\u9fff":  # 中文字符范围
         return True
     elif char in punctuation:
         return True
@@ -24,7 +24,7 @@ def is_alpha_or_digit_or_punc(char: str):
 
 
 def remove_special_char(sentence: str):
-    ans = ''
+    ans = ""
     for char in sentence:
         if is_alpha_or_digit_or_punc(char):
             ans += char
@@ -33,10 +33,10 @@ def remove_special_char(sentence: str):
 
 def remove_duplicate_punctuation(sentence: str) -> str:
     """
-    删除句子中重复的标点符号、重复的空格，同时将换行变为特殊字符'\n'
+    删除句子中重复的标点符号、重复的空格，同时将换行变为特殊字符"\n"
     """
 
-    ans = ''
+    ans = ""
     n = len(sentence)
     p = 0
     while p < n:
@@ -50,8 +50,8 @@ def remove_duplicate_punctuation(sentence: str) -> str:
 
 def process_sentence(line: str) -> str:
     line = re.sub(r"\「|\」|\｢|\｣|\『|\』", '\"', line)  # 将「」｢｣『』这些符号替换成引号
-    line = re.sub(r"\，\）|\；\）", '）', line)  # 罗德·法尼(Rod Dodji Fanni，）
-    line = re.sub(r"\（\，|\(\，", '（', line)  # 阿魯拉·基馬(Alula Girma (，
+    line = re.sub(r"\，\）|\；\）", "）", line)  # 罗德·法尼(Rod Dodji Fanni，）
+    line = re.sub(r"\（\，|\(\，", "（", line)  # 阿魯拉·基馬(Alula Girma (，
     line = remove_special_char(line)
     line = remove_duplicate_punctuation(line)  # 删除中文空括号和重复的标点
     return line

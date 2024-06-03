@@ -39,8 +39,8 @@ def iter_block_items(parent: Document):
 
 @dataclass
 class ContentsHeading:
-    title: str = ''
-    sub_content: str = ''
+    title: str = ""
+    sub_content: str = ""
 
 
 class DocxLoaderByHead(DocxLoader):
@@ -48,8 +48,8 @@ class DocxLoaderByHead(DocxLoader):
     @staticmethod
     def _extract_hyperlink(block):
         try:
-            hyperlink_rid = re.findall(r'<w:hyperlink r:id="(rId\d+)"', str(block.paragraph_format.element.xml))[0]
-            return f' {block.part.rels[hyperlink_rid].target_ref} '
+            hyperlink_rid = re.findall(r"<w:hyperlink r:id='(rId\d+)'", str(block.paragraph_format.element.xml))[0]
+            return f" {block.part.rels[hyperlink_rid].target_ref} "
         except Exception as e:
             logger.warning(f"_extract_hyperlink {str(e)}")
             return ""
@@ -60,7 +60,7 @@ class DocxLoaderByHead(DocxLoader):
         """
         处理Heading级别元素，并将上级标题拼接到本级标题中
         """
-        if block.style.name.startswith('Heading'):
+        if block.style.name.startswith("Heading"):
             try:
                 title_level = int(block.style.name.split()[-1])
             except Exception as ex:
@@ -69,13 +69,13 @@ class DocxLoaderByHead(DocxLoader):
             while stack and stack[-1][0] >= title_level:
                 stack.pop()
             if stack:
-                parent_title = ''.join(stack[-1][1])
+                parent_title = "".join(stack[-1][1])
                 current_title = block.text
-                block.text = parent_title + '-' + block.text
+                block.text = parent_title + "-" + block.text
             else:
                 current_title = block.text
             stack.append((title_level, current_title.strip()))
-            all_content.append(ContentsHeading(block.text, ''))
+            all_content.append(ContentsHeading(block.text, ""))
             return True
         return False
 
@@ -100,22 +100,22 @@ class DocxLoaderByHead(DocxLoader):
 
             handle_head = self._handle_paragraph_heading(all_contents, block, stack)
 
-            if block.style.name.lower().startswith('title'):
+            if block.style.name.lower().startswith("title"):
                 all_contents[-1].title = block.text
                 stack.append((0, block.text.strip()))
             elif not handle_head:
                 all_contents[-1].sub_content += " " + block.text
-                if 'hyperlink' in block.paragraph_format.element.xml:
+                if "hyperlink" in block.paragraph_format.element.xml:
                     all_contents[-1].sub_content += self._extract_hyperlink(block)
 
         docs = []
         for content in all_contents:
             # 转化无意义特殊字符为标准字符
-            plain_text = unicodedata.normalize('NFKD', content.sub_content).strip()
+            plain_text = unicodedata.normalize("NFKD", content.sub_content).strip()
             # 过滤掉纯标题的document
             if len(plain_text) > 1:
                 # 按定长切分进行分组
                 grouped_text = text_splitter.split_text(plain_text)
                 docs += [Doc(page_content=f"{unicodedata.normalize('NFKD', content.title).strip()} {text}",
-                             metadata={'source': self.file_path}) for text in grouped_text]
+                             metadata={"source": self.file_path}) for text in grouped_text]
         return docs
