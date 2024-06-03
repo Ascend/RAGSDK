@@ -35,6 +35,9 @@ class TextSplitterBase:
         res_split_text = re.split(separator, text)
         return [s for s in res_split_text if s]
 
+    def split_text(self, text: str) -> List[str]:
+        pass
+
     def _split_text_and_keep_seperator(self, text, separator) -> List[str]:
         split_text = re.split(f"({separator})", text)
         if not self._separator_after_split_text:
