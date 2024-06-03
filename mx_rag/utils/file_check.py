@@ -26,7 +26,6 @@ class FileCheckError(Exception):
         super().__init__(msg)
 
 
-
 class SecFileCheck:
     def __init__(self, file_path, max_size_mb):
         self.file_path = file_path
