@@ -32,25 +32,6 @@ class RequestUtils:
                                         retries=retries, timeout=timeout, num_pools=num_pools, maxsize=maxsize)
         self.response_limit_size = response_limit_size
 
-    @staticmethod
-    def safe_get(data, keys, default=None):
-        """
-        安全地获取嵌套字典或列表中的值。
-
-        :param data: 字典或列表数据
-        :param keys: 键或索引列表，表示嵌套层级
-        :param default: 如果键或索引不存在，返回的默认值
-        :return: 对应键或索引的值或默认值
-        """
-        for key in keys:
-            if isinstance(data, dict):
-                data = data.get(key, default)
-            elif isinstance(data, list) and isinstance(key, int) and 0 <= key < len(data):
-                data = data[key]
-            else:
-                return default
-        return data
-
     def post(self, url: str, body: str, headers: Dict):
         try:
             response = self.pool.request(method='POST',
