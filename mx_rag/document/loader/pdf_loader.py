@@ -45,9 +45,9 @@ class PdfLoader(BaseLoader):
 
     def _check(self):
         try:
-            SecFileCheck(self.file_path, BaseLoader.MAX_SIZE_MB).check()
+            SecFileCheck(self.file_path, self.MAX_SIZE_MB).check()
             _pdf_page_count = self._get_pdf_page_count()
-            if _pdf_page_count > BaseLoader.MAX_PAGE_NUM:
+            if _pdf_page_count > self.MAX_PAGE_NUM:
                 logger.error(f"too many pages {_pdf_page_count}")
                 return False
             return True

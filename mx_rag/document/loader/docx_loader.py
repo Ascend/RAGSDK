@@ -61,9 +61,9 @@ class DocxLoader(BaseLoader):
 
     def _is_document_valid(self):
         try:
-            SecFileCheck(self.file_path, BaseLoader.MAX_SIZE_MB).check()
+            SecFileCheck(self.file_path, self.MAX_SIZE_MB).check()
             doc = docx.Document(self.file_path)
-            if len(doc.paragraphs) > BaseLoader.MAX_PAGE_NUM:
+            if len(doc.paragraphs) > self.MAX_PAGE_NUM:
                 logger.error(f"too many pages {len(doc.paragraphs)}")
                 return False
             return True

@@ -85,7 +85,7 @@ class ExcelLoader(BaseLoader):
         ：返回：逐行读取表,返回 string list
         """
         try:
-            file_check.excel_file_check(self.file_path, BaseLoader.MAX_SIZE_MB)
+            file_check.excel_file_check(self.file_path, self.MAX_SIZE_MB)
         except Exception as e:
             logger.error(e)
             return []
@@ -126,7 +126,7 @@ class ExcelLoader(BaseLoader):
     def _load_xls(self):
         docs: List[Doc] = list()
         wb = xlrd.open_workbook(self.file_path)
-        if wb.nsheets > BaseLoader.MAX_PAGE_NUM:
+        if wb.nsheets > self.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
             return docs
         for i in range(wb.nsheets):  # 对于每一张表
@@ -142,7 +142,7 @@ class ExcelLoader(BaseLoader):
     def _load_xlsx(self):
         docs: List[Doc] = list()
         wb = load_workbook(self.file_path)
-        if len(wb.sheetnames) > BaseLoader.MAX_PAGE_NUM:
+        if len(wb.sheetnames) > self.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
             return docs
         for sheet_name in wb.sheetnames:  # 每张表单
