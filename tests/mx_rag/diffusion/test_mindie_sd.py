@@ -10,7 +10,7 @@ from unittest.mock import patch
 import urllib3
 from PIL import Image, ImageChops
 
-from mx_rag.vision import MindieVision
+from mx_rag.diffusion import MindieSD
 
 
 MOCK_IMAGE = Image.new("RGB", (200, 200), color=(73, 109, 137))
@@ -50,7 +50,7 @@ class TestMindieVision(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 200))):
-            sd_model = MindieVision(model_name="sd", url="http://test:8888")
+            sd_model = MindieSD(model_name="sd", url="http://test:8888")
             img_data = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
             image = Image.open(img_data)
             self.assertTrue(compare_images(image, MOCK_IMAGE))
@@ -61,7 +61,7 @@ class TestMindieVision(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 404))):
-            sd_model = MindieVision(model_name="sd", url="http://test:8888")
+            sd_model = MindieSD(model_name="sd", url="http://test:8888")
             img_data = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
             self.assertEqual(img_data, None)
 

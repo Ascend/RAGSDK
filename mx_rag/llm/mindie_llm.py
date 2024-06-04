@@ -6,19 +6,19 @@ from urllib.parse import urljoin
 
 from loguru import logger
 
-from mx_rag.utils import is_english, RequestUtils
-
-
-HEADER = {
-    "Content-Type": "application/json"
-}
+from mx_rag.utils import is_english, RequestUtils, safe_get
 
 
 class MindieLLM:
-    def __init__(self, model_name: str, url: str):
-        super().__init__()
+    HEADER = {
+        "Content-Type": "application/json"
+    }
+    MAX_QUERY_LEN = 16000
+
+    def __init__(self, model_name: str, url: str, timeout: int = 10):
         self.model_name = model_name
         self.url = url
+        self.client = RequestUtils(timeout=timeout)
 
     def get_request_body(self, query: str, history: list[dict], role: str = "role", **kwargs):
         history.insert(0, {"role": role, "content": query})
@@ -37,22 +37,21 @@ class MindieLLM:
 
     def chat(self, query: str, history: list[dict], role: str = "role", **kwargs):
         ans = ""
-        if query is None:
-            logger.error("query cannot be None")
+        if query is None or len(query) > MindieLLM.MAX_QUERY_LEN:
+            logger.error(f"query cannot be None or content len not in (0, {MindieLLM.MAX_QUERY_LEN}]")
             return ans
         request_body = self.get_request_body(query, history, role, **kwargs)
         request_body["stream"] = False
         chat_url = urljoin(self.url, "v1/chat/completions")
-        request_util = RequestUtils()
-        response = request_util.post(url=chat_url, body=json.dumps(request_body), headers=HEADER)
+        response = self.client.post(url=chat_url, body=json.dumps(request_body), headers=MindieLLM.HEADER)
         if response.success:
             try:
                 data = json.loads(response.data)
             except json.JSONDecodeError as e:
                 logger.error(f"response content cannot convert to json format: {e}")
                 return ans
-            ans = request_util.safe_get(data, ["choices", 0, "message", "content"], "")
-            if request_util.safe_get(data, ["choices", 0, "finish_reason"], "") == "length":
+            ans = safe_get(data, ["choices", 0, "message", "content"], "")
+            if safe_get(data, ["choices", 0, "finish_reason"], "") == "length":
                 ans += "...\nFor the content length reason, it stopped, continue?" if is_english(
                             [ans]) else "······\n由于长度的原因，回答被截断了，要继续吗？"
         else:
@@ -61,16 +60,15 @@ class MindieLLM:
 
     def chat_streamly(self, query: str, history: list[dict], role: str = "role", **kwargs):
         ans = ""
-        if query is None:
-            logger.error("query cannot be None")
+        if query is None or len(query) > MindieLLM.MAX_QUERY_LEN:
+            logger.error(f"query cannot be None or content len not in (0, {MindieLLM.MAX_QUERY_LEN}]")
             yield ans
             return
         request_body = self.get_request_body(query, history, role, **kwargs)
         request_body["stream"] = True
         chat_url = urljoin(self.url, "v1/chat/completions")
         ans = ""
-        request_util = RequestUtils()
-        response = request_util.post_streamly(url=chat_url, body=json.dumps(request_body), headers=HEADER)
+        response = self.client.post_streamly(url=chat_url, body=json.dumps(request_body), headers=MindieLLM.HEADER)
         for result in response:
             if not result.success:
                 logger.error("get response failed")
@@ -83,7 +81,7 @@ class MindieLLM:
             except json.JSONDecodeError as e:
                 logger.error(f"response content cannot convert to json format:{e}")
                 break
-            finish_reason = request_util.safe_get(data, ["choices", 0, "finish_reason"], "")
+            finish_reason = safe_get(data, ["choices", 0, "finish_reason"], "")
             if finish_reason == "stop":
                 break
             elif finish_reason == "length":
@@ -93,5 +91,5 @@ class MindieLLM:
                 break
             elif finish_reason == "":
                 break
-            ans += request_util.safe_get(data, ["choices", 0, "delta", "content"], "")
+            ans += safe_get(data, ["choices", 0, "delta", "content"], "")
             yield ans

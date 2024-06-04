@@ -3,7 +3,9 @@
 
 
 __all__ = [
-    "CharTextSplitter"
+    "CharTextSplitter",
+    "TextSplitterBase"
 ]
 
 from mx_rag.document.splitter.char_text_splitter import CharTextSplitter
+from mx_rag.document.splitter.text_splitter import TextSplitterBase

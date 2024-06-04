@@ -9,6 +9,7 @@ __all__ = [
     "excel_file_check",
     "dir_check",
     "is_english",
+    "safe_get",
     "FileCheck",
     "RequestUtils"
 ]
@@ -24,4 +25,4 @@ from mx_rag.utils.file_check import (
 )
 
 from mx_rag.utils.url import RequestUtils
-from mx_rag.utils.sentence_check import is_english
+from mx_rag.utils.common import is_english, safe_get
