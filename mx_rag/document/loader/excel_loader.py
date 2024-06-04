@@ -6,6 +6,7 @@ from typing import List
 from loguru import logger
 from openpyxl import load_workbook
 import xlrd
+
 from mx_rag.document.loader.base_loader import BaseLoader
 from mx_rag.document.doc import Doc
 from mx_rag.utils import file_check
