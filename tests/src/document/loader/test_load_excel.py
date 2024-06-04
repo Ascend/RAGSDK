@@ -3,7 +3,7 @@
 
 import unittest
 from unittest.mock import patch
-from mx_rag.document.loader.load_excel import ExcelLoader
+from mx_rag.document.loader.excel_loader import ExcelLoader
 
 
 class TestExcelLoader(unittest.TestCase):
