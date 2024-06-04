@@ -43,9 +43,13 @@ class ExcelLoader(BaseLoader):
         for row in worksheet.iter_rows(values_only=True):
             if all(cell is None for cell in row):
                 start_row += 1
+            else:
+                break
         for col in worksheet.iter_cols(values_only=True):
             if all(cell is None for cell in col):
                 start_col += 1
+            else:
+                break
         # 删除空行和空列
         if start_row:
             worksheet.delete_rows(1, amount=start_row)
