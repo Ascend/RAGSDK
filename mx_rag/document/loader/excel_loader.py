@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import csv
 from datetime import datetime, timedelta
 from typing import List
-import csv
-import xlrd
 from loguru import logger
 from openpyxl import load_workbook
+import xlrd
+
+from mx_rag.document.loader.base_loader import BaseLoader
+from mx_rag.document.doc import Doc
 from mx_rag.utils import file_check
-from mx_rag.document.loader.docx_loader import Doc
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
 CSV_EXTENSION = (".csv",)
 
 
-class ExcelLoader:
-    def __init__(self, file_path, max_size_mb=100, line_sep="**;"):
-        self.file_path = file_path
-        self.max_size_mb = max_size_mb
-        self.line_sep = line_sep
+class ExcelLoader(BaseLoader):
+    def __init__(self, file_path, line_sep="**;"):
+        super().__init__(file_path)
+        self.line_sep = str(line_sep)
 
     @staticmethod
     def _exceltime_to_datetime(exceltime):
@@ -86,7 +86,7 @@ class ExcelLoader:
         ：返回：逐行读取表,返回 string list
         """
         try:
-            file_check.excel_file_check(self.file_path, self.max_size_mb)
+            file_check.excel_file_check(self.file_path, self.MAX_SIZE_MB)
         except Exception as e:
             logger.error(e)
             return []
@@ -127,6 +127,9 @@ class ExcelLoader:
     def _load_xls(self):
         docs: List[Doc] = list()
         wb = xlrd.open_workbook(self.file_path)
+        if wb.nsheets > self.MAX_PAGE_NUM:
+            logger.error(f"file {self.file_path} sheets number more than limit")
+            return docs
         for i in range(wb.nsheets):  # 对于每一张表
             content = ""
             ws = wb.sheet_by_index(i)
@@ -140,6 +143,9 @@ class ExcelLoader:
     def _load_xlsx(self):
         docs: List[Doc] = list()
         wb = load_workbook(self.file_path)
+        if len(wb.sheetnames) > self.MAX_PAGE_NUM:
+            logger.error(f"file {self.file_path} sheets number more than limit")
+            return docs
         for sheet_name in wb.sheetnames:  # 每张表单
             content = ""
             ws_init = wb[sheet_name]
