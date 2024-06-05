@@ -204,12 +204,15 @@ class ExcelLoader(BaseLoader):
     def _is_zip_bomb(self):
         try:
             with zipfile.ZipFile(self.file_path, 'r') as zip_ref:
-                total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
-                if total_uncompressed_size > self.MAX_SIZE_MB*1024*1024:
-                    logger.error(f"{self.file_path} is zip Bomb")
-                    return True
-                else:
+                total_uncompressed_size = 0
+                for zinfo in zip_ref.infolist():
+                    total_uncompressed_size += zinfo.file_size
+                    # 如果文件总大小超过限制，认为是ZIP bomb
+                    if total_uncompressed_size > self.MAX_SIZE_MB*1024*1024:
+                        logger.error(f"{self.file_path} is ZIP bomb：too large after decompression.")
+                        return True
                     return False
         except Exception as e:
             logger.error(f"Error checking ZIP bomb: {e}")
             return True
+
