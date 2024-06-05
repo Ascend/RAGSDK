@@ -203,7 +203,7 @@ class ExcelLoader(BaseLoader):
 
     def _is_zip_bomb(self):
         try:
-            with zipfile.ZipFile(self.file_path, 'r') as zip_ref:
+            with zipfile.ZipFile(self.file_path, "r") as zip_ref:
                 total_uncompressed_size = 0
                 for zinfo in zip_ref.infolist():
                     total_uncompressed_size += zinfo.file_size
