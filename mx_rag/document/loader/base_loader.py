@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 
 class BaseLoader(ABC):
-    MAX_SIZE_MB = 100
+    MAX_SIZE = 100 * 1024 * 1024
     MAX_PAGE_NUM = 1000
 
     def __init__(self, file_path):

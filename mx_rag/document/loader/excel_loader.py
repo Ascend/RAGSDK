@@ -92,7 +92,7 @@ class ExcelLoader(BaseLoader):
         ：返回：逐行读取表,返回 string list
         """
         try:
-            file_check.excel_file_check(self.file_path, self.MAX_SIZE_MB)
+            file_check.excel_file_check(self.file_path, self.MAX_SIZE)
         except Exception as e:
             logger.error(e)
             return []
@@ -206,7 +206,7 @@ class ExcelLoader(BaseLoader):
         try:
             with zipfile.ZipFile(self.file_path, "r") as zip_ref:
                 total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
-                if total_uncompressed_size > self.MAX_SIZE_MB*1024*1024*self.multi_size:
+                if total_uncompressed_size > self.MAX_SIZE * self.multi_size:
                     logger.error(f"{self.file_path} is ZIP bomb: file is too large after decompression.")
                     return True
                 else:
