@@ -6,6 +6,7 @@ from typing import List
 from loguru import logger
 from openpyxl import load_workbook
 import xlrd
+import zipfile
 
 from mx_rag.document.loader.base_loader import BaseLoader
 from mx_rag.document.doc import Doc
@@ -98,7 +99,10 @@ class ExcelLoader(BaseLoader):
         if self.file_path.endswith(XLRD_EXTENSION):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
-            return self._load_xlsx()
+            if self._is_zip_bomb():
+                return []
+            else:
+                return self._load_xlsx()
         elif self.file_path.endswith(CSV_EXTENSION):
             return self._load_csv()
         else:
@@ -196,3 +200,16 @@ class ExcelLoader(BaseLoader):
         else:
             logger.info(f"file {self.file_path} is empty")
         return docs
+
+    def _is_zip_bomb(self):
+        try:
+            with zipfile.ZipFile(self.file_path, 'r') as zip_ref:
+                total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
+                if total_uncompressed_size > self.MAX_SIZE_MB*1024*1024:
+                    logger.error(f"{self.file_path} is zip Bomb")
+                    return True
+                else:
+                    return False
+        except Exception as e:
+            print(f"Error checking ZIP bomb: {e}")
+            return True
