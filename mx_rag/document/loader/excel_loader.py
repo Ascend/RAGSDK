@@ -3,10 +3,10 @@
 import csv
 from datetime import datetime, timedelta
 from typing import List
+import zipfile
 from loguru import logger
 from openpyxl import load_workbook
 import xlrd
-import zipfile
 
 from mx_rag.document.loader.base_loader import BaseLoader
 from mx_rag.document.doc import Doc
@@ -211,5 +211,5 @@ class ExcelLoader(BaseLoader):
                 else:
                     return False
         except Exception as e:
-            print(f"Error checking ZIP bomb: {e}")
+            logger.error(f"Error checking ZIP bomb: {e}")
             return True
