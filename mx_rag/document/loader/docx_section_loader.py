@@ -79,7 +79,7 @@ class DocxLoaderByHead(DocxLoader):
             return True
         return False
 
-    def load_and_split(self, text_splitter) -> List[Document]:
+    def load_and_split(self, text_splitter) -> List[Doc]:
         """
         将最小级别heading下的内容拼接生成Doc对象
         """
