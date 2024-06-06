@@ -15,7 +15,7 @@ if not is_torch_npu_available():
 
 from loguru import logger
 
-from mx_rag.embedding.local.embedding import LocalEmbedding
+from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.llm import MindieLLM
 from mx_rag.retrievers import MultiQueryRetriever
 from mx_rag.vectorstore.faiss_npu import MindFAISS
@@ -27,7 +27,7 @@ class MyTestCase(unittest.TestCase):
     def test_MultiQueryRetriever_npu(self):
         if not is_torch_npu_available():
             return
-        emb = LocalEmbedding("/workspace/bge-large-zh/")
+        emb = TextEmbedding("/workspace/bge-large-zh/")
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
         MindFAISS.set_device(3)

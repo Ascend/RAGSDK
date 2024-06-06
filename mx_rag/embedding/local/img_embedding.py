@@ -19,7 +19,7 @@ try:
     import torch_npu
     torch.npu.set_compile_mode(jit_compile=False)
 except Exception as e:
-    logger.warning(f"import torch_npu failed:{e}")
+    logger.warning(f"import torch_npu failed:{e}, img_embedding will running on cpu")
 
 
 class ImageEmbedding(Embedding):

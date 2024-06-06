@@ -2,15 +2,17 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import json
+from typing import List
 from urllib.parse import urljoin
 
 from loguru import logger
 import numpy as np
 
 from mx_rag.utils import RequestUtils
+from mx_rag.embedding.embedding import Embedding
 
 
-class TEIEmbedding:
+class TEIEmbedding(Embedding):
     HEADERS = {
         'Content-Type': 'application/json'
     }
@@ -20,9 +22,9 @@ class TEIEmbedding:
         self.url = urljoin(url, 'embed')
         self.client = RequestUtils()
 
-    def encode(self,
-               texts: list[str],
-               batch_size: int = 32):
+    def embed_texts(self,
+                    texts: list[str],
+                    batch_size: int = 32):
         texts_len = len(texts)
         if texts_len == 0:
             return np.array([])
