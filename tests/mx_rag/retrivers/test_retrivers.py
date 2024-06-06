@@ -16,7 +16,7 @@ if not is_torch_npu_available():
 from loguru import logger
 from transformers import is_torch_npu_available
 
-from mx_rag.embedding.local.embedding import LocalEmbedding
+from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.retrievers import Retriever
 from mx_rag.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage import Document, SQLiteDocstore
@@ -36,7 +36,7 @@ class MyTestCase(unittest.TestCase):
             logger.info("skip npu case")
             return
 
-        emb = LocalEmbedding("/workspace/bge-large-zh/")
+        emb = TextEmbedding("/workspace/bge-large-zh/")
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
         MindFAISS.set_device(0)

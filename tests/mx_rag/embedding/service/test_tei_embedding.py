@@ -32,18 +32,18 @@ class TestTEIEmbedding(unittest.TestCase):
             embed = TEIEmbedding(url='http://localhost:8888')
 
             texts = ['abc'] * 100
-            encoded_texts = embed.encode(texts=texts)
+            encoded_texts = embed.embed_texts(texts=texts)
             self.assertEqual(encoded_texts.shape, (len(texts), test_embed_length))
 
             texts = ['abc'] * 1000
-            encoded_texts = embed.encode(texts=texts)
+            encoded_texts = embed.embed_texts(texts=texts)
             self.assertEqual(encoded_texts.shape, (len(texts), test_embed_length))
 
     def test_empty_texts(self):
         embed = TEIEmbedding(url='http://localhost:8888')
 
         texts = []
-        encoded_texts = embed.encode(texts=texts)
+        encoded_texts = embed.embed_texts(texts=texts)
         self.assertEqual(encoded_texts.shape, (0,))
 
     def test_request_failed(self):
@@ -54,7 +54,7 @@ class TestTEIEmbedding(unittest.TestCase):
             embed = TEIEmbedding(url='http://localhost:8888')
 
             texts = ['abc'] * 100
-            encoded_texts = embed.encode(texts=texts)
+            encoded_texts = embed.embed_texts(texts=texts)
             self.assertEqual(encoded_texts.shape, (0,))
 
 
