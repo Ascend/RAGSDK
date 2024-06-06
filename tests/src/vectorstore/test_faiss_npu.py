@@ -25,13 +25,13 @@ class TestAscendFAISS(unittest.TestCase):
         MindFAISS.set_device = MagicMock()
         MindFAISS.set_device(0)
         MindFAISS.DEVICES = MagicMock()
-        index = MindFAISS(1024, "FLAT:L2", SQLiteDocstore("./sql.db"), embed_func)
+        index = MindFAISS(1024, "FLAT:L2", SQLiteDocstore("./sql.db"))
         texts = ["1111", "2222", "3333"]
 
-        index.add_texts("test.txt", texts, metadatas=[{"name": "yiyiyi"}, {"name": "ererere"}, {"name": "sansansan"}])
+        index.add_texts("test.txt", texts, embed_func= embed_func, metadatas=[{"name": "yiyiyi"}, {"name": "ererere"}, {"name": "sansansan"}])
         index.index.search = MagicMock(return_value=([[0.1]], [[np.array(0)]]))
         index.document_store.search = MagicMock(return_value=Document(page_content="1111", document_name="test.txt"))
-        ret = index.similarity_search(["1111"], k=1)
+        ret = index.similarity_search(["1111"], embed_func= embed_func, k=1)
         self.assertEqual(ret[0][0].page_content, "1111")
 
         index.similarity_search_by_vector = MagicMock(
@@ -40,7 +40,7 @@ class TestAscendFAISS(unittest.TestCase):
         self.assertEqual(ret[0][0].page_content, "1111")
 
         texts = ["4444", "5555", "6666"]
-        index.add_texts("test-2.txt", texts, metadatas=[{"name": "sisisi"}, {"name": "wuwuwu"}, {"name": "liuliuliu"}])
+        index.add_texts("test-2.txt", texts, embed_func= embed_func, metadatas=[{"name": "sisisi"}, {"name": "wuwuwu"}, {"name": "liuliuliu"}])
         index.index.remove_ids = MagicMock(return_value=len(texts))
         index.delete("test.txt")
         index.save_local("./faiss.index")

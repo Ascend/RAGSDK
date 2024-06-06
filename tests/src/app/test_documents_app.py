@@ -19,17 +19,17 @@ class TestDocumentApp(unittest.TestCase):
 
             MindFAISS.set_device = MagicMock()
             current_dir = os.path.dirname(os.path.realpath(__file__))
-            doc_app = DocumentApp("./sql.db", dev=0, embed_func=embed_func, )
+            doc_app = DocumentApp("./sql.db", dev=0, local_index_path="./faiss.index",)
             top_path = os.path.dirname(os.path.dirname(current_dir))
             doc_app.index_faiss.document_store.check_document_exist = MagicMock(return_value=False)
-            doc_app.upload_file(os.path.join(top_path, "data/demo.docx"))
+            doc_app.upload_files([os.path.join(top_path, "data/demo.docx")], embed_func)
             doc_app.index_faiss.document_store.check_document_exist = MagicMock(return_value=True)
-            doc_app.upload_file(os.path.join(top_path, "data/demo.docx"), force=True)
+            doc_app.upload_files([os.path.join(top_path, "data/demo.docx")], embed_func, force=True)
             doc_app.save_index("faiss.index")
             doc_app.index_faiss.document_store.check_document_exist = MagicMock(return_value=True)
             doc_app.delete_files(["demo.docx"])
             doc_app.index_faiss.document_store.check_document_exist.reset_mock()
             doc_app.index_faiss.document_store.check_document_exist = MagicMock(return_value=False)
-            doc_app.upload_dir(os.path.join(top_path, "data"))
+            doc_app.upload_dir(os.path.join(top_path, "data"), embed_func)
 
 

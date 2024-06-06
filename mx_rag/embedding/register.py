@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import Dict
 
-from .local import LocalEmbedding
+from .local import TextEmbedding
 from .service import TEIEmbedding
 
 
@@ -14,6 +14,6 @@ class EmbeddingModelType(Enum):
 
 
 TYPE_TO_EMBEDDING_MODEL: Dict = {
-    EmbeddingModelType.LOCAL.value: LocalEmbedding,
+    EmbeddingModelType.LOCAL.value: TextEmbedding,
     EmbeddingModelType.TEI.value: TEIEmbedding
 }

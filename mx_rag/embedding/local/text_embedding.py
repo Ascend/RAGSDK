@@ -1,21 +1,24 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
+from typing import List
 from typing import Optional
 
-from loguru import logger
 import numpy as np
 import torch
+from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
 import mx_rag.utils as m_utils
+from mx_rag.embedding.embedding import Embedding
 
 
-class LocalEmbedding:
+class TextEmbedding(Embedding):
     TEXT_MAX_LEN = 1000
 
     def __init__(self,
                  model_name_or_path: str,
+                 dev_id: int = 0,
                  use_fp16: bool = True,
                  pooling_method: Optional[str] = None):
         self.model_name_or_path = model_name_or_path
@@ -36,21 +39,22 @@ class LocalEmbedding:
 
         try:
             if is_torch_npu_available():
-                self.model.to('npu')
+                self.model.to(f'npu:{dev_id}')
         except ImportError:
             logger.warning('unable to import torch_npu, please check if torch_npu is properly installed. '
                            'currently running on cpu.')
 
         self.model = self.model.eval()
 
-    def encode(self,
-               texts: list[str],
+    def embed_texts(self,
+               texts: List[str],
                batch_size: int = 32,
                max_length: int = 512):
+
         if len(texts) == 0:
             return np.array([])
-        elif len(texts) > LocalEmbedding.TEXT_MAX_LEN:
-            logger.error(f'texts list length must less than {LocalEmbedding.TEXT_MAX_LEN}')
+        elif len(texts) > self.TEXT_MAX_LEN:
+            logger.error(f'texts list length must less than {self.TEXT_MAX_LEN}')
             return np.array([])
 
         result = []
