@@ -7,9 +7,9 @@ import os
 import shutil
 import stat
 from pathlib import Path
+import logging
 
 import yaml
-from loguru import logger
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py as build_py_orig
 
@@ -29,13 +29,13 @@ def get_ci_version_info():
     src_path = this_directory.parent
     ci_version_file = src_path.joinpath('mindxsdk', 'build', 'conf', 'config.yaml')
     version = '6.0.RC2'
-    logger.info(f"get version from {ci_version_file}")
+    logging.info("get version from %s", ci_version_file)
     try:
         with open(ci_version_file, 'r') as f:
             config = yaml.safe_load(f)
             version = config['version']['mindx_sdk']
     except Exception as ex:
-        logger.warning(f"get version failed, {str(ex)}")
+        logging.warning("get version failed, %s", str(ex))
     return version
 
 
@@ -69,7 +69,7 @@ def copy_patches():
     try:
         shutil.copytree(source_folder, target_folder)
     except Exception as e:
-        logger.warning(f"patches folder replication failed, {str(e)}")
+        logging.warning("patches folder replication failed, %s", str(e))
 
 
 clean()
@@ -83,7 +83,6 @@ required_package = []
 package_data = {'': ['document/loader/*.so', 'patches/*/*']}
 
 excluded = [
-    'mx_rag/document/loader/docx_section_loader.py',
     'mx_rag/document/loader/docx_loader.py',
     'mx_rag/document/loader/data_clean.py'
 ]

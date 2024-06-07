@@ -47,7 +47,6 @@ function package()
     cd "${OUTPUT_DIR}"
     cp -r ./* "${CI_PACKAGE_DIR}"
     chmod 400 "${CI_PACKAGE_DIR}"/*
-    python3 -m twine check "${CI_PACKAGE_DIR}"/mx_rag*.whl
 }
 
 function build_so_package()

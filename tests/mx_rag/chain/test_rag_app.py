@@ -4,7 +4,7 @@ import unittest
 
 from transformers import is_torch_npu_available
 
-from mx_rag.document.loader.docx_section_loader import DocxLoaderByHead
+from mx_rag.document.loader import DocxLoader
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -33,7 +33,7 @@ class MyTestCase(unittest.TestCase):
             return
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
-        loader = DocxLoaderByHead(os.path.realpath(os.path.join(current_dir, "../../data/mxVision.docx")))
+        loader = DocxLoader(os.path.realpath(os.path.join(current_dir, "../../data/mxVision.docx")))
         spliter = CharTextSplitter()
         res = loader.load_and_split(spliter)
         emb = TextEmbedding("/workspace/bge-large-zh/")
