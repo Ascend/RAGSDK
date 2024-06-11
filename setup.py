@@ -61,26 +61,13 @@ def clean():
                 shutil.rmtree(name)
 
 
-def copy_patches():
-    source_folder = this_directory / 'patches'
-
-    target_folder = this_directory / 'mx_rag/patches'
-
-    try:
-        shutil.copytree(source_folder, target_folder)
-    except Exception as e:
-        logging.warning("patches folder replication failed, %s", str(e))
-
-
 clean()
-
-copy_patches()
 
 build_dependencies()
 
 required_package = []
 
-package_data = {'': ['document/loader/*.so', 'patches/*/*']}
+package_data = {'': ['document/loader/*.so']}
 
 excluded = [
     'mx_rag/document/loader/docx_loader.py',
