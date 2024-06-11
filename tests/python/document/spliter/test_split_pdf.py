@@ -14,10 +14,7 @@ from mx_rag.document.splitter import CharTextSplitter
 class TestPdfSplit(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
-    def test_pdf_split(self):
-        loader = PdfLoader(os.path.join(self.current_dir, "../../../data/test.pdf"))
-        pdf_doc = loader.load()
-
+    def compare_langchain_res(self, pdf_doc):
         langchain_char_text_splitter = CharacterTextSplitter(chunk_size=512, chunk_overlap=100, separator="\n")
         expect_split_text = langchain_char_text_splitter.split_text(pdf_doc[0].page_content)
 
@@ -25,3 +22,8 @@ class TestPdfSplit(unittest.TestCase):
         result_split_text = mxrag_char_text_splitter.split_text(pdf_doc[0].page_content)
 
         self.assertEqual(expect_split_text, result_split_text)
+
+    def test_pdf_split(self):
+        loader = PdfLoader(os.path.join(self.current_dir, "../../../data/test.pdf"))
+        pdf_doc = loader.load()
+        self.compare_langchain_res(pdf_doc)

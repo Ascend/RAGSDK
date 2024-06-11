@@ -3,38 +3,101 @@
 
 import os
 from typing import List
+from enum import Enum
 
 import fitz
+import cv2
+import numpy as np
 from loguru import logger
+
+from paddleocr import PPStructure
+from paddleocr.ppstructure.recovery.recovery_to_doc import sorted_layout_boxes
+from PIL import Image
 
 from mx_rag.document.loader.base_loader import BaseLoader
 from mx_rag.document.doc import Doc
 from mx_rag.utils import SecFileCheck
 
 
+class PdfLang(Enum):
+    EN: str = 'en'
+    CN: str = 'cn'
+
+
 class PdfLoader(BaseLoader):
-    def __init__(self, file_path: str, image_inline=False):
+    def __init__(self, file_path: str, lang: PdfLang = PdfLang.EN, layout_recognize: bool = False):
         super().__init__(file_path)
-        self.do_ocr = image_inline
+        self.layout_recognize = layout_recognize
+        self.ocr_engine = None
+        self.lang = lang
+
+    @staticmethod
+    def _reconstruct(layout_res):
+        pdf_content: List[str] = []
+        for page_layout in layout_res:
+            for line in page_layout:
+                line.pop('img')
+                for res in line['res']:
+                    pdf_content.append(res['text'])
+                pdf_content.append("\n")
+        return pdf_content
 
     def load(self) -> List[Doc]:
         if not self._check():
             return []
 
-        pdf_content = []
-        pdf_document = fitz.open(self.file_path)
+        return self._parser() if self.layout_recognize else self._plain_parser()
+
+    def _text_merger(self, pdf_content):
         docs: List[Doc] = list()
-
-        for page_num in range(pdf_document.page_count):
-            page = pdf_document.load_page(page_num)
-            pdf_content.append(page.get_text("text"))
-
         one_text = " ".join([t for t in pdf_content])
         docs.append(Doc(page_content=one_text, metadata={"source": self.file_path,
-                                                         "page_count": pdf_document.page_count}))
-
-        pdf_document.close()
+                                                         "page_count": self._get_pdf_page_count()}))
         return docs
+
+    def _layout_recognize(self, pdf_document):
+        layout_res = []
+        imgs = []
+        for page_num in range(pdf_document.page_count):
+            page = pdf_document.load_page(page_num)
+            mat = fitz.Matrix(2, 2)
+            pm = page.get_pixmap(matrix=mat, alpha=False)
+
+            if pm.width > 2000 or pm.height > 2000:
+                pm = page.get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
+
+            img = Image.frombytes("RGB", [pm.width, pm.height], pm.samples)
+            img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            imgs.append(img)
+
+        for img in imgs:
+            ocr_res = self.ocr_engine(img)
+            h, w, _ = img.shape
+            result = sorted_layout_boxes(ocr_res, w)
+            layout_res.append(result)
+
+        return layout_res
+
+    def _parser(self):
+        if self.ocr_engine is None:
+            self.ocr_engine = PPStructure(table=True, ocr=True, lang=self.lang.value, layout=True)
+
+        with fitz.open(self.file_path) as pdf_document:
+            layout_res = self._layout_recognize(pdf_document)
+
+        pdf_content = self._reconstruct(layout_res)
+
+        return self._text_merger(pdf_content)
+
+    def _plain_parser(self):
+        pdf_content = []
+
+        with fitz.open(self.file_path) as pdf_document:
+            for page_num in range(pdf_document.page_count):
+                page = pdf_document.load_page(page_num)
+                pdf_content.append(page.get_text("text"))
+
+        return self._text_merger(pdf_content)
 
     def _get_pdf_page_count(self):
         pdf_document = fitz.open(self.file_path)
