@@ -27,9 +27,9 @@ class FileCheckError(Exception):
 
 
 class SecFileCheck:
-    def __init__(self, file_path, max_size_mb):
+    def __init__(self, file_path, max_size):
         self.file_path = file_path
-        self.max_size_mb = max_size_mb
+        self.max_size = max_size
 
     def check(self):
         if not os.path.isfile(self.file_path):
@@ -39,9 +39,9 @@ class SecFileCheck:
 
     def _check_size(self):
         file_size = os.path.getsize(self.file_path)
-        if file_size > self.max_size_mb * 1024 * 1024:
+        if file_size > self.max_size:
             raise SizeOverLimitException(
-                f"SizeOverLimitException: {self.file_path} size over Limit: {self.max_size_mb}")
+                f"SizeOverLimitException: {self.file_path} size over Limit: {self.max_size}")
 
 
 def excel_file_check(file_path, size):
