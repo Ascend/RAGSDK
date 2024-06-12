@@ -3,8 +3,10 @@
 
 __all__ = [
     "loader",
-    "splitter"
+    "splitter",
+    "parse_file"
 ]
 
 from mx_rag.document import loader
 from mx_rag.document import splitter
+from mx_rag.document.parser import parse_file
