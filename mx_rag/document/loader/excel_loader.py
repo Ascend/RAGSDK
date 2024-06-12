@@ -3,6 +3,7 @@
 import csv
 from datetime import datetime, timedelta
 from typing import List
+import zipfile
 from loguru import logger
 from openpyxl import load_workbook
 import xlrd
@@ -20,6 +21,7 @@ class ExcelLoader(BaseLoader):
     def __init__(self, file_path, line_sep="**;"):
         super().__init__(file_path)
         self.line_sep = str(line_sep)
+        self.multi_size = 5
 
     @staticmethod
     def _exceltime_to_datetime(exceltime):
@@ -43,9 +45,13 @@ class ExcelLoader(BaseLoader):
         for row in worksheet.iter_rows(values_only=True):
             if all(cell is None for cell in row):
                 start_row += 1
+            else:
+                break
         for col in worksheet.iter_cols(values_only=True):
             if all(cell is None for cell in col):
                 start_col += 1
+            else:
+                break
         # 删除空行和空列
         if start_row:
             worksheet.delete_rows(1, amount=start_row)
@@ -86,7 +92,7 @@ class ExcelLoader(BaseLoader):
         ：返回：逐行读取表,返回 string list
         """
         try:
-            file_check.excel_file_check(self.file_path, self.MAX_SIZE_MB)
+            file_check.excel_file_check(self.file_path, self.MAX_SIZE)
         except Exception as e:
             logger.error(e)
             return []
@@ -94,7 +100,10 @@ class ExcelLoader(BaseLoader):
         if self.file_path.endswith(XLRD_EXTENSION):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
-            return self._load_xlsx()
+            if self._is_zip_bomb():
+                return []
+            else:
+                return self._load_xlsx()
         elif self.file_path.endswith(CSV_EXTENSION):
             return self._load_csv()
         else:
@@ -192,3 +201,16 @@ class ExcelLoader(BaseLoader):
         else:
             logger.info(f"file {self.file_path} is empty")
         return docs
+
+    def _is_zip_bomb(self):
+        try:
+            with zipfile.ZipFile(self.file_path, "r") as zip_ref:
+                total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
+                if total_uncompressed_size > self.MAX_SIZE * self.multi_size:
+                    logger.error(f"{self.file_path} is ZIP bomb: file is too large after decompression.")
+                    return True
+                else:
+                    return False
+        except Exception as e:
+            logger.error(f"Error checking ZIP bomb: {e}")
+            return True
