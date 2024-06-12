@@ -4,13 +4,31 @@
 
 set -e
 
+warn() { echo >&2 -e "\033[1;31m[WARN ][Depend  ] $1\033[1;37m" ; }
 ARCH=$(uname -m)
 PY_VER=py$(python3 -c "import platform; print(platform.python_version().replace('.','')[0:2])")
 CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
-CI_PACKAGE_DIR="${ROOT_PATH}"/output/${PY_VER}
+PKG_DIR=mindxsdk-mxrag
+CI_PACKAGE_DIR="${ROOT_PATH}"/output/"${PKG_DIR}"
 OUTPUT_DIR="${ROOT_PATH}"/_package_output_${PY_VER}
 SO_OUTPUT_DIR="${ROOT_PATH}"/mx_rag/lib
+
+VERSION_FILE="${ROOT_PATH}"/../mindxsdk/build/conf/config.yaml
+get_version() {
+  if [ -f "$VERSION_FILE" ]; then
+    VERSION=$(sed '/.*mindxsdk:/!d;s/.*: //' "$VERSION_FILE")
+    if [[ "$VERSION" == *.[b/B]* ]] && [[ "$VERSION" != *.[RC/rc]* ]]; then
+      VERSION=${VERSION%.*}
+    fi
+  else
+    VERSION="6.0.RC2"
+  fi
+}
+
+get_version
+echo "MindX SDK mxrag: ${VERSION}" >> "$ROOT_PATH"/version.info
+RELEASE_TAR=Ascend-"${PKG_DIR}"_"${VERSION}"_linux-"${ARCH}".tar.gz
 
 export CFLAGS="-fstack-protector-strong -fPIC -D_FORTIFY_SOURCE=2 -O2 -ftrapv"
 export LDFLAGS="-Wl,-z,relro,-z,now,-z,noexecstack -s"
@@ -45,9 +63,22 @@ function package()
     mkdir -p -m 700 "${CI_PACKAGE_DIR}"
     echo "start build output package"
     cd "${OUTPUT_DIR}"
-    cp -r ./* "${CI_PACKAGE_DIR}"
-    chmod 400 "${CI_PACKAGE_DIR}"/*
-    python3 -m twine check "${CI_PACKAGE_DIR}"/mx_rag*.whl
+    cp *.whl "${CI_PACKAGE_DIR}"
+
+    cp -r "${ROOT_PATH}"/patches "${CI_PACKAGE_DIR}"
+
+    mv "${ROOT_PATH}"/version.info "${CI_PACKAGE_DIR}"
+
+    cd "${CI_PACKAGE_DIR}"
+    chmod 400 version.info
+    chmod 400 *.whl
+    chmod -R -w patches
+    find patches -name "*.sh" -exec chmod 500 {} \;
+
+    cd ../
+    tar -zcvf "${RELEASE_TAR}" "${PKG_DIR}" || {
+      warn "compression failed, packages might be broken"
+    }
 }
 
 function build_so_package()

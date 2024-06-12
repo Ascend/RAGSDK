@@ -4,16 +4,18 @@
 from enum import Enum
 from typing import Dict
 
-from .local import LocalEmbedding
+from .local import TextEmbedding, ImageEmbedding
 from .service import TEIEmbedding
 
 
 class EmbeddingModelType(Enum):
-    LOCAL = 1
-    TEI = 2
+    LOCAL_TEXT = 1
+    LOCAL_IMAGE = 2
+    TEI = 3
 
 
 TYPE_TO_EMBEDDING_MODEL: Dict = {
-    EmbeddingModelType.LOCAL.value: LocalEmbedding,
+    EmbeddingModelType.LOCAL_TEXT.value: TextEmbedding,
+    EmbeddingModelType.LOCAL_IMAGE.value: ImageEmbedding,
     EmbeddingModelType.TEI.value: TEIEmbedding
 }

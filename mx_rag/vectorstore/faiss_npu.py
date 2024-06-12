@@ -1,6 +1,7 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from __future__ import annotations
+
 import inspect
 import os
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Optional, List, Any, Sized, Tuple, Callable, NoReturn
 import ascendfaiss
 import faiss
 import numpy as np
+from loguru import logger
 
 from mx_rag.storage import Document, Docstore
 
@@ -32,7 +34,6 @@ class MindFAISS:
             x_dim: Optional[int],
             index_type: Optional[str],
             document_store: Docstore,
-            embed_func: Callable[[List[str]], np.ndarray],
             load_local_index: bool = False,
             **kwargs
     ):
@@ -42,9 +43,6 @@ class MindFAISS:
         if not isinstance(document_store, Docstore):
             raise MindFAISSError("invalid document store type")
         self.document_store = document_store
-        if not callable(embed_func):
-            raise MindFAISSError("embed_func need callable")
-        self.embed_func = embed_func
 
         if load_local_index:
             return
@@ -74,7 +72,7 @@ class MindFAISS:
             cls.DEVICES.clear()
 
     @classmethod
-    def load_local(cls, index_path: str, document_store: Docstore, embed_func: Callable, **kwargs) -> MindFAISS:
+    def load_local(cls, index_path: str, document_store: Docstore, **kwargs) -> MindFAISS:
         if cls.DEVICES is None:
             raise MindFAISSError("set devices first")
 
@@ -83,14 +81,14 @@ class MindFAISS:
             ascend_index = ascendfaiss.index_cpu_to_ascend(cls.DEVICES, cpu_index)
         except Exception as err:
             raise MindFAISSError(f"load index failed, {err}") from err
-        index_obj = cls(None, None, document_store=document_store,
-                        embed_func=embed_func, load_local_index=True)
+        index_obj = cls(None, None, document_store=document_store, load_local_index=True)
         index_obj.index = ascend_index
         return index_obj
 
     def save_local(self, index_path: str, **kwargs) -> None:
         if os.path.exists(index_path):
-            raise MindFAISSError(f"the index path {index_path} has already exist, please remove it first.")
+            logger.warning(f"the index path {index_path} has already exist")
+
         try:
             cpu_index = ascendfaiss.index_ascend_to_cpu(self.index)
             faiss.write_index(cpu_index, index_path)
@@ -102,13 +100,14 @@ class MindFAISS:
             self,
             doc_name: str,
             texts: List[str],
+            embed_func: Callable[[List[str]], np.ndarray],
             metadatas: Optional[List[dict]] = None,
             **kwargs: Any,
     ) -> NoReturn:
-        embeddings = self.embed_func(texts)
+        embeddings = embed_func(texts)
         if not isinstance(embeddings, np.ndarray):
             raise MindFAISSError("The data type of embedding should be np.ndarray")
-        self._add_index(doc_name, texts, embeddings, metadatas=metadatas, )
+        self._add_index(doc_name, texts, embeddings, metadatas=metadatas)
 
     def delete(self, doc_name: str, **kwargs: Any):
         try:
@@ -122,11 +121,12 @@ class MindFAISS:
     def similarity_search(
             self,
             query: List[str],
+            embed_func: Callable[[List[str]], np.ndarray],
             k: int = 4,
             **kwargs: Any
     ) -> List[Tuple[Document, float]]:
         """Return docs most similar to query."""
-        embeddings = self.embed_func(query)
+        embeddings = embed_func(query)
         if not isinstance(embeddings, np.ndarray):
             raise MindFAISSError("The data type of embedding should be np.ndarray")
         return self.similarity_search_by_vector(embeddings, k, **kwargs)

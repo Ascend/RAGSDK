@@ -9,18 +9,18 @@ from mx_rag.document.loader.excel_loader import ExcelLoader
 class TestExcelLoader(unittest.TestCase):
 
     def test_class_init_case(self):
-        loader = ExcelLoader("./mx_rag/document/loader/files/test.xlsx")
+        loader = ExcelLoader("./python/document/loader/files/test.xlsx")
         self.assertIsInstance(loader, ExcelLoader)
 
     @patch.object(ExcelLoader, '_load_xls')
     def test_call_load_xls(self, mock_load_xls):
         # Arrange
-        loader = ExcelLoader("./mx_rag/document/loader/files/test.xls")
+        loader = ExcelLoader("./python/document/loader/files/test.xls")
         loader.load()
         mock_load_xls.assert_called_once()
 
     def test_load_xls(self):
-        loader = ExcelLoader("./mx_rag/document/loader/files/test.xls")
+        loader = ExcelLoader("./python/document/loader/files/test.xls")
         docs = loader.load()
         self.assertEqual(2, len(docs))
         self.assertEqual("", docs[1].page_content)
@@ -38,12 +38,12 @@ class TestExcelLoader(unittest.TestCase):
     @patch.object(ExcelLoader, '_load_xlsx')
     def test_call_load_xlsx(self, mock_load_xlsx):
         # Arrange
-        loader = ExcelLoader("./mx_rag/document/loader/files/test.xlsx")
+        loader = ExcelLoader("./python/document/loader/files/test.xlsx")
         loader.load()
         mock_load_xlsx.assert_called_once()
 
     def test_load_xlsx(self):
-        loader = ExcelLoader("./mx_rag/document/loader/files/test.xlsx")
+        loader = ExcelLoader("./python/document/loader/files/test.xlsx")
         docs = loader.load()
         content = ('None:中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count\n（3月15日为例）:9篇;SUM:24篇;**;'
                    'None:None;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count\n（3月15日为例）'
@@ -61,12 +61,12 @@ class TestExcelLoader(unittest.TestCase):
     @patch.object(ExcelLoader, '_load_csv')
     def test_call_load_csv(self, mock_load_csv):
         # Arrange
-        loader = ExcelLoader("./mx_rag/document/loader/files/test.csv")
+        loader = ExcelLoader("./python/document/loader/files/test.csv")
         loader.load()
         mock_load_csv.assert_called_once()
 
     def test_load_csv(self):
-        loader = ExcelLoader("./mx_rag/document/loader/files/test.csv")
+        loader = ExcelLoader("./python/document/loader/files/test.csv")
         docs = loader.load()
         content = ('None:中文资讯;source:机器之心;link:入门|机器之心(jiqizhixin.com);count\n（3月15日为例）:9篇;SUM:24篇;**;'
                    'None:None;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count\n（3月15日为例）:'

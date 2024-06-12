@@ -8,10 +8,10 @@ from unittest.mock import patch
 
 import torch
 
-from mx_rag.embedding.local import LocalEmbedding
+from mx_rag.embedding.local import TextEmbedding
 
 
-class TestLocalEmbedding(unittest.TestCase):
+class TestTextEmbedding(unittest.TestCase):
     class BatchEncoding(Dict):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
@@ -37,7 +37,7 @@ class TestLocalEmbedding(unittest.TestCase):
         def __call__(self, *args, **kwargs):
             input_ids = args[0]
             last_hidden_state = torch.rand(input_ids.shape + (self.test_embed_length,))
-            return TestLocalEmbedding.BatchEncoding(last_hidden_state=last_hidden_state)
+            return TestTextEmbedding.BatchEncoding(last_hidden_state=last_hidden_state)
 
         def half(self):
             return self
@@ -55,7 +55,7 @@ class TestLocalEmbedding(unittest.TestCase):
             rand_token_len = random.randint(1, max_length)
             input_ids = torch.rand((len(batch_text), rand_token_len))
             attention_mask = torch.ones((len(batch_text), rand_token_len))
-            return TestLocalEmbedding.BatchEncoding(input_ids=input_ids, attention_mask=attention_mask)
+            return TestTextEmbedding.BatchEncoding(input_ids=input_ids, attention_mask=attention_mask)
 
     @patch("mx_rag.utils.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
@@ -66,19 +66,19 @@ class TestLocalEmbedding(unittest.TestCase):
                                       tok_pre_mock,
                                       model_pre_mock,
                                       dir_check_mock):
-        model_pre_mock.return_value = TestLocalEmbedding.Model(1024)
-        tok_pre_mock.return_value = TestLocalEmbedding.Tokenizer()
+        model_pre_mock.return_value = self.Model(1024)
+        tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = False
 
-        embed = LocalEmbedding(model_name_or_path='/model/embedding',
-                               pooling_method='mean')
+        embed = TextEmbedding(model_name_or_path='/model/embedding',
+                              pooling_method='mean')
 
         texts = ['test_txt'] * 100
-        ret = embed.encode(texts=texts)
+        ret = embed.embed_texts(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 1024))
 
         texts = ['test_txt'] * 1000
-        ret = embed.encode(texts=texts)
+        ret = embed.embed_texts(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 1024))
 
     @patch("mx_rag.utils.dir_check")
@@ -90,20 +90,46 @@ class TestLocalEmbedding(unittest.TestCase):
                                      tok_pre_mock,
                                      model_pre_mock,
                                      dir_check_mock):
-        model_pre_mock.return_value = TestLocalEmbedding.Model(512)
-        tok_pre_mock.return_value = TestLocalEmbedding.Tokenizer()
+        model_pre_mock.return_value = self.Model(512)
+        tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
 
-        embed = LocalEmbedding(model_name_or_path='/model/embedding',
-                               use_fp16=False)
+        embed = TextEmbedding(model_name_or_path='/model/embedding',
+                              use_fp16=False)
 
         texts = ['test_txt'] * 100
-        ret = embed.encode(texts=texts)
+        ret = embed.embed_texts(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 512))
 
         texts = ['test_txt'] * 1000
-        ret = embed.encode(texts=texts)
+        ret = embed.embed_texts(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 512))
+
+    @patch("mx_rag.utils.dir_check")
+    @patch("transformers.AutoModel.from_pretrained")
+    @patch("transformers.AutoTokenizer.from_pretrained")
+    @patch("transformers.is_torch_npu_available")
+    def test_encode_success_with_last_hidden_state(self,
+                                                   torch_avail_mock,
+                                                   tok_pre_mock,
+                                                   model_pre_mock,
+                                                   dir_check_mock):
+        model_pre_mock.return_value = self.Model(1024)
+        tok_pre_mock.return_value = self.Tokenizer()
+        torch_avail_mock.return_value = False
+
+        embed = TextEmbedding(model_name_or_path='/model/embedding',
+                              pooling_method='mean')
+
+        texts = ['test_txt'] * 100
+        ret, lhs = embed.embed_texts_with_last_hidden_state(texts=texts)
+        self.assertEqual(ret.shape, (len(texts), 1024))
+        self.assertEqual(len(lhs), len(texts))
+
+        texts = ['test_txt'] * 1000
+        ret, lhs = embed.embed_texts_with_last_hidden_state(texts=texts)
+        self.assertEqual(ret.shape, (len(texts), 1024))
+        self.assertEqual(len(lhs), len(texts))
 
     @patch("mx_rag.utils.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
@@ -114,15 +140,15 @@ class TestLocalEmbedding(unittest.TestCase):
                                            tok_pre_mock,
                                            model_pre_mock,
                                            dir_check_mock):
-        model_pre_mock.return_value = TestLocalEmbedding.Model(1024)
-        tok_pre_mock.return_value = TestLocalEmbedding.Tokenizer()
+        model_pre_mock.return_value = self.Model(1024)
+        tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
 
-        embed = LocalEmbedding(model_name_or_path='/model/embedding',
-                               pooling_method='no valid')
+        embed = TextEmbedding(model_name_or_path='/model/embedding',
+                              pooling_method='no valid')
 
         texts = ['test_txt'] * 100
-        self.assertRaises(NotImplementedError, embed.encode, texts=texts)
+        self.assertRaises(NotImplementedError, embed.embed_texts, texts=texts)
 
 
 if __name__ == '__main__':
