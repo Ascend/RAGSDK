@@ -6,7 +6,7 @@ set -e
 
 warn() { echo >&2 -e "\033[1;31m[WARN ][Depend  ] $1\033[1;37m" ; }
 ARCH=$(uname -m)
-PY_VER=py$(python3 -c "import platform; print(platform.python_version().replace('.','')[0:2])")
+PY_VER=py$(python3 -c "import platform; print(platform.python_version().replace('.','')[0:1])")
 CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 PKG_DIR=mindxsdk-mxrag
@@ -87,7 +87,8 @@ function build_so_package()
     cd "${ROOT_PATH}/mx_rag"
     python3 ./setup.py build_ext
     mkdir -p "${SO_OUTPUT_DIR}"
-    cp -r build/lib.linux-*/mx_rag/document/loader/* document/loader/
+    cp -arfv build/lib.linux-*/mx_rag/* .
+    rm -rf build
 }
 
 function build_wheel_package()

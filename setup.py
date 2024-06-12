@@ -3,15 +3,17 @@
 
 import datetime
 import glob
+import logging
 import os
 import shutil
 import stat
 from pathlib import Path
-import logging
 
 import yaml
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py as build_py_orig
+
+from mx_rag.setup import get_python_files
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
@@ -61,18 +63,29 @@ def clean():
                 shutil.rmtree(name)
 
 
+def get_excluded_files():
+    file_list = get_python_files()
+    return [os.path.join("mx_rag", x) for x in file_list]
+
+
+def get_all_so_files():
+    src_dir = f"{pwd}/mx_rag"
+    file_list = []
+    for name in glob.glob(f"{src_dir}/**/*.so", recursive=True):
+        file = name[len(src_dir) + 1:]
+        file_list.append(file)
+    return file_list
+
+
 clean()
 
 build_dependencies()
 
 required_package = []
 
-package_data = {'': ['document/loader/*.so']}
+package_data = {'': get_all_so_files()}
 
-excluded = [
-    'mx_rag/document/loader/docx_loader.py',
-    'mx_rag/document/loader/data_clean.py'
-]
+excluded = get_excluded_files()
 
 
 class BuildBy(build_py_orig):

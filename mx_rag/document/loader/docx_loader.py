@@ -2,6 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import re
+import os
 import unicodedata
 from dataclasses import dataclass
 from typing import List, Tuple, Any
@@ -112,7 +113,7 @@ class DocxLoader(BaseLoader):
                 all_text.append(para_text)
 
         one_text = " ".join([t for t in all_text])
-        docs.append(Doc(page_content=one_text, metadata={"source": self.file_path}))
+        docs.append(Doc(page_content=one_text, metadata={"source": os.path.basename(self.file_path)}))
         return docs
 
     def load_and_split(self, text_splitter) -> List[Doc]:
@@ -153,7 +154,7 @@ class DocxLoader(BaseLoader):
                 # 按定长切分进行分组
                 grouped_text = text_splitter.split_text(plain_text)
                 docs += [Doc(page_content=f"{unicodedata.normalize('NFKD', content.title).strip()} {text}",
-                             metadata={"source": self.file_path}) for text in grouped_text]
+                             metadata={"source": os.path.basename(self.file_path)}) for text in grouped_text]
         return docs
 
     def _handle_table(self, element):

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+
+import copy
 from typing import Union, Iterator, List, Dict
 
 from loguru import logger
@@ -26,7 +28,9 @@ class SingleText2TextChain(Chain):
         self._prompt = prompt
         self._source = False
         self._history: List[Dict] = []
-        self._role: str = ""
+        self._role: str = "user"
+        self._doc = []
+        self._query_str = ""
         logger.debug(f"RAG prompt: {self._prompt}")
 
     @property
@@ -37,7 +41,7 @@ class SingleText2TextChain(Chain):
     def source(self, value: bool):
         self._source = value
 
-    def query(self, text : str, *args, **kwargs) -> Union[str, Iterator]:
+    def query(self, text: str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
         return self._query(text, *args, **kwargs)
 
     def _merge_query_prompt(self, query: str, docs: List[Doc], prompt: str):
@@ -61,10 +65,11 @@ class SingleText2TextChain(Chain):
                max_tokens: int = 1000,
                temperature: float = 0.5,
                top_p: float = 0.95,
-               stream: bool = False) -> Union[str, Iterator]:
+               stream: bool = False) -> Union[Dict, Iterator[Dict]]:
 
-        docs = self._retriever.get_relevant_documents(text)
-        question = self._merge_query_prompt(text, docs, self._prompt)
+        self._query_str = text
+        self._doc = self._retriever.get_relevant_documents(text)
+        question = self._merge_query_prompt(text, copy.deepcopy(self._doc), self._prompt)
         logger.debug(f"query prompt: {self._prompt}")
 
         if not stream:
@@ -72,20 +77,23 @@ class SingleText2TextChain(Chain):
 
         return self._do_stream_query(question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
 
-
-    def _do_query(self, text: str, **kwargs) -> str:
+    def _do_query(self, text: str, **kwargs) -> Dict:
         logger.info("invoke normal query")
+        resp = {"query": self._query_str, "result": ""}
+        if self.source:
+            resp['source_documents'] = [vars(x) for x in self._doc]
         llm_response = self._llm.chat(text, self._history, self._role, **kwargs)
         self._content = llm_response
-        if self.source:
-            llm_response += self._retriever.ref_doc
-        return self._content
+        resp['result'] = llm_response
+        return resp
 
-    def _do_stream_query(self, text: str, **kwargs) -> Iterator:
+    def _do_stream_query(self, text: str, **kwargs) -> Iterator[Dict]:
         logger.info("invoke stream query")
-        for resp in self._llm.chat_streamly(text, self._history, self._role, **kwargs):
-            self._content = resp
-            yield self._content
-
+        resp = {"query": self._query_str, "result": ""}
         if self.source:
-            yield self._retriever.ref_doc
+            resp['source_documents'] = [vars(x) for x in self._doc]
+
+        for response in self._llm.chat_streamly(text, self._history, self._role, **kwargs):
+            self._content = response
+            resp['result'] = response
+            yield resp

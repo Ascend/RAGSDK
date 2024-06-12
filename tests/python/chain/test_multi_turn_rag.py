@@ -73,11 +73,11 @@ class MyTestCase(unittest.TestCase):
         response = rag.query("Please remember that Xiao Ming's father is Xiao Gang.", max_tokens=1024, temperature=1.0,
                              top_p=0.1)
         logger.debug(f"stream response {response}")
-        self.assertEqual("MultiQueryRetriever", response)
+        self.assertEqual("MultiQueryRetriever", response.get("result"))
 
         response = rag.query("Who is Xiaoming's father?", max_tokens=1024, temperature=1.0, top_p=0.1)
         logger.debug(f"stream response {response}")
-        self.assertEqual("MultiQueryRetriever", response)
+        self.assertEqual("MultiQueryRetriever", response.get("result"))
 
 
 if __name__ == '__main__':
