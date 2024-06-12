@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 from transformers import is_torch_npu_available
 
 from mx_rag.document.loader import DocxLoader
+from mx_rag.knowledge import Knowledge
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -42,14 +43,13 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         MindFAISS.set_device(2)
         logger.info("set_device done")
-
-        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
-
-        vector_store.add_texts("mxVision.docx",
-                               [d.page_content for d in MyTestCase.res],
-                               embed_func=emb.embed_texts,
-                               metadatas = [d.metadata for d in MyTestCase.res]
-                               )
+        index = MindFAISS(x_dim=1024, index_type="FLAT:L2")
+        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store._add_texts("mxVision.docx",
+                                [d.page_content for d in MyTestCase.res],
+                                metadatas=[d.metadata for d in MyTestCase.res],
+                                embed_func=emb.embed_texts
+                                )
 
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")

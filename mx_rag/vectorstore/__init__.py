@@ -3,6 +3,8 @@
 
 __all__ = [
     "MindFAISS",
+    "VectorStore"
 ]
 
 from .faiss_npu import MindFAISS
+from .vectorstore import VectorStore

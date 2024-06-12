@@ -9,6 +9,8 @@ from unittest.mock import MagicMock
 import numpy as np
 from transformers import is_torch_npu_available
 
+from mx_rag.knowledge import Knowledge
+
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.join(cur_dir, "../vectorstore/"))
@@ -32,8 +34,9 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         MindFAISS.set_device(3)
         logger.info("set_device done")
-        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
-        vector_store.add_texts("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
+        index = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
+        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store._add_texts("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
 
@@ -58,7 +61,7 @@ class MyTestCase(unittest.TestCase):
         MindFAISS.DEVICES = MagicMock()
         vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
         vector_store.similarity_search = MagicMock(
-            return_value=[(Document(page_content="this is a test", document_name="test.txt"), 0.01)])
+            return_value=[[(Document(page_content="this is a test", document_name="test.txt"), 0.01)]])
 
         r = MultiQueryRetriever(mind_llm, vector_store=vector_store, embed_func=embed_func)
         doc = r.get_relevant_documents("what is test?")
@@ -70,9 +73,9 @@ class MyTestCase(unittest.TestCase):
             return
 
         def my_side_effect():
-            yield [(Document(page_content="this is a test1", document_name="test1.txt"), 0.01)]
-            yield [(Document(page_content="this is a test2", document_name="test2.txt"), 0.01)]
-            yield [(Document(page_content="this is a test3", document_name="test3.txt"), 0.01)]
+            yield [[(Document(page_content="this is a test1", document_name="test1.txt"), 0.01)]]
+            yield [[(Document(page_content="this is a test2", document_name="test2.txt"), 0.01)]]
+            yield [[(Document(page_content="this is a test3", document_name="test3.txt"), 0.01)]]
 
         similarity_search_mock = MagicMock()
         similarity_search_mock.side_effect = my_side_effect()
