@@ -1,0 +1,46 @@
+{
+    "name": "question_generation",
+    "instruction": "Generate a question for the given answer and Identify if answer is noncommittal. Give noncommittal as 1 if the answer is noncommittal and 0 if the answer is committal. A noncommittal answer is one that is evasive, vague, or ambiguous. For example, \"I don't know\" or \"I'm not sure\" are noncommittal answers",
+    "output_format_instruction": "The output should be a well-formatted JSON instance that conforms to the JSON schema below.\n\nAs an example, for the schema {\"properties\": {\"foo\": {\"title\": \"Foo\", \"description\": \"a list of strings\", \"type\": \"array\", \"items\": {\"type\": \"string\"}}}, \"required\": [\"foo\"]}\nthe object {\"foo\": [\"bar\", \"baz\"]} is a well-formatted instance of the schema. The object {\"properties\": {\"foo\": [\"bar\", \"baz\"]}} is not well-formatted.\n\nHere is the output JSON schema:\n```\n{\"type\": \"object\", \"properties\": {\"question\": {\"title\": \"Question\", \"type\": \"string\"}, \"noncommittal\": {\"title\": \"Noncommittal\", \"type\": \"integer\"}}, \"required\": [\"question\", \"noncommittal\"]}\n```\n\nDo not return any preamble or explanations, return only a pure JSON string surrounded by triple backticks (```).",
+    "examples": [
+        {
+            "answer": "阿尔伯特·爱因斯坦出生于德国。",
+            "context": "阿尔伯特·爱因斯坦是一位德裔理论物理学家，被广泛认为是历史上最伟大、最有影响力的科学家之一。",
+            "output": {
+                "question": "阿尔伯特·爱因斯坦出生在哪里？",
+                "noncommittal": 0
+            }
+        },
+        {
+            "answer": "它可以根据环境温度来改变皮肤颜色。",
+            "context": "最近的一项科学研究在亚马逊雨林中发现了一种新的青蛙物种，它具有根据环境温度改变皮肤颜色的独特能力。",
+            "output": {
+                "question": "新发现的青蛙物种有什么独特的能力？",
+                "noncommittal": 0
+            }
+        },
+        {
+            "answer": "珠穆朗玛峰",
+            "context": "从海平面测量的地球上最高的山峰是位于喜马拉雅山脉的一座著名山峰。",
+            "output": {
+                "question": "地球上最高的山是什么？",
+                "noncommittal": 0
+            }
+        },
+        {
+            "answer": "我不知道2023年发明的智能手机的开创性功能，因为我对2022年之后的信息一无所知。",
+            "context": "2023年，一项具有开创性的发明被宣布：一款电池寿命长达一个月的智能手机，彻底改变了人们使用移动技术的方式。",
+            "output": {
+                "question": "2023年发明的智能手机有哪些开创性的功能？",
+                "noncommittal": 1
+            }
+        }
+    ],
+    "input_keys": [
+        "answer",
+        "context"
+    ],
+    "output_key": "output",
+    "output_type": "json",
+    "language": "chinese"
+}
