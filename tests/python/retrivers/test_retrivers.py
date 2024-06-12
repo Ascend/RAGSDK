@@ -41,40 +41,39 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         MindFAISS.set_device(0)
         logger.info("set_device done")
-        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db, embed_func=emb.encode)
-        vector_store.add_texts("unshare_desc.txt", [EMBEDDING_TEXT])
+        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
+        vector_store.add_texts("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
-        r = Retriever(vector_store, score_threshold=0.5)
+        r = Retriever(vector_store, score_threshold=0.5, embed_func=emb.embed_texts)
 
         def test_result(self):
             query = "what is unshare command?"
             logger.info(f"get_relevant_documents [{query}]")
-            x = r.get_relevant_documents(query)
-            logger.info(f"relevant doc {x}")
-            self.assertEqual(f"{EMBEDDING_TEXT}\n{query}", x)
+            docs = r.get_relevant_documents(query)
+            logger.info(f"relevant doc {docs}")
+            self.assertEqual(EMBEDDING_TEXT, docs[0].page_content)
 
         def test_result_with_prompt(self):
-            prompt = "haha"
             query = "what is unshare command?"
             logger.info(f"get_relevant_documents [{query}]")
-            x = r.get_relevant_documents(query, prompt)
-            logger.info(f"relevant doc {x}")
-            self.assertEqual(f"{EMBEDDING_TEXT}\n{prompt}\n{query}", x)
+            docs = r.get_relevant_documents(query)
+            logger.info(f"relevant doc {docs}")
+            self.assertEqual(EMBEDDING_TEXT, docs[0].page_content)
 
         def test_no_result(self):
             query = "xxxx xxx xx xxx xxx x"
             logger.info(f"get_relevant_documents [{query}]")
-            x = r.get_relevant_documents(query)
-            logger.info(f"relevant doc {x}")
-            self.assertEqual(query, x)
+            docs = r.get_relevant_documents(query)
+            logger.info(f"relevant doc {docs}")
+            self.assertEqual(query, docs[0].page_content)
 
         def test_no_result_with_prompt(self):
             prompt = "haha"
             query = "xxxx xxx xx xxx xxx x"
             logger.info(f"get_relevant_documents [{query}]")
-            x = r.get_relevant_documents(query, prompt)
-            logger.info(f"relevant doc {x}")
-            self.assertEqual(f"{query}", x)
+            docs = r.get_relevant_documents(query)
+            logger.info(f"relevant doc {docs}")
+            self.assertEqual(query, docs[0].page_content)
 
         test_result(self)
         test_result_with_prompt(self)
@@ -91,20 +90,20 @@ class MyTestCase(unittest.TestCase):
 
         db = SQLiteDocstore("sql.db")
         MindFAISS.DEVICES = MagicMock()
-        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db, embed_func=embed_func)
+        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
         vector_store.similarity_search = MagicMock(
             return_value=[(Document(page_content="this is a test", document_name="test.txt"), 0.5)])
 
-        r = Retriever(vector_store, score_threshold=0.5)
+        r = Retriever(vector_store, score_threshold=0.5, embed_func=embed_func)
 
         def test_result(self):
             vector_store.similarity_search = MagicMock(
                 return_value=[(Document(page_content=EMBEDDING_TEXT, document_name="test.txt"), 0.5)])
             query = "what is unshare command?"
             logger.info(f"get_relevant_documents [{query}]")
-            x = r.get_relevant_documents(query)
-            logger.info(f"relevant doc {x}")
-            self.assertEqual(f"{EMBEDDING_TEXT}\n\n{query}", x)
+            docs = r.get_relevant_documents(query)
+            logger.info(f"relevant doc {docs}")
+            self.assertEqual(EMBEDDING_TEXT, docs[0].page_content)
 
         def test_result_with_prompt(self):
             vector_store.similarity_search = MagicMock(
@@ -112,18 +111,18 @@ class MyTestCase(unittest.TestCase):
             prompt = "haha"
             query = "what is unshare command?"
             logger.info(f"get_relevant_documents [{query}]")
-            x = r.get_relevant_documents(query, prompt)
-            logger.info(f"relevant doc {x}")
-            self.assertEqual(f"{EMBEDDING_TEXT}\n\n{prompt}\n\n{query}", x)
+            docs = r.get_relevant_documents(query)
+            logger.info(f"relevant doc {docs}")
+            self.assertEqual(EMBEDDING_TEXT, docs[0].page_content)
 
         def test_no_result(self):
             vector_store.similarity_search = MagicMock(
                 return_value=[(Document(page_content=EMBEDDING_TEXT, document_name="test.txt"), 0.6)])
             query = "xxxx xxx xx xxx xxx x"
             logger.info(f"get_relevant_documents [{query}]")
-            x = r.get_relevant_documents(query)
-            logger.info(f"relevant doc {x}")
-            self.assertEqual(query, x)
+            docs = r.get_relevant_documents(query)
+            logger.info(f"relevant doc {docs}")
+            self.assertEqual(len(docs), 0)
 
         def test_no_result_with_prompt(self):
             vector_store.similarity_search = MagicMock(
@@ -131,9 +130,10 @@ class MyTestCase(unittest.TestCase):
             prompt = "haha"
             query = "xxxx xxx xx xxx xxx x"
             logger.info(f"get_relevant_documents [{query}]")
-            x = r.get_relevant_documents(query, prompt)
-            logger.info(f"relevant doc {x}")
-            self.assertEqual(f"{query}", x)
+            docs = r.get_relevant_documents(query)
+
+            logger.info(f"relevant doc {docs}")
+            self.assertEqual(len(docs), 0)
 
         test_result(self)
         test_result_with_prompt(self)
