@@ -43,7 +43,8 @@ class DocumentApp:
         self.local_index_path = local_index_path
         FileCheck.check_input_path_valid(db_path)
         sql_db = SQLiteDocstore(db_path)
-        MindFAISS.set_device(dev)
+        if MindFAISS.DEVICES is None:
+            MindFAISS.set_device(dev)
         if os.path.exists(self.local_index_path):
             FileCheck.check_input_path_valid(self.local_index_path)
             self.index_faiss = MindFAISS.load_local(self.local_index_path, sql_db)

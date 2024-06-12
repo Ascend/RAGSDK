@@ -8,7 +8,7 @@ from typing import List, Any
 from loguru import logger
 
 from mx_rag.document.loader.docx_loader import Doc
-from mx_rag.llm import MindieLLM
+from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers.retriever import Retriever
 
 
@@ -59,7 +59,7 @@ class DefaultOutputParser(OutputParser):
 
 
 class MultiQueryRetriever(Retriever):
-    def __init__(self, llm: MindieLLM,
+    def __init__(self, llm: Text2TextLLM,
                  prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
                  parser: OutputParser = DefaultOutputParser(),
                  **data: Any):

@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import urllib3
 
-from mx_rag.llm import MindieLLM
+from mx_rag.llm import Text2TextLLM
 
 
 class MockResponse:
@@ -71,7 +71,7 @@ class TestMindieLLM(unittest.TestCase):
                     "Content-Length": 200
                 }, 200))):
 
-            llm_model = MindieLLM(model_name="llama2-7b-hf", url="http://test:8888")
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
             data = llm_model.chat(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
                 history=[],
@@ -83,7 +83,7 @@ class TestMindieLLM(unittest.TestCase):
         with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse(RESPONSE_STREAM, {
             "Content-Type": "text/event-stream",
         }, 200))):
-            llm_model = MindieLLM(model_name="llama2-7b-hf", url="http://test:8888")
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
             stream_data = llm_model.chat_streamly(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
                 history=[],
@@ -97,7 +97,7 @@ class TestMindieLLM(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 404))):
-            llm_model = MindieLLM(model_name="llama2-7b-hf", url="http://test:8888")
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
             data = llm_model.chat(query="你好", history=[], max_tokens=1024)
             self.assertEqual(data, "")
 
@@ -105,7 +105,7 @@ class TestMindieLLM(unittest.TestCase):
         with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse(RESPONSE_STREAM, {
             "Content-Type": "text/event-stream",
         }, 404))):
-            llm_model = MindieLLM(model_name="llama2-7b-hf", url="http://test:8888")
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
             stream_data = llm_model.chat_streamly(query="你好", history=[], max_tokens=1024)
             data = False
             for _ in stream_data:

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
 import json
 from urllib.parse import urljoin
 
@@ -9,22 +8,22 @@ from loguru import logger
 from mx_rag.utils import is_english, RequestUtils, safe_get
 
 
-class MindieLLM:
+class Text2TextLLM:
     HEADER = {
         "Content-Type": "application/json"
     }
-    MAX_QUERY_LEN = 16000
 
-    def __init__(self, model_name: str, url: str, timeout: int = 10):
-        self.model_name = model_name
-        self.url = url
-        self.client = RequestUtils(timeout=timeout)
+    def __init__(self, url: str, model_name: str, timeout: int = 10, max_prompt_len=128 * 1024 * 1024):
+        self._model_name = model_name
+        self._url = url
+        self._client = RequestUtils(timeout=timeout)
+        self._max_prompt_len = max_prompt_len
 
-    def get_request_body(self, query: str, history: list[dict], role: str = "role", **kwargs):
+    def get_request_body(self, query: str, history: list[dict], role: str = "user", **kwargs):
         history.append({"role": role, "content": query})
 
         request_body = {
-            "model": self.model_name,
+            "model": self._model_name,
             "messages": history,
             "max_tokens": kwargs.get("max_tokens", 16),
             "presence_penalty": kwargs.get("presence_penalty", 0),
@@ -35,15 +34,20 @@ class MindieLLM:
         }
         return request_body
 
-    def chat(self, query: str, history: list[dict], role: str = "role", **kwargs):
+    def chat(self, query: str, history: list[dict] = None, role: str = "role", **kwargs):
         ans = ""
-        if query is None or len(query) > MindieLLM.MAX_QUERY_LEN:
-            logger.error(f"query cannot be None or content len not in (0, {MindieLLM.MAX_QUERY_LEN}]")
+        if query is None:
+            logger.error(f"query cannot be None")
             return ans
+
+        if len(query) > self._max_prompt_len or len(query) == 0:
+            logger.error(f"query content len [{len(query)}] not in (0, {self._max_prompt_len}]")
+            return ans
+
         request_body = self.get_request_body(query, history, role, **kwargs)
         request_body["stream"] = False
-        chat_url = urljoin(self.url, "v1/chat/completions")
-        response = self.client.post(url=chat_url, body=json.dumps(request_body), headers=MindieLLM.HEADER)
+        chat_url = urljoin(self._url, "v1/chat/completions")
+        response = self._client.post(url=chat_url, body=json.dumps(request_body), headers=self.HEADER)
         if response.success:
             try:
                 data = json.loads(response.data)
@@ -60,15 +64,15 @@ class MindieLLM:
 
     def chat_streamly(self, query: str, history: list[dict], role: str = "role", **kwargs):
         ans = ""
-        if query is None or len(query) > MindieLLM.MAX_QUERY_LEN:
-            logger.error(f"query cannot be None or content len not in (0, {MindieLLM.MAX_QUERY_LEN}]")
+        if query is None or len(query) > self._max_prompt_len:
+            logger.error(f"query cannot be None or content len not in  (0, {self._max_prompt_len})")
             yield ans
             return
         request_body = self.get_request_body(query, history, role, **kwargs)
         request_body["stream"] = True
-        chat_url = urljoin(self.url, "v1/chat/completions")
+        chat_url = urljoin(self._url, "v1/chat/completions")
         ans = ""
-        response = self.client.post_streamly(url=chat_url, body=json.dumps(request_body), headers=MindieLLM.HEADER)
+        response = self._client.post_streamly(url=chat_url, body=json.dumps(request_body), headers=self.HEADER)
         for result in response:
             if not result.success:
                 logger.error("get response failed")

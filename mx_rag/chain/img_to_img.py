@@ -1,0 +1,30 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+from loguru import logger
+
+from mx_rag.chain.base import Chain
+
+
+class Img2ImgChain(Chain):
+    """ 检索出输入文本最相关的图片与prompt合并发送给大模型，生成相应图片 """
+
+    def __init__(self, multi_model, retriever):
+        self._multi_model = multi_model
+        self._retriever = retriever
+
+    def query(self, text : str, *args, **kwargs) -> str:
+        if "prompt" not in kwargs:
+            logger.error("input param must contain prompt and question")
+            return ""
+
+        img_path = self._retrieve_img(text)
+        return self._multi_model.img2img(kwargs["prompt"], img_path=img_path)
+
+    def _retrieve_img(self, text : str) -> str:
+        """ 从向量数据库中检视text最相近的图片 """
+        docs = self._retriever.get_relevant_documents(text)
+        if not isinstance(docs, list) or len(docs) == 0:
+            logger.error("retrieve similarity image failed")
+            return ""
+
+        return docs[0].page_content
