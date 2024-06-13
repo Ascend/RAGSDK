@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from transformers import is_torch_npu_available
 
 from mx_rag.document.loader import DocxLoader
-from mx_rag.knowledge import Knowledge
+from mx_rag.knowledge import KnowledgeDB
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -44,7 +44,7 @@ class MyTestCase(unittest.TestCase):
         MindFAISS.set_device(2)
         logger.info("set_device done")
         index = MindFAISS(x_dim=1024, index_type="FLAT:L2")
-        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
         vector_store._add_texts("mxVision.docx",
                                 [d.page_content for d in MyTestCase.res],
                                 metadatas=[d.metadata for d in MyTestCase.res],

@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 
 
-class TestAscendFAISS(unittest.TestCase):
+class TestMindFAISS(unittest.TestCase):
     def test_faiss(self):
         with patch("mx_rag.vectorstore.faiss_npu.ascendfaiss") as ascendfaiss:
             with patch("mx_rag.vectorstore.faiss_npu.faiss") as faiss:

@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 import numpy as np
 from transformers import is_torch_npu_available
 
+from mx_rag.knowledge import KnowledgeDB
 from mx_rag.document.doc import Doc
-from mx_rag.knowledge import Knowledge
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -45,7 +45,7 @@ class MyTestCase(unittest.TestCase):
         MindFAISS.set_device(0)
         logger.info("set_device done")
         index = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
-        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
         vector_store._add_texts("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         r = Retriever(vector_store, document_store= db, score_threshold=0.5, embed_func=emb.embed_texts)
