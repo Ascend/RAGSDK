@@ -124,12 +124,12 @@ class TestTextEmbedding(unittest.TestCase):
         texts = ['test_txt'] * 100
         ret, lhs = embed.embed_texts_with_last_hidden_state(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 1024))
-        self.assertEqual(len(lhs), len(texts))
+        self.assertEqual(lhs.shape, (len(texts), 1024))
 
         texts = ['test_txt'] * 1000
         ret, lhs = embed.embed_texts_with_last_hidden_state(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 1024))
-        self.assertEqual(len(lhs), len(texts))
+        self.assertEqual(lhs.shape, (len(texts), 1024))
 
     @patch("mx_rag.utils.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
