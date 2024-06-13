@@ -33,7 +33,7 @@ class KnowledgeModel(Base):
     document_name = Column(String, comment="文档名称", unique=True)
 
 
-class Knowledge(KnowledgeBase):
+class KnowledgeDB(KnowledgeBase):
     SUPPORT_IMAGE_TYPE = (".jpg", ".png")
     SUPPORT_DOC_TYPE = (".docx", ".xlsx", ".xls", ".csv", ".pdf")
 
@@ -192,7 +192,7 @@ class Knowledge(KnowledgeBase):
             return True if chunk is not None else False
 
 
-class KnowledgeBase:
+class KnowledgeMgr:
 
     def __init__(self, db_path: str):
         engine = create_engine(f"sqlite:///{db_path}")
@@ -200,7 +200,7 @@ class KnowledgeBase:
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    def register(self, knowledge: Knowledge):
+    def register(self, knowledge: KnowledgeDB):
         if knowledge.knowledge_name in self.get_all():
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} has been registered")
 
@@ -212,7 +212,7 @@ class KnowledgeBase:
                 session.rollback()
                 raise KnowledgeError(f"add knowledge failed, {err}") from err
 
-    def delete(self, knowledge: Knowledge):
+    def delete(self, knowledge: KnowledgeDB):
         if knowledge.knowledge_name not in self.get_all():
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} is not be registered")
         if knowledge.get_all_documents():

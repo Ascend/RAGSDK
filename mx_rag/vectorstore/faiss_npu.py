@@ -64,7 +64,7 @@ class MindFAISS(VectorStore):
             cls.DEVICES.clear()
 
     @classmethod
-    def load_local(cls, index_path: str, **kwargs) -> MindFAISS:
+    def load_local(cls, index_path: str) -> MindFAISS:
         if cls.DEVICES is None:
             raise MindFAISSError("set devices first")
 
@@ -77,7 +77,7 @@ class MindFAISS(VectorStore):
         index_obj.index = ascend_index
         return index_obj
 
-    def save_local(self, index_path: str, **kwargs) -> None:
+    def save_local(self, index_path: str) -> None:
         if os.path.exists(index_path):
             logger.warning(f"the index path {index_path} has already exist, will be overwritten")
         try:

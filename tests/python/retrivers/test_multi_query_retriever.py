@@ -10,7 +10,7 @@ import numpy as np
 from transformers import is_torch_npu_available
 
 from mx_rag.document.doc import Doc
-from mx_rag.knowledge import Knowledge
+from mx_rag.knowledge import KnowledgeDB
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -36,7 +36,7 @@ class MyTestCase(unittest.TestCase):
         MindFAISS.set_device(3)
         logger.info("set_device done")
         index = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
-        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
         vector_store._add_texts("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")

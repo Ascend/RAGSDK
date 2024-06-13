@@ -20,7 +20,7 @@ from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage import SQLiteDocstore, Document
 import numpy as np
-from mx_rag.knowledge import Knowledge
+from mx_rag.knowledge import KnowledgeDB
 from mx_rag.chain import SingleText2TextChain
 
 
@@ -41,7 +41,7 @@ class MyTestCase(unittest.TestCase):
         MindFAISS.set_device(2)
         logger.info("set_device done")
         index = MindFAISS(x_dim=1024, index_type="FLAT:L2")
-        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
         vector_store._add_texts("test_file.txt", ["this is a test"], metadata=[{"filepath": "xxx.file"}],  embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
