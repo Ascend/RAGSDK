@@ -16,19 +16,23 @@ RAG评测基于RAGAS，采用中文prompt，并对相应API和本地模型接口
 
 
 ## 基本使用方法
-1. rag_test.py提供了rag测试入口，RAG_TEST_METRIC可以设置测试指标，RAG_TEST_LANGUAGE可以设置测试语言
-2. 测试完成后在result文件夹下会生成相应的结果文件，格式为rag_test_currenttime.csv
+evaluation.py提供了rag测试入口
+以下为该脚本的参数项说明：
+--language      测试集语言类型，支持chinese(中文)和english(英文)
+--method        测试RAG所采用的模型方法，包括url(外部API)和local(本地模型)
+--llm_url       采用外部API方法时，LLM的url地址
+--embed_url     采用外部API方法时，Embedding的url地址
+--llm_path      采用本地模型方法时，LLM的路径
+--embed_path    采用本地模型方法时，Embedding的路径
+--metric        评测指标，名称和上表一致，多个指标用逗号连接
+--output_path   评测结果输出路径
+--dataset_path  评测集路径，当前在dataset下有baseline.csv，可供用户简单测试url或本地模型
 
-## 评测模型选择
-在rag_test.py中可以设置评测模型。
+## 评测集构建
+按question、ground_truth、answer、contexts列名称构建评测集，文件类型为csv。
+question类型为string
+ground_truth类型为List[string]
+answer类型为string
+contexts类型为List[string]
 
-若选择API模型，则设置相应的url，以下为例：
-embedding_model = APIEmbedding(emb_url)
-llm_model = APILLM(llm_url)
 
-若选择本地模型，则设置相应的模型路径，以下为例：
-embedding_model = LocalEmbedding(llm_path)
-llm_model = LocalLLM(embed_path)
-
-## 评测数据集自动生成辅助工具
-datatest文件夹下auto_datatest.py为评测数据集自动生成辅助工具，其主要功能为用户提供ground_truth的json文件，自动针对每个ground_truth生成多个问题，用户在此基础上筛选合适的问题作为相应的评测数据集。
