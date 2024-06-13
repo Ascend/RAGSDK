@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 from transformers import is_torch_npu_available
 
 from mx_rag.document.loader import DocxLoader
-from mx_rag.knowledge import Knowledge
+from mx_rag.knowledge import KnowledgeDB
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -44,7 +44,7 @@ class MyTestCase(unittest.TestCase):
         MindFAISS.set_device(2)
         logger.info("set_device done")
         index = MindFAISS(x_dim=1024, index_type="FLAT:L2")
-        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
         vector_store._add_texts("mxVision.docx",
                                 [d.page_content for d in MyTestCase.res],
                                 metadatas=[d.metadata for d in MyTestCase.res],
@@ -65,7 +65,7 @@ class MyTestCase(unittest.TestCase):
 
         def test_rag_chain_npu_multi_doc(self):
             multi_sr_prompt = "mxVision软件包介绍"
-            r = Retriever(vector_store=vector_store, k=5, score_threshold=0.7, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store= db, k=5, score_threshold=0.7, embed_func=emb.embed_texts)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             final_ans = ""
             for response in rag.query(multi_sr_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
@@ -73,7 +73,7 @@ class MyTestCase(unittest.TestCase):
             logger.debug(f"final_ans {final_ans}")
 
         def test_rag_chain_npu_no_doc(self):
-            r = Retriever(vector_store=vector_store, score_threshold=0.5, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store= db, score_threshold=0.5, embed_func=emb.embed_texts)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             final_ans = ""
             for response in rag.query("CANN是什么呢", max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):

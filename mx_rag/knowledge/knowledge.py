@@ -33,7 +33,7 @@ class KnowledgeModel(Base):
     document_name = Column(String, comment="文档名称", unique=True)
 
 
-class Knowledge(KnowledgeBase):
+class KnowledgeDB(KnowledgeBase):
     SUPPORT_IMAGE_TYPE = (".jpg", ".png")
     SUPPORT_DOC_TYPE = (".docx", ".xlsx", ".xls", ".csv", ".pdf")
 
@@ -134,18 +134,6 @@ class Knowledge(KnowledgeBase):
             self._delete(filename)
             count += 1
 
-    def similarity_search(
-            self,
-            query: List[str],
-            embed_func: Callable[[List[str]], np.ndarray],
-            k: int = 4,
-            *args,
-            **kwargs
-    ) -> List[List[Tuple[Document, float]]]:
-        """Return docs most similar to query."""
-        embeddings = embed_func(query)
-        return self._similarity_search_by_vector(embeddings, k, **kwargs)
-
     def get_all_documents(self, *args, **kwargs):
         """获取当前已上传的所有文档"""
         with self.session() as session:
@@ -155,27 +143,6 @@ class Knowledge(KnowledgeBase):
             ).filter_by(knowledge_name=self.knowledge_name).distinct().all():
                 ret.append(doc[0])
             return ret
-
-    def _similarity_search_by_vector(
-            self,
-            embeddings: np.ndarray,
-            k: int = 4,
-            *args,
-            **kwargs,
-    ) -> List[List[Tuple[Document, float]]]:
-        if not isinstance(embeddings, np.ndarray):
-            raise KnowledgeError("The data type of embedding should be np.ndarray")
-        docs = []
-        scores, indices = self._vector_store.search(embeddings, k)
-        for topk_score, topk_indices in zip(scores, indices):
-            k_docs = []
-            for sc, idx in zip(topk_score, topk_indices):
-                doc = self._document_store.search(idx)
-                if doc is None:
-                    continue
-                k_docs.append((doc, sc))
-            docs.append(k_docs)
-        return docs
 
     def _add_texts(
             self,
@@ -225,7 +192,7 @@ class Knowledge(KnowledgeBase):
             return True if chunk is not None else False
 
 
-class KnowledgeBase:
+class KnowledgeMgr:
 
     def __init__(self, db_path: str):
         engine = create_engine(f"sqlite:///{db_path}")
@@ -233,7 +200,7 @@ class KnowledgeBase:
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    def register(self, knowledge: Knowledge):
+    def register(self, knowledge: KnowledgeDB):
         if knowledge.knowledge_name in self.get_all():
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} has been registered")
 
@@ -245,7 +212,7 @@ class KnowledgeBase:
                 session.rollback()
                 raise KnowledgeError(f"add knowledge failed, {err}") from err
 
-    def delete(self, knowledge: Knowledge):
+    def delete(self, knowledge: KnowledgeDB):
         if knowledge.knowledge_name not in self.get_all():
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} is not be registered")
         if knowledge.get_all_documents():

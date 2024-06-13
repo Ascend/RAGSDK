@@ -13,7 +13,7 @@ class TestKnowledge(unittest.TestCase):
             if __name__ == '__main__':
                 from mx_rag.vectorstore.faiss_npu import MindFAISS
                 from mx_rag.storage import SQLiteDocstore
-                from mx_rag.knowledge import Knowledge, KnowledgeBase
+                from mx_rag.knowledge import KnowledgeDB, KnowledgeMgr
                 total = np.random.random((3, 1024))
                 query = np.array([total[0]])
 
@@ -27,7 +27,7 @@ class TestKnowledge(unittest.TestCase):
                 db = SQLiteDocstore("./sql.db")
                 current_dir = os.path.dirname(os.path.realpath(__file__))
                 top_path = os.path.dirname(os.path.dirname(current_dir))
-                knowledge = Knowledge("./sql.db", db, index, "test_knowledge", white_paths=[top_path, ])
+                knowledge = KnowledgeDB("./sql.db", db, index, "test_knowledge", white_paths=[top_path, ])
                 knowledge.upload_files([os.path.join(top_path, "data/demo.docx")], embed_func)
                 knowledge.upload_files([os.path.join(top_path, "data/demo.docx")], embed_func, force=True)
                 knowledge.delete_files(["demo.docx"])
@@ -35,8 +35,8 @@ class TestKnowledge(unittest.TestCase):
                 knowledge.get_all_documents()
                 knowledge.delete_files(["demo.docx"])
                 knowledge.get_all_documents()
-                knowledge_mgr = KnowledgeBase("./sql.db")
-                knowledge2 = Knowledge("./sql.db", db, index, "test2_knowledge", white_paths=[top_path, ])
+                knowledge_mgr = KnowledgeMgr("./sql.db")
+                knowledge2 = KnowledgeDB("./sql.db", db, index, "test2_knowledge", white_paths=[top_path, ])
                 knowledge_mgr.register(knowledge)
                 knowledge_mgr.register(knowledge2)
                 knowledge_mgr.get_all()

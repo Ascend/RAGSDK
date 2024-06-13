@@ -73,10 +73,10 @@ class TextEmbedding(Embedding):
                 max_length: int = 512,
                 with_last_hidden_state: bool = False):
         if len(texts) == 0:
-            return np.array([]), []
+            return np.array([]), np.array([])
         elif len(texts) > self.TEXT_MAX_LEN:
             logger.error(f'texts list length must less than {self.TEXT_MAX_LEN}')
-            return np.array([]), []
+            return np.array([]), np.array([])
 
         result = []
         last_hidden_states = []
@@ -87,25 +87,36 @@ class TextEmbedding(Embedding):
                 batch_texts, padding=True, truncation=True, max_length=max_length, return_tensors='pt').to(
                 self.model.device)
 
+            attention_mask = encode_texts.attention_mask
             with torch.no_grad():
-                model_output = self.model(
-                    encode_texts.input_ids, encode_texts.attention_mask, return_dict=True)
+                model_output = self.model(encode_texts.input_ids, attention_mask, return_dict=True)
             last_hidden_state = model_output.last_hidden_state
-            embeddings = self._pooling(last_hidden_state, encode_texts.attention_mask)
-            embeddings = torch.nn.functional.normalize(embeddings, dim=-1).cpu().numpy().tolist()
-            result = result + embeddings
+            embeddings = self._pooling(last_hidden_state, attention_mask)
+            embeddings = torch.nn.functional.normalize(embeddings, dim=-1).cpu().numpy()
+            result.append(embeddings)
 
-            if with_last_hidden_state:
-                try:
-                    last_hidden_state = last_hidden_state.cpu().numpy()
-                    lhs_shape = last_hidden_state.shape
-                    last_hidden_state = np.split(np.reshape(last_hidden_state, (-1, *lhs_shape[2:])), len(batch_texts))
-                    last_hidden_states = last_hidden_states + last_hidden_state
-                except Exception as le:
-                    logger.error(f'process last_hidden_state failed, find exception {le}')
-                    return np.array([]), []
+            if not with_last_hidden_state:
+                continue
 
-        return np.array(result), last_hidden_states
+            try:
+                attention_mask = attention_mask.cpu()
+                last_hidden_state = last_hidden_state.cpu().numpy()
+
+                left_padding = attention_mask[:, -1].sum() == attention_mask.shape[0]
+                if left_padding:
+                    last_hidden_state = last_hidden_state[:, -1]
+                else:
+                    sequence_length = attention_mask.sum(dim=1) - 1
+                    current_batch_size = len(batch_texts)
+                    last_hidden_state = last_hidden_state[torch.arange(current_batch_size), sequence_length]
+
+                last_hidden_states.append(last_hidden_state)
+            except Exception as le:
+                logger.error(f'process last_hidden_state failed, find exception {le}')
+                return np.array([]), np.array([])
+
+        last_hidden_states = np.concatenate(last_hidden_states, axis=0) if with_last_hidden_state else np.array([])
+        return np.concatenate(result, axis=0), last_hidden_states
 
     def _pooling(self,
                  last_hidden_state: torch.Tensor,

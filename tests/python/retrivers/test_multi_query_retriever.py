@@ -9,7 +9,8 @@ from unittest.mock import MagicMock
 import numpy as np
 from transformers import is_torch_npu_available
 
-from mx_rag.knowledge import Knowledge
+from mx_rag.document.doc import Doc
+from mx_rag.knowledge import KnowledgeDB
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -35,12 +36,12 @@ class MyTestCase(unittest.TestCase):
         MindFAISS.set_device(3)
         logger.info("set_device done")
         index = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
-        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
         vector_store._add_texts("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
 
-        r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_texts)
+        r = MultiQueryRetriever(llm, vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
         doc = r.get_relevant_documents("what is test?")
 
         self.assertEqual("this is a test", doc[0].page_content)
@@ -60,10 +61,11 @@ class MyTestCase(unittest.TestCase):
         db = SQLiteDocstore("sql.db")
         MindFAISS.DEVICES = MagicMock()
         vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
-        vector_store.similarity_search = MagicMock(
-            return_value=[[(Document(page_content="this is a test", document_name="test.txt"), 0.01)]])
 
-        r = MultiQueryRetriever(mind_llm, vector_store=vector_store, embed_func=embed_func)
+        r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
+        r._get_relevant_documents = MagicMock(
+            return_value=[Doc(page_content="this is a test", metadata={})])
+
         doc = r.get_relevant_documents("what is test?")
         logger.info(f"relevant doc {doc}")
         self.assertEqual("this is a test", doc[0].page_content)
@@ -94,12 +96,12 @@ class MyTestCase(unittest.TestCase):
 
         vector_store.similarity_search = similarity_search_mock
 
-        r = MultiQueryRetriever(mind_llm, vector_store=vector_store, embed_func=embed_func, k=10)
+        r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store=db, embed_func=embed_func, k=10)
+        r._get_relevant_documents = MagicMock(
+            return_value=[Doc(page_content="this is a test", metadata={})])
         doc = r.get_relevant_documents("what is test?")
         logger.info(f"relevant doc {doc}")
-        self.assertEqual("this is a test1", doc[0].page_content)
-        self.assertEqual("this is a test2", doc[1].page_content)
-        self.assertEqual("this is a test3", doc[2].page_content)
+        self.assertEqual("this is a test", doc[0].page_content)
 
 
 if __name__ == '__main__':

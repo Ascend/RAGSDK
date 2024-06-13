@@ -112,16 +112,3 @@ class SQLiteDocstore(Docstore):
                     document_name=chunk.document_name
                 )
             return chunk
-
-    def check_document_exist(self, doc_name: str) -> bool:
-        with self.session() as session:
-            chunk = session.query(ChunkModel).filter_by(document_name=doc_name).first()
-            return True if chunk is not None else False
-
-    def get_all_documents(self):
-        with self.session() as session:
-            documents = session.query(ChunkModel.document_name).distinct().all()
-            ret = []
-            for d in documents:
-                ret.append(d[0])
-            return ret

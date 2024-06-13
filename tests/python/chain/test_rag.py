@@ -20,7 +20,7 @@ from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage import SQLiteDocstore, Document
 import numpy as np
-from mx_rag.knowledge import Knowledge
+from mx_rag.knowledge import KnowledgeDB
 from mx_rag.chain import SingleText2TextChain
 
 
@@ -41,19 +41,19 @@ class MyTestCase(unittest.TestCase):
         MindFAISS.set_device(2)
         logger.info("set_device done")
         index = MindFAISS(x_dim=1024, index_type="FLAT:L2")
-        vector_store = Knowledge("./sql.db", db, index, "test", white_paths=["/home"])
+        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
         vector_store._add_texts("test_file.txt", ["this is a test"], metadata=[{"filepath": "xxx.file"}],  embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
 
         def test_rag_chain_npu(self):
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
             logger.debug(f"response {response}")
 
         def test_rag_chain_npu_stream(self):
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
                                       stream=True):
@@ -93,14 +93,14 @@ class MyTestCase(unittest.TestCase):
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://127.0.0.1:7890")
 
         def test_rag_chain_npu(self):
-            r = Retriever(vector_store=vector_store, embed_func=embed_func)
+            r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             llm.chat = MagicMock(return_value="test test test")
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
             self.assertEqual("test test test", response)
 
         def test_rag_chain_npu_stream(self):
-            r = Retriever(vector_store=vector_store, embed_func=embed_func)
+            r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             llm.chat_streamly = MagicMock(return_value=(yield "Retriever steam"))
             for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
@@ -108,14 +108,14 @@ class MyTestCase(unittest.TestCase):
                 self.assertEqual("Retriever steam", response)
 
         def test_rag_chain_npu_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=embed_func)
+            r = MultiQueryRetriever(llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             llm.chat = MagicMock(return_value=("MultiQueryRetriever"))
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
             self.assertEqual("MultiQueryRetriever", response)
 
         def test_rag_chain_npu_stream_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=embed_func)
+            r = MultiQueryRetriever(llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             llm.chat_streamly = MagicMock(return_value=(yield "MultiQueryRetriever steam"))
@@ -124,7 +124,7 @@ class MyTestCase(unittest.TestCase):
                 self.assertEqual("MultiQueryRetriever steam", response)
 
         def test_merge_query_prompt(self):
-            r = Retriever(vector_store=vector_store, embed_func=embed_func)
+            r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             query = "who are you?"
             prompt = "请根据上面提示输出对应结果"
