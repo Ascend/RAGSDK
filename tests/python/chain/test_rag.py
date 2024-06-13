@@ -97,7 +97,7 @@ class MyTestCase(unittest.TestCase):
             rag = SingleText2TextChain(retriever=r, llm=llm)
             llm.chat = MagicMock(return_value="test test test")
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
-            self.assertEqual("test test test", response)
+            self.assertEqual("test test test", response.get("result"))
 
         def test_rag_chain_npu_stream(self):
             r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
@@ -105,14 +105,14 @@ class MyTestCase(unittest.TestCase):
             llm.chat_streamly = MagicMock(return_value=(yield "Retriever steam"))
             for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
                                       stream=True):
-                self.assertEqual("Retriever steam", response)
+                self.assertEqual("Retriever steam", response.get("result"))
 
         def test_rag_chain_npu_multi_query_retriever(self):
             r = MultiQueryRetriever(llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             llm.chat = MagicMock(return_value=("MultiQueryRetriever"))
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
-            self.assertEqual("MultiQueryRetriever", response)
+            self.assertEqual("MultiQueryRetriever", response.get("result"))
 
         def test_rag_chain_npu_stream_multi_query_retriever(self):
             r = MultiQueryRetriever(llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
@@ -121,7 +121,7 @@ class MyTestCase(unittest.TestCase):
             llm.chat_streamly = MagicMock(return_value=(yield "MultiQueryRetriever steam"))
             for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
                                       stream=True):
-                self.assertEqual("MultiQueryRetriever steam", response)
+                self.assertEqual("MultiQueryRetriever steam", response.get("result"))
 
         def test_merge_query_prompt(self):
             r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
