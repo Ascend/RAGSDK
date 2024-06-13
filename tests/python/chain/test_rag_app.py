@@ -65,7 +65,7 @@ class MyTestCase(unittest.TestCase):
 
         def test_rag_chain_npu_multi_doc(self):
             multi_sr_prompt = "mxVision软件包介绍"
-            r = Retriever(vector_store=vector_store, k=5, score_threshold=0.7, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store= db, k=5, score_threshold=0.7, embed_func=emb.embed_texts)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             final_ans = ""
             for response in rag.query(multi_sr_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
@@ -73,7 +73,7 @@ class MyTestCase(unittest.TestCase):
             logger.debug(f"final_ans {final_ans}")
 
         def test_rag_chain_npu_no_doc(self):
-            r = Retriever(vector_store=vector_store, score_threshold=0.5, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store= db, score_threshold=0.5, embed_func=emb.embed_texts)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             final_ans = ""
             for response in rag.query("CANN是什么呢", max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
