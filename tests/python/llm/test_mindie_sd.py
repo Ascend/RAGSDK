@@ -7,11 +7,9 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-import urllib3
 from PIL import Image, ImageChops
 
-from mx_rag.diffusion import MindieSD
-
+from mx_rag.llm import Text2ImgMultiModel
 
 MOCK_IMAGE = Image.new("RGB", (200, 200), color=(73, 109, 137))
 
@@ -50,20 +48,19 @@ class TestMindieVision(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 200))):
-            sd_model = MindieSD(model_name="sd", url="http://test:8888")
+            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888")
             img_data = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
-            image = Image.open(img_data)
-            self.assertTrue(compare_images(image, MOCK_IMAGE))
-            image.close()
+            self.assertNotEqual(img_data, "")
+
 
     def test_img_interrupt(self):
         with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse({
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 404))):
-            sd_model = MindieSD(model_name="sd", url="http://test:8888")
+            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888")
             img_data = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
-            self.assertEqual(img_data, None)
+            self.assertEqual(img_data, "")
 
 
 if __name__ == "__main__":

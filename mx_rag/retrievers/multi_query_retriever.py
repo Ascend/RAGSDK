@@ -8,7 +8,7 @@ from typing import List, Any
 from loguru import logger
 
 from mx_rag.document.loader.docx_loader import Doc
-from mx_rag.llm import MindieLLM
+from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers.retriever import Retriever
 
 
@@ -59,7 +59,7 @@ class DefaultOutputParser(OutputParser):
 
 
 class MultiQueryRetriever(Retriever):
-    def __init__(self, llm: MindieLLM,
+    def __init__(self, llm: Text2TextLLM,
                  prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
                  parser: OutputParser = DefaultOutputParser(),
                  **data: Any):
@@ -72,8 +72,9 @@ class MultiQueryRetriever(Retriever):
         docs = []
 
         llm_query = self._prompt.format(question=query)
-        llm_response = self._llm.chat(query=llm_query, history=[], max_tokens=2048)
+        llm_response = self._llm.chat(query=llm_query, history=[], role="user", max_tokens=2048)
         for sub_query in self._parser.parse(output=str(llm_response)):
+            logger.success(f"sub_query {sub_query}")
             doc = super()._get_relevant_documents(sub_query)
             docs.extend(doc)
 

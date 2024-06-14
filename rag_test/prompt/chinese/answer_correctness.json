@@ -1,0 +1,76 @@
+{
+    "name": "answer_correctness",
+    "instruction": "Given a ground truth and an answer statements, analyze each statement and classify them in one of the following categories:\n\n- TP (true positive): statements that are present in answer that are also directly supported by the one or more statements in ground truth,\n- FP (false positive): statements present in the answer but not directly supported by any statement in ground truth,\n- FN (false negative): statements found in the ground truth but not present in answer.\n\nEach statement can only belong to one of the categories. Provide a reason for each classification.\n",
+    "output_format_instruction": "The output should be a well-formatted JSON instance that conforms to the JSON schema below.\n\nAs an example, for the schema {\"properties\": {\"foo\": {\"title\": \"Foo\", \"description\": \"a list of strings\", \"type\": \"array\", \"items\": {\"type\": \"string\"}}}, \"required\": [\"foo\"]}\nthe object {\"foo\": [\"bar\", \"baz\"]} is a well-formatted instance of the schema. The object {\"properties\": {\"foo\": [\"bar\", \"baz\"]}} is not well-formatted.\n\nHere is the output JSON schema:\n```\n{\"type\": \"object\", \"properties\": {\"TP\": {\"title\": \"Tp\", \"type\": \"array\", \"items\": {\"type\": \"object\"}}, \"FP\": {\"title\": \"Fp\", \"type\": \"array\", \"items\": {\"type\": \"object\"}}, \"FN\": {\"title\": \"Fn\", \"type\": \"array\", \"items\": {\"type\": \"object\"}}}, \"required\": [\"TP\", \"FP\", \"FN\"]}\n```\n\nDo not return any preamble or explanations, return only a pure JSON string surrounded by triple backticks (```).",
+    "examples": [
+        {
+            "question": "太阳的能量来源是什么？它的主要功能是什么？",
+            "answer": "['太阳由核裂变提供能量，这与地球上的核反应堆类似。', '太阳的主要功能是为太阳系提供光照。']",
+            "ground_truth": "['太阳的能量来自核聚变，氢原子聚变成氦原子。', '太阳核心的这种聚变过程释放出巨大的能量。', '来自太阳的能量提供热和光，这对地球上的生命至关重要。', '太阳的光在地球的气候系统中起着至关重要的作用。', '阳光有助于驱动天气和洋流。']",
+            "classification": {
+                "TP": [
+                    {
+                        "statement": "太阳的主要功能是为太阳系提供光照。",
+                        "reason": "虽然这句话更广泛地关注太阳的能量，但基本事实中提到太阳提供光照及其作用，因此这句话得到了某种程度的支持。"
+                    }
+                ],
+                "FP": [
+                    {
+                        "statement": "太阳由核裂变提供能量，这与地球上的核反应堆类似。",
+                        "reason": "这句话是错误的，与基本事实相矛盾，基本事实指出太阳是靠核聚变提供能量的。"
+                    }
+                ],
+                "FN": [
+                    {
+                        "statement": "太阳的能量来自核聚变，氢原子聚变成氦原子。",
+                        "reason": "这个对太阳能量来源的准确描述在答案中没有被包含。"
+                    },
+                    {
+                        "statement": "太阳核心的这种聚变过程释放出巨大的能量。",
+                        "reason": "答案中没有提到这个过程及其重要性。"
+                    },
+                    {
+                        "statement": "来自太阳的能量提供热和光，这对地球上的生命至关重要。",
+                        "reason": "答案中只提到了光照，忽略了热量及其对生命的重要性，而基本事实中涵盖了这些方面。"
+                    },
+                    {
+                        "statement": "太阳的光在地球的气候系统中起着至关重要的作用。",
+                        "reason": "答案中没有涉及太阳光照对地球气候系统的广泛影响。"
+                    },
+                    {
+                        "statement": "阳光有助于驱动天气和洋流。",
+                        "reason": "答案中省略了阳光对天气模式和洋流的影响。"
+                    }
+                ]
+            }
+        },
+        {
+            "question": "水的沸点是多少？",
+            "answer": "['水在海平面的沸点是100摄氏度']",
+            "ground_truth": "['水的沸点在海平面是100摄氏度（212华氏度）。', '水的沸点会随着海拔的变化而变化。']",
+            "classification": {
+                "TP": [
+                    {
+                        "statement": "水在海平面的沸点是100摄氏度",
+                        "reason": "该陈述直接得到基本事实的支持，该事实指定海平面下水的沸点是100摄氏度。"
+                    }
+                ],
+                "FP": [],
+                "FN": [
+                    {
+                        "statement": "水的沸点会随着海拔的变化而变化。",
+                        "reason": "答案中没有提到关于水的沸点如何随海拔高度变化的额外信息。"
+                    }
+                ]
+            }
+        }
+    ],
+    "input_keys": [
+        "question",
+        "answer",
+        "ground_truth"
+    ],
+    "output_key": "classification",
+    "output_type": "json",
+    "language": "chinese"
+}

@@ -80,7 +80,7 @@ class RequestUtils:
             yield Result(False, "")
             return
 
-        if content_type != 'text/event-stream':
+        if 'text/event-stream' not in content_type:
             logger.error("content type is not stream")
             yield Result(False, "")
             return

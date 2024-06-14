@@ -33,7 +33,3 @@ class Docstore(ABC):
     @abstractmethod
     def add(self, *args, **kwargs):
         pass
-
-    @abstractmethod
-    def check_document_exist(self, doc_name: str) -> bool:
-        pass

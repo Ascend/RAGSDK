@@ -1,0 +1,24 @@
+{
+    "name": "critique",
+    "instruction": "Given a input and submission. Evaluate the submission only using the given criteria. Use only 'Yes' (1) and 'No' (0) as verdict.",
+    "output_format_instruction": "The output should be a well-formatted JSON instance that conforms to the JSON schema below.\n\nAs an example, for the schema {\"properties\": {\"foo\": {\"title\": \"Foo\", \"description\": \"a list of strings\", \"type\": \"array\", \"items\": {\"type\": \"string\"}}}, \"required\": [\"foo\"]}\nthe object {\"foo\": [\"bar\", \"baz\"]} is a well-formatted instance of the schema. The object {\"properties\": {\"foo\": [\"bar\", \"baz\"]}} is not well-formatted.\n\nHere is the output JSON schema:\n```\n{\"type\": \"object\", \"properties\": {\"reason\": {\"title\": \"Reason\", \"type\": \"string\"}, \"verdict\": {\"title\": \"Verdict\", \"type\": \"integer\"}}, \"required\": [\"reason\", \"verdict\"]}\n```\n\nDo not return any preamble or explanations, return only a pure JSON string surrounded by triple backticks (```).",
+    "examples": [
+        {
+            "input": "洛斯阿拉莫斯实验室的主任是谁？",
+            "submission": "爱因斯坦是洛斯阿拉莫斯实验室的主任。",
+            "criteria": "输出是否以完美的语法书写",
+            "output": {
+                "reason": "评估标准是输出是否用完美的语法书写。在这种情况下，输出语法正确。",
+                "verdict": 1
+            }
+        }
+    ],
+    "input_keys": [
+        "input",
+        "submission",
+        "criteria"
+    ],
+    "output_key": "output",
+    "output_type": "json",
+    "language": "chinese"
+}
