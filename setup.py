@@ -77,13 +77,22 @@ def get_all_so_files():
     return file_list
 
 
+def get_all_json_files():
+    src_dir = f"{pwd}/mx_rag"
+    file_list = []
+    for name in glob.glob(f"{src_dir}/rag_test/**/*.json", recursive=True):
+        file = name[len(src_dir) + 1:]
+        file_list.append(file)
+    return file_list
+
+
 clean()
 
 build_dependencies()
 
 required_package = []
 
-package_data = {'': get_all_so_files()}
+package_data = {'': get_all_so_files() + get_all_json_files()}
 
 excluded = get_excluded_files()
 

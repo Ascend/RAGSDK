@@ -85,7 +85,7 @@ function build_so_package()
 {
     echo "prepare .so resource"
     cd "${ROOT_PATH}/mx_rag"
-    python3 ./setup.py build_ext
+    python3 ./setup.py build_ext -j"$(nproc)"
     mkdir -p "${SO_OUTPUT_DIR}"
     cp -arfv build/lib.linux-*/mx_rag/* .
     rm -rf build
