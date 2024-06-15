@@ -6,13 +6,13 @@ from abc import ABC, abstractmethod
 class VectorStore(ABC):
 
     @abstractmethod
-    def delete(self, *args, **kwargs):
+    def delete(self, ids):
         pass
 
     @abstractmethod
-    def search(self, *args, **kwargs):
+    def search(self, embeddings, k):
         pass
 
     @abstractmethod
-    def add(self, *args, **kwargs):
+    def add(self, embeddings, ids):
         pass

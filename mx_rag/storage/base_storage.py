@@ -23,13 +23,13 @@ class Document(BaseModel):
 
 class Docstore(ABC):
     @abstractmethod
-    def search(self, *args, **kwargs) -> Document:
+    def search(self, index_id) -> Document:
         pass
 
     @abstractmethod
-    def delete(self, *args, **kwargs):
+    def delete(self, doc_name):
         pass
 
     @abstractmethod
-    def add(self, *args, **kwargs):
+    def add(self, documents):
         pass

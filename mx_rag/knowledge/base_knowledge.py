@@ -12,19 +12,19 @@ class KnowledgeBase(ABC):
         self.white_paths = white_paths
 
     @abstractmethod
-    def add_file(self, *args, **kwargs):
+    def add_file(self, doc_name, texts, embed_func, metadatas):
         pass
 
     @abstractmethod
-    def check_document_exist(self, *args, **kwargs):
+    def check_document_exist(self, doc_name):
         pass
 
     @abstractmethod
-    def delete_file(self, *args, **kwargs):
+    def delete_file(self, doc_name):
         pass
 
     @abstractmethod
-    def get_all_documents(self, *args, **kwargs):
+    def get_all_documents(self):
         pass
 
 

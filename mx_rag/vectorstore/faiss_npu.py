@@ -70,17 +70,17 @@ class MindFAISS(VectorStore):
         except Exception as err:
             raise MindFAISSError(f"save index failed {err}") from err
 
-    def delete(self, ids, *args, **kwargs):
+    def delete(self, ids):
         res = self.index.remove_ids(np.array(ids))
         if self.auto_save_path is not None:
             self.save_local(self.auto_save_path)
         return res
 
-    def search(self, embeddings: np.ndarray, k: int = 3, *args, **kwargs):
+    def search(self, embeddings: np.ndarray, k: int = 3):
         scores, indices = self.index.search(embeddings, k)
         return scores.tolist(), indices.tolist()
 
-    def add(self, embeddings, ids, *args, **kwargs):
+    def add(self, embeddings, ids):
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
         except Exception as err:
