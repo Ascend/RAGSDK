@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-import re
 import os
+import re
 import unicodedata
 from dataclasses import dataclass
 from typing import List, Tuple, Any
@@ -29,6 +29,7 @@ class ContentsHeading:
 
 class DocxLoader(BaseLoader):
     """Loading logic for loading documents from docx."""
+    EXTENSION = (".docx",)
 
     def __init__(self, file_path: str, image_inline=False):
         """Initialize with filepath and options."""
@@ -171,6 +172,13 @@ class DocxLoader(BaseLoader):
     def _is_document_valid(self):
         try:
             SecFileCheck(self.file_path, self.MAX_SIZE).check()
+            if not self.file_path.endswith(DocxLoader.EXTENSION):
+                logger.error(f"file type not correct")
+                return False
+            if self._is_zip_bomb():
+                logger.error(f"file too large")
+                return False
+
             doc = docx.Document(self.file_path)
             if len(doc.paragraphs) > self.MAX_PAGE_NUM:
                 logger.error(f"too many pages {len(doc.paragraphs)}")
