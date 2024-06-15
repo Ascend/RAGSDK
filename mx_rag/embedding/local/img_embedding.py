@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+from pathlib import Path
 from typing import List
 
 import PIL
@@ -22,11 +22,13 @@ except Exception as e:
 
 
 class ImageEmbedding(Embedding):
-    MAX_IMAGE_SIZE = 100
-    TEXT_MAX_LEN = 1000
-    IMAGE_MAX_LEN = 1000
+    SUPPORT_IMG_TYPE = (".jpg", ".png")
+    MAX_IMAGE_SIZE = 100 * 1024 * 1024
+    TEXT_COUNT = 1000
+    IMAGE_COUNT = 1000
+    TEXT_LEN = 256
 
-    def __init__(self, model_path, dev_id: int = 0, use_fp16: bool = True):
+    def __init__(self, model_path: str, dev_id: int = 0, use_fp16: bool = True):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
 
@@ -47,11 +49,16 @@ class ImageEmbedding(Embedding):
     def embed_texts(self, texts: List[str]) -> np.ndarray:
         if len(texts) == 0:
             return np.array([])
-        elif len(texts) > self.TEXT_MAX_LEN:
-            logger.error(f'texts list length must less than {self.TEXT_MAX_LEN}')
+        elif len(texts) > self.TEXT_COUNT:
+            logger.error(f'texts list length must less than {self.TEXT_COUNT}')
             return np.array([])
 
-        inputs = self.preprocess(text=texts, padding=True, return_tensors="pt").to(self.model.device)
+        for text in texts:
+            if len(text) > self.TEXT_LEN:
+                logger.error(f"text len can not greater than {self.TEXT_LEN}")
+                return np.array([])
+
+        inputs = self.preprocess(text=texts, padding=True, return_tensors="pt", max_length=512).to(self.model.device)
         with torch.no_grad():
             text_features = self.model.get_text_features(**inputs).detach().cpu()
             text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
@@ -63,13 +70,16 @@ class ImageEmbedding(Embedding):
 
         if len(images) == 0:
             return np.array([])
-        elif len(images) > self.IMAGE_MAX_LEN:
-            logger.error(f'texts list length must less than {self.IMAGE_MAX_LEN}')
+        elif len(images) > self.IMAGE_COUNT:
+            logger.error(f'texts list length must less than {self.IMAGE_COUNT}')
             return np.array([])
 
         for image in images:
             FileCheck.check_path_is_exist_and_valid(image)
             SecFileCheck(image, self.MAX_IMAGE_SIZE).check()
+            if Path(image).suffix not in self.SUPPORT_IMG_TYPE:
+                raise TypeError(f"embed img:[{image}] failed because the file type not be supported")
+
             fi = PIL.Image.open(image)
             inputs = self.preprocess(images=fi, return_tensors="pt").to(self.model.device)
             fi.close()
