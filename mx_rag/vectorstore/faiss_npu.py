@@ -24,7 +24,6 @@ class MindFAISSError(Exception):
 
 
 class MindFAISS(VectorStore):
-    DEVICES = None
     INDEX_MAP = {
         "FLAT:L2": ascendfaiss.AscendIndexFlatL2,
     }
@@ -33,18 +32,23 @@ class MindFAISS(VectorStore):
             self,
             x_dim: Optional[int],
             index_type: Optional[str],
-            load_local_index: bool = False,
+            dev: int,
+            load_local_index: str = None,
             auto_save_path: str = None,
             **kwargs
     ):
-
-        if self.DEVICES is None:
-            raise MindFAISSError("set devices first")
+        self.device = ascendfaiss.IntVector()
+        self.device.push_back(dev)
         self.auto_save_path = auto_save_path
-        if load_local_index:
+        if load_local_index is not None:
+            try:
+                cpu_index = faiss.read_index(load_local_index)
+                self.index = ascendfaiss.index_cpu_to_ascend(self.device, cpu_index)
+            except Exception as err:
+                raise MindFAISSError(f"load index failed, {err}") from err
             return
         try:
-            config = ascendfaiss.AscendIndexFlatConfig(self.DEVICES)
+            config = ascendfaiss.AscendIndexFlatConfig(self.device)
             ascend_index = self.INDEX_MAP.get(index_type, None)
             if ascend_index is None:
                 raise MindFAISSError(f"index type {ascend_index} not support")
@@ -53,29 +57,8 @@ class MindFAISS(VectorStore):
             raise MindFAISSError(f"init index failed, {err}") from err
 
     @classmethod
-    def set_device(cls, dev: int):
-        if cls.DEVICES is None:
-            cls.DEVICES = ascendfaiss.IntVector()
-        cls.DEVICES.push_back(dev)
-
-    @classmethod
-    def clear_device(cls):
-        if cls.DEVICES is not None:
-            cls.DEVICES.clear()
-
-    @classmethod
-    def load_local(cls, index_path: str) -> MindFAISS:
-        if cls.DEVICES is None:
-            raise MindFAISSError("set devices first")
-
-        try:
-            cpu_index = faiss.read_index(index_path)
-            ascend_index = ascendfaiss.index_cpu_to_ascend(cls.DEVICES, cpu_index)
-        except Exception as err:
-            raise MindFAISSError(f"load index failed, {err}") from err
-        index_obj = cls(None, None, load_local_index=True)
-        index_obj.index = ascend_index
-        return index_obj
+    def load_local(cls, dev: int, index_path: str, auto_save_path: str = None) -> MindFAISS:
+        return cls(None, None, dev, index_path, auto_save_path)
 
     def save_local(self, index_path: str) -> None:
         if os.path.exists(index_path):
@@ -95,7 +78,7 @@ class MindFAISS(VectorStore):
 
     def search(self, embeddings: np.ndarray, k: int = 3, *args, **kwargs):
         scores, indices = self.index.search(embeddings, k)
-        return scores, indices.tolist()
+        return scores.tolist(), indices.tolist()
 
     def add(self, embeddings, ids, *args, **kwargs):
         try:

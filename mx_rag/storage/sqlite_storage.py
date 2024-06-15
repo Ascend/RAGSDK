@@ -6,7 +6,7 @@ from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from .base_storage import Docstore, Document, StorageError
+from mx_rag.storage.base_storage import Docstore, Document, StorageError
 
 Base = declarative_base()
 
@@ -45,23 +45,7 @@ class SQLiteDocstore(Docstore):
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    def add(self, documents: List[Document], session=None, *args, **kwargs) -> List[int]:
-        if session is not None:
-            chunk_idx = session.query(ChunkIdxModel).filter_by(id=1).first()
-            # 数据表不存在数据时，创建第一条数据
-            if chunk_idx is None:
-                chunk_idx = ChunkIdxModel()
-                session.add(chunk_idx)
-                session.flush()
-            idxs = [chunk_idx.chunk_nums + i for i in range(1, len(documents) + 1)]
-            chunks = [
-                ChunkModel(chunk_content=doc.page_content, document_name=doc.document_name,
-                           chunk_metadata=doc.metadata, index_id=idx)
-                for doc, idx in zip(documents, idxs)
-            ]
-            chunk_idx.chunk_nums += len(chunks)
-            session.bulk_save_objects(chunks)
-            return idxs
+    def add(self, documents: List[Document], *args, **kwargs) -> List[int]:
         with self.session() as session:
             try:
                 chunk_idx = session.query(ChunkIdxModel).filter_by(id=1).first()
@@ -85,12 +69,7 @@ class SQLiteDocstore(Docstore):
                 session.rollback()
                 raise StorageError(f"add chunk failed, {err}") from err
 
-    def delete(self, doc_name: str, session=None, *args, **kwargs) -> List[int]:
-        if session is not None:
-            chunks = session.query(ChunkModel).filter_by(document_name=doc_name)
-            idxs = [c.index_id for c in chunks]
-            chunks.delete(synchronize_session=False)
-            return idxs
+    def delete(self, doc_name: str, *args, **kwargs) -> List[int]:
         with self.session() as session:
             try:
                 chunks = session.query(ChunkModel).filter_by(document_name=doc_name)

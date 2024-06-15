@@ -9,15 +9,17 @@ from unittest.mock import MagicMock
 import numpy as np
 from transformers import is_torch_npu_available
 
-from mx_rag.document.doc import Doc
-from mx_rag.knowledge import KnowledgeDB
+
+
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
     sys.path.insert(0, os.path.join(cur_dir, "../vectorstore/"))
 
 from loguru import logger
-
+from mx_rag.knowledge.knowledge import KnowledgeStore
+from mx_rag.document.doc import Doc
+from mx_rag.knowledge import KnowledgeDB
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import MultiQueryRetriever
@@ -33,11 +35,11 @@ class MyTestCase(unittest.TestCase):
         emb = TextEmbedding("/workspace/bge-large-zh/")
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
-        MindFAISS.set_device(3)
         logger.info("set_device done")
-        index = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
-        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
-        vector_store._add_texts("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
+        index = MindFAISS(x_dim=1024, dev=3, index_type="FLAT:L2", document_store=db)
+
+        vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
+        vector_store.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
 
@@ -59,8 +61,7 @@ class MyTestCase(unittest.TestCase):
                          "2. Test is a process of verifying that a product or service meets certain requirements.\n"
                          "3. Test is a type of software or application designed to simulate a real-world scenario.")
         db = SQLiteDocstore("sql.db")
-        MindFAISS.DEVICES = MagicMock()
-        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
+        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", document_store=db)
 
         r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
         r._get_relevant_documents = MagicMock(
@@ -91,8 +92,7 @@ class MyTestCase(unittest.TestCase):
                          "2. Test is a process of verifying that a product or service meets certain requirements.\n"
                          "3. Test is a type of software or application designed to simulate a real-world scenario.")
         db = SQLiteDocstore("sql.db")
-        MindFAISS.DEVICES = MagicMock()
-        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
+        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", document_store=db)
 
         vector_store.similarity_search = similarity_search_mock
 

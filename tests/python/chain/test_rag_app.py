@@ -5,6 +5,7 @@ from typing import List
 
 from transformers import is_torch_npu_available
 
+from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.document.loader import DocxLoader
 from mx_rag.knowledge import KnowledgeDB
 
@@ -43,15 +44,14 @@ class MyTestCase(unittest.TestCase):
         emb = TextEmbedding("/workspace/bge-large-zh/", 2)
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
-        MindFAISS.set_device(2)
         logger.info("set_device done")
 
-        index = MindFAISS(x_dim=1024, index_type="FLAT:L2")
-        vector_store = KnowledgeDB(MyTestCase.sql_db_file, db, index, "test", white_paths=["/home"])
-        vector_store._add_texts("mxVision.docx",
-                                [d.page_content for d in res],
-                                embed_func=emb.embed_texts,
-                                metadatas=[d.metadata for d in res]
+        index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
+        vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
+        vector_store.add_file("mxVision.docx",
+                              [d.page_content for d in res],
+                              embed_func=emb.embed_texts,
+                              metadatas=[d.metadata for d in res]
                                 )
 
         logger.info("create MindFAISS done")
