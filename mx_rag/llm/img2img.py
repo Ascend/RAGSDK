@@ -14,7 +14,7 @@ class Img2ImgMultiModel:
     }
     IMAGE_ITEM = "image"
 
-    def __init__(self, url, model_name=None, timeout: int = 10, max_prompt_len=1000):
+    def __init__(self, url: str, model_name=None, timeout: int = 10, max_prompt_len=1000):
         self._url = url
         self._model_name = model_name
         self._client = RequestUtils(timeout=timeout)
