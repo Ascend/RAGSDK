@@ -57,7 +57,7 @@ class TestTextEmbedding(unittest.TestCase):
             attention_mask = torch.ones((len(batch_text), rand_token_len))
             return TestTextEmbedding.BatchEncoding(input_ids=input_ids, attention_mask=attention_mask)
 
-    @patch("mx_rag.utils.dir_check")
+    @patch("mx_rag.utils.FileCheck.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")
@@ -70,7 +70,7 @@ class TestTextEmbedding(unittest.TestCase):
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = False
 
-        embed = TextEmbedding(model_name_or_path='/model/embedding',
+        embed = TextEmbedding(model_path='/model/embedding',
                               pooling_method='mean')
 
         texts = ['test_txt'] * 100
@@ -81,7 +81,7 @@ class TestTextEmbedding(unittest.TestCase):
         ret = embed.embed_texts(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 1024))
 
-    @patch("mx_rag.utils.dir_check")
+    @patch("mx_rag.utils.FileCheck.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")
@@ -94,7 +94,7 @@ class TestTextEmbedding(unittest.TestCase):
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
 
-        embed = TextEmbedding(model_name_or_path='/model/embedding',
+        embed = TextEmbedding(model_path='/model/embedding',
                               use_fp16=False)
 
         texts = ['test_txt'] * 100
@@ -105,7 +105,7 @@ class TestTextEmbedding(unittest.TestCase):
         ret = embed.embed_texts(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 512))
 
-    @patch("mx_rag.utils.dir_check")
+    @patch("mx_rag.utils.FileCheck.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")
@@ -118,7 +118,7 @@ class TestTextEmbedding(unittest.TestCase):
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = False
 
-        embed = TextEmbedding(model_name_or_path='/model/embedding',
+        embed = TextEmbedding(model_path='/model/embedding',
                               pooling_method='mean')
 
         texts = ['test_txt'] * 100
@@ -131,7 +131,7 @@ class TestTextEmbedding(unittest.TestCase):
         self.assertEqual(ret.shape, (len(texts), 1024))
         self.assertEqual(lhs.shape, (len(texts), 1024))
 
-    @patch("mx_rag.utils.dir_check")
+    @patch("mx_rag.utils.FileCheck.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")
@@ -144,7 +144,7 @@ class TestTextEmbedding(unittest.TestCase):
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
 
-        embed = TextEmbedding(model_name_or_path='/model/embedding',
+        embed = TextEmbedding(model_path='/model/embedding',
                               pooling_method='no valid')
 
         texts = ['test_txt'] * 100

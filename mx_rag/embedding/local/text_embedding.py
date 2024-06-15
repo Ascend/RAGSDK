@@ -9,7 +9,7 @@ import torch
 from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
-import mx_rag.utils as m_utils
+from mx_rag.utils import FileCheck
 from mx_rag.embedding.embedding import Embedding
 
 try:
@@ -24,22 +24,19 @@ class TextEmbedding(Embedding):
     TEXT_MAX_LEN = 1000
 
     def __init__(self,
-                 model_name_or_path: str,
+                 model_path: str,
                  dev_id: int = 0,
                  use_fp16: bool = True,
                  pooling_method: Optional[str] = None):
-        self.model_name_or_path = model_name_or_path
-        if self.model_name_or_path.startswith('/'):
-            m_utils.dir_check(self.model_name_or_path)
-        else:
-            raise Exception('model_name_or_path must be an absolute path')
+        self.model_path = model_path
+        FileCheck.dir_check(self.model_path)
 
         self.pooling_method = 'cls'
         if pooling_method is not None:
             self.pooling_method = pooling_method
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-        self.model = AutoModel.from_pretrained(model_name_or_path, local_files_only=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.model = AutoModel.from_pretrained(model_path, local_files_only=True)
 
         if use_fp16:
             self.model = self.model.half()

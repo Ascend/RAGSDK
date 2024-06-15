@@ -2,8 +2,6 @@ import os
 import unittest
 from unittest.mock import patch
 
-import numpy as np
-
 from mx_rag.embedding.local import ImageEmbedding
 
 
@@ -11,6 +9,7 @@ class TestImageEmbedding(unittest.TestCase):
     @classmethod
     def setup_class(cls):
         os.mkdir("/tmp/chinese-clip-vit-base-patch16/")
+
     @classmethod
     def teardown_class(cls):
         os.removedirs("/tmp/chinese-clip-vit-base-patch16/")
@@ -24,8 +23,8 @@ class TestImageEmbedding(unittest.TestCase):
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoProcessor.from_pretrained")
     def test_embed_texts_para_invalid(self,
-                                      model_pre_mock,
-                                      processor_pre_mock,):
+                                      processor_pre_mock,
+                                      model_pre_mock):
         model_pre_mock.return_value = None
         processor_pre_mock.return_value = None
 
@@ -37,12 +36,11 @@ class TestImageEmbedding(unittest.TestCase):
         ret = emb.embed_texts(text)
         self.assertEqual(ret.size, 0)
 
-
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoProcessor.from_pretrained")
     def test_embed_images_para_invalid(self,
-                                      model_pre_mock,
-                                      processor_pre_mock,):
+                                       processor_pre_mock,
+                                       model_pre_mock):
         model_pre_mock.return_value = None
         processor_pre_mock.return_value = None
 

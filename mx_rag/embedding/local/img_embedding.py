@@ -11,7 +11,6 @@ from PIL import Image
 from loguru import logger
 from transformers import AutoProcessor, AutoModel, is_torch_npu_available
 
-import mx_rag.utils as m_utils
 from mx_rag.embedding.embedding import Embedding
 from mx_rag.utils import FileCheck, SecFileCheck
 
@@ -29,10 +28,7 @@ class ImageEmbedding(Embedding):
 
     def __init__(self, model_path, dev_id: int = 0, use_fp16: bool = True):
         self.model_path = model_path
-        if self.model_path.startswith('/'):
-            m_utils.dir_check(self.model_path)
-        else:
-            raise Exception('model_path must be an absolute path')
+        FileCheck.dir_check(self.model_path)
 
         self.use_fp16 = use_fp16
         self.model = AutoModel.from_pretrained(self.model_path)
