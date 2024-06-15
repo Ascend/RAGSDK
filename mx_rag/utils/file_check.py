@@ -49,11 +49,6 @@ def excel_file_check(file_path, size):
     return file_check.check()
 
 
-def dir_check(file_path):
-    if not os.path.isdir(file_path):
-        raise PathNotDirException(f"PathNotDirException: [{file_path}] is not a valid dir")
-
-
 class FileCheck:
     MAX_PATH_LENGTH = 1024
 
@@ -76,6 +71,16 @@ class FileCheck:
             raise FileCheckError("path is not exists")
 
         FileCheck.check_input_path_valid(path, check_real_path)
+
+    @staticmethod
+    def dir_check(file_path: str):
+        if not file_path.startswith("/"):
+            raise FileCheckError("dir must be an absolute path")
+
+        if not os.path.isdir(file_path):
+            raise PathNotDirException(f"PathNotDirException: [{file_path}] is not a valid dir")
+
+        FileCheck.check_input_path_valid(file_path, True)
 
     @staticmethod
     def _check_normal_file_path(path):

@@ -7,6 +7,7 @@ from loguru import logger
 import urllib3
 
 from .cert import TlsConfig
+from .file_check import FileCheck
 
 LIMIT_1M_SIZE = 1000 * 1000
 
@@ -26,10 +27,21 @@ class RequestUtils:
                  timeout=10,
                  num_pools=200,
                  maxsize=200,
-                 response_limit_size=LIMIT_1M_SIZE):
-        ssl_ctx = TlsConfig.get_init_context()
+                 response_limit_size=LIMIT_1M_SIZE,
+                 cert_file: str = ""):
+        if cert_file:
+            FileCheck.check_path_is_exist_and_valid(cert_file)
+            success, ssl_ctx = TlsConfig.get_client_ssl_context(cert_file)
+            if not success:
+                raise Exception('unable to add ca_file for request')
+        else:
+            ssl_ctx = TlsConfig.get_init_context()
+
         self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
-                                        retries=retries, timeout=timeout, num_pools=num_pools, maxsize=maxsize)
+                                        retries=retries,
+                                        timeout=timeout,
+                                        num_pools=num_pools,
+                                        maxsize=maxsize)
         self.response_limit_size = response_limit_size
 
     def post(self, url: str, body: str, headers: Dict):

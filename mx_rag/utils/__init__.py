@@ -7,7 +7,6 @@ __all__ = [
     "PathNotDirException",
     "SecFileCheck",
     "excel_file_check",
-    "dir_check",
     "is_english",
     "safe_get",
     "FileCheck",
@@ -20,7 +19,6 @@ from mx_rag.utils.file_check import (
     PathNotDirException,
     SecFileCheck,
     excel_file_check,
-    dir_check,
     FileCheck
 )
 

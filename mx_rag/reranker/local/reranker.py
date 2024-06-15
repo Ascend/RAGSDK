@@ -6,30 +6,35 @@ import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_torch_npu_available
 
-import mx_rag.utils as m_utils
+from mx_rag.utils import FileCheck
+
+try:
+    import torch_npu
+
+    torch.npu.set_compile_mode(jit_compile=False)
+except Exception as e:
+    logger.warning(f"import torch_npu failed:{e}, LocalReranker will running on cpu")
 
 
 class LocalReranker:
     TEXT_MAX_LEN = 1000
 
     def __init__(self,
-                 model_name_or_path: str,
+                 model_path: str,
+                 dev_id: int = 0,
                  use_fp16: bool = True):
-        self.model_name_or_path = model_name_or_path
-        if self.model_name_or_path.startswith('/'):
-            m_utils.dir_check(self.model_name_or_path)
-        else:
-            raise Exception('model_name_or_path must be an absolute path')
+        self.model_path = model_path
+        FileCheck.dir_check(self.model_path)
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path, local_files_only=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=True)
 
         if use_fp16:
             self.model = self.model.half()
 
         try:
             if is_torch_npu_available():
-                self.model.to('npu')
+                self.model.to(f'npu:{dev_id}')
         except ImportError:
             logger.warning('unable to import torch_npu, please check if torch_npu is properly installed. '
                            'currently running on cpu.')

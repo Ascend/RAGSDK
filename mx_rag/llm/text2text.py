@@ -15,10 +15,15 @@ class Text2TextLLM:
     }
     INT64_MAX = (1 << 63) - 1
 
-    def __init__(self, url: str, model_name: str, timeout: int = 10, max_prompt_len=128 * 1024 * 1024):
+    def __init__(self,
+                 url: str,
+                 model_name: str,
+                 timeout: int = 10,
+                 max_prompt_len=128 * 1024 * 1024,
+                 cert_file: str = ''):
         self._model_name = model_name
         self._url = url
-        self._client = RequestUtils(timeout=timeout)
+        self._client = RequestUtils(timeout=timeout, cert_file=cert_file)
         self._max_prompt_len = max_prompt_len
 
     @staticmethod
@@ -61,7 +66,7 @@ class Text2TextLLM:
 
         return True
 
-    def chat(self, query: str, history: list[dict] = None, role: str = "role", **kwargs):
+    def chat(self, query: str, history: list[dict] = None, role: str = "user", **kwargs):
         ans = ""
         if query is None:
             logger.error(f"query cannot be None")
@@ -85,12 +90,12 @@ class Text2TextLLM:
             ans = safe_get(data, ["choices", 0, "message", "content"], "")
             if safe_get(data, ["choices", 0, "finish_reason"], "") == "length":
                 ans += "...\nFor the content length reason, it stopped, continue?" if is_english(
-                            [ans]) else "······\n由于长度的原因，回答被截断了，要继续吗？"
+                    [ans]) else "······\n由于长度的原因，回答被截断了，要继续吗？"
         else:
             logger.error("get response failed")
         return ans
 
-    def chat_streamly(self, query: str, history: list[dict] = None, role: str = "role", **kwargs):
+    def chat_streamly(self, query: str, history: list[dict] = None, role: str = "user", **kwargs):
         ans = ""
         if query is None or len(query) > self._max_prompt_len:
             logger.error(f"query cannot be None or content len not in  (0, {self._max_prompt_len})")
