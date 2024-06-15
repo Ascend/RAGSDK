@@ -86,7 +86,7 @@ def upload_dir(
     count = 0
     files = []
     for file in Path(dir_path).glob("*"):
-        if count > knowledge.max_loop_limit:
+        if count >= knowledge.max_loop_limit:
             logger.warning("the number of files reaches the maximum limit")
             break
         if file.suffix in support_file_type:
@@ -108,7 +108,7 @@ def delete_files(
     for filename in file_names:
         if not isinstance(filename, str):
             raise FileHandlerError(f"file path {filename} is invalid")
-        if count > knowledge.max_loop_limit:
+        if count >= knowledge.max_loop_limit:
             logger.warning("the number of files reaches the maximum limit")
             break
         if not knowledge.check_document_exist(filename):
