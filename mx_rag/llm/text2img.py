@@ -29,6 +29,10 @@ class Text2ImgMultiModel:
             logger.error(f"prompt content len [{len(prompt)}] not in (0, {self._max_prompt_len}]")
             return ""
 
+        if output_format.lower() not in ["png", "jpeg", "jpg", "webp"]:
+            logger.error("output format are not valid")
+            return ""
+
         request_body = {"prompt": prompt, "output_format": output_format}
         img_url = urljoin(self._url, 'text2img')
         response = self._client.post(url=img_url, body=json.dumps(request_body), headers=self.HEADER)
