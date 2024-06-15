@@ -15,6 +15,7 @@ DOC_PARSER_MAP = {
     ".pdf": (PdfLoader, CharTextSplitter),
 }
 SUPPORT_IMAGE_TYPE = (".jpg", ".png")
+SUPPORT_DOC_TYPE = (".docx", ".xlsx", ".xls", ".csv", ".pdf")
 
 
 def parse_file(filepath: str) -> Tuple[List[str], List[Dict[str, str]]]:

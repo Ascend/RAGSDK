@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 from transformers import is_torch_npu_available
 
+from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.document.doc import Doc
 
 if not is_torch_npu_available():
@@ -38,11 +39,10 @@ class MyTestCase(unittest.TestCase):
         emb = TextEmbedding("/workspace/bge-large-zh/")
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
-        MindFAISS.set_device(2)
         logger.info("set_device done")
-        index = MindFAISS(x_dim=1024, index_type="FLAT:L2")
-        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
-        vector_store._add_texts("test_file.txt", ["this is a test"], metadata=[{"filepath": "xxx.file"}],  embed_func=emb.embed_texts)
+        index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
+        vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
+        vector_store.add_file("test_file.txt", ["this is a test"], metadata=[{"filepath": "xxx.file"}], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
 
@@ -86,8 +86,7 @@ class MyTestCase(unittest.TestCase):
             return np.random.random((1, 1024))
 
         db = SQLiteDocstore("sql.db")
-        MindFAISS.DEVICES = MagicMock()
-        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
+        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", document_store=db)
         vector_store.similarity_search = MagicMock(
             return_value=[[(Document(page_content="this is a test", document_name="test.txt"), 0.5)]])
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://127.0.0.1:7890")

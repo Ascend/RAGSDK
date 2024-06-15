@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 import numpy as np
 from transformers import is_torch_npu_available
 
+from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.knowledge import KnowledgeDB
 from mx_rag.document.doc import Doc
 
@@ -42,11 +43,10 @@ class MyTestCase(unittest.TestCase):
         emb = TextEmbedding("/workspace/bge-large-zh/")
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
-        MindFAISS.set_device(0)
         logger.info("set_device done")
-        index = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
-        vector_store = KnowledgeDB("./sql.db", db, index, "test", white_paths=["/home"])
-        vector_store._add_texts("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_texts)
+        index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", document_store=db)
+        vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
+        vector_store.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         r = Retriever(vector_store, document_store= db, score_threshold=0.5, embed_func=emb.embed_texts)
 
@@ -93,8 +93,7 @@ class MyTestCase(unittest.TestCase):
             return np.random.random((1, 1024))
 
         db = SQLiteDocstore("sql.db")
-        MindFAISS.DEVICES = MagicMock()
-        vector_store = MindFAISS(x_dim=1024, index_type="FLAT:L2", document_store=db)
+        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", document_store=db)
 
         r = Retriever(vector_store, document_store= db, score_threshold=0.5, embed_func=embed_func)
 

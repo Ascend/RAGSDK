@@ -21,13 +21,9 @@ class TestMindFAISS(unittest.TestCase):
                     return query
 
                 os.chmod = MagicMock()
-                MindFAISS.set_device = MagicMock()
-                MindFAISS.set_device(0)
-                MindFAISS.DEVICES = MagicMock()
-                index = MindFAISS(1024, "FLAT:L2")
+                index = MindFAISS(1024, "FLAT:L2", 0)
                 index.search(query, k=1)
                 index.add(query, [1])
                 index.delete([1])
                 index.save_local("./faiss.index")
-                MindFAISS.load_local("./faiss.index")
-                MindFAISS.clear_device()
+                MindFAISS.load_local(0, "./faiss.index")

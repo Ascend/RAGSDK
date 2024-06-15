@@ -11,7 +11,7 @@ class AscendIndexFlatL2:
         pass
 
     def search(self, *args, **kwarg):
-        return [[0.1]], np.array([[0]])
+        return np.array([[0.1]]), np.array([[0]])
 
     def remove_ids(self, *args, **kwarg):
         pass
@@ -24,6 +24,9 @@ class AscendIndexFlatConfig:
 
 class IntVector:
     def __init__(self, *args, **kwargs):
+        pass
+
+    def push_back(self, *args, **kwargs):
         pass
 
 

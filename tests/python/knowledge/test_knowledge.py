@@ -14,6 +14,7 @@ class TestKnowledge(unittest.TestCase):
                 from mx_rag.vectorstore.faiss_npu import MindFAISS
                 from mx_rag.storage import SQLiteDocstore
                 from mx_rag.knowledge import KnowledgeDB, KnowledgeMgr
+                from mx_rag.knowledge.knowledge import KnowledgeStore, KnowledgeMgrStore
                 total = np.random.random((3, 1024))
                 query = np.array([total[0]])
 
@@ -22,21 +23,17 @@ class TestKnowledge(unittest.TestCase):
                         return total
                     return query
 
-                MindFAISS.set_device(0)
-                index = MindFAISS(x_dim=1024, index_type="FLAT:L2", auto_save_path="faiss.index")
+                index = MindFAISS(x_dim=1024, dev=0, ndex_type="FLAT:L2", auto_save_path="faiss.index")
                 db = SQLiteDocstore("./sql.db")
                 current_dir = os.path.dirname(os.path.realpath(__file__))
                 top_path = os.path.dirname(os.path.dirname(current_dir))
-                knowledge = KnowledgeDB("./sql.db", db, index, "test_knowledge", white_paths=[top_path, ])
-                knowledge.upload_files([os.path.join(top_path, "data/demo.docx")], embed_func)
-                knowledge.upload_files([os.path.join(top_path, "data/demo.docx")], embed_func, force=True)
-                knowledge.delete_files(["demo.docx"])
-                knowledge.upload_dir(os.path.join(top_path, "data"), embed_func)
+                knowledge = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test_knowledge", white_paths=[top_path, ])
+                knowledge.add_file("test_file.txt", ["this is a test"], metadata=[{"filepath": "xxx.file"}], embed_func=embed_func)
                 knowledge.get_all_documents()
-                knowledge.delete_files(["demo.docx"])
+                knowledge.delete_file("demo.docx")
                 knowledge.get_all_documents()
-                knowledge_mgr = KnowledgeMgr("./sql.db")
-                knowledge2 = KnowledgeDB("./sql.db", db, index, "test2_knowledge", white_paths=[top_path, ])
+                knowledge_mgr = KnowledgeMgr(KnowledgeMgrStore("./sql.db"))
+                knowledge2 = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test2_knowledge", white_paths=[top_path, ])
                 knowledge_mgr.register(knowledge)
                 knowledge_mgr.register(knowledge2)
                 knowledge_mgr.get_all()
@@ -46,7 +43,7 @@ class TestKnowledge(unittest.TestCase):
                     knowledge_mgr.delete(knowledge)
                 except Exception as err:
                     print(err)
-                knowledge.delete_files(knowledge.get_all_documents())
+                knowledge.delete_file(knowledge.get_all_documents())
                 knowledge_mgr.delete(knowledge)
                 # 删除知识库后再删除
                 try:
