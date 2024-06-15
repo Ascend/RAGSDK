@@ -58,14 +58,14 @@ class MilvusDB(VectorStore):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         self.client.drop_collection(self._collection_name)
 
-    def delete(self, ids, *args, **kwargs):
+    def delete(self, ids):
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
         self.client.refresh_load(self._collection_name)
         return res
 
-    def search(self, embeddings: Union[np.ndarray, List[list], list], k: int = 3, *args, **kwargs):
+    def search(self, embeddings: Union[np.ndarray, List[list], list], k: int = 3):
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
 
@@ -86,7 +86,7 @@ class MilvusDB(VectorStore):
             ids.append(k_id)
         return scores, ids
 
-    def add(self, embeddings, ids, *args, **kwargs):
+    def add(self, embeddings, ids):
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
 

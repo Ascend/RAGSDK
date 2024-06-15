@@ -91,7 +91,7 @@ class KnowledgeDB(KnowledgeBase):
         self.max_loop_limit = max_loop_limit
         self.knowledge_name = knowledge_name
 
-    def get_all_documents(self, *args, **kwargs):
+    def get_all_documents(self):
         """获取当前已上传的所有文档"""
         return self._knowledge_store.get_all(self.knowledge_name)
 
@@ -100,9 +100,7 @@ class KnowledgeDB(KnowledgeBase):
             doc_name: str,
             texts: List[str],
             embed_func: Callable[[List[str]], np.ndarray],
-            metadatas: Optional[List[dict]] = None,
-            *args,
-            **kwargs,
+            metadatas: Optional[List[dict]] = None
     ) -> NoReturn:
         embeddings = embed_func(texts)
         if not isinstance(embeddings, np.ndarray):
@@ -115,14 +113,14 @@ class KnowledgeDB(KnowledgeBase):
         ids = self._document_store.add(documents)
         self._vector_store.add(embeddings, np.array(ids))
 
-    def delete_file(self, doc_name: str, *args, **kwargs):
+    def delete_file(self, doc_name: str):
         self._knowledge_store.delete(self.knowledge_name, doc_name)
         ids = self._document_store.delete(doc_name)
         num_removed = self._vector_store.delete(ids)
         if len(ids) != num_removed:
             logger.warning("the number of documents does not match the number of vectors")
 
-    def check_document_exist(self, doc_name: str, *args, **kwargs) -> bool:
+    def check_document_exist(self, doc_name: str) -> bool:
         return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
 
 

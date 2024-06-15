@@ -45,7 +45,7 @@ class SQLiteDocstore(Docstore):
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    def add(self, documents: List[Document], *args, **kwargs) -> List[int]:
+    def add(self, documents: List[Document]) -> List[int]:
         with self.session() as session:
             try:
                 chunk_idx = session.query(ChunkIdxModel).filter_by(id=1).first()
@@ -69,7 +69,7 @@ class SQLiteDocstore(Docstore):
                 session.rollback()
                 raise StorageError(f"add chunk failed, {err}") from err
 
-    def delete(self, doc_name: str, *args, **kwargs) -> List[int]:
+    def delete(self, doc_name: str) -> List[int]:
         with self.session() as session:
             try:
                 chunks = session.query(ChunkModel).filter_by(document_name=doc_name)
@@ -81,7 +81,7 @@ class SQLiteDocstore(Docstore):
                 session.rollback()
                 raise StorageError(f"delete chunk failed, {err}") from err
 
-    def search(self, index_id: int, *args, **kwargs) -> Optional[Document]:
+    def search(self, index_id: int) -> Optional[Document]:
         with self.session() as session:
             chunk = session.query(ChunkModel).filter_by(index_id=index_id).first()
             if chunk is not None:
