@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import json
+import sys
 from urllib.parse import urljoin
 
 from loguru import logger
@@ -12,6 +13,7 @@ class Text2TextLLM:
     HEADER = {
         "Content-Type": "application/json"
     }
+    INT64_MAX = (1 << 63) - 1
 
     def __init__(self, url: str, model_name: str, timeout: int = 10, max_prompt_len=128 * 1024 * 1024):
         self._model_name = model_name
@@ -19,20 +21,45 @@ class Text2TextLLM:
         self._client = RequestUtils(timeout=timeout)
         self._max_prompt_len = max_prompt_len
 
-    def get_request_body(self, query: str, history: list[dict], role: str = "user", **kwargs):
-        history.append({"role": role, "content": query})
+    @staticmethod
+    def _validate_range(value, value_range, expected_type, inclusive_min=True, param_name=""):
+        if value is None:
+            raise ValueError(f"{param_name} cannot be None.")
 
-        request_body = {
-            "model": self._model_name,
-            "messages": history,
-            "max_tokens": kwargs.get("max_tokens", 16),
-            "presence_penalty": kwargs.get("presence_penalty", 0),
-            "frequency_penalty": kwargs.get("frequency_penalty", 0),
-            "seed": kwargs.get("seed", None),
-            "temperature": kwargs.get("temperature", 1),
-            "top_p": kwargs.get("top_p", 1),
-        }
-        return request_body
+        if not isinstance(value, expected_type):
+            raise TypeError(f"{param_name}={value} is of incorrect type (expected {expected_type.__name__}).")
+
+        min_value, max_value = value_range
+
+        if inclusive_min:
+            if value < min_value:
+                raise ValueError(
+                    f"{param_name}={value} is less than the inclusive minimum allowed value ({min_value}).")
+        else:
+            if value <= min_value:
+                raise ValueError(
+                    f"{param_name}={value} is less than or equal to the exclusive minimum allowed value ({min_value}).")
+
+        if value > max_value:
+            raise ValueError(
+                f"{param_name}={value} is greater than or equal to the maximum allowed value ({max_value}).")
+
+        return value
+
+    @staticmethod
+    def _validate_history_format(history):
+        if history is None:
+            return False
+
+        required_keys = {"role", "content"}
+
+        for item in history:
+            if not isinstance(item, dict):
+                return False
+            if not required_keys.issubset(item.keys()):
+                return False
+
+        return True
 
     def chat(self, query: str, history: list[dict] = None, role: str = "role", **kwargs):
         ans = ""
@@ -43,8 +70,9 @@ class Text2TextLLM:
         if len(query) > self._max_prompt_len or len(query) == 0:
             logger.error(f"query content len [{len(query)}] not in (0, {self._max_prompt_len}]")
             return ans
-
-        request_body = self.get_request_body(query, history, role, **kwargs)
+        if history is None:
+            history = []
+        request_body = self._get_request_body(query, history, role, **kwargs)
         request_body["stream"] = False
         chat_url = urljoin(self._url, "v1/chat/completions")
         response = self._client.post(url=chat_url, body=json.dumps(request_body), headers=self.HEADER)
@@ -62,13 +90,16 @@ class Text2TextLLM:
             logger.error("get response failed")
         return ans
 
-    def chat_streamly(self, query: str, history: list[dict], role: str = "role", **kwargs):
+    def chat_streamly(self, query: str, history: list[dict] = None, role: str = "role", **kwargs):
         ans = ""
         if query is None or len(query) > self._max_prompt_len:
             logger.error(f"query cannot be None or content len not in  (0, {self._max_prompt_len})")
             yield ans
             return
-        request_body = self.get_request_body(query, history, role, **kwargs)
+        if history is None:
+            history = []
+
+        request_body = self._get_request_body(query, history, role, **kwargs)
         request_body["stream"] = True
         chat_url = urljoin(self._url, "v1/chat/completions")
         ans = ""
@@ -97,3 +128,39 @@ class Text2TextLLM:
                 break
             ans += safe_get(data, ["choices", 0, "delta", "content"], "")
             yield ans
+
+    def _get_request_body(self, query: str, history: list[dict], role: str = "user", **kwargs):
+        if not self._validate_history_format(history):
+            raise ValueError("the history parameter is missing a role or context")
+
+        history.append({"role": role, "content": query})
+
+        max_tokens = "max_tokens"
+        presence_penalty = "presence_penalty"
+        frequency_penalty = "frequency_penalty"
+        temperature = "temperature"
+        top_p = "top_p"
+
+        seed_str = "seed"
+
+        seed = kwargs.get(seed_str, None)
+        if seed is not None:
+            seed = self._validate_range(kwargs.get(seed_str, None), (0, self.INT64_MAX), int,
+                                        inclusive_min=False, param_name=seed_str)
+
+        request_body = {
+            "model": self._model_name,
+            "messages": history,
+            max_tokens: self._validate_range(kwargs.get(max_tokens, 16), (1, 4096), int,
+                                             inclusive_min=False, param_name=max_tokens),
+            presence_penalty: self._validate_range(kwargs.get(presence_penalty, 0.0), (-2.0, 2.0), float,
+                                                   param_name=presence_penalty),
+            frequency_penalty: self._validate_range(kwargs.get(frequency_penalty, 0.0), (-2.0, 2.0), float,
+                                                    param_name=frequency_penalty),
+            seed_str: seed,
+            temperature: self._validate_range(kwargs.get(temperature, 1.0), (0.0, sys.float_info.max), float,
+                                              inclusive_min=False, param_name=temperature),
+            top_p: self._validate_range(kwargs.get(top_p, 1.0), (0.0, 1.0), float,
+                                        inclusive_min=False, param_name=top_p)
+        }
+        return request_body

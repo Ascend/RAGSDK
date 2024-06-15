@@ -6,8 +6,6 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-import urllib3
-
 from mx_rag.llm import Text2TextLLM
 
 
