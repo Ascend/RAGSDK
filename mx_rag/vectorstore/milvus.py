@@ -61,8 +61,9 @@ class MilvusDB(VectorStore):
     def delete(self, ids, *args, **kwargs):
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
-
-        return self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
+        res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
+        self.client.refresh_load(self._collection_name)
+        return res
 
     def search(self, embeddings: Union[np.ndarray, List[list], list], k: int = 3, *args, **kwargs):
         if not self.client.has_collection(self._collection_name):
