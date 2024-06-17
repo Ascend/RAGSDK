@@ -3,9 +3,10 @@
 
 from typing import Dict, Iterator
 
-from loguru import logger
 import urllib3
+from loguru import logger
 
+from mx_rag.libs.glib.checker.url_checker import HttpUrlChecker, HttpsUrlChecker
 from .cert import TlsConfig
 from .file_check import FileCheck
 
@@ -18,6 +19,13 @@ class Result:
     def __init__(self, success: bool, data):
         self.success = success
         self.data = data
+
+
+def is_url_valid(url) -> bool:
+    check_key = "url"
+    if HttpUrlChecker(check_key).check({check_key: url}) or HttpsUrlChecker(check_key).check({check_key: url}):
+        return True
+    return False
 
 
 class RequestUtils:
@@ -45,6 +53,10 @@ class RequestUtils:
         self.response_limit_size = response_limit_size
 
     def post(self, url: str, body: str, headers: Dict):
+        if not is_url_valid(url):
+            logger.error("url check failed")
+            return Result(False, "")
+
         try:
             response = self.pool.request(method='POST',
                                          url=url,
@@ -78,6 +90,10 @@ class RequestUtils:
             return Result(False, "")
 
     def post_streamly(self, url: str, body: str, headers: Dict, chunk_size: int = 1024):
+        if not is_url_valid(url):
+            logger.error("url check failed")
+            yield Result(False, "")
+
         try:
             response = self.pool.request(method='POST', url=url, body=body, headers=headers, preload_content=False)
         except Exception as e:

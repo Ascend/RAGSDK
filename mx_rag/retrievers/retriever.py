@@ -18,28 +18,22 @@ class Retriever(ABC):
         self._embed_func = embed_func
         self._k = k
         self._score_threshold = score_threshold
-        self._ref_doc = []
-
-    @property
-    def ref_doc(self) -> str:
-        if len(self._ref_doc) != 0:
-            return "。参考资料:" + '\n'.join(x.metadata['filepath'] for x in self._ref_doc)
-        return ""
 
     def get_relevant_documents(self, query: str) -> List[Doc]:
         docs = self._get_relevant_documents(query)
-        self._ref_doc = docs[:self._k]
         return docs[:self._k]
 
     def _get_relevant_documents(self, query: str) -> List[Doc]:
-        embedding = self._embed_func(query)
+        embedding = self._embed_func([query])
         scores, indices = self._vector_store.search(embedding, k=self._k)
         sr = []
 
         for i, idx in enumerate(indices[0]):
+            logger.debug(f"check {i}/{idx}")
             doc = self._document_store.search(idx)
             if doc is None:
                 continue
+            logger.debug(f"scores {scores[0][i]}, page content len: {len(doc.page_content)}")
             sr.append((doc, scores[0][i]))
 
         logger.info(f"Filter is [<={self._score_threshold}]")
