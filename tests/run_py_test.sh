@@ -4,8 +4,8 @@ set -e
 
 CUR_PATH=$(cd "$(dirname "$0")" || { warn "Failed to check path/to/run_py_test.sh" ; exit ; } ; pwd)
 TOP_PATH="${CUR_PATH}"/../
-
-export PYTHONPATH=$TOP_PATH:$PYTHONPATH
+GLIB_PATH="${CUR_PATH}"/../mx_rag/libs
+export PYTHONPATH=$TOP_PATH:$PYTHONPATH:$GLIB_PATH
 
 mkdir test_results
 
