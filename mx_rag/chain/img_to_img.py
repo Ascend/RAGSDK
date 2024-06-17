@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+from typing import Dict
+
 from loguru import logger
 
 from mx_rag.chain.base import Chain
@@ -12,10 +14,10 @@ class Img2ImgChain(Chain):
         self._multi_model = multi_model
         self._retriever = retriever
 
-    def query(self, text : str, *args, **kwargs) -> str:
+    def query(self, text : str, *args, **kwargs) -> Dict:
         if "prompt" not in kwargs:
             logger.error("input param must contain prompt and question")
-            return ""
+            return {}
 
         img_path = self._retrieve_img(text)
         return self._multi_model.img2img(kwargs["prompt"], img_path=img_path)

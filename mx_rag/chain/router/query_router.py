@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from typing import Union, Iterator
+from typing import Union, Iterator, Dict
 
 from loguru import logger
 
@@ -43,13 +43,12 @@ class QueryRouter:
         del(self._chains[label])
         self._labels.remove(label)
 
-    def route_to_llm(self, text: str, *args, **kwargs) -> Union[str, Iterator]:
+    def route_to_llm(self, text: str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
         """ 解析text 分类标签，调用对应的大模型chain """
         purpose = self._parse_purpose(text)
-        data = ""
         if purpose not in self._chains.keys():
             logger.error("classify query purpose failed")
-            return data
+            return {}
 
         chain = self._chains[purpose]
         return chain.query(text, *args, **kwargs)
