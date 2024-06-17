@@ -8,7 +8,6 @@
 ## 安装补丁步骤
 在patches/whisper目录下执行一键式补丁脚本
 ```bash
-cd mxRAG/patches/whisper
 bash whisper_patch.sh
 ```
 
@@ -21,9 +20,9 @@ bash whisper_patch.sh
 ```
 
 ## 版本依赖
-| 软件             | 版本要求 |
-|----------------| -------- |
-| python         | >= 3.9.0 |
-| openai-whisper | == 20231117 |
+| 软件             | 版本要求            |
+|----------------|-----------------|
+| python         | == 3.10         |
+| openai-whisper | == 20231117     |
 | torch          | >=2.0.1,<=2.1.0 |
 | torch_npu      | >=2.0.1,<=2.1.0 |
