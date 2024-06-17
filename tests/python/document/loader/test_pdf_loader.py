@@ -26,6 +26,30 @@ class TestPdfLoader(unittest.TestCase):
         pdf_doc = loader.load()
         self.assertEqual(pdf_doc, [])
 
+    def test_load_size_zero_byte(self):
+        with unittest.mock.patch('os.path.getsize') as mock_path_getsize:
+            mock_path_getsize.return_value = 0  # 0 MByte
+            loader = PdfLoader(os.path.join(self.current_dir, "../../../data/test.pdf"))
+            pdf_doc = loader.load()
+            self.assertEqual(pdf_doc, [])
+
+    # 打桩测试超过了pdf文件超过100M字节场景
+    def test_load_size_over_limit(self):
+        with unittest.mock.patch('os.path.getsize') as mock_path_getsize:
+            mock_path_getsize.return_value = 101 * 1024 * 1024  # 101 MByte
+            loader = PdfLoader(os.path.join(self.current_dir, "../../../data/test.pdf"))
+            pdf_doc = loader.load()
+            self.assertEqual(pdf_doc, [])
+
+    # 打桩测试超过了pdf文件页数超过1000页场景
+    def test_load_page_num_over_limit(self):
+        with unittest.mock.patch('mx_rag.document.loader.pdf_loader.PdfLoader._get_pdf_page_count') \
+                as mock_get_pdf_page_count:
+            mock_get_pdf_page_count.return_value = 1001  # 1001页
+            loader = PdfLoader(os.path.join(self.current_dir, "../../../data/test.pdf"))
+            pdf_doc = loader.load()
+            self.assertEqual(pdf_doc, [])
+
     def test_load(self):
         loader = PdfLoader(os.path.join(self.current_dir, "../../../data/test.pdf"))
         pdf_doc = loader.load()
