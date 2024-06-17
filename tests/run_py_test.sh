@@ -12,7 +12,7 @@ mkdir test_results
 function run_test_cases() {
     echo "Get testcases final result."
     pytest --cov="${CUR_PATH}"/../mx_rag --cov-report=html --cov-report=xml --junit-xml=./final.xml --html=./final.html --self-contained-html --durations=5 -vs --cov-branch
-    coverage xml -i --omit="build/*,cust_op/*,src/*"
+    coverage xml -i --omit="build/*,cust_op/*,src/*,*/libs/*"
     cp coverage.xml final.xml final.html ./test_results
     cp -r htmlcov ./test_results
     rm -rf coverage.xml final.xml final.html htmlcov

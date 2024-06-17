@@ -70,10 +70,10 @@ function package()
     mv "${ROOT_PATH}"/version.info "${CI_PACKAGE_DIR}"
 
     cd "${CI_PACKAGE_DIR}"
-    chmod 400 version.info
-    chmod 400 *.whl
-    chmod -R -w patches
-    find patches -name "*.sh" -exec chmod 500 {} \;
+    chmod 440 version.info
+    chmod 550 *.whl
+    chmod -R 550 patches
+    find patches -name "*.sh" -exec chmod 550 {} \;
 
     cd ../
     tar -zcvf "${RELEASE_TAR}" "${PKG_DIR}" || {

@@ -2,7 +2,7 @@
 
 ## 安装补丁步骤
 ```bash
-bash tei_patch.sh
+bash tei_patch.sh [text-embeddings-inference包的所在路径]
 ```
 
 ## 注意事项
