@@ -1,5 +1,10 @@
 # 安装openai-whisper补丁说明
 
+## 安装环境准备
+1. 安装Python
+2. 安装torch
+3. 官网获取torch_npu whl包安装torch_npu
+
 ## 安装补丁步骤
 在patches/whisper目录下执行一键式补丁脚本
 ```bash
