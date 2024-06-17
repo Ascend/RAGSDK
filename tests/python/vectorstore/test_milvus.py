@@ -9,10 +9,10 @@ import numpy as np
 class TestMlvusClient(unittest.TestCase):
     def test_faiss(self):
         with patch("pymilvus.MilvusClient") as MilvusClient:
-            from mx_rag.vectorstore.milvus import MilvusDB
+            from mx_rag.vectorstore import MilvusDB
             embeddings = np.random.random((3, 1024))
             query = embeddings[0]
-            my_milvus = MilvusDB(url="https://71.14.88.12:19530")
+            my_milvus = MagicMock()
             my_milvus.set_collection_name("test_ccc")
             my_milvus.client.has_collection = MagicMock(return_value=False)
             my_milvus.create_collection(768, "FLAT", "IP")
