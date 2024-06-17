@@ -51,19 +51,33 @@ def excel_file_check(file_path, size):
 
 class FileCheck:
     MAX_PATH_LENGTH = 1024
+    BLACKLIST_PATH = [
+        "/etc/",
+        "/usr/bin/",
+        "/usr/lib/",
+        "/usr/lib64/",
+        "/sys/",
+        "/dev/",
+        "/sbin",
+    ]
 
     @staticmethod
-    def check_input_path_valid(path: str, check_real_path: bool = True):
+    def check_input_path_valid(path: str, check_real_path: bool = True, check_blacklist: bool = False):
         if not path or not isinstance(path, str):
-            raise FileCheckError("Input path is not valid str")
+            raise FileCheckError(f"Input path {path} is not valid str")
 
         if len(path) > FileCheck.MAX_PATH_LENGTH:
-            raise FileCheckError("Input path length over limit")
+            raise FileCheckError(f"Input path {path} length over limit")
 
         FileCheck._check_normal_file_path(path)
 
         if check_real_path and os.path.islink(path):
-            raise FileCheckError("Input path is symbol link")
+            raise FileCheckError(f"Input path {path} is symbol link")
+        path_obj = Path(path)
+        if check_blacklist:
+            for black_path in FileCheck.BLACKLIST_PATH:
+                if path_obj.resolve().is_relative_to(black_path):
+                    raise FileCheckError(f"Input path {path} is in blacklist")
 
     @staticmethod
     def check_path_is_exist_and_valid(path: str, check_real_path: bool = True):

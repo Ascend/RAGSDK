@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage import Docstore, Document
+from mx_rag.utils import FileCheck
 from mx_rag.vectorstore import VectorStore
 
 Base = declarative_base()
@@ -33,6 +34,7 @@ class KnowledgeModel(Base):
 
 class KnowledgeStore:
     def __init__(self, db_path):
+        FileCheck.check_input_path_valid(db_path, check_blacklist=True)
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
@@ -127,6 +129,7 @@ class KnowledgeDB(KnowledgeBase):
 class KnowledgeMgrStore:
 
     def __init__(self, db_path):
+        FileCheck.check_input_path_valid(db_path, check_blacklist=True)
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
         Base.metadata.create_all(engine)

@@ -37,7 +37,7 @@ def upload_files(
 
         in_white_path = False
         for p in knowledge.white_paths:
-            if file_obj.absolute().is_relative_to(p):
+            if file_obj.resolve().is_relative_to(p):
                 in_white_path = True
         if not in_white_path:
             raise FileHandlerError(f"{file_obj.as_posix()} is not in whitelist path")

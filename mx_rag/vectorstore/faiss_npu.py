@@ -12,6 +12,7 @@ import faiss
 import numpy as np
 from loguru import logger
 
+from mx_rag.utils import FileCheck
 from mx_rag.vectorstore.vectorstore import VectorStore
 
 
@@ -42,6 +43,7 @@ class MindFAISS(VectorStore):
         self.auto_save_path = auto_save_path
         if load_local_index is not None:
             try:
+                FileCheck.check_input_path_valid(load_local_index, check_blacklist=True)
                 cpu_index = faiss.read_index(load_local_index)
                 self.index = ascendfaiss.index_cpu_to_ascend(self.device, cpu_index)
             except Exception as err:
@@ -63,6 +65,7 @@ class MindFAISS(VectorStore):
     def save_local(self, index_path: str) -> None:
         if os.path.exists(index_path):
             logger.warning(f"the index path {index_path} has already exist, will be overwritten")
+        FileCheck.check_input_path_valid(index_path, check_blacklist=True)
         try:
             cpu_index = ascendfaiss.index_ascend_to_cpu(self.index)
             faiss.write_index(cpu_index, index_path)

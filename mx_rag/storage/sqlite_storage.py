@@ -7,6 +7,7 @@ from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.storage.base_storage import Docstore, Document, StorageError
+from mx_rag.utils import FileCheck
 
 Base = declarative_base()
 
@@ -40,6 +41,7 @@ class ChunkModel(Base):
 class SQLiteDocstore(Docstore):
 
     def __init__(self, db_path: str):
+        FileCheck.check_input_path_valid(db_path, check_blacklist=True)
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
