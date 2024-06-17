@@ -3,7 +3,7 @@ set -e
 
 PATCH_DIR=$(dirname $(readlink -f $0))
 
-pip install openai-whisper==20231117
+pip3 install openai-whisper==20231117
 dist_packages=$(python3 -c "import site;print(site.getsitepackages()[0])")
 dist_packages_path=$(echo "$dist_packages" | sed "s/[',\[\]]//g")
 echo "dist-packages path is: $dist_packages_path"
