@@ -72,7 +72,8 @@ function package()
     cd "${CI_PACKAGE_DIR}"
     chmod 440 version.info
     chmod 550 *.whl
-    chmod -R 550 patches
+    find patches \( -name "*.md" -o -name "*.patch" \) -exec chmod 440 {} \;
+    chmod 550 `find patches -type d`
     find patches -name "*.sh" -exec chmod 550 {} \;
 
     cd ../
