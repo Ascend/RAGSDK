@@ -28,7 +28,7 @@ def parse_file(filepath: str) -> Tuple[List[str], List[Dict[str, str]]]:
         metadatas = []
         texts = []
         for doc in loader(file.as_posix()).load():
-            split_texts = splitter().split_text(doc.page_content)
+            split_texts = splitter(separator="\n", chunk_size=200, chunk_overlap=100).split_text(doc.page_content)
             metadatas.extend(doc.metadata for _ in split_texts)
             texts.extend(split_texts)
         return texts, metadatas

@@ -112,7 +112,7 @@ setup(
     version=get_ci_version_info(),
     platforms=['linux', ],
     description='MindX RAG is library to build RAG system',
-    python_requires='>= 3.7',
+    python_requires='>= 3.10',
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=required_package,
