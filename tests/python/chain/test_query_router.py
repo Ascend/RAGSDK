@@ -11,7 +11,7 @@ class MockClassifier(TextClassifier):
 
 class MockImg2ImgChain(Chain):
     def query(self, text, *args, **kwargs):
-        return "this is test case"
+        return {"result": "this is test case"}
 
 class TestQueryRouter(unittest.TestCase):
     @classmethod
@@ -66,10 +66,10 @@ class TestQueryRouter(unittest.TestCase):
         q.register_chain("text generate image", chain)
 
         res = q.route_to_llm("安装cann依赖软件有哪些？")
-        self.assertEqual(res, "")
+        self.assertEqual(res, {})
 
 
         q.register_chain("text generate text", chain)
 
         res = q.route_to_llm("安装cann依赖软件有哪些？")
-        self.assertEqual(res, "this is test case")
+        self.assertEqual(res["result"], "this is test case")

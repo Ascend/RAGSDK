@@ -20,14 +20,16 @@ class Img2ImgMultiModel:
         self._client = RequestUtils(timeout=timeout)
         self._max_prompt_len = max_prompt_len
 
-    def img2img(self, prompt: str, img_path: str):
+    def img2img(self, prompt: str, img_path: str) -> dict:
+        resp = {"prompt": prompt, "result": ""}
+
         if prompt is None:
             logger.error(f"prompt cannot be None")
-            return ""
+            return resp
 
         if len(prompt) > self._max_prompt_len or len(prompt) == 0:
             logger.error(f"prompt content len [{len(prompt)}] not in (0, {self._max_prompt_len}]")
-            return ""
+            return resp
 
         FileCheck.check_path_is_exist_and_valid(img_path)
 
@@ -42,11 +44,13 @@ class Img2ImgMultiModel:
             response = self._client.post(url=self._url, body=json.dumps(payload), headers=self.HEADER)
             if not response.success:
                 logger.error("request img to generate img failed")
-                return ""
+                return resp
 
             res = json.loads(response.data)
             if self.IMAGE_ITEM not in res:
                 logger.error("request img to generate img failed, the response not contain image")
-                return ""
+                return resp
 
-            return res[self.IMAGE_ITEM]
+            resp["result"] = res[self.IMAGE_ITEM]
+
+            return resp

@@ -31,7 +31,6 @@ class SingleText2TextChain(Chain):
         self._role: str = "user"
         self._doc = []
         self._query_str = ""
-        logger.debug(f"RAG prompt: {self._prompt}")
 
     @property
     def source(self):

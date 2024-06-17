@@ -49,8 +49,8 @@ class TestMindieVision(unittest.TestCase):
             "Content-Length": 200
         }, 200))):
             sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888")
-            img_data = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
-            self.assertNotEqual(img_data, "")
+            res = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
+            self.assertEqual(res["result"], "")
 
 
     def test_img_interrupt(self):
@@ -59,8 +59,8 @@ class TestMindieVision(unittest.TestCase):
             "Content-Length": 200
         }, 404))):
             sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888")
-            img_data = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
-            self.assertEqual(img_data, "")
+            res = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
+            self.assertEqual(res["result"], "")
 
 
 if __name__ == "__main__":
