@@ -7,6 +7,30 @@ from mx_rag.document.splitter import CharTextSplitter
 
 
 class TestTextSplit(unittest.TestCase):
+    def test_spliter_init_failed_case_1(self):
+        try:
+            CharTextSplitter(chunk_size=-1, chunk_overlap=4, separator="\n")
+        except ValueError:
+            self.assertTrue(True)
+        else:
+            self.assertTrue(False)
+
+    def test_spliter_init_failed_case_2(self):
+        try:
+            CharTextSplitter(chunk_size=10, chunk_overlap=-1, separator="\n")
+        except ValueError:
+            self.assertTrue(True)
+        else:
+            self.assertTrue(False)
+
+    def test_spliter_init_failed_case_3(self):
+        try:
+            CharTextSplitter(chunk_size=1, chunk_overlap=10, separator="\n")
+        except ValueError:
+            self.assertTrue(True)
+        else:
+            self.assertTrue(False)
+
     def test_blank_space_odd_num_text_split(self):
         text = "123 \n 456 \n 789"
         text_splitter = TextSplitterBase(chunk_size=512, chunk_overlap=100, keep_separator=True)
