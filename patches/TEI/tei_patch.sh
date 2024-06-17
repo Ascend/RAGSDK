@@ -4,7 +4,7 @@ set -e
 PATCH_DIR=$(cd $(dirname $0); pwd)
 
 # 1. TEI打patch
-cd ../../../text-embeddings-inference
+cd $1
 patch -p1 < $PATCH_DIR/tei/tei.patch
 
 # 2. transformers打patch

@@ -12,8 +12,8 @@ diff -uprN text-embeddings-inference-main/NPU_ADAPT.md text-embeddings-inference
 +```shell
 +curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 +```
-+See the following example for how to install protobuf:
-+https://blog.csdn.net/j8267643/article/details/134133091
++## install protobuf v21.12
++Please refer to protobuf official instructions to install it
 +
 +## Install Router
 +locate in /tei-npu
