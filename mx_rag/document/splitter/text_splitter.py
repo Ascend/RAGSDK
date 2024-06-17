@@ -16,6 +16,21 @@ class TextSplitterBase:
                  keep_separator: bool = False,
                  separator_after_split_text: bool = False,
                  strip_whitespace: bool = True):
+        if chunk_size < 0:
+            raise ValueError(
+                f"chunk size({chunk_size}) Check failed it should be greater than or equal zero."
+            )
+
+        if chunk_overlap < 0:
+            raise ValueError(
+                f"chunk overlap({chunk_overlap}) Check failed it should be greater than or equal zero."
+            )
+
+        if chunk_overlap > chunk_size:
+            raise ValueError(
+                f"chunk size({chunk_size} should be greater than or equal chunk overlap({chunk_overlap})"
+            )
+
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
 
