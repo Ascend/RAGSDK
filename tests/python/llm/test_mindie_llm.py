@@ -68,7 +68,6 @@ class TestMindieLLM(unittest.TestCase):
                     "Content-Type": "application/json",
                     "Content-Length": 200
                 }, 200))):
-
             llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
             data = llm_model.chat(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
@@ -109,6 +108,62 @@ class TestMindieLLM(unittest.TestCase):
             for _ in stream_data:
                 data = True
             self.assertFalse(data)
+
+    def test_chat_param_max_tokens(self):
+        error = False
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        try:
+            llm_model.chat(query="你好", max_tokens=0)
+        except ValueError:
+            error = True
+        self.assertTrue(error)
+
+    def test_chat_param_max_tokens_2(self):
+        error = False
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        try:
+            llm_model.chat(query="你好", max_tokens=8000)
+        except ValueError:
+            error = True
+        self.assertTrue(error)
+
+    def test_chat_param_history(self):
+        error = False
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        history = [{"role": "users", "content": "test"}] * 101
+        try:
+            llm_model.chat(query="你好", history=history)
+        except ValueError:
+            error = True
+        self.assertTrue(error)
+
+    def test_chat_param_history_2(self):
+        error = False
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        history = [{"role": "users", "content": "test", "111": "1"}]
+        try:
+            llm_model.chat(query="你好", history=history)
+        except ValueError:
+            error = True
+        self.assertTrue(error)
+
+    def test_chat_param_presence_penalty(self):
+        error = False
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        try:
+            llm_model.chat(query="你好", seed=None, presence_penalty=-5.0)
+        except ValueError:
+            error = True
+        self.assertTrue(error)
+
+    def test_chat_param_presence_penalty_2(self):
+        error = False
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        try:
+            llm_model.chat(query="你好", seed=None, presence_penalty=-5)
+        except TypeError:
+            error = True
+        self.assertTrue(error)
 
 
 if __name__ == '__main__':

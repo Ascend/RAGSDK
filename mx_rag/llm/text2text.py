@@ -20,10 +20,12 @@ class Text2TextLLM:
                  model_name: str,
                  timeout: int = 10,
                  max_prompt_len=128 * 1024 * 1024,
+                 max_history_len=100,
                  cert_file: str = ''):
         self._model_name = model_name
         self._url = url
         self._client = RequestUtils(timeout=timeout, cert_file=cert_file)
+        self._max_history_len = max_history_len
         self._max_prompt_len = max_prompt_len
 
     @staticmethod
@@ -52,7 +54,7 @@ class Text2TextLLM:
         return value
 
     @staticmethod
-    def _validate_history_format(history):
+    def _validate_history_format(history: list[dict]):
         if history is None:
             return False
 
@@ -61,7 +63,7 @@ class Text2TextLLM:
         for item in history:
             if not isinstance(item, dict):
                 return False
-            if not required_keys.issubset(item.keys()):
+            if set(item.keys()) != required_keys:
                 return False
 
         return True
@@ -134,9 +136,12 @@ class Text2TextLLM:
             ans += safe_get(data, ["choices", 0, "delta", "content"], "")
             yield ans
 
-    def _get_request_body(self, query: str, history: list[dict], role: str = "user", **kwargs):
+    def _get_request_body(self, query: str, history: list[dict], role: str, **kwargs):
+        if len(history) > self._max_history_len:
+            raise ValueError(f"The length of the history parameter cannot exceed {self._max_history_len}")
+
         if not self._validate_history_format(history):
-            raise ValueError("the history parameter is missing a role or context")
+            raise ValueError("the history parameter is not valid, can only contain role and context")
 
         history.append({"role": role, "content": query})
 
