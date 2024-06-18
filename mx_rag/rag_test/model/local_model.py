@@ -2,16 +2,16 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import typing as t
-import asyncio
 from typing import List
-from ragas.llms import BaseRagasLLM
+
 from langchain.schema import LLMResult
 from langchain.schema import Generation
-from langchain.callbacks.base import Callbacks
-from langchain.schema.embeddings import Embeddings
-from FlagEmbedding import FlagModel
 from transformers import AutoModel, AutoTokenizer
+from ragas.llms import BaseRagasLLM
+from ragas.embeddings.base import BaseRagasEmbeddings
 from ragas.llms.prompt import PromptValue
+
+from mx_rag.embedding.local.text_embedding import TextEmbedding
 
 
 class LocalLLM(BaseRagasLLM):
@@ -55,18 +55,19 @@ class LocalLLM(BaseRagasLLM):
             stop: t.Optional[t.List[str]] = None,
             callbacks=None,
     ) -> LLMResult:
-        pass
+        return self.generate_text(prompt, n, temperature, stop, callbacks)
 
 
-class LocalEmbedding(Embeddings):
+class LocalEmbedding(BaseRagasEmbeddings):
 
     def __init__(self, path: str, max_length=512, batch_size=256):
-        self.model = FlagModel(path, query_instruction_for_retrieval="为这个句子生成表示以用于检索相关文章：")
+        self.model = TextEmbedding(path)
         self.max_length = max_length
         self.batch_size = batch_size
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.model.encode_corpus(texts, self.batch_size, self.max_length).tolist()
+        return self.model.embed_texts(texts, self.batch_size, self.max_length).tolist()
 
     def embed_query(self, text: str) -> List[float]:
-        return self.model.encode_queries(text, self.batch_size, self.max_length).tolist()
+        result = self.model.embed_texts([text], self.batch_size, self.max_length).tolist()
+        return result[0] if result else []
