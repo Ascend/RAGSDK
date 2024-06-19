@@ -12,9 +12,8 @@ bash bertSAFast_patch.sh
 ```
 2. 安装patch后使用bert_model请确保已经完成了自定义算子的注册，运行run包注册。
 
-   包名中的`*`代表系统名，若无多个run包存在同文件夹内，可直接运行。
 ```sh
-    custom_opp_*_aarch64.run
+    custom_opp_aarch64.run
 ```
 3. 出现 aclnnBertSelfAttention not find的问题时请查看是否有设置LD_LIBRARY_PATH环境变量如下：
 ```sh
