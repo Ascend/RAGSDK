@@ -74,6 +74,13 @@ function package()
 
     cp -r "${ROOT_PATH}"/patches "${CI_PACKAGE_DIR}"
 
+    if [ ! -d "${CI_PACKAGE_DIR}/ops" ]; then
+      mkdir -p "${CI_PACKAGE_DIR}/ops"
+    fi
+    OPP_RUN_NAME=$(basename "${ROOT_PATH}"/ops/BertSelfAttention/build_out/custom_opp_*.run | awk -F'_' '{print $1 "_" $2 "_" $4 }')
+    cp "${ROOT_PATH}"/ops/BertSelfAttention/build_out/custom_opp_*.run "${CI_PACKAGE_DIR}"/ops/"${OPP_RUN_NAME}"
+    chmod -R 550 "${CI_PACKAGE_DIR}"/ops
+
     mv "${ROOT_PATH}"/version.info "${CI_PACKAGE_DIR}"
 
     cd "${CI_PACKAGE_DIR}"
@@ -106,11 +113,19 @@ function build_wheel_package()
     echo "prepare resource"
 }
 
+function build_ops_package()
+{
+  cd "${ROOT_PATH}/ops"
+  bash build.sh
+  cd "${ROOT_PATH}"
+}
+
 function main()
 {
     clean
     build_so_package
     build_wheel_package
+    build_ops_package
     package
 }
 
