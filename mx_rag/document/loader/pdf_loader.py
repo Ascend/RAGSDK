@@ -21,7 +21,7 @@ from mx_rag.utils import SecFileCheck
 
 class PdfLang(Enum):
     EN: str = 'en'
-    CN: str = 'cn'
+    CH: str = 'ch'
 
 
 class PdfLoader(BaseLoader):
@@ -36,11 +36,16 @@ class PdfLoader(BaseLoader):
         pdf_content: List[str] = []
         for page_layout in layout_res:
             for line in page_layout:
-                line.pop('img')
-                for res in line['res']:
-                    pdf_content.append(res['text'])
-                pdf_content.append("\n")
+                PdfLoader._reconstruct_line(line, pdf_content)
         return pdf_content
+
+    @staticmethod
+    def _reconstruct_line(line, pdf_content):
+        line.pop('img')
+        for res in line['res']:
+            if 'text' in res:
+                pdf_content.append(res['text'])
+        pdf_content.append("\n")
 
     def load(self) -> List[Doc]:
         if not self._check():
