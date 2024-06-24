@@ -25,17 +25,6 @@ class LocalLLM(BaseRagasLLM):
     def llm(self):
         return self.base_llm
 
-    def get_llm_result(self, prompt):
-        generations = []
-        llm_output = {}
-        token_total = 0
-        content = prompt.to_string()
-        text, history = self.base_llm.chat(self.tokenizer, content, history=[])
-        generations.append([Generation(text=text)])
-        token_total += len(text)
-        llm_output['token_total'] = token_total
-        return LLMResult(generations=generations, llm_output=llm_output)
-
     def generate_text(
             self,
             prompt: PromptValue,
@@ -44,7 +33,7 @@ class LocalLLM(BaseRagasLLM):
             stop: t.Optional[t.List[str]] = None,
             callbacks=None,
     ):
-        result = self.get_llm_result(prompt)
+        result = self._get_llm_result(prompt)
         return result
 
     async def agenerate_text(
@@ -56,6 +45,17 @@ class LocalLLM(BaseRagasLLM):
             callbacks=None,
     ) -> LLMResult:
         return self.generate_text(prompt, n, temperature, stop, callbacks)
+
+    def _get_llm_result(self, prompt):
+        generations = []
+        llm_output = {}
+        token_total = 0
+        content = prompt.to_string()
+        text, history = self.base_llm.chat(self.tokenizer, content, history=[])
+        generations.append([Generation(text=text)])
+        token_total += len(text)
+        llm_output['token_total'] = token_total
+        return LLMResult(generations=generations, llm_output=llm_output)
 
 
 class LocalEmbedding(BaseRagasEmbeddings):
