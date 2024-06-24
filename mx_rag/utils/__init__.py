@@ -7,7 +7,6 @@ __all__ = [
     "PathNotDirException",
     "SecFileCheck",
     "excel_file_check",
-    "is_english",
     "safe_get",
     "FileCheck",
     "RequestUtils"
@@ -23,4 +22,4 @@ from mx_rag.utils.file_check import (
 )
 
 from mx_rag.utils.url import RequestUtils
-from mx_rag.utils.common import is_english, safe_get
+from mx_rag.utils.common import safe_get

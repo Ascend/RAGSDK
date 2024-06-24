@@ -118,15 +118,6 @@ class TestMindieLLM(unittest.TestCase):
             error = True
         self.assertTrue(error)
 
-    def test_chat_param_max_tokens_2(self):
-        error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
-        try:
-            llm_model.chat(query="你好", max_tokens=8000)
-        except ValueError:
-            error = True
-        self.assertTrue(error)
-
     def test_chat_param_history(self):
         error = False
         llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")

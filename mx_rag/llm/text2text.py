@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 from loguru import logger
 
-from mx_rag.utils import is_english, RequestUtils, safe_get
+from mx_rag.utils import RequestUtils, safe_get
 
 
 class Text2TextLLM:
@@ -91,8 +91,8 @@ class Text2TextLLM:
                 return ans
             ans = safe_get(data, ["choices", 0, "message", "content"], "")
             if safe_get(data, ["choices", 0, "finish_reason"], "") == "length":
-                ans += "...\nFor the content length reason, it stopped, continue?" if is_english(
-                    [ans]) else "······\n由于长度的原因，回答被截断了，要继续吗？"
+                logger.info("for the content length reason, it stopped.")
+                ans += "......"
         else:
             logger.error("get response failed")
         return ans
@@ -127,8 +127,8 @@ class Text2TextLLM:
             if finish_reason == "stop":
                 break
             elif finish_reason == "length":
-                ans += "...\nFor the content length reason, it stopped, continue?" if is_english(
-                    [ans]) else "······\n由于长度的原因，回答被截断了，要继续吗？"
+                logger.info("for the content length reason, it stopped.")
+                ans += "......"
                 yield ans
                 break
             elif finish_reason == "":
@@ -157,11 +157,11 @@ class Text2TextLLM:
         if seed is not None:
             seed = self._validate_range(kwargs.get(seed_str, None), (0, self.INT64_MAX), int,
                                         inclusive_min=False, param_name=seed_str)
-
+        # 适配MindIE参数范围
         request_body = {
             "model": self._model_name,
             "messages": history,
-            max_tokens: self._validate_range(kwargs.get(max_tokens, 16), (1, 4096), int,
+            max_tokens: self._validate_range(kwargs.get(max_tokens, 16), (1, self.INT64_MAX), int,
                                              inclusive_min=False, param_name=max_tokens),
             presence_penalty: self._validate_range(kwargs.get(presence_penalty, 0.0), (-2.0, 2.0), float,
                                                    param_name=presence_penalty),
