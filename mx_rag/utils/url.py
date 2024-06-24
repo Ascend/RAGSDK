@@ -10,7 +10,7 @@ from mx_rag.libs.glib.checker.url_checker import HttpUrlChecker, HttpsUrlChecker
 from .cert import TlsConfig
 from .file_check import FileCheck
 
-LIMIT_1M_SIZE = 1000 * 1000
+LIMIT_1M_SIZE = 1024 * 1024
 
 HTTP_SUCCESS = 200
 
