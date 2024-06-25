@@ -17,11 +17,7 @@ from mx_rag.vectorstore.vectorstore import VectorStore
 
 
 class MindFAISSError(Exception):
-    def __init__(self, err_msg: str):
-        self.err_msg = err_msg
-        info: inspect.FrameInfo = inspect.stack()[1]
-        msg = f"{info.function}({Path(info.filename).name}:{info.lineno})-{err_msg}"
-        super().__init__(msg)
+    pass
 
 
 class MindFAISS(VectorStore):
