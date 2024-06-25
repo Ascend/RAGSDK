@@ -31,12 +31,11 @@ class MindFAISS(VectorStore):
 
     def __init__(
             self,
-            x_dim: Optional[int],
-            index_type: Optional[str],
+            x_dim: int,
+            index_type: str,
             dev: int,
             load_local_index: str = None,
-            auto_save_path: str = None,
-            **kwargs
+            auto_save_path: str = None
     ):
         self.device = ascendfaiss.IntVector()
         self.device.push_back(dev)

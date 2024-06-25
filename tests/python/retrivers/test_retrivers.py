@@ -93,7 +93,7 @@ class MyTestCase(unittest.TestCase):
             return np.random.random((1, 1024))
 
         db = SQLiteDocstore("sql.db")
-        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", document_store=db)
+        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
 
         r = Retriever(vector_store, document_store= db, score_threshold=0.5, embed_func=embed_func)
 
