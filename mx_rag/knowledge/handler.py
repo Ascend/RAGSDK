@@ -8,7 +8,6 @@ import numpy as np
 from loguru import logger
 
 from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
-from mx_rag.knowledge import KnowledgeDB
 from mx_rag.utils import FileCheck
 
 
@@ -21,7 +20,7 @@ class FileHandlerError(Exception):
 
 
 def upload_files(
-        knowledge: KnowledgeDB,
+        knowledge,
         files: List[str],
         parse_func: Callable[[str], Tuple[List[str], List[Dict[str, str]]]],
         embed_func: Callable[[List[str]], np.ndarray],
@@ -64,7 +63,7 @@ def upload_files(
 
 
 def upload_dir(
-        knowledge: KnowledgeDB,
+        knowledge,
         dir_path: str,
         parse_func: Callable[[str], Tuple[List[str], List[Dict[str, str]]]],
         embed_func: Callable[[List[str]], np.ndarray],
@@ -97,7 +96,7 @@ def upload_dir(
 
 
 def delete_files(
-        knowledge: KnowledgeDB,
+        knowledge,
         file_names: List[str]
 ):
     """删除上传的文档，需传入待删除的文档名称"""

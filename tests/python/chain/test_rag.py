@@ -86,7 +86,7 @@ class MyTestCase(unittest.TestCase):
             return np.random.random((1, 1024))
 
         db = SQLiteDocstore("sql.db")
-        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", document_store=db)
+        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
         vector_store.similarity_search = MagicMock(
             return_value=[[(Document(page_content="this is a test", document_name="test.txt"), 0.5)]])
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://127.0.0.1:7890")
