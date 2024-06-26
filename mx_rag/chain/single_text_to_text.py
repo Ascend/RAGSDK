@@ -41,6 +41,7 @@ class SingleText2TextChain(Chain):
         self._source = value
 
     def query(self, text: str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
+        self._history = []
         return self._query(text, *args, **kwargs)
 
     def _merge_query_prompt(self, query: str, docs: List[Doc], prompt: str):
