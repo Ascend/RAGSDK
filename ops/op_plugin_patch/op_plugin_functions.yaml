@@ -1,0 +1,2 @@
+  - func: npu_bert_self_attention_custom(Tensor input, Tensor queryW, Tensor queryBias, Tensor keyW, Tensor keyBias, Tensor valueW, Tensor valueBias, Tensor attentionMask, Tensor headMask, int numAttentionHeads, int attentionHeadSize, float dropOutKeepProb, bool train) -> Tensor
+    impl_ns: op_api
