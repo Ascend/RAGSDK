@@ -1,8 +1,7 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 import os
-from pathlib import Path
-from typing import List, Dict, Tuple, Callable, Optional, Any, NoReturn
+from typing import List, Callable, Optional, NoReturn
 
 import numpy as np
 from loguru import logger
@@ -10,6 +9,8 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
+from mx_rag.retrievers.tree_retriever.src.tree_builder import TreeBuilder, TreeBuilderConfig
+from mx_rag.retrievers.tree_retriever.src.tree_structures import Tree
 from mx_rag.storage import Docstore, Document
 from mx_rag.utils import FileCheck
 from mx_rag.vectorstore import VectorStore
@@ -121,6 +122,53 @@ class KnowledgeDB(KnowledgeBase):
         num_removed = self._vector_store.delete(ids)
         if len(ids) != num_removed:
             logger.warning("the number of documents does not match the number of vectors")
+
+    def check_document_exist(self, doc_name: str) -> bool:
+        return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
+
+
+class KnowledgeTreeDB(KnowledgeBase):
+    def __init__(
+            self,
+            knowledge_store: KnowledgeStore,
+            chunk_store: Docstore,
+            knowledge_name: str,
+            white_paths: List[str],
+            tree_builder_config: TreeBuilderConfig
+    ):
+        super().__init__(white_paths)
+        self._knowledge_store = knowledge_store
+        self._document_store = chunk_store
+        self.knowledge_name = knowledge_name
+        self.tree_builder_config = tree_builder_config
+        self.tree_builder = TreeBuilder(tree_builder_config)
+
+    def get_all_documents(self):
+        """获取当前已上传的所有文档"""
+        return self._knowledge_store.get_all(self.knowledge_name)
+
+    def add_files(self,
+                  file_names: List[str],
+                  texts: List[str],
+                  embed_func: Callable[[List[str]], np.ndarray],
+                  metadatas: Optional[List[dict]] = None) -> Tree:
+        if len(texts) != len(metadatas) != len(file_names):
+            raise KnowledgeError("chunks, metadatas, file_names expected to be equal length")
+        # 需要将索引tree返回
+        tree = self.tree_builder.build_from_text(embed_func, chunks=texts)
+        documents = []
+        for text, metadata, file_name in zip(texts, metadatas, file_names):
+            self.add_file(file_name, [text], None, [metadata])
+            documents.append(Document(page_content=text, metadata=metadata, document_name=file_name))
+        self._document_store.add(documents)
+        return tree
+
+    def add_file(self, doc_name, texts, embed_func, metadatas):
+        self._knowledge_store.add(self.knowledge_name, doc_name)
+
+    def delete_file(self, doc_name: str):
+        self._knowledge_store.delete(self.knowledge_name, doc_name)
+        self._document_store.delete(doc_name)
 
     def check_document_exist(self, doc_name: str) -> bool:
         return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
