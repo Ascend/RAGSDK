@@ -158,8 +158,9 @@ class KnowledgeTreeDB(KnowledgeBase):
         tree = self.tree_builder.build_from_text(embed_func, chunks=texts)
         documents = []
         for text, metadata, file_name in zip(texts, metadatas, file_names):
-            self.add_file(file_name, [text], None, [metadata])
             documents.append(Document(page_content=text, metadata=metadata, document_name=file_name))
+        for file_name in list(set(file_names)):
+            self.add_file(file_name, [], None, [])
         self._document_store.add(documents)
         return tree
 

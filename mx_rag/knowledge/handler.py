@@ -14,7 +14,7 @@ from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB
 from mx_rag.retrievers.tree_retriever.src.tree_structures import Tree, Node, tree2dict
-from mx_rag.utils import FileCheck
+from mx_rag.utils import FileCheck, SecFileCheck
 
 
 class FileHandlerError(Exception):
@@ -53,11 +53,7 @@ def check_file(file: str, force: bool, knowledge: KnowledgeBase):
     """
     FileCheck.check_path_is_exist_and_valid(file)
     file_obj = Path(file)
-    in_white_path = False
-    for p in knowledge.white_paths:
-        if file_obj.resolve().is_relative_to(p):
-            in_white_path = True
-    if not in_white_path:
+    if not is_in_white_paths(file_obj, knowledge.white_paths):
         raise FileHandlerError(f"{file_obj.as_posix()} is not in whitelist path")
     if not file_obj.is_file():
         raise FileHandlerError(f"{file} is not a normal file")
@@ -68,11 +64,23 @@ def check_file(file: str, force: bool, knowledge: KnowledgeBase):
             knowledge.delete_file(file_obj.name)
 
 
+def is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
+    """
+    判断是否在白名单路径中
+    """
+    for p in white_paths:
+        if file_obj.resolve().is_relative_to(p):
+            return True
+    return False
+
+
 def upload_files_build_tree(knowledge: KnowledgeTreeDB,
                             files: List[str],
                             parse_func: Callable[[str, PreTrainedTokenizerBase, int], Tuple],
                             embed_func: Callable[[List[str]], np.ndarray],
                             force: bool = False) -> Tree:
+    if len(files) > 1:
+        raise FileHandlerError(f"Currently not supported for uploading multiple files simultaneously!")
     for file in files:
         check_file(file, force, knowledge)
     tokenizer = knowledge.tree_builder_config.tokenizer
@@ -155,10 +163,16 @@ def save_tree(tree: Tree, file_path: str):
         ff.write(json.dumps(tree, default=tree2dict))
 
 
-def load_tree(file_path: str, float_type=np.float16):
+def load_tree(file_path: str, white_paths, float_type=np.float16):
     """
     从文件加载Tree，反序列化
     """
+    real_path = os.path.realpath(file_path)
+    file_obj = Path(real_path)
+    if not is_in_white_paths(file_obj, white_paths):
+        raise FileHandlerError(f"{file_obj.as_posix()} is not in whitelist path")
+    file_check = SecFileCheck(file_path, 1024 * 1024 * 1024)
+    file_check.check()
     with open(file_path, "r") as f:
         tree_dict = json.load(f)
     all_nodes = json2node(tree_dict.get("all_nodes"), float_type)
@@ -176,10 +190,10 @@ def json2node(dict_nodes: List[Dict[str, Dict]], float_type) -> {}:
     result = {}
     for item in dict_nodes:
         for k, v in item.items():
-            children = set(v.get("children"))
-            embeddings = np.array(v.get("embeddings"), dtype=float_type)
-            index = int(v.get("index"))
-            text = v.get("text")
+            children = set(v.get("children", []))
+            embeddings = np.array(v.get("embeddings", []), dtype=float_type)
+            index = int(v.get("index", 0))
+            text = v.get("text", "")
             result[int(k)] = Node(text, index, children, embeddings)
     return result
 
@@ -190,10 +204,10 @@ def josn2node_list(dict_node_list: List[Dict[str, List[Dict[str, str]]]], float_
         for k, v in item.items():
             node_list = []
             for node in v:
-                children = set([int(child) for child in node.get("children")])
-                embeddings = np.array(node.get("embeddings"), dtype=float_type)
-                index = int(node.get("index"))
-                text = node.get("text")
+                children = set([int(child) for child in node.get("children", [])])
+                embeddings = np.array(node.get("embeddings", []), dtype=float_type)
+                index = int(node.get("index", 0))
+                text = node.get("text", "")
                 node_list.append(Node(text, index, children, embeddings))
             result[int(k)] = node_list
     return result

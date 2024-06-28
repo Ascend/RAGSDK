@@ -26,14 +26,42 @@ class TreeBuilderConfig:
             summarization_length=100,
             summarization_model=None
     ):
+        if tokenizer is None:
+            raise ValueError("tokenizer cannot be None.")
         self.tokenizer = tokenizer
+
+        if not isinstance(max_tokens, int) or max_tokens < 1:
+            raise ValueError("max_tokens must be an integer and at least 1")
         self.max_tokens = max_tokens
+
+        if not isinstance(num_layers, int) or num_layers < 1:
+            raise ValueError("num_layers must be an integer and at least 1")
         self.num_layers = num_layers
+
+        if not isinstance(threshold, (int, float)) or not (0 <= threshold <= 1):
+            raise ValueError("threshold must be a number between 0 and 1")
         self.threshold = threshold
+
+        if not isinstance(top_k, int) or top_k < 1:
+            raise ValueError("top_k must be an integer and at least 1")
         self.top_k = top_k
+
+        if not isinstance(reduction_dimension, int) or top_k < 1:
+            raise ValueError("reduction_dimension must be an integer and at least 1")
         self.reduction_dimension = reduction_dimension
+
+        if selection_mode not in ["top_k", "threshold"]:
+            raise ValueError("selection_mode must be either 'top_k' or 'threshold'")
         self.selection_mode = selection_mode
+
         self.summarization_length = summarization_length
+
+        if summarization_model is None:
+            raise ValueError("summarization model must be defined")
+        if not isinstance(summarization_model, TreeText2TextChain):
+            raise ValueError(
+                "summarization_model must be an instance of TreeText2TextChain"
+            )
         self.summarization_model = summarization_model
 
 

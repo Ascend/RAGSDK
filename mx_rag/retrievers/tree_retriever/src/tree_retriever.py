@@ -22,10 +22,29 @@ class TreeRetrieverConfig:
             selection_mode="top_k",
             embed_func=None,
     ):
+        if tokenizer is None:
+            raise ValueError("tokenizer cannot be None.")
         self.tokenizer = tokenizer
+
+        if not isinstance(threshold, float) or not (0 <= threshold <= 1):
+            raise ValueError("threshold must be a float between 0 and 1")
         self.threshold = threshold
+
+        if not isinstance(top_k, int) or top_k < 1:
+            raise ValueError("top_k must be an integer and at least 1")
         self.top_k = top_k
+
+        if not isinstance(selection_mode, str) or selection_mode not in [
+            "top_k",
+            "threshold",
+        ]:
+            raise ValueError(
+                "selection_mode must be a string and either 'top_k' or 'threshold'"
+            )
         self.selection_mode = selection_mode
+
+        if embed_func is None:
+            raise ValueError("embed_func must be a callable function")
         self.embed_func = embed_func
 
 
@@ -49,7 +68,7 @@ class TreeRetriever:
         logger.debug(f"the create_embedding embeddings type is {embeddings.shape}")
         return embeddings
 
-    def retrieve_information_collapse_tree(self, query: str, top_k: int, max_tokens: int) -> str:
+    def retrieve_information_collapse_tree(self, query: str, top_k: int, max_tokens: int) -> tuple:
         query_embedding = self.create_embedding(query)
         selected_nodes = []
         node_list = get_node_list(self.tree.all_nodes)
