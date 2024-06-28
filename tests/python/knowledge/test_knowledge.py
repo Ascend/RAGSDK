@@ -8,7 +8,7 @@ import numpy as np
 
 from mx_rag.chain.tree_text_to_text import TreeText2TextChain
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeStore
-from mx_rag.retrievers.tree_retriever.src.tree_builder import TreeBuilderConfig
+from mx_rag.retrievers.tree_retriever.tree_builder import TreeBuilderConfig
 from mx_rag.storage import SQLiteDocstore
 
 SQL_PATH = "./sql.db"
@@ -71,7 +71,7 @@ class TestKnowledge(unittest.TestCase):
                 except Exception as err:
                     print(err)
 
-    @patch("mx_rag.retrievers.tree_retriever.src.tree_builder.TreeBuilder.build_from_text")
+    @patch("mx_rag.retrievers.tree_retriever.tree_builder.TreeBuilder.build_from_text")
     def test_knowledge_treeDB(self, mock_build_from_text):
         mock_build_from_text.return_value = None
         current_dir = os.path.dirname(os.path.realpath(__file__))

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock
 
 from mx_rag.document.loader import DocxLoader, ExcelLoader, PdfLoader
 from mx_rag.document.splitter import CharTextSplitter
-from mx_rag.retrievers.tree_retriever.src.utils import split_text, cal_chunks_when_exceed_max_tokens, \
+from mx_rag.retrievers.tree_retriever.utils import split_text, cal_chunks_when_exceed_max_tokens, \
     distances_from_embeddings
 
 DOC_PARSER_MAP = {

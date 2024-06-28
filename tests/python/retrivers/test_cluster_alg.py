@@ -1,9 +1,9 @@
 from unittest import TestCase
 import numpy as np
 
-from mx_rag.retrievers.tree_retriever.src.cluster_alg import global_cluster_embeddings, local_cluster_embeddings, \
+from mx_rag.retrievers.tree_retriever.cluster_alg import global_cluster_embeddings, local_cluster_embeddings, \
     get_optimal_clusters, perform_clustering, clustering, gmm_cluster
-from mx_rag.retrievers.tree_retriever.src.tree_structures import Node
+from mx_rag.retrievers.tree_retriever.tree_structures import Node
 
 
 class Test(TestCase):

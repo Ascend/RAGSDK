@@ -5,9 +5,9 @@ import numpy as np
 from transformers import PreTrainedTokenizerBase
 
 from mx_rag.chain import TreeText2TextChain
-from mx_rag.retrievers.tree_retriever.src.tree_builder import TreeBuilderConfig, TreeBuilder
-from mx_rag.retrievers.tree_retriever.src.tree_retriever import TreeRetrieverConfig, TreeRetriever
-from mx_rag.retrievers.tree_retriever.src.tree_structures import Node
+from mx_rag.retrievers.tree_retriever.tree_builder import TreeBuilderConfig, TreeBuilder
+from mx_rag.retrievers.tree_retriever.tree_retriever import TreeRetrieverConfig, TreeRetriever
+from mx_rag.retrievers.tree_retriever.tree_structures import Node
 
 
 class TestTreeRetriever(unittest.TestCase):
@@ -27,7 +27,7 @@ class TestTreeRetriever(unittest.TestCase):
 
     def test_create_embedding(self):
         result = self.tree_retriever.create_embedding("test")
-        self.assertEqual([1, 2, 3], result.tolist())
+        self.assertEqual([1, 2, 3], result)
 
     def test_retrieve_information_collapse_tree(self):
         selected_nodes, context = self.tree_retriever.retrieve_information_collapse_tree("hello", 2, 5)

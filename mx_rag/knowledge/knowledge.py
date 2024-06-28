@@ -9,8 +9,8 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
-from mx_rag.retrievers.tree_retriever.src.tree_builder import TreeBuilder, TreeBuilderConfig
-from mx_rag.retrievers.tree_retriever.src.tree_structures import Tree
+from mx_rag.retrievers.tree_retriever.tree_builder import TreeBuilder, TreeBuilderConfig
+from mx_rag.retrievers.tree_retriever.tree_structures import Tree
 from mx_rag.storage import Docstore, Document
 from mx_rag.utils import FileCheck
 from mx_rag.vectorstore import VectorStore

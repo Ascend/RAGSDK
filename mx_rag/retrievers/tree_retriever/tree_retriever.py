@@ -63,9 +63,9 @@ class TreeRetriever:
         self.tree_node_index_to_layer = reverse_mapping(self.tree.layer_to_nodes)
         self.embed_func = config.embed_func
 
-    def create_embedding(self, text: str) -> numpy.ndarray:
-        embeddings = self.embed_func([text]).flatten()
-        logger.debug(f"the create_embedding embeddings type is {embeddings.shape}")
+    def create_embedding(self, text: str) -> List[float]:
+        embeddings = self.embed_func([text]).flatten().tolist()
+        logger.debug(f"the create_embedding embeddings dim is {len(embeddings)}")
         return embeddings
 
     def retrieve_information_collapse_tree(self, query: str, top_k: int, max_tokens: int) -> tuple:
