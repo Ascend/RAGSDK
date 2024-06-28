@@ -41,15 +41,15 @@ class Text2TextLLM:
         if inclusive_min:
             if value < min_value:
                 raise ValueError(
-                    f"{param_name}={value} is less than the inclusive minimum allowed value ({min_value}).")
+                    f"{param_name}={value} is less than minimum allowed value ({min_value}).")
         else:
             if value <= min_value:
                 raise ValueError(
-                    f"{param_name}={value} is less than or equal to the exclusive minimum allowed value ({min_value}).")
+                    f"{param_name}={value} is less than or equal to the minimum allowed value ({min_value}).")
 
         if value > max_value:
             raise ValueError(
-                f"{param_name}={value} is greater than or equal to the maximum allowed value ({max_value}).")
+                f"{param_name}={value} is greater than the maximum allowed value ({max_value}).")
 
         return value
 
