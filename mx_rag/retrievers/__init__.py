@@ -14,5 +14,5 @@ __all__ = [
 
 from mx_rag.retrievers.multi_query_retriever import PromptTemplate, OutputParser, MultiQueryRetriever
 from mx_rag.retrievers.retriever import Retriever
-from mx_rag.retrievers.tree_retriever.src.tree_builder import TreeBuilder, TreeBuilderConfig
-from mx_rag.retrievers.tree_retriever.src.tree_retriever import TreeRetriever, TreeRetrieverConfig
+from mx_rag.retrievers.tree_retriever.tree_builder import TreeBuilder, TreeBuilderConfig
+from mx_rag.retrievers.tree_retriever.tree_retriever import TreeRetriever, TreeRetrieverConfig

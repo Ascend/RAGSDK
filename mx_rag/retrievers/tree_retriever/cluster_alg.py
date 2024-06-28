@@ -48,7 +48,7 @@ def get_optimal_clusters(
         gm.fit(embeddings)
         bics.append(gm.bic(embeddings))
     optimal_clusters = n_clusters[np.argmin(bics)]
-    return optimal_clusters
+    return int(optimal_clusters)
 
 
 def gmm_cluster(embeddings: np.ndarray, threshold: float):

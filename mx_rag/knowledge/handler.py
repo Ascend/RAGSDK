@@ -13,7 +13,7 @@ from transformers import PreTrainedTokenizerBase
 from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB
-from mx_rag.retrievers.tree_retriever.src.tree_structures import Tree, Node, tree2dict
+from mx_rag.retrievers.tree_retriever.tree_structures import Tree, Node, tree2dict
 from mx_rag.utils import FileCheck, SecFileCheck
 
 
