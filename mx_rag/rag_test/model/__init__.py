@@ -2,9 +2,8 @@
 __all__ = [
     "APILLM",
     "APIEmbedding",
-    "LocalLLM",
     "LocalEmbedding"
 ]
 
 from mx_rag.rag_test.model.api_model import APILLM, APIEmbedding
-from mx_rag.rag_test.model.local_model import LocalLLM, LocalEmbedding
+from mx_rag.rag_test.model.local_model import LocalEmbedding
