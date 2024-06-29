@@ -85,7 +85,12 @@ class PdfLoader(BaseLoader):
 
     def _parser(self):
         if self.ocr_engine is None:
-            self.ocr_engine = PPStructure(table=True, ocr=True, lang=self.lang.value, layout=True)
+            try:
+                self.ocr_engine = PPStructure(table=True, ocr=True, lang=self.lang.value, layout=True)
+            except Exception as e:
+                self.ocr_engine = None
+                logger.error(f"paddleOcr init failed, {str(e)}")
+                return self._text_merger([""])
 
         with fitz.open(self.file_path) as pdf_document:
             layout_res = self._layout_recognize(pdf_document)
