@@ -2,7 +2,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import json
-from typing import List
 from urllib.parse import urljoin
 
 from loguru import logger
@@ -40,15 +39,20 @@ class TEIEmbedding(Embedding):
 
             resp = self.client.post(self.url, json.dumps(request_body), headers=TEIEmbedding.HEADERS)
 
-            if resp.success:
-                try:
-                    data = json.loads(resp.data)
-                    result = result + data
-                except Exception as e:
-                    logger.error(f'unable to process tei response content, find exception {e}')
-                    return np.array([])
-            else:
+            if not resp.success:
                 logger.error('tei request failed')
+                return np.array([])
+
+            try:
+                data = json.loads(resp.data)
+                if not isinstance(data, list):
+                    raise TypeError('tei response is not list')
+                if len(data) != len(texts_batch):
+                    raise ValueError('tei response return data with different size')
+
+                result.extend(data)
+            except Exception as e:
+                logger.error(f'unable to process tei response content, find exception {e}')
                 return np.array([])
 
         return np.array(result)
