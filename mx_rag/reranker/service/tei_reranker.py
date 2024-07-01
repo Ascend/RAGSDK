@@ -25,10 +25,22 @@ class TEIReranker:
         if len(scores_json) != scores_len:
             raise Exception('tei response has different data length with request')
 
-        scores = [0] * scores_len
+        scores = [0.0] * scores_len
+        visited = [False] * scores_len
         for score_json in scores_json:
-            scores[score_json['index']] = score_json['score']
+            idx = score_json['index']
+            sco = score_json['score']
+            if not isinstance(idx, int):
+                raise TypeError('index in tei response is not int value')
+            if not isinstance(sco, float):
+                raise TypeError('score in tei response it not float value')
+            if idx >= scores_len or idx < 0:
+                raise IndexError('index in tei response is not within valid range')
+            if visited[idx]:
+                raise ValueError('index in tei response is repeated')
 
+            visited[idx] = True
+            scores[idx] = sco
         return scores
 
     def rerank(self,
@@ -54,7 +66,7 @@ class TEIReranker:
                 try:
                     scores_json = json.loads(resp.data)
                     scores = self._process_data(scores_json, len(texts_batch))
-                    result = result + scores
+                    result.extend(scores)
                 except Exception as e:
                     logger.error(f'unable to process tei response content, find exception {e}')
                     return np.array([])
