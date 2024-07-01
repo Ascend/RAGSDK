@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
+class UrlUtilException(Exception):
+    pass
+
 
 def safe_get(data, keys, default=None):
     """

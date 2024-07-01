@@ -23,7 +23,7 @@ class TEIReranker:
     @staticmethod
     def _process_data(scores_json, scores_len):
         if len(scores_json) != scores_len:
-            raise Exception('tei response has different data length with request')
+            raise ValueError('tei response has different data length with request')
 
         scores = [0.0] * scores_len
         visited = [False] * scores_len
