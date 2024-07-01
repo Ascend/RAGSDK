@@ -107,7 +107,8 @@ class ExcelLoader(BaseLoader):
         elif self.file_path.endswith(CSV_EXTENSION):
             return self._load_csv()
         else:
-            raise TypeError(f"{self.file_path} file type is not correct")
+            logger.error(f"{self.file_path} file type is not one of (csv, xlsx, xls).")
+            return []
 
     def _load_xls_sheet(self, ws):
         res = ""
@@ -194,7 +195,8 @@ class ExcelLoader(BaseLoader):
                 headers = next(reader)  # 读取第一行标题
                 content = self._load_csv_lines(reader, headers)
         except Exception as e:
-            raise e
+            logger.error(e)
+            return docs
         if content:
             doc = Doc(page_content=content, metadata={"source": self.file_path})
             docs.append(doc)
