@@ -8,6 +8,7 @@ from loguru import logger
 
 from mx_rag.libs.glib.checker.url_checker import HttpUrlChecker, HttpsUrlChecker
 from .cert import TlsConfig
+from .common import UrlUtilException
 from .file_check import FileCheck
 
 LIMIT_1M_SIZE = 1024 * 1024
@@ -41,7 +42,7 @@ class RequestUtils:
             FileCheck.check_path_is_exist_and_valid(cert_file)
             success, ssl_ctx = TlsConfig.get_client_ssl_context(cert_file)
             if not success:
-                raise Exception('unable to add ca_file for request')
+                raise UrlUtilException('unable to add ca_file for request')
         else:
             ssl_ctx = TlsConfig.get_init_context()
 
