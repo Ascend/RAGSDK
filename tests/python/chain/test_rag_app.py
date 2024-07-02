@@ -2,6 +2,7 @@ import os
 import sys
 import unittest
 from typing import List
+from unittest.mock import MagicMock
 
 from transformers import is_torch_npu_available
 
@@ -45,7 +46,7 @@ class MyTestCase(unittest.TestCase):
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
         logger.info("set_device done")
-
+        os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("mxVision.docx",

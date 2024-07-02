@@ -2,10 +2,8 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from __future__ import annotations
 
-import inspect
 import os
-from pathlib import Path
-from typing import Optional
+import shutil
 
 import ascendfaiss
 import faiss
@@ -33,6 +31,8 @@ class MindFAISS(VectorStore):
             load_local_index: str = None,
             auto_save_path: str = None
     ):
+        if os.system(f"{shutil.which('npu-smi')} info > /dev/null 2>&1") != 0:
+            raise MindFAISSError("npu device is abnormal")
         self.device = ascendfaiss.IntVector()
         self.device.push_back(dev)
         self.auto_save_path = auto_save_path
@@ -55,7 +55,7 @@ class MindFAISS(VectorStore):
 
     @classmethod
     def load_local(cls, dev: int, index_path: str, auto_save_path: str = None) -> MindFAISS:
-        return cls(None, None, dev, index_path, auto_save_path)
+        return cls(0, "", dev, index_path, auto_save_path)
 
     def save_local(self, index_path: str) -> None:
         if os.path.exists(index_path):

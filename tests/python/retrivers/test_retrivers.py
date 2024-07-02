@@ -44,7 +44,8 @@ class MyTestCase(unittest.TestCase):
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
         logger.info("set_device done")
-        index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", document_store=db)
+        os.system = MagicMock(return_value=0)
+        index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
@@ -93,6 +94,7 @@ class MyTestCase(unittest.TestCase):
             return np.random.random((1, 1024))
 
         db = SQLiteDocstore("sql.db")
+        os.system = MagicMock(return_value=0)
         vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
 
         r = Retriever(vector_store, document_store= db, score_threshold=0.5, embed_func=embed_func)
