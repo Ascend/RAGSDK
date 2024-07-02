@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
 import unittest
-from unittest.mock import patch, Mock
+from unittest.mock import patch, Mock, MagicMock
 
 import numpy as np
 
@@ -35,12 +35,13 @@ class TestKnowledge(unittest.TestCase):
                         return total
                     return query
 
-                index = MindFAISS(x_dim=1024, dev=0, ndex_type="FLAT:L2", auto_save_path="faiss.index")
+                os.system = MagicMock(return_value=0)
+                index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2", auto_save_path="faiss.index")
                 db = SQLiteDocstore(SQL_PATH)
                 current_dir = os.path.dirname(os.path.realpath(__file__))
                 top_path = os.path.dirname(os.path.dirname(current_dir))
                 knowledge = KnowledgeDB(KnowledgeStore(SQL_PATH), db, index, "test_knowledge", white_paths=[top_path, ])
-                knowledge.add_file("test_file.txt", ["this is a test"], metadata=[{"filepath": "xxx.file"}],
+                knowledge.add_file("test_file.txt", ["this is a test"], metadatas=[{"filepath": "xxx.file"}],
                                    embed_func=embed_func)
                 knowledge.get_all_documents()
                 knowledge.delete_file("demo.docx")

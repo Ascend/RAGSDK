@@ -20,6 +20,7 @@ class TestMindFAISS(unittest.TestCase):
                         return total
                     return query
 
+                os.system = MagicMock(return_value=0)
                 os.chmod = MagicMock()
                 index = MindFAISS(1024, "FLAT:L2", 0)
                 index.search(query, k=1)
