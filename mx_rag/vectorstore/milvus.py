@@ -19,8 +19,8 @@ class MilvusError(Exception):
 
 class MilvusDB(VectorStore):
 
-    def __init__(self, url: str, collection_name="mxRag", **kwargs):
-        if url.startswith("http:"):
+    def __init__(self, url: str, collection_name="mxRag", use_http=False, **kwargs):
+        if url.startswith("http:") and not use_http:
             raise MilvusError("http protocol is not support")
         self.client = MilvusClient(url, **kwargs)
         self._collection_name = collection_name
