@@ -10,6 +10,8 @@ from mx_rag.utils import RequestUtils, FileCheck, SecFileCheck
 
 
 class Img2ImgMultiModel:
+    MAX_IMAGE_SIZE = 100 * 1024 * 1024
+    SUPPORT_IMG_TYPE = (".jpg", ".png")
     HEADER = {
         'Content-Type': 'application/json'
     }
@@ -33,6 +35,9 @@ class Img2ImgMultiModel:
             return resp
 
         FileCheck.check_path_is_exist_and_valid(img_path)
+        SecFileCheck(img_path, self.MAX_IMAGE_SIZE).check()
+        if Path(img_path).suffix not in self.SUPPORT_IMG_TYPE:
+            raise TypeError(f"check [{img_path}] failed because the file type not be supported")
 
         with open(img_path, "rb") as f:
             content = f.read()
