@@ -2,10 +2,11 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import base64
 import json
+from pathlib import Path
 
 from loguru import logger
 
-from mx_rag.utils import RequestUtils, FileCheck
+from mx_rag.utils import RequestUtils, FileCheck, SecFileCheck
 
 
 class Img2ImgMultiModel:
@@ -45,8 +46,15 @@ class Img2ImgMultiModel:
             if not response.success:
                 logger.error("request img to generate img failed")
                 return resp
+            try:
+                res = json.loads(response.data)
+            except json.JSONDecodeError as e:
+                logger.error(f"response content cannot convert to json format: {e}")
+                return resp
+            except Exception as e:
+                logger.error(f"json load error: {e}")
+                return resp
 
-            res = json.loads(response.data)
             if self.IMAGE_ITEM not in res:
                 logger.error("request img to generate img failed, the response not contain image")
                 return resp

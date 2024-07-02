@@ -89,6 +89,10 @@ class Text2TextLLM:
             except json.JSONDecodeError as e:
                 logger.error(f"response content cannot convert to json format: {e}")
                 return ans
+            except Exception as e:
+                logger.error(f"json load error: {e}")
+                return ans
+
             ans = safe_get(data, ["choices", 0, "message", "content"], "")
             if safe_get(data, ["choices", 0, "finish_reason"], "") == "length":
                 logger.info("for the content length reason, it stopped.")
@@ -123,6 +127,10 @@ class Text2TextLLM:
             except json.JSONDecodeError as e:
                 logger.error(f"response content cannot convert to json format:{e}")
                 break
+            except Exception as e:
+                logger.error(f"json load error: {e}")
+                break
+
             finish_reason = safe_get(data, ["choices", 0, "finish_reason"], "")
             if finish_reason == "stop":
                 break
