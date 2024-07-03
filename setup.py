@@ -83,6 +83,10 @@ def get_all_json_files():
     for name in glob.glob(f"{src_dir}/rag_test/**/*.json", recursive=True):
         file = name[len(src_dir) + 1:]
         file_list.append(file)
+
+    for name in glob.glob(f"{src_dir}/tools/**/*.json", recursive=True):
+        file = name[len(src_dir) + 1:]
+        file_list.append(file)
     return file_list
 
 
