@@ -9,7 +9,8 @@ from loguru import logger
 from mx_rag.libs.glib.checker.url_checker import HttpUrlChecker, HttpsUrlChecker
 from .cert import TlsConfig
 from .common import UrlUtilException
-from .file_check import FileCheck
+from .file_check import FileCheck, SecFileCheck
+from .cert_check import CertContentsChecker
 
 LIMIT_1M_SIZE = 1024 * 1024
 
@@ -30,6 +31,7 @@ def is_url_valid(url) -> bool:
 
 
 class RequestUtils:
+    MAX_FILE_SIZE = 1 * 1024 * 1024
 
     def __init__(self,
                  retries=3,
@@ -37,10 +39,28 @@ class RequestUtils:
                  num_pools=200,
                  maxsize=200,
                  response_limit_size=LIMIT_1M_SIZE,
-                 cert_file: str = ""):
+                 cert_file: str = "",
+                 crl_file: str = ""):
         if cert_file:
             FileCheck.check_path_is_exist_and_valid(cert_file)
-            success, ssl_ctx = TlsConfig.get_client_ssl_context(cert_file)
+            SecFileCheck(cert_file, self.MAX_FILE_SIZE).check()
+            try:
+                with open(cert_file, "r") as f:
+                    ca_data = f.read()
+            except Exception as e:
+                logger.warning(f"read cert file failed, find exception: {e}")
+                raise UrlUtilException('read cert file failed') from e
+
+            ret = CertContentsChecker("cert").check_dict({"cert": ca_data})
+            if not ret:
+                logger.error(f"invalid mef ca cert content: {ret.reason}")
+                raise UrlUtilException('invalid cert content')
+
+            if crl_file:
+                FileCheck.check_path_is_exist_and_valid(cert_file)
+                SecFileCheck(crl_file, self.MAX_FILE_SIZE).check()
+
+            success, ssl_ctx = TlsConfig.get_client_ssl_context(cert_file, crl_file)
             if not success:
                 raise UrlUtilException('unable to add ca_file for request')
         else:

@@ -2,9 +2,11 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import json
+import os
 import unittest
 from unittest import mock
 from unittest.mock import patch
+from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
 
@@ -62,6 +64,9 @@ RESPONSE_STREAM = {
 
 
 class TestMindieLLM(unittest.TestCase):
+
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+
     def test_chat(self):
         with patch("urllib3.PoolManager.request", mock.Mock(
                 return_value=MockResponse(RESPONSE, {
@@ -155,6 +160,14 @@ class TestMindieLLM(unittest.TestCase):
         except TypeError:
             error = True
         self.assertTrue(error)
+
+    def test_chat_with_cert(self):
+        cart_file = os.path.join(self.current_dir, "../../data/root_ca.crt")
+        cart_file = os.path.realpath(cart_file)
+        try:
+            Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888", cert_file=cart_file)
+        except Exception as e:
+            logger.info(e)
 
 
 if __name__ == '__main__':

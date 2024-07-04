@@ -17,3 +17,4 @@ paddlepaddle
 opencv-python~=4.6.0.66
 scikit-learn
 umap-learn==0.5.5
+pyOpenSSL==24.1.0
