@@ -15,7 +15,7 @@ class TEIEmbedding(Embedding):
     HEADERS = {
         'Content-Type': 'application/json'
     }
-    TEXT_MAX_LEN = 1000
+    TEXT_MAX_LEN = 1000 * 1000
 
     def __init__(self, url: str):
         self.url = urljoin(url, 'embed')

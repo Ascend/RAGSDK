@@ -21,7 +21,7 @@ except Exception as e:
 
 
 class TextEmbedding(Embedding):
-    TEXT_MAX_LEN = 1000
+    TEXT_MAX_LEN = 1000 * 1000
 
     def __init__(self,
                  model_path: str,

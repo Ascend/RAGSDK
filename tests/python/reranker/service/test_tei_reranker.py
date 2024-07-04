@@ -46,7 +46,7 @@ class TestTEIReranker(unittest.TestCase):
     def test_texts_too_long(self):
         rerank = TEIReranker(url='http://localhost:8888')
 
-        texts = ['我是小黑', '我是小红'] * 600
+        texts = ['我是小黑', '我是小红'] * 500001
         scores = rerank.rerank(query='你好', texts=texts)
         self.assertEqual(scores.shape, (0,))
 
