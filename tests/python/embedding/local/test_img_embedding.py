@@ -32,7 +32,7 @@ class TestImageEmbedding(unittest.TestCase):
         ret = emb.embed_texts([])
         self.assertEqual(ret.size, 0)
 
-        text = ["a"] * 1001
+        text = ["a"] * 1000001
         ret = emb.embed_texts(text)
         self.assertEqual(ret.size, 0)
 
@@ -48,6 +48,6 @@ class TestImageEmbedding(unittest.TestCase):
         ret = emb.embed_images([])
         self.assertEqual(ret.size, 0)
 
-        text = ["a"] * 1001
+        text = ["a"] * 1000001
         ret = emb.embed_images(text)
         self.assertEqual(ret.size, 0)

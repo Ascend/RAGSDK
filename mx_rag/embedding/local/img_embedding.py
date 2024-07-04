@@ -24,7 +24,7 @@ except Exception as e:
 class ImageEmbedding(Embedding):
     SUPPORT_IMG_TYPE = (".jpg", ".png")
     MAX_IMAGE_SIZE = 100 * 1024 * 1024
-    TEXT_COUNT = 1000
+    TEXT_COUNT = 1000 * 1000
     IMAGE_COUNT = 1000
     TEXT_LEN = 256
 
