@@ -12,7 +12,7 @@ from transformers import PreTrainedTokenizerBase
 
 from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
-from mx_rag.knowledge.knowledge import KnowledgeTreeDB
+from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeDB
 from mx_rag.retrievers.tree_retriever.tree_structures import Tree, Node, tree2dict
 from mx_rag.utils import FileCheck, SecFileCheck
 
@@ -22,7 +22,7 @@ class FileHandlerError(Exception):
 
 
 def upload_files(
-        knowledge,
+        knowledge: KnowledgeDB,
         files: List[str],
         parse_func: Callable[[str], Tuple[List[str], List[Dict[str, str]]]],
         embed_func: Callable[[List[str]], np.ndarray],
@@ -98,7 +98,7 @@ def upload_files_build_tree(knowledge: KnowledgeTreeDB,
 
 
 def upload_dir(
-        knowledge,
+        knowledge: KnowledgeDB,
         dir_path: str,
         parse_func: Callable[[str], Tuple[List[str], List[Dict[str, str]]]],
         embed_func: Callable[[List[str]], np.ndarray],
@@ -131,7 +131,7 @@ def upload_dir(
 
 
 def delete_files(
-        knowledge,
+        knowledge: KnowledgeDB,
         file_names: List[str]
 ):
     """删除上传的文档，需传入待删除的文档名称"""
