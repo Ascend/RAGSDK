@@ -17,7 +17,7 @@ bash bertSAFast_patch.sh
 ```
 3. 出现 aclnnBertSelfAttention not find的问题时请查看是否有设置LD_LIBRARY_PATH环境变量如下：
 ```sh
-export LD_LIBRARY_PATH=$ASCEND_OPP_PATH/vendors/customize/op_api/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$ASCEND_OPP_PATH/vendors/mxRAG/op_api/lib/:$LD_LIBRARY_PATH
 ```
 
 ## 版本依赖
