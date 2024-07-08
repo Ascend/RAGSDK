@@ -28,6 +28,14 @@ class DocxLoaderTestCase(unittest.TestCase):
         res = loader.load_and_split(CharTextSplitter(chunk_size=512, chunk_overlap=100))
         self.assertEqual(2, len(res))
 
+
+    def test_split(self):
+        loader = DocxLoader(os.path.join(self.current_dir, "../../../data/demo.docx"))
+        d = loader.load()
+        splitter = CharTextSplitter(chunk_size=10, chunk_overlap=2, separator="\n\n")
+        res = splitter.split_text(d[0].page_content)
+        self.assertEqual(7, len(res))
+
     def test_title(self):
         loader = DocxLoader(os.path.join(self.current_dir, "../../../data/title.docx"))
         res = loader.load_and_split(CharTextSplitter(chunk_size=512, chunk_overlap=100))

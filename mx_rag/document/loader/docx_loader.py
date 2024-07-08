@@ -113,7 +113,7 @@ class DocxLoader(BaseLoader):
                 para_text = paragraph.text
                 all_text.append(para_text)
 
-        one_text = " ".join([t for t in all_text])
+        one_text = "\n\n".join([t for t in all_text])
         docs.append(Doc(page_content=one_text, metadata={"source": os.path.basename(self.file_path)}))
         return docs
 
