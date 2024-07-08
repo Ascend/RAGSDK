@@ -48,7 +48,7 @@ class TestMindieVision(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 200))):
-            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888")
+            sd_model = Text2ImgMultiModel(model_name="sd", url="https://test:8888")
             res = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
             self.assertNotEqual(res["result"], "")
 
@@ -58,7 +58,7 @@ class TestMindieVision(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 404))):
-            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888")
+            sd_model = Text2ImgMultiModel(model_name="sd", url="https://test:8888")
             res = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
             self.assertEqual(res["result"], "")
 

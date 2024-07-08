@@ -17,15 +17,23 @@ LIMIT_1M_SIZE = 1024 * 1024
 HTTP_SUCCESS = 200
 
 
+class UrlError(Exception):
+    pass
+
+
 class Result:
     def __init__(self, success: bool, data):
         self.success = success
         self.data = data
 
 
-def is_url_valid(url) -> bool:
+def is_url_valid(url, use_http) -> bool:
+    if url.startswith("http:") and not use_http:
+        raise UrlError("http protocol is not support")
     check_key = "url"
-    if HttpUrlChecker(check_key).check({check_key: url}) or HttpsUrlChecker(check_key).check({check_key: url}):
+    if use_http and HttpUrlChecker(check_key).check({check_key: url}):
+        return True
+    elif not use_http and HttpsUrlChecker(check_key).check({check_key: url}):
         return True
     return False
 
@@ -40,7 +48,9 @@ class RequestUtils:
                  maxsize=200,
                  response_limit_size=LIMIT_1M_SIZE,
                  cert_file: str = "",
-                 crl_file: str = ""):
+                 crl_file: str = "",
+                 use_http: bool = False):
+        self.use_http = use_http
         if cert_file:
             FileCheck.check_path_is_exist_and_valid(cert_file)
             SecFileCheck(cert_file, self.MAX_FILE_SIZE).check()
@@ -57,7 +67,7 @@ class RequestUtils:
                 raise UrlUtilException('invalid cert content')
 
             if crl_file:
-                FileCheck.check_path_is_exist_and_valid(cert_file)
+                FileCheck.check_path_is_exist_and_valid(crl_file)
                 SecFileCheck(crl_file, self.MAX_FILE_SIZE).check()
 
             success, ssl_ctx = TlsConfig.get_client_ssl_context(cert_file, crl_file)
@@ -74,7 +84,7 @@ class RequestUtils:
         self.response_limit_size = response_limit_size
 
     def post(self, url: str, body: str, headers: Dict):
-        if not is_url_valid(url):
+        if not is_url_valid(url, self.use_http):
             logger.error("url check failed")
             return Result(False, "")
 
@@ -111,7 +121,7 @@ class RequestUtils:
             return Result(False, "")
 
     def post_streamly(self, url: str, body: str, headers: Dict, chunk_size: int = 1024):
-        if not is_url_valid(url):
+        if not is_url_valid(url, self.use_http):
             logger.error("url check failed")
             yield Result(False, "")
 

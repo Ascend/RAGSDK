@@ -14,10 +14,11 @@ class Text2ImgMultiModel:
         'Content-Type': 'application/json'
     }
 
-    def __init__(self, url: str, model_name: str = None, timeout: int = 10, max_prompt_len=1000):
+    def __init__(self, url: str, model_name: str = None, timeout: int = 10, max_prompt_len=1000,
+                 use_http: bool = False):
         self._model_name = model_name
         self._url = url
-        self._client = RequestUtils(timeout=timeout)
+        self._client = RequestUtils(timeout=timeout, use_http=use_http)
         self._max_prompt_len = max_prompt_len
 
     def text2img(self, prompt: str, output_format: str = "png"):

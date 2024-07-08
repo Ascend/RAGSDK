@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import shutil
 
 import ascendfaiss
 import faiss
@@ -31,8 +30,6 @@ class MindFAISS(VectorStore):
             load_local_index: str = None,
             auto_save_path: str = None
     ):
-        if os.system(f"{shutil.which('npu-smi')} info > /dev/null 2>&1") != 0:
-            raise MindFAISSError("npu device is abnormal")
         self.device = ascendfaiss.IntVector()
         self.device.push_back(dev)
         self.auto_save_path = auto_save_path

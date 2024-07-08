@@ -17,9 +17,9 @@ class TEIEmbedding(Embedding):
     }
     TEXT_MAX_LEN = 1000 * 1000
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, use_http: bool = False):
         self.url = urljoin(url, 'embed')
-        self.client = RequestUtils()
+        self.client = RequestUtils(use_http=use_http)
 
     def embed_texts(self,
                     texts: list[str],

@@ -17,10 +17,10 @@ class Img2ImgMultiModel:
     }
     IMAGE_ITEM = "image"
 
-    def __init__(self, url: str, model_name=None, timeout: int = 10, max_prompt_len=1000):
+    def __init__(self, url: str, model_name=None, timeout: int = 10, max_prompt_len=1000, use_http: bool = False):
         self._url = url
         self._model_name = model_name
-        self._client = RequestUtils(timeout=timeout)
+        self._client = RequestUtils(timeout=timeout, use_http=use_http)
         self._max_prompt_len = max_prompt_len
 
     def img2img(self, prompt: str, img_path: str) -> dict:

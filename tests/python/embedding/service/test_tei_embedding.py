@@ -29,7 +29,7 @@ class TestTEIEmbedding(unittest.TestCase):
             return TestTEIEmbedding.Result(True, json.dumps(response_data))
 
         with patch('mx_rag.utils.RequestUtils.post', mock.Mock(side_effect=mock_post)):
-            embed = TEIEmbedding(url='http://localhost:8888')
+            embed = TEIEmbedding(url='https://localhost:8888')
 
             texts = ['abc'] * 100
             encoded_texts = embed.embed_texts(texts=texts)
@@ -40,7 +40,7 @@ class TestTEIEmbedding(unittest.TestCase):
             self.assertEqual(encoded_texts.shape, (len(texts), test_embed_length))
 
     def test_empty_texts(self):
-        embed = TEIEmbedding(url='http://localhost:8888')
+        embed = TEIEmbedding(url='https://localhost:8888')
 
         texts = []
         encoded_texts = embed.embed_texts(texts=texts)
@@ -51,7 +51,7 @@ class TestTEIEmbedding(unittest.TestCase):
             return TestTEIEmbedding.Result(False, "")
 
         with patch('mx_rag.utils.RequestUtils.post', mock.Mock(side_effect=mock_post)):
-            embed = TEIEmbedding(url='http://localhost:8888')
+            embed = TEIEmbedding(url='https://localhost:8888')
 
             texts = ['abc'] * 100
             encoded_texts = embed.embed_texts(texts=texts)
