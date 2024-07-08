@@ -6,25 +6,26 @@ from typing import Dict, List, Optional, Set, Tuple, Callable
 
 import numpy as np
 from loguru import logger
+from transformers import PreTrainedTokenizerBase
 
-from mx_rag.chain.tree_text_to_text import TreeText2TextChain
 from .cluster_alg import clustering
 from .tree_structures import Node, Tree
 from .utils import get_node_list, get_text
+from ...chain import TreeText2TextChain
 
 
 class TreeBuilderConfig:
     def __init__(
             self,
-            tokenizer=None,
-            max_tokens=100,
-            num_layers=5,
-            threshold=0.5,
-            top_k=5,
-            reduction_dimension=10,
-            selection_mode="top_k",
-            summarization_length=100,
-            summarization_model=None
+            tokenizer: PreTrainedTokenizerBase = None,
+            max_tokens: int = 100,
+            num_layers: int = 5,
+            threshold: float = 0.5,
+            top_k: int = 5,
+            reduction_dimension: int = 10,
+            selection_mode: str = "top_k",
+            summarization_length: int = 100,
+            summarization_model: TreeText2TextChain = None
     ):
         if tokenizer is None:
             raise ValueError("tokenizer cannot be None.")

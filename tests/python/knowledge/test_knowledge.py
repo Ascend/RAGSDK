@@ -8,7 +8,8 @@ import numpy as np
 
 from mx_rag.chain.tree_text_to_text import TreeText2TextChain
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeStore
-from mx_rag.retrievers.tree_retriever.tree_builder import TreeBuilderConfig
+from mx_rag.retrievers import TreeBuilderConfig
+
 from mx_rag.storage import SQLiteDocstore
 
 SQL_PATH = "./sql.db"

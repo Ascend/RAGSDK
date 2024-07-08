@@ -5,7 +5,7 @@ import numpy as np
 from transformers import PreTrainedTokenizerBase
 
 from mx_rag.chain import TreeText2TextChain
-from mx_rag.retrievers.tree_retriever.tree_builder import TreeBuilderConfig, TreeBuilder
+from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
 
 
 class TestTreeBuilder(unittest.TestCase):

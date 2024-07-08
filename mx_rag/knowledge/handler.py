@@ -4,7 +4,7 @@ import json
 import os
 import stat
 from pathlib import Path
-from typing import Callable, List, Tuple, Dict
+from typing import Callable, List, Tuple, Dict, Union
 
 import numpy as np
 from loguru import logger
@@ -13,7 +13,9 @@ from transformers import PreTrainedTokenizerBase
 from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeDB
-from mx_rag.retrievers.tree_retriever.tree_structures import Tree, Node, tree2dict
+from mx_rag.retrievers.tree_retriever import Tree
+from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
+
 from mx_rag.utils import FileCheck, SecFileCheck
 
 
@@ -160,10 +162,10 @@ def save_tree(tree: Tree, file_path: str):
     flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
     modes = stat.S_IWUSR | stat.S_IRUSR
     with os.fdopen(os.open(file_path, flags, modes), "w") as ff:
-        ff.write(json.dumps(tree, default=tree2dict))
+        ff.write(json.dumps(tree, default=_tree2dict))
 
 
-def load_tree(file_path: str, white_paths, float_type=np.float16):
+def load_tree(file_path: str, white_paths: List[str], float_type: Union[np.float16, np.float32] = np.float16):
     """
     从文件加载Tree，反序列化
     """
@@ -175,15 +177,15 @@ def load_tree(file_path: str, white_paths, float_type=np.float16):
     file_check.check()
     with open(file_path, "r") as f:
         tree_dict = json.load(f)
-    all_nodes = json2node(tree_dict.get("all_nodes"), float_type)
-    root_nodes = json2node(tree_dict.get("root_nodes"), float_type)
-    leaf_nodes = json2node(tree_dict.get("leaf_nodes"), float_type)
-    layer_to_nodes = josn2node_list(tree_dict.get("layer_to_nodes"), float_type)
+    all_nodes = _json2node(tree_dict.get("all_nodes"), float_type)
+    root_nodes = _json2node(tree_dict.get("root_nodes"), float_type)
+    leaf_nodes = _json2node(tree_dict.get("leaf_nodes"), float_type)
+    layer_to_nodes = _josn2node_list(tree_dict.get("layer_to_nodes"), float_type)
     num_layers = tree_dict.get("num_layers")
     return Tree(all_nodes, root_nodes, leaf_nodes, num_layers, layer_to_nodes)
 
 
-def json2node(dict_nodes: List[Dict[str, Dict]], float_type) -> {}:
+def _json2node(dict_nodes: List[Dict[str, Dict]], float_type) -> {}:
     """
     反序列化Node对象
     """
@@ -198,7 +200,7 @@ def json2node(dict_nodes: List[Dict[str, Dict]], float_type) -> {}:
     return result
 
 
-def josn2node_list(dict_node_list: List[Dict[str, List[Dict[str, str]]]], float_type):
+def _josn2node_list(dict_node_list: List[Dict[str, List[Dict[str, str]]]], float_type):
     result = {}
     for item in dict_node_list:
         for k, v in item.items():

@@ -5,9 +5,8 @@ import numpy as np
 from transformers import PreTrainedTokenizerBase
 
 from mx_rag.chain import TreeText2TextChain
-from mx_rag.retrievers.tree_retriever.tree_builder import TreeBuilderConfig, TreeBuilder
-from mx_rag.retrievers.tree_retriever.tree_retriever import TreeRetrieverConfig, TreeRetriever
-from mx_rag.retrievers.tree_retriever.tree_structures import Node
+from mx_rag.retrievers import TreeRetrieverConfig, TreeRetriever, TreeBuilderConfig, TreeBuilder
+from mx_rag.retrievers.tree_retriever import Node
 
 
 class TestTreeRetriever(unittest.TestCase):

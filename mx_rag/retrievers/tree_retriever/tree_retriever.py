@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-from typing import List
+from typing import List, Callable
 
-import numpy
+import numpy as np
 from loguru import logger
+from transformers import PreTrainedTokenizerBase
 
 from .tree_structures import Node, Tree
 from .utils import (distances_from_embeddings, get_embeddings,
@@ -16,11 +17,11 @@ from .utils import (distances_from_embeddings, get_embeddings,
 class TreeRetrieverConfig:
     def __init__(
             self,
-            tokenizer=None,
-            threshold=0.5,
-            top_k=5,
-            selection_mode="top_k",
-            embed_func=None,
+            tokenizer: PreTrainedTokenizerBase = None,
+            threshold: float = 0.5,
+            top_k: int = 5,
+            selection_mode: str = "top_k",
+            embed_func: Callable[[List[str]], np.ndarray] = None,
     ):
         if tokenizer is None:
             raise ValueError("tokenizer cannot be None.")
@@ -49,7 +50,7 @@ class TreeRetrieverConfig:
 
 
 class TreeRetriever:
-    def __init__(self, config, tree) -> None:
+    def __init__(self, config: TreeRetrieverConfig, tree: Tree) -> None:
         if not isinstance(tree, Tree):
             raise ValueError("tree must be an instance of Tree")
 
