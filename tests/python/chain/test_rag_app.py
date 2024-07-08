@@ -47,7 +47,7 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
+        index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("mxVision.docx",
                               [d.page_content for d in res],

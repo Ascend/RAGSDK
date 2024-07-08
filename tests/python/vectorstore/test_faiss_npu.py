@@ -22,9 +22,9 @@ class TestMindFAISS(unittest.TestCase):
 
                 os.system = MagicMock(return_value=0)
                 os.chmod = MagicMock()
-                index = MindFAISS(1024, "FLAT:L2", 0)
+                index = MindFAISS(1024, "FLAT:L2", devs=[0])
                 index.search(query, k=1)
                 index.add(query, [1])
                 index.delete([1])
                 index.save_local("./faiss.index")
-                MindFAISS.load_local(0, "./faiss.index")
+                MindFAISS.load_local([0], "./faiss.index")

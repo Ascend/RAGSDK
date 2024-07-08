@@ -37,7 +37,7 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, dev=3, index_type="FLAT:L2")
+        index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")
 
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
@@ -63,7 +63,7 @@ class MyTestCase(unittest.TestCase):
                          "3. Test is a type of software or application designed to simulate a real-world scenario.")
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
-        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
+        vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")
 
         r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
         r._get_relevant_documents = MagicMock(
@@ -95,7 +95,7 @@ class MyTestCase(unittest.TestCase):
                          "3. Test is a type of software or application designed to simulate a real-world scenario.")
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
-        vector_store = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
+        vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")
 
         vector_store.similarity_search = similarity_search_mock
 
