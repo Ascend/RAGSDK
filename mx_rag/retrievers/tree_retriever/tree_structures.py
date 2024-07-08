@@ -25,17 +25,17 @@ class Tree:
         self.layer_to_nodes = layer_to_nodes
 
 
-def tree2dict(tree: Tree):
+def _tree2dict(tree: Tree):
     return {
-        "all_nodes": [{index: node2str(node)} for index, node in tree.all_nodes.items()],
-        "root_nodes": [{index: node2str(node)} for index, node in tree.root_nodes.items()],
-        "leaf_nodes": [{index: node2str(node)} for index, node in tree.leaf_nodes.items()],
+        "all_nodes": [{index: _node2str(node)} for index, node in tree.all_nodes.items()],
+        "root_nodes": [{index: _node2str(node)} for index, node in tree.root_nodes.items()],
+        "leaf_nodes": [{index: _node2str(node)} for index, node in tree.leaf_nodes.items()],
         "num_layers": tree.num_layers,
-        "layer_to_nodes": [{index: node_list2str(node_list)} for index, node_list in tree.layer_to_nodes.items()]
+        "layer_to_nodes": [{index: _node_list2str(node_list)} for index, node_list in tree.layer_to_nodes.items()]
     }
 
 
-def node2str(node: Node):
+def _node2str(node: Node):
     return {
         "text": node.text,
         "index": node.index,
@@ -44,8 +44,8 @@ def node2str(node: Node):
     }
 
 
-def node_list2str(node_list: List[Node]):
+def _node_list2str(node_list: List[Node]):
     result = []
     for node in node_list:
-        result.append(node2str(node))
+        result.append(_node2str(node))
     return result
