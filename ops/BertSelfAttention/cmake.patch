@@ -1,0 +1,33 @@
+175,179d174
+<   --nox11                           Do not spawn an xterm
+<   --noexec                          Do not run embedded script
+<   --extract=<path>                  Extract directly to a target directory (absolute or relative)
+<                                     Usually used with --noexec to just extract files without running
+<   --tar arg1 [arg2 ...]             Access the contents of the archive through the tar command
+409,419d403
+< 	--tar)
+< 	offset=\`head -n "\$skip" "\$0" | wc -c | tr -d " "\`
+< 	arg1="\$2"
+<     shift 2 || { MS_Help; exit 1; }
+< 	for s in \$filesizes
+< 	do
+< 	    MS_dd "\$0" \$offset \$s | MS_Decompress | tar "\$arg1" - "\$@"
+< 	    offset=\`expr \$offset + \$s\`
+< 	done
+< 	exit 0
+< 	;;
+424,437d407
+< 	;;
+< 	--noexec)
+< 	script=""
+<     cleanup_script=""
+< 	shift
+< 	;;
+<     --extract=*)
+< 	keep=y
+< 	targetdir=\`echo \$1 | cut -d"=" -f2 \`
+<     if ! shift; then MS_Help; exit 1; fi
+< 	;;
+<     --nox11)
+< 	nox11=y
+< 	shift

@@ -116,12 +116,6 @@ function build_wheel_package()
 
 function build_ops_package()
 {
-  if [ -f ${ROOT_PATH}/../nputorch/*whl ]; then
-    pip3.10 install ${ROOT_PATH}/../nputorch/*.whl
-  else
-    cd "${ROOT_PATH}/ops"
-    bash run_op_plugin.sh
-  fi
   cd "${ROOT_PATH}/ops"
   bash build.sh
   cd "${ROOT_PATH}"
