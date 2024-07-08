@@ -34,12 +34,12 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
+        index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
-        r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
+        r = Retriever(vector_store=vector_store, document_store=db, embed_func=emb.embed_texts)
         rag = MultiText2TextChain(retriever=r, llm=llm)
         response = rag.query("Please remember that Xiao Ming's father is Xiao Gang.", max_tokens=1024, temperature=1.0,
                              top_p=0.1)
@@ -60,7 +60,7 @@ class MyTestCase(unittest.TestCase):
 
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, dev=0, index_type="FLAT:L2")
+        index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.similarity_search = MagicMock(
             return_value=[[(Document(page_content="this is a test", document_name="test.txt"), 0.5)]])

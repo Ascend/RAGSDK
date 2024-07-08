@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from typing import List
 
 import ascendfaiss
 import faiss
@@ -26,12 +27,17 @@ class MindFAISS(VectorStore):
             self,
             x_dim: int,
             index_type: str,
-            dev: int,
+            devs: List[int],
             load_local_index: str = None,
             auto_save_path: str = None
     ):
         self.device = ascendfaiss.IntVector()
-        self.device.push_back(dev)
+        if not isinstance(devs, list) or not devs:
+            raise MindFAISSError("param devs need list type")
+        if len(devs) != 1:
+            raise MindFAISSError("currently only supports to set one device")
+        for d in devs:
+            self.device.push_back(d)
         self.auto_save_path = auto_save_path
         if load_local_index is not None:
             try:
@@ -51,8 +57,8 @@ class MindFAISS(VectorStore):
             raise MindFAISSError(f"init index failed, {err}") from err
 
     @classmethod
-    def load_local(cls, dev: int, index_path: str, auto_save_path: str = None) -> MindFAISS:
-        return cls(0, "", dev, index_path, auto_save_path)
+    def load_local(cls, devs: List[int], index_path: str, auto_save_path: str = None) -> MindFAISS:
+        return cls(0, "", devs, index_path, auto_save_path)
 
     def save_local(self, index_path: str) -> None:
         if os.path.exists(index_path):
