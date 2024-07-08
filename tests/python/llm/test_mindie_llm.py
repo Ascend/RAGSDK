@@ -73,7 +73,7 @@ class TestMindieLLM(unittest.TestCase):
                     "Content-Type": "application/json",
                     "Content-Length": 200
                 }, 200))):
-            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
             data = llm_model.chat(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
                 history=[],
@@ -85,7 +85,7 @@ class TestMindieLLM(unittest.TestCase):
         with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse(RESPONSE_STREAM, {
             "Content-Type": "text/event-stream",
         }, 200))):
-            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
             stream_data = llm_model.chat_streamly(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
                 history=[],
@@ -99,7 +99,7 @@ class TestMindieLLM(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 404))):
-            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
             data = llm_model.chat(query="你好", history=[], max_tokens=1024)
             self.assertEqual(data, "")
 
@@ -107,7 +107,7 @@ class TestMindieLLM(unittest.TestCase):
         with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse(RESPONSE_STREAM, {
             "Content-Type": "text/event-stream",
         }, 404))):
-            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
             stream_data = llm_model.chat_streamly(query="你好", history=[], max_tokens=1024)
             data = False
             for _ in stream_data:
@@ -116,7 +116,7 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_max_tokens(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
         try:
             llm_model.chat(query="你好", max_tokens=0)
         except ValueError:
@@ -125,7 +125,7 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_history(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
         history = [{"role": "users", "content": "test"}] * 101
         try:
             llm_model.chat(query="你好", history=history)
@@ -135,7 +135,7 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_history_2(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
         history = [{"role": "users", "content": "test", "111": "1"}]
         try:
             llm_model.chat(query="你好", history=history)
@@ -145,7 +145,7 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_presence_penalty(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
         try:
             llm_model.chat(query="你好", seed=None, presence_penalty=-5.0)
         except ValueError:
@@ -154,7 +154,7 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_presence_penalty_2(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888")
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888")
         try:
             llm_model.chat(query="你好", seed=None, presence_penalty=-5)
         except TypeError:
@@ -165,7 +165,7 @@ class TestMindieLLM(unittest.TestCase):
         cart_file = os.path.join(self.current_dir, "../../data/root_ca.crt")
         cart_file = os.path.realpath(cart_file)
         try:
-            Text2TextLLM(model_name="llama2-7b-hf", url="http://test:8888", cert_file=cart_file)
+            Text2TextLLM(model_name="llama2-7b-hf", url="https://test:8888", cert_file=cart_file)
         except Exception as e:
             logger.info(e)
 

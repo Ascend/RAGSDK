@@ -22,10 +22,11 @@ class Text2TextLLM:
                  max_prompt_len=128 * 1024 * 1024,
                  max_history_len=100,
                  cert_file: str = "",
-                 crl_file: str = ""):
+                 crl_file: str = "",
+                 use_http: bool = False):
         self._model_name = model_name
         self._url = url
-        self._client = RequestUtils(timeout=timeout, cert_file=cert_file, crl_file=crl_file)
+        self._client = RequestUtils(timeout=timeout, cert_file=cert_file, crl_file=crl_file, use_http=use_http)
         self._max_history_len = max_history_len
         self._max_prompt_len = max_prompt_len
 

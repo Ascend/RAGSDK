@@ -16,9 +16,9 @@ class TEIReranker:
     }
     TEXT_MAX_LEN = 1000 * 1000
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, use_http: bool = False):
         self.url = urljoin(url, 'rerank')
-        self.client = RequestUtils()
+        self.client = RequestUtils(use_http=use_http)
 
     @staticmethod
     def _process_data(scores_json, scores_len):

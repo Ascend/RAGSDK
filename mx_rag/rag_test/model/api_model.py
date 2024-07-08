@@ -51,9 +51,9 @@ class APILLM(BaseRagasLLM):
 
 class APIEmbedding(BaseRagasEmbeddings):
 
-    def __init__(self, embed_url: str, max_length=512, batch_size=256):
+    def __init__(self, embed_url: str, max_length=512, batch_size=256, use_http: bool = False):
         self.url = embed_url
-        self.embed = TEIEmbedding(embed_url)
+        self.embed = TEIEmbedding(embed_url, use_http=use_http)
         self.max_length = max_length
         self.batch_size = batch_size
 
