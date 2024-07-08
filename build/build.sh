@@ -83,6 +83,7 @@ function package()
     chmod -R 550 "${CI_PACKAGE_DIR}"/ops
 
     mv "${ROOT_PATH}"/version.info "${CI_PACKAGE_DIR}"
+    cp "${ROOT_PATH}"/requirements.txt "${CI_PACKAGE_DIR}"
 
     cd "${CI_PACKAGE_DIR}"
     chmod 440 version.info
