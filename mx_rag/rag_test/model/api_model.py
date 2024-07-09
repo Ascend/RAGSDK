@@ -16,9 +16,19 @@ from mx_rag.embedding.service.tei_embedding import TEIEmbedding
 
 class APILLM(BaseRagasLLM):
 
-    def __init__(self, llm_url: str, model_name: str):
+    def __init__(self,
+                 llm_url: str,
+                 model_name: str,
+                 cert_file: str = "",
+                 crl_file: str = "",
+                 use_http: bool = False):
         self.url = llm_url
-        self.llm = Text2TextLLM(self.url, model_name, timeout=60 * 10)
+        self.llm = Text2TextLLM(self.url,
+                                model_name,
+                                timeout=60 * 10,
+                                cert_file=cert_file,
+                                crl_file=crl_file,
+                                use_http=use_http)
 
     def generate_text(
             self,
