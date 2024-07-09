@@ -48,6 +48,16 @@ class CertContentsChecker(StringLengthChecker):
             msg_format = "Cert contents checkers: check signature algorithm is not safe."
             return CheckResult.make_failed(msg_format)
 
+        basic_constraints = cert_info.extensions.get("basicConstraints", "")
+        if "CA:" not in basic_constraints:
+            msg_format = "Cert contents checkers: 'CA' not found in basic constraints."
+            return CheckResult.make_failed(msg_format)
+
+        key_usage = cert_info.extensions.get("keyUsage", "")
+        if "Digital Signature" not in key_usage:
+            msg_format = "Cert contents checkers: 'Digital Signature' not found in key usage."
+            return CheckResult.make_failed(msg_format)
+
         return CheckResult.make_success()
 
     def check_dict(self, data: dict) -> CheckResult:

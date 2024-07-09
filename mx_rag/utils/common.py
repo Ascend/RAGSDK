@@ -55,6 +55,11 @@ class ParseCertInfo:
         self.cert_version = self.cert_info.get_version() + 1
         self.pubkey_type = self.cert_info.get_pubkey().type()
         self.ca_pub_key = self.cert_info.get_pubkey().to_cryptography_key()
+        self.extensions = {}
+        for i in range(self.cert_info.get_extension_count()):
+            ext = self.cert_info.get_extension(i)
+            ext_name = ext.get_short_name().decode()
+            self.extensions[ext_name] = str(ext)
 
     @property
     def subject(self) -> str:
