@@ -1,7 +1,6 @@
 #!/bin/bash
 export LD_LIBRARY_PATH=/usr/local/Ascend/driver/lib64:/usr/local/Ascend/driver/lib64/common:/usr/local/Ascend/driver/lib64/driver:$LD_LIBRARY_PATH
 
-#rm -rf kernel_meta_temp* cache prof_total
 CURRENT_DIR=$(
     cd $(dirname ${BASH_SOURCE:-$0})
     pwd
@@ -27,9 +26,9 @@ export PYTHONPATH=$ASCEND_HOME_DIR/python/site-packages:$PYTHONPATH
 export PATH=$ASCEND_HOME_DIR/python/site-packages/bin:$PATH
 
 function main() {
-    # 1. 清除遗留生成文件和日志文件
-    rm -rf $HOME/ascend/log/*
+    # 1. 下载PTA源码仓，必须要git下载
     cd ${CURRENT_DIR}
+    git clone https://gitee.com/ascend/op-plugin.git
 
     # 2. PTA自定义算子注册
     FUNCTION_REGISTE_FIELD="op_plugin_patch/op_plugin_functions.yaml"
@@ -42,7 +41,6 @@ function main() {
     # 3. 编译PTA插件并安装
     cp -rf op_plugin_patch/*.cpp ${PTA_DIR}/op_plugin/ops/v2r1/opapi
     cd ${PTA_DIR};
-    sed -i 's/\(  \)checkout_pytorch_branch/\1# checkout_pytorch_branch/g' ci/build.sh
     (bash ci/build.sh --python=${PYTHON_VERSION} --pytorch=v$PYTORCH_VESION ; pip3.10 uninstall torch-npu -y ; pip3.10 install dist/*.whl)
 
 }
