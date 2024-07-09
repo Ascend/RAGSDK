@@ -5,7 +5,8 @@ set -e
 CUR_PATH=$(cd "$(dirname "$0")" || { warn "Failed to check path/to/run_py_test.sh" ; exit ; } ; pwd)
 TOP_PATH="${CUR_PATH}"/../
 GLIB_PATH="${CUR_PATH}"/../mx_rag/libs
-export PYTHONPATH=$TOP_PATH:$PYTHONPATH:$GLIB_PATH
+FAKE_PACKAGE_PATH="${CUR_PATH}"/fake_package
+export PYTHONPATH=$TOP_PATH:$PYTHONPATH:$GLIB_PATH:$FAKE_PACKAGE_PATH
 
 mkdir test_results
 

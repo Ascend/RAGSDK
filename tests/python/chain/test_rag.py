@@ -1,20 +1,12 @@
 import os
-import sys
 import unittest
 from unittest.mock import MagicMock
-
-from transformers import is_torch_npu_available
-
-from mx_rag.knowledge.knowledge import KnowledgeStore
-from mx_rag.document.doc import Doc
-
-if not is_torch_npu_available():
-    cur_dir = os.path.dirname(os.path.realpath(__file__))
-    sys.path.insert(0, os.path.join(cur_dir, "../vectorstore/"))
 
 from loguru import logger
 from transformers import is_torch_npu_available
 
+from mx_rag.knowledge.knowledge import KnowledgeStore
+from mx_rag.document.doc import Doc
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever, MultiQueryRetriever
