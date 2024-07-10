@@ -26,14 +26,20 @@ class PromptTemplate:
         return self._template_string.format(**kwargs)
 
 
-DEFAULT_QUERY_PROMPT = PromptTemplate(
+DEFAULT_QUERY_PROMPT_EN = PromptTemplate(
     """You are an AI language model assistant. Your task is 
         to generate 3 different versions of the given user 
         question to retrieve relevant documents from a vector database. 
-        By generating multiple perspectives on the user question, 
-        your goal is to help the user overcome some of the limitations 
+        Your goal is to help the user overcome some of the limitations 
         of distance-based similarity search. Provide these alternative 
-        questions separated by newlines. Original question: {question}"""
+        questions in english.Please number the answers starting from 1 
+        and separated by newlines. Original question: {question}"""
+)
+
+DEFAULT_QUERY_PROMPT_CH = PromptTemplate(
+    """你是一个人工智能语言模型助理。您的任务是根据用户的原始问题，从矢量数据库中基于
+    距离的相似性检索出与原问题相关的3个问题。你的目标是通过生成的多个角度的提问来帮助
+    用户克服原问题的限制。请从1开始编号且用中文回答，每个回答用换行符分隔开。原始问题：{question}"""
 )
 
 
@@ -52,15 +58,17 @@ class DefaultOutputParser(OutputParser):
     def parse(self, output: str) -> List[str]:
         lines = []
         for line in output.splitlines():
-            if line.strip() == "":
-                continue
-            lines.append(line)
+            if self.is_starting_with_number(line.strip()):
+                lines.append(line)
         return lines
+
+    def is_starting_with_number(self, query: str):
+        return bool(re.match(r'\d.*', query))
 
 
 class MultiQueryRetriever(Retriever):
     def __init__(self, llm: Text2TextLLM,
-                 prompt: PromptTemplate = DEFAULT_QUERY_PROMPT,
+                 prompt: PromptTemplate = DEFAULT_QUERY_PROMPT_CH,
                  parser: OutputParser = DefaultOutputParser(),
                  **data: Any):
         super().__init__(**data)
