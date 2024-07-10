@@ -4,6 +4,7 @@
 from typing import List
 
 from ragas.embeddings.base import BaseRagasEmbeddings
+from ragas.run_config import RunConfig
 
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 
@@ -14,6 +15,7 @@ class LocalEmbedding(BaseRagasEmbeddings):
         self.model = TextEmbedding(path)
         self.max_length = max_length
         self.batch_size = batch_size
+        self.set_run_config(RunConfig())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         return self.model.embed_texts(texts, self.batch_size, self.max_length).tolist()

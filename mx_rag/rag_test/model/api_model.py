@@ -9,6 +9,7 @@ from langchain.schema import Generation
 from ragas.llms import BaseRagasLLM
 from ragas.embeddings.base import BaseRagasEmbeddings
 from ragas.llms.prompt import PromptValue
+from ragas.run_config import RunConfig
 
 from mx_rag.llm.text2text import Text2TextLLM
 from mx_rag.embedding.service.tei_embedding import TEIEmbedding
@@ -25,7 +26,7 @@ class APILLM(BaseRagasLLM):
         self.url = llm_url
         self.llm = Text2TextLLM(self.url,
                                 model_name,
-                                timeout=60 * 10,
+                                timeout=10 * 60,
                                 cert_file=cert_file,
                                 crl_file=crl_file,
                                 use_http=use_http)
@@ -66,6 +67,7 @@ class APIEmbedding(BaseRagasEmbeddings):
         self.embed = TEIEmbedding(embed_url, use_http=use_http)
         self.max_length = max_length
         self.batch_size = batch_size
+        self.set_run_config(RunConfig())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         result = self.embed.embed_texts(texts, self.batch_size)
