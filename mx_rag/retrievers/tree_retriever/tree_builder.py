@@ -115,7 +115,6 @@ class TreeBuilder:
             max_tokens=summarization_length,
         )
         summarized_text = summarized_result.get('result', '')
-        logger.info(f"the summarized answer is {summarized_text}")
         _, new_parent_node = TreeBuilder.create_node(
             next_node_index, summarized_text, embed_func=embed_func, children_indices={node.index for node in cluster}
         )

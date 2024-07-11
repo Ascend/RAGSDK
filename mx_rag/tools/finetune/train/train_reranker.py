@@ -38,5 +38,5 @@ def train_reranker(origin_reranker_model_path: str,
         logger.info("train reranker model success")
         return True
     else:
-        logger.info("train reranker model failed")
+        logger.error("train reranker model failed")
         return False
