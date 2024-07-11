@@ -65,5 +65,4 @@ class TreeText2TextChain(SingleText2TextChain):
         # 原始提问文本
         self._query_str = text
         question = f"为以下内容生成摘要，包含尽可能多的关键细节，请用中文回答: \n\n{text}:"
-        logger.info(f"the summarize question to llm : {question}")
         return self._do_query(question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)

@@ -42,5 +42,5 @@ def train_embedding(origin_emb_model_path: str,
         logger.info("train embedding model success")
         return True
     else:
-        logger.info("train embedding model failed")
+        logger.error("train embedding model failed")
         return False

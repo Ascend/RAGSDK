@@ -70,13 +70,13 @@ class MineHardNegative:
 
         corpus = list(set(corpus))
 
-        logger.info(f"inference embedding for corpus (number={len(corpus)})--------------")
+        logger.info(f"inference embedding for corpus (number={len(corpus)})")
         p_vecs = self.model.embed_texts(corpus)
 
-        logger.info(f"inference embedding for queries (number={len(queries)})--------------")
+        logger.info(f"inference embedding for queries (number={len(queries)})")
         q_vecs = self.model.embed_texts(queries)
 
-        logger.info("create index and search------------------")
+        logger.info("create index and search")
         index = self._create_index(p_vecs)
         _, all_inxs = self._batch_search(index, q_vecs, top_k=sample_range[-1])
 
