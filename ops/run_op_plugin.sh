@@ -26,11 +26,8 @@ export PYTHONPATH=$ASCEND_HOME_DIR/python/site-packages:$PYTHONPATH
 export PATH=$ASCEND_HOME_DIR/python/site-packages/bin:$PATH
 
 function main() {
-    # 1. 下载PTA源码仓，必须要git下载
+    # 1. PTA自定义算子注册
     cd ${CURRENT_DIR}
-    git clone https://gitee.com/ascend/op-plugin.git
-
-    # 2. PTA自定义算子注册
     FUNCTION_REGISTE_FIELD="op_plugin_patch/op_plugin_functions.yaml"
     FUNCTION_REGISTE_FILE="${PTA_DIR}/op_plugin/config/v2r1/op_plugin_functions.yaml"
     line="  - func: npu_bert_self_attention_custom(Tensor input, Tensor queryW, Tensor queryBias, Tensor keyW, Tensor keyBias, Tensor valueW, Tensor valueBias, Tensor attentionMask, Tensor dropOutMask, Tensor headMask, int numAttentionHeads, int attentionHeadSize, float dropOutKeepProb) -> Tensor"
@@ -38,7 +35,7 @@ function main() {
         sed -i "/custom:/r   $FUNCTION_REGISTE_FIELD" $FUNCTION_REGISTE_FILE
     fi
 
-    # 3. 编译PTA插件并安装
+    # 2. 编译PTA插件并安装
     cp -rf op_plugin_patch/*.cpp ${PTA_DIR}/op_plugin/ops/v2r1/opapi
     cd ${PTA_DIR};
     (bash ci/build.sh --python=${PYTHON_VERSION} --pytorch=v$PYTORCH_VESION ; pip3.10 uninstall torch-npu -y ; pip3.10 install dist/*.whl)
