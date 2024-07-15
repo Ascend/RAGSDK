@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.storage.base_storage import Docstore, Document, StorageError
 from mx_rag.utils import FileCheck
+from mx_rag.utils.file_operate import check_disk_free_space
 
 Base = declarative_base()
 
@@ -40,14 +41,19 @@ class ChunkModel(Base):
 
 class SQLiteDocstore(Docstore):
 
+    FREE_SPACE_LIMIT = 200 * 1024 * 1024
+
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
+        self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
     def add(self, documents: List[Document]) -> List[int]:
+        if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
+            raise StorageError("Insufficient remaining space, please clear disk space")
         with self.session() as session:
             try:
                 chunk_idx = session.query(ChunkIdxModel).filter_by(id=1).first()

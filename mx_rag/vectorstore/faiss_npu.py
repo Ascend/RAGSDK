@@ -61,10 +61,12 @@ class MindFAISS(VectorStore):
         return cls(0, "", devs, index_path, auto_save_path)
 
     def save_local(self, index_path: str) -> None:
-        if os.path.exists(index_path):
-            logger.warning(f"the index path {index_path} has already exist, will be overwritten")
         FileCheck.check_input_path_valid(index_path, check_blacklist=True)
         try:
+            if os.path.exists(index_path):
+                logger.warning(f"the index path {index_path} has already exist, will be overwritten")
+                os.remove(index_path)
+
             cpu_index = ascendfaiss.index_ascend_to_cpu(self.index)
             faiss.write_index(cpu_index, index_path)
             os.chmod(index_path, 0o600)

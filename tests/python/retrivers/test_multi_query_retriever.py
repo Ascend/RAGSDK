@@ -2,6 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import os
+import shutil
 import sys
 import unittest
 from unittest.mock import MagicMock
@@ -61,6 +62,7 @@ class MyTestCase(unittest.TestCase):
             return_value="1. Test is a framework for testing and evaluating the quality of a product or service.\n"
                          "2. Test is a process of verifying that a product or service meets certain requirements.\n"
                          "3. Test is a type of software or application designed to simulate a real-world scenario.")
+        shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
         vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")
@@ -93,6 +95,7 @@ class MyTestCase(unittest.TestCase):
             return_value="1. Test is a framework for testing and evaluating the quality of a product or service.\n"
                          "2. Test is a process of verifying that a product or service meets certain requirements.\n"
                          "3. Test is a type of software or application designed to simulate a real-world scenario.")
+        shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
         vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")

@@ -14,6 +14,7 @@ from mx_rag.retrievers.tree_retriever import Tree
 
 from mx_rag.storage import Docstore, Document
 from mx_rag.utils import FileCheck
+from mx_rag.utils.file_operate import check_disk_free_space
 from mx_rag.vectorstore import VectorStore
 
 Base = declarative_base()
@@ -35,14 +36,20 @@ class KnowledgeModel(Base):
 
 
 class KnowledgeStore:
+
+    FREE_SPACE_LIMIT = 200 * 1024 * 1024
+
     def __init__(self, db_path):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
+        self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
     def add(self, knowledge_name, doc_name):
+        if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
+            raise KnowledgeError("Insufficient remaining space, please clear disk space")
         with self.session() as session:
             try:
                 session.add(KnowledgeModel(knowledge_name=knowledge_name, document_name=doc_name))
@@ -179,14 +186,19 @@ class KnowledgeTreeDB(KnowledgeBase):
 
 class KnowledgeMgrStore:
 
+    FREE_SPACE_LIMIT = 200 * 1024 * 1024
+
     def __init__(self, db_path):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
+        self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
     def add(self, knowledge_name):
+        if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
+            raise KnowledgeError("Insufficient remaining space, please clear disk space")
         with self.session() as session:
             try:
                 session.add(KnowledgeMgrModel(knowledge_name=knowledge_name))
