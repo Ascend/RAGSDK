@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
+import shutil
 import unittest
 from unittest.mock import patch, Mock, MagicMock
 
@@ -79,6 +80,7 @@ class TestKnowledge(unittest.TestCase):
         current_dir = os.path.dirname(os.path.realpath(__file__))
         top_path = os.path.dirname(os.path.dirname(current_dir))
         tree_builder_config = TreeBuilderConfig(tokenizer=Mock(), summarization_model=Mock(spec=TreeText2TextChain))
+        shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         knwoledge_tree_db = KnowledgeTreeDB(KnowledgeStore(SQL_PATH), chunk_store=SQLiteDocstore(SQL_PATH),
                                             knowledge_name="test_knowledge",
                                             white_paths=[top_path], tree_builder_config=tree_builder_config)

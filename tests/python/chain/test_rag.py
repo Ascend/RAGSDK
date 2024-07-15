@@ -1,4 +1,5 @@
 import os
+import shutil
 import unittest
 from unittest.mock import MagicMock
 
@@ -78,6 +79,7 @@ class MyTestCase(unittest.TestCase):
         def embed_func(texts):
             return np.random.random((1, 1024))
 
+        shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
         vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2")

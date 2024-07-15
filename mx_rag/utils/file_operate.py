@@ -4,6 +4,7 @@
 import json
 import os
 import re
+import shutil
 import stat
 
 from loguru import logger
@@ -84,3 +85,8 @@ def _read_jsonl_file(file, length_limit, line_cnt, line_limit):
         if line_cnt >= line_limit:
             logger.warning(f"read data more than {line_limit} lines")
     return datas
+
+
+def check_disk_free_space(path, volume):
+    _, _, free = shutil.disk_usage(path)
+    return free < volume
