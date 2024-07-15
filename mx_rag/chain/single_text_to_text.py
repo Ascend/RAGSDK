@@ -8,6 +8,7 @@ from loguru import logger
 
 from mx_rag.chain import Chain
 from mx_rag.document.doc import Doc
+from mx_rag.reranker.reranker import Reranker
 
 DEFAULT_RAG_PROMPT = (
     "<指令>根据上述已知信息，简洁和专业的来回答用户的问题，并保存对应知识的URL。"
@@ -20,16 +21,17 @@ DEFAULT_RAG_PROMPT = (
 class SingleText2TextChain(Chain):
     document_separator: str = "\n\n"
 
-    def __init__(self, llm, retriever, prompt=DEFAULT_RAG_PROMPT):
+    def __init__(self, llm, retriever, reranker: Reranker = None, prompt=DEFAULT_RAG_PROMPT):
         super().__init__()
         self._retriever = retriever
+        self._reranker = reranker
         self._llm = llm
         self._content = ""
         self._prompt = prompt
         self._source = False
         self._history: List[Dict] = []
         self._role: str = "user"
-        self._doc = []
+        self._docs = []
         self._query_str = ""
 
     @property
@@ -68,9 +70,13 @@ class SingleText2TextChain(Chain):
                stream: bool = False) -> Union[Dict, Iterator[Dict]]:
 
         self._query_str = text
-        self._doc = self._retriever.get_relevant_documents(text)
-        question = self._merge_query_prompt(text, copy.deepcopy(self._doc), self._prompt)
-        logger.debug(f"query prompt: {self._prompt}")
+        self._docs = self._retriever.get_relevant_documents(text)
+
+        if self._reranker is not None:
+            scores = self._reranker.rerank(text, [doc.page_content for doc in self._docs])
+            self._docs = self._reranker.rerank_top_k(self._docs, scores)
+
+        question = self._merge_query_prompt(text, copy.deepcopy(self._docs), self._prompt)
 
         if not stream:
             return self._do_query(question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
@@ -81,7 +87,7 @@ class SingleText2TextChain(Chain):
         logger.info("invoke normal query")
         resp = {"query": self._query_str, "result": ""}
         if self.source:
-            resp['source_documents'] = [vars(x) for x in self._doc]
+            resp['source_documents'] = [vars(x) for x in self._docs]
         llm_response = self._llm.chat(text, self._history, self._role, **kwargs)
         self._content = llm_response
         resp['result'] = llm_response
@@ -91,7 +97,7 @@ class SingleText2TextChain(Chain):
         logger.info("invoke stream query")
         resp = {"query": self._query_str, "result": ""}
         if self.source:
-            resp['source_documents'] = [vars(x) for x in self._doc]
+            resp['source_documents'] = [vars(x) for x in self._docs]
 
         for response in self._llm.chat_streamly(text, self._history, self._role, **kwargs):
             self._content = response

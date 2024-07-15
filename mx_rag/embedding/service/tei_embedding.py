@@ -2,6 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import json
+from typing import List
 from urllib.parse import urljoin
 
 from loguru import logger
@@ -22,7 +23,7 @@ class TEIEmbedding(Embedding):
         self.client = RequestUtils(use_http=use_http)
 
     def embed_texts(self,
-                    texts: list[str],
+                    texts: List[str],
                     batch_size: int = 32):
         texts_len = len(texts)
         if texts_len == 0:

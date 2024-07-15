@@ -18,3 +18,6 @@ class Doc:
 
     def __hash__(self):
         return hash(self.page_content)
+
+    def __repr__(self):
+        return f"page_content:{self.page_content}, metadata:{self.metadata}"

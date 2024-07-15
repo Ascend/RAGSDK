@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+from typing import List
 
 from loguru import logger
 import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_torch_npu_available
 
+from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -16,13 +18,15 @@ except Exception as e:
     logger.warning(f"import torch_npu failed:{e}, LocalReranker will running on cpu")
 
 
-class LocalReranker:
+class LocalReranker(Reranker):
     TEXT_MAX_LEN = 1000 * 1000
 
     def __init__(self,
                  model_path: str,
                  dev_id: int = 0,
+                 k: int = 1,
                  use_fp16: bool = True):
+        super(LocalReranker, self).__init__(k)
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
 
@@ -43,9 +47,9 @@ class LocalReranker:
 
     def rerank(self,
                query: str,
-               texts: list[str],
+               texts: List[str],
                batch_size: int = 32,
-               max_length: int = 512):
+               max_length: int = 512) -> np.array:
         if len(texts) == 0:
             return np.array([])
         elif len(texts) > LocalReranker.TEXT_MAX_LEN:

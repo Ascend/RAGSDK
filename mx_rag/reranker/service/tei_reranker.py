@@ -2,21 +2,24 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import json
+from typing import List
 from urllib.parse import urljoin
 
 from loguru import logger
 import numpy as np
 
+from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.url import RequestUtils
 
 
-class TEIReranker:
+class TEIReranker(Reranker):
     HEADERS = {
         'Content-Type': 'application/json'
     }
     TEXT_MAX_LEN = 1000 * 1000
 
-    def __init__(self, url: str, use_http: bool = False):
+    def __init__(self, url: str, use_http: bool = False, k: int = 1):
+        super(TEIReranker, self).__init__(k)
         self.url = urljoin(url, 'rerank')
         self.client = RequestUtils(use_http=use_http)
 
@@ -45,7 +48,7 @@ class TEIReranker:
 
     def rerank(self,
                query: [str],
-               texts: list[str],
+               texts: List[str],
                batch_size: int = 32):
         texts_len = len(texts)
         if texts_len == 0:
