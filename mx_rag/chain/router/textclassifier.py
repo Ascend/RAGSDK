@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from loguru import logger
 from transformers import pipeline
 
-from mx_rag.utils import FileCheck
+from mx_rag.utils.file_check import FileCheck
 
 
 class TextClassifier(ABC):

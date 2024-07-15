@@ -2,7 +2,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 __all__ = [
-    "Doc",
     "loader",
     "splitter",
     "SUPPORT_IMAGE_TYPE",
@@ -11,7 +10,6 @@ __all__ = [
 
 from mx_rag.document import loader
 from mx_rag.document import splitter
-from mx_rag.document.doc import Doc
 
 
 SUPPORT_IMAGE_TYPE = (".jpg", ".png")

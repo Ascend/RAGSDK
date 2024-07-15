@@ -14,7 +14,7 @@ class TestTrainDataGenerator(unittest.TestCase):
         self.file_path = os.path.join(current_dir, "../../data/")
         self.train_data_generator = TrainDataGenerator(None, "", self.file_path, "", "")
 
-    @patch("mx_rag.utils.FileCheck.dir_check")
+    @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("mx_rag.tools.finetune.generator.train_data_generator.TrainDataGenerator._generate_origin_document")
     def test_process_origin_document(self, generate_mock, dir_check_mock):
         generate_mock.return_value = []
@@ -28,7 +28,7 @@ class TestTrainDataGenerator(unittest.TestCase):
         result = self.train_data_generator.generate_coarsest_qd_pairs([], 1)
         self.assertEqual(mock_value, result)
 
-    @patch("mx_rag.utils.FileCheck.dir_check")
+    @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     def test_save_train_data_and_rewrite(self, dir_check_mock):
         with self.assertRaises(Exception):
             result = self.train_data_generator.save_train_data_and_rewrite([], [], 1)

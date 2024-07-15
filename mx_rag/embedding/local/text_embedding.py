@@ -9,7 +9,7 @@ import torch
 from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
-from mx_rag.utils import FileCheck
+from mx_rag.utils.file_check import FileCheck
 from mx_rag.embedding.embedding import Embedding
 
 try:

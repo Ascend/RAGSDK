@@ -16,7 +16,7 @@ from PIL import Image
 
 from mx_rag.document.loader.base_loader import BaseLoader
 from mx_rag.document.doc import Doc
-from mx_rag.utils import SecFileCheck
+from mx_rag.utils.file_check import SecFileCheck
 
 
 class PdfLang(Enum):

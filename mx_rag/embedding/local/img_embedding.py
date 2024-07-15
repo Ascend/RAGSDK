@@ -12,7 +12,7 @@ from loguru import logger
 from transformers import AutoProcessor, AutoModel, is_torch_npu_available
 
 from mx_rag.embedding.embedding import Embedding
-from mx_rag.utils import FileCheck, SecFileCheck
+from mx_rag.utils.file_check import FileCheck, SecFileCheck
 
 try:
     import torch_npu

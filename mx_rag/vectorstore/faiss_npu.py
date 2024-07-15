@@ -10,7 +10,7 @@ import faiss
 import numpy as np
 from loguru import logger
 
-from mx_rag.utils import FileCheck
+from mx_rag.utils.file_check import FileCheck
 from mx_rag.vectorstore.vectorstore import VectorStore
 
 

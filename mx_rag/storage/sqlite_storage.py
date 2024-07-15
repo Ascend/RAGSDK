@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.storage.base_storage import Docstore, Document, StorageError
-from mx_rag.utils import FileCheck
+from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
 
 Base = declarative_base()

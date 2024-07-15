@@ -25,7 +25,7 @@ class TestTEIReranker(unittest.TestCase):
                 response_data.append({'index': i, 'score': random.random()})
             return TestTEIReranker.Result(True, json.dumps(response_data))
 
-        with patch('mx_rag.utils.RequestUtils.post', mock.Mock(side_effect=mock_post)):
+        with patch('mx_rag.utils.url.RequestUtils.post', mock.Mock(side_effect=mock_post)):
             rerank = TEIReranker(url='https://localhost:8888')
 
             texts = ['我是小黑', '我是小红'] * 100
@@ -54,7 +54,7 @@ class TestTEIReranker(unittest.TestCase):
         def mock_post(url: str, body: str, headers: Dict):
             return TestTEIReranker.Result(False, "")
 
-        with patch('mx_rag.utils.RequestUtils.post', mock.Mock(side_effect=mock_post)):
+        with patch('mx_rag.utils.url.RequestUtils.post', mock.Mock(side_effect=mock_post)):
             rerank = TEIReranker(url='https://localhost:8888')
 
             texts = ['我是小黑', '我是小红'] * 300
