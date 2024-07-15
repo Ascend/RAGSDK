@@ -59,13 +59,13 @@ class TextEmbedding(Embedding):
         return result
 
     def embed_texts_with_last_hidden_state(self,
-                                           texts: list[str],
+                                           texts: List[str],
                                            batch_size: int = 32,
                                            max_length: int = 512):
         return self._encode(texts, batch_size, max_length, True)
 
     def _encode(self,
-                texts: list[str],
+                texts: List[str],
                 batch_size: int = 32,
                 max_length: int = 512,
                 with_last_hidden_state: bool = False):

@@ -2,6 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import json
 import sys
+from typing import List
 from urllib.parse import urljoin
 
 from loguru import logger
@@ -57,7 +58,7 @@ class Text2TextLLM:
         return value
 
     @staticmethod
-    def _validate_history_format(history: list[dict]):
+    def _validate_history_format(history: List[dict]):
         if history is None:
             return False
 
@@ -71,7 +72,7 @@ class Text2TextLLM:
 
         return True
 
-    def chat(self, query: str, history: list[dict] = None, role: str = "user", **kwargs):
+    def chat(self, query: str, history: List[dict] = None, role: str = "user", **kwargs):
         ans = ""
         if query is None:
             logger.error(f"query cannot be None")
@@ -104,7 +105,7 @@ class Text2TextLLM:
             logger.error("get response failed")
         return ans
 
-    def chat_streamly(self, query: str, history: list[dict] = None, role: str = "user", **kwargs):
+    def chat_streamly(self, query: str, history: List[dict] = None, role: str = "user", **kwargs):
         ans = ""
         if query is None or len(query) > self._max_prompt_len:
             logger.error(f"query cannot be None or content len not in  (0, {self._max_prompt_len})")
@@ -147,7 +148,7 @@ class Text2TextLLM:
             ans += safe_get(data, ["choices", 0, "delta", "content"], "")
             yield ans
 
-    def _get_request_body(self, query: str, history: list[dict], role: str, **kwargs):
+    def _get_request_body(self, query: str, history: List[dict], role: str, **kwargs):
         if len(history) > self._max_history_len:
             raise ValueError(f"The length of the history parameter cannot exceed {self._max_history_len}")
 
