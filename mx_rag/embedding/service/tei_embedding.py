@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 from loguru import logger
 import numpy as np
 
-from mx_rag.utils import RequestUtils
+from mx_rag.utils.url import RequestUtils
 from mx_rag.embedding.embedding import Embedding
 
 

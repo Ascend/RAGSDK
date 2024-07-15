@@ -6,7 +6,8 @@ from urllib.parse import urljoin
 
 from loguru import logger
 
-from mx_rag.utils import RequestUtils, safe_get
+from mx_rag.utils.common import safe_get
+from mx_rag.utils.url import RequestUtils
 
 
 class Text2TextLLM:

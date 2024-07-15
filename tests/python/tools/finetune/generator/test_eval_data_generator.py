@@ -15,9 +15,9 @@ class TestEvalDataGenerator(unittest.TestCase):
         if os.path.exists(os.path.join(self.file_path, "eval_data.jsonl")):
             os.remove(os.path.join(self.file_path, "eval_data.jsonl"))
 
-    @patch("mx_rag.utils.FileCheck.dir_check")
+    @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("mx_rag.tools.finetune.generator.eval_data_generator.SecFileCheck.check")
-    @patch("mx_rag.utils.FileCheck.check_path_is_exist_and_valid")
+    @patch("mx_rag.utils.file_check.FileCheck.check_path_is_exist_and_valid")
     @patch("mx_rag.tools.finetune.generator.eval_data_generator.generate_qa_embedding_pairs")
     @patch("mx_rag.tools.finetune.generator.eval_data_generator.BaseGenerator._feature_qd_pair")
     @patch("mx_rag.tools.finetune.generator.eval_data_generator.BaseGenerator._prefer_qd_pair")

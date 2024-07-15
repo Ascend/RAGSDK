@@ -24,7 +24,7 @@ from transformers import is_torch_npu_available
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.retrievers import Retriever
 from mx_rag.vectorstore.faiss_npu import MindFAISS
-from mx_rag.storage import Document, SQLiteDocstore
+from mx_rag.storage import SQLiteDocstore
 
 EMBEDDING_TEXT = """The unshare command creates new namespaces and then executes the specified program."""
 

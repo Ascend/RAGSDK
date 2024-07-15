@@ -55,7 +55,7 @@ class TestLocalReranker(unittest.TestCase):
             input_ids = torch.rand((len(batch_text), rand_token_len))
             return TestLocalReranker.BatchEncoding(input_ids=input_ids)
 
-    @patch("mx_rag.utils.FileCheck.dir_check")
+    @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("transformers.AutoModelForSequenceClassification.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")
@@ -74,7 +74,7 @@ class TestLocalReranker(unittest.TestCase):
 
         self.assertEqual(ret.shape, (len(texts),))
 
-    @patch("mx_rag.utils.FileCheck.dir_check")
+    @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("transformers.AutoModelForSequenceClassification.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")

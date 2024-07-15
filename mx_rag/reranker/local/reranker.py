@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_torch_npu_available
 
-from mx_rag.utils import FileCheck
+from mx_rag.utils.file_check import FileCheck
 
 try:
     import torch_npu

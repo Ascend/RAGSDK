@@ -25,7 +25,8 @@ from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import MultiQueryRetriever
 from mx_rag.vectorstore.faiss_npu import MindFAISS
-from mx_rag.storage import SQLiteDocstore, Document
+from mx_rag.storage import SQLiteDocstore
+from mx_rag.storage.base_storage import Document
 
 
 class MyTestCase(unittest.TestCase):

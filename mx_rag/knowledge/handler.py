@@ -16,7 +16,7 @@ from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeDB
 from mx_rag.retrievers.tree_retriever import Tree
 from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
 
-from mx_rag.utils import FileCheck, SecFileCheck
+from mx_rag.utils.file_check import FileCheck, SecFileCheck
 
 
 class FileHandlerError(Exception):

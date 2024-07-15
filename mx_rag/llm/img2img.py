@@ -6,7 +6,8 @@ from pathlib import Path
 
 from loguru import logger
 
-from mx_rag.utils import RequestUtils, FileCheck, SecFileCheck
+from mx_rag.utils.url import RequestUtils
+from mx_rag.utils.file_check import FileCheck, SecFileCheck
 
 
 class Img2ImgMultiModel:

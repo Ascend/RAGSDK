@@ -24,8 +24,8 @@ class TestFileOperate(unittest.TestCase):
         with self.assertRaises(FileCheckError):
             read_jsonl_from_file(self.file_path)
 
-    @patch("mx_rag.utils.FileCheck.dir_check")
-    @patch("mx_rag.utils.FileCheck.check_input_path_valid")
+    @patch("mx_rag.utils.file_check.FileCheck.dir_check")
+    @patch("mx_rag.utils.file_check.FileCheck.check_input_path_valid")
     def test_write_and_read_jsonl_file(self, dir_check_mock, check_input_mock):
         path = os.path.realpath(self.file_path)
         write_jsonl_to_file(self.datas, path)

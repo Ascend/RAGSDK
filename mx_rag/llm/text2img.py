@@ -6,7 +6,7 @@ from urllib.parse import urljoin
 
 from loguru import logger
 
-from mx_rag.utils import RequestUtils
+from mx_rag.utils.url import RequestUtils
 
 
 class Text2ImgMultiModel:
