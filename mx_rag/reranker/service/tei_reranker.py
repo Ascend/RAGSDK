@@ -47,7 +47,7 @@ class TEIReranker(Reranker):
         return scores
 
     def rerank(self,
-               query: [str],
+               query: str,
                texts: List[str],
                batch_size: int = 32):
         texts_len = len(texts)
