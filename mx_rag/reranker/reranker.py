@@ -8,7 +8,7 @@ import numpy as np
 
 
 class Reranker(ABC):
-    def __init__(self, k):
+    def __init__(self, k: int):
         self._k = k
 
     @abstractmethod
