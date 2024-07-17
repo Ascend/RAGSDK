@@ -25,17 +25,17 @@ class TestTreeRetriever(unittest.TestCase):
             TreeRetrieverConfig(tokenizer, 1)
 
     def test_create_embedding(self):
-        result = self.tree_retriever.create_embedding("test")
+        result = self.tree_retriever._create_embedding("test")
         self.assertEqual([1, 2, 3], result)
 
     def test_retrieve_information_collapse_tree(self):
-        selected_nodes, context = self.tree_retriever.retrieve_information_collapse_tree("hello", 2, 5)
+        selected_nodes, context = self.tree_retriever._retrieve_information_collapse_tree("hello", 2, 5)
         self.assertEqual("test1\n\ntest2\n\n", context)
         self.assertEqual(2, len(selected_nodes))
 
     def test_retrieve_information(self):
         node_list = [Node("test1", 0, {0}, {"filepath": "xxx"}), Node("test2", 1, {1}, [1, 2, 3])]
-        selected_nodes, context = self.tree_retriever.retrieve_information(node_list, "test", 0)
+        selected_nodes, context = self.tree_retriever._retrieve_information(node_list, "test", 0)
         self.assertEqual("", context)
         self.assertEqual([], selected_nodes)
 

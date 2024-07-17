@@ -64,13 +64,38 @@ class TreeRetriever:
         self.tree_node_index_to_layer = reverse_mapping(self.tree.layer_to_nodes)
         self.embed_func = config.embed_func
 
-    def create_embedding(self, text: str) -> List[float]:
+    def retrieve(
+            self,
+            query: str,
+            top_k: int = 10,
+            max_tokens: int = 3500,
+            collapse_tree: bool = True,
+    ) -> str:
+        if not isinstance(query, str):
+            raise ValueError("query must be a string")
+
+        if not isinstance(max_tokens, int) or max_tokens < 1:
+            raise ValueError("max_tokens must be an integer and at least 1")
+
+        if not isinstance(collapse_tree, bool):
+            raise ValueError("collapse_tree must be a boolean")
+
+        if collapse_tree:
+            selected_nodes, context = self._retrieve_information_collapse_tree(query, top_k, max_tokens)
+        else:
+            layer_nodes = self.tree.layer_to_nodes[self.start_layer]
+            selected_nodes, context = self._retrieve_information(layer_nodes, query, self.num_layers)
+        selected_nodes_index = [node.index for node in selected_nodes]
+        logger.debug(f"after retrieve, the selected nodes index is {selected_nodes_index}")
+        return context
+
+    def _create_embedding(self, text: str) -> List[float]:
         embeddings = self.embed_func([text]).flatten().tolist()
         logger.debug(f"the create_embedding embeddings dim is {len(embeddings)}")
         return embeddings
 
-    def retrieve_information_collapse_tree(self, query: str, top_k: int, max_tokens: int) -> tuple:
-        query_embedding = self.create_embedding(query)
+    def _retrieve_information_collapse_tree(self, query: str, top_k: int, max_tokens: int) -> tuple:
+        query_embedding = self._create_embedding(query)
         selected_nodes = []
         node_list = get_node_list(self.tree.all_nodes)
         embeddings = get_embeddings(node_list)
@@ -87,10 +112,10 @@ class TreeRetriever:
         context = get_text(selected_nodes)
         return selected_nodes, context
 
-    def retrieve_information(
+    def _retrieve_information(
             self, current_nodes: List[Node], query: str, num_layers: int
     ) -> (List[Node], str):
-        query_embedding = self.create_embedding(query)
+        query_embedding = self._create_embedding(query)
         selected_nodes = []
         node_list = current_nodes
         for layer in range(num_layers):
@@ -115,28 +140,3 @@ class TreeRetriever:
 
         context = get_text(selected_nodes)
         return selected_nodes, context
-
-    def retrieve(
-            self,
-            query: str,
-            top_k: int = 10,
-            max_tokens: int = 3500,
-            collapse_tree: bool = True,
-    ) -> str:
-        if not isinstance(query, str):
-            raise ValueError("query must be a string")
-
-        if not isinstance(max_tokens, int) or max_tokens < 1:
-            raise ValueError("max_tokens must be an integer and at least 1")
-
-        if not isinstance(collapse_tree, bool):
-            raise ValueError("collapse_tree must be a boolean")
-
-        if collapse_tree:
-            selected_nodes, context = self.retrieve_information_collapse_tree(query, top_k, max_tokens)
-        else:
-            layer_nodes = self.tree.layer_to_nodes[self.start_layer]
-            selected_nodes, context = self.retrieve_information(layer_nodes, query, self.num_layers)
-        selected_nodes_index = [node.index for node in selected_nodes]
-        logger.debug(f"after retrieve, the selected nodes index is {selected_nodes_index}")
-        return context
