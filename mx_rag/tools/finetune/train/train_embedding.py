@@ -17,7 +17,7 @@ def train_embedding(origin_emb_model_path: str,
     FileCheck.dir_check(output_emb_model_path)
     SecFileCheck(train_data_path, MAX_FILE_SIZE_100M).check()
 
-    command = f"""torchrun --nproc_per_node 1 \
+    command = f"""/usr/local/bin/torchrun --nproc_per_node 1 \
 -m FlagEmbedding.baai_general_embedding.finetune.run \
 --model_name_or_path {origin_emb_model_path} \
 --output_dir {output_emb_model_path} \
@@ -37,7 +37,7 @@ def train_embedding(origin_emb_model_path: str,
 --save_steps 1000 \
 --query_instruction_for_retrieval "" """
 
-    ret = subprocess.run(shlex.split(command))
+    ret = subprocess.run([c.strip() for c in shlex.split(command)])
     if ret.returncode == 0:
         logger.info("train embedding model success")
         return True

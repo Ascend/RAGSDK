@@ -17,7 +17,7 @@ def train_reranker(origin_reranker_model_path: str,
     FileCheck.dir_check(output_reranker_model_path)
     SecFileCheck(train_data_path, MAX_FILE_SIZE_100M).check()
 
-    command = f"""torchrun --nproc_per_node 1 \
+    command = f"""/usr/local/bin/torchrun --nproc_per_node 1 \
 -m FlagEmbedding.reranker.run \
 --model_name_or_path {origin_reranker_model_path} \
 --output_dir {output_reranker_model_path} \
@@ -33,7 +33,7 @@ def train_reranker(origin_reranker_model_path: str,
 --weight_decay 0.01 \
 --logging_steps 10 """
 
-    ret = subprocess.run(shlex.split(command))
+    ret = subprocess.run([c.strip() for c in shlex.split(command)])
     if ret.returncode == 0:
         logger.info("train reranker model success")
         return True

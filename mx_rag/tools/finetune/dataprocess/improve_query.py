@@ -4,11 +4,12 @@ from tqdm import tqdm
 from loguru import logger
 
 from mx_rag.tools.finetune.instruction import RuleComplexInstructionRewriter
+from mx_rag.llm import Text2TextLLM
 
 IMPROVE_QUERY_MAX_LEN = 10000
 
 
-def improve_query(llm, old_query_list: list[str]):
+def improve_query(llm: Text2TextLLM, old_query_list: list[str]):
     """问题重写"""
 
     if len(old_query_list) > IMPROVE_QUERY_MAX_LEN:
