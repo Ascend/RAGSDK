@@ -6,6 +6,8 @@ from tqdm import tqdm
 from loguru import logger
 from langchain.prompts import PromptTemplate
 
+from mx_rag.llm import Text2TextLLM
+
 LLM_PREFERRED_MAX_LEN = 10000
 SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关性。相关性评分应该在0到1之间，其中1表示非常相关，0表示不相关。评分应该基于文档内容回答问题的直接程度。
 
@@ -30,7 +32,7 @@ SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关
 """
 
 
-def llm_preferred(llm, query_list: list[str], doc_list: list[str]):
+def llm_preferred(llm: Text2TextLLM, query_list: list[str], doc_list: list[str]):
     """大模型打分"""
 
     if len(query_list) > LLM_PREFERRED_MAX_LEN or len(doc_list) > LLM_PREFERRED_MAX_LEN:

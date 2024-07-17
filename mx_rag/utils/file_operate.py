@@ -40,7 +40,7 @@ def write_jsonl_to_file(datas: list[dict], file: str, line_limit: int = 10000, l
 def _write_jsonl_file(datas, file, length_limit):
     with os.fdopen(os.open(file, W_FLAGS, MODES), "w") as f:
         for data in datas:
-            data_str = json.dumps(data)
+            data_str = json.dumps(data, ensure_ascii=False)
             if len(data_str) > length_limit:
                 logger.warning(f"data longer than {length_limit}, is {len(data_str)}")
                 continue
