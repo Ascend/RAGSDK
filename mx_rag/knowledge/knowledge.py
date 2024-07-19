@@ -159,7 +159,7 @@ class KnowledgeTreeDB(KnowledgeBase):
                   file_names: List[str],
                   texts: List[str],
                   embed_func: Callable[[List[str]], np.ndarray],
-                  metadatas: Optional[List[dict]] = None) -> Tree:
+                  metadatas: List[dict]) -> Tree:
         if len(texts) != len(metadatas) != len(file_names):
             raise KnowledgeError("chunks, metadatas, file_names expected to be equal length")
         # 需要将索引tree返回
