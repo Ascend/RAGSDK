@@ -50,7 +50,7 @@ class DocxLoader(BaseLoader):
     def iter_block_items(parent: Document):
         """
         获取Document对象的元素
-        按文档顺序生成对*parent*中每个段落和表子的引用。
+        按文档顺序生成对*parent*中每个段落和表的引用。
         每个返回值都是Table或Paragraph。
         *parent*通常是对主Document对象的引用。
         """

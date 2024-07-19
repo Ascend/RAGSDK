@@ -3,9 +3,9 @@
 import csv
 from datetime import datetime, timedelta
 from typing import List
-import zipfile
 from loguru import logger
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
+from openpyxl.cell import MergedCell
 import xlrd
 
 from mx_rag.document.loader.base_loader import BaseLoader
@@ -35,46 +35,117 @@ class ExcelLoader(BaseLoader):
         return time.strftime("%H:%M")
 
     @staticmethod
-    def _cleanup_xlsx(worksheet):
+    def _get_xlsx_blank_rows_and_cols(worksheet):
         """
-        ：返回：去掉左边与上边空白行列后的表单，左上角对其, 需要感知空cell
+        功能：获取所有空行、空列的索引
         """
-        # 查找表格最左上角的cell位置
-        start_row = 0
-        start_col = 0
+        row_count = 0
+        col_count = 0
+
+        null_rows = {}
         for row in worksheet.iter_rows(values_only=True):
-            if all(cell is None for cell in row):
-                start_row += 1
-            else:
-                break
+            row_count += 1
+            if all(not cell for cell in row):
+                null_rows[row_count] = True
+
+        blank_cols = {}
         for col in worksheet.iter_cols(values_only=True):
-            if all(cell is None for cell in col):
-                start_col += 1
-            else:
-                break
-        # 删除空行和空列
-        if start_row:
-            worksheet.delete_rows(1, amount=start_row)
-        if start_col:
-            worksheet.delete_cols(1, amount=start_col)
-        return worksheet
+            col_count += 1
+            if all(not cell for cell in col):
+                blank_cols[col_count] = True
+
+        return null_rows, blank_cols
 
     @staticmethod
-    def _table_location_xls(worksheet):
+    def _get_xls_blank_rows_and_cols(worksheet):
         """
-        查找表格最左上角的cell位置
+        功能：获取所有空行、空列的索引
         """
-        start_row = 0
-        start_col = 0
+        null_rows = {}
+        blank_cols = {}
+
         for i in range(worksheet.nrows):
             row = worksheet.row_values(i)
-            if not sum(cell != "" for cell in row):
-                start_row += 1
+            if all(not cell for cell in row):
+                null_rows[i] = True
+
         for i in range(worksheet.ncols):
             col = worksheet.col_values(i)
-            if not sum(cell != "" for cell in col):
-                start_col += 1
-        return start_row, start_col
+            if all(not cell for cell in col):
+                blank_cols[i] = True
+
+        return null_rows, blank_cols
+
+    @staticmethod
+    def _parse_xlsx_cell(sheet: Workbook, row: int, col: int):
+        """
+        功能：读取xlsx cell值，如果是合并项，使用左上cell值替代
+        """
+        cell = sheet.cell(row=row, column=col)
+        if not isinstance(cell, MergedCell):
+            return cell.value
+
+        for merged_range in sheet.merged_cells.ranges:
+            if cell.coordinate in merged_range:
+                # return the left top cell
+                cell = sheet.cell(row=merged_range.min_row, column=merged_range.min_col)
+                return cell.value
+
+        return cell.value
+
+    @staticmethod
+    def _parse_xls_cell(sheet, row: int, col: int):
+        """
+        功能：读取xls cell值，如果是合并项，使用左上cell值替代
+        """
+        cell = sheet.cell(rowx=row, colx=col)
+        if cell.value:
+            return cell.value
+
+        for crange in sheet.merged_cells:
+            rlo, rhi, clo, chi = crange
+            if rlo <= row < rhi and clo <= col < chi:
+                return sheet.cell(rowx=rlo, colx=clo).value
+
+        return cell.value
+
+    @staticmethod
+    def _get_xlsx_first_not_blank_row_and_col(ws):
+        """
+        功能：读取xlsx 非空白首行、首列索引
+        """
+        first_row = 1
+        first_col = 1
+        for row in ws.iter_rows(values_only=True):
+            if any(cell for cell in row):
+                break
+            first_row += 1
+
+        for col in ws.iter_cols(values_only=True):
+            if any(cell for cell in col):
+                break
+            first_col += 1
+
+        return first_row, first_col
+
+    @staticmethod
+    def _get_xls_first_not_blank_row_and_col(ws):
+        """
+        功能：获取xls 非空白首行、首列索引
+        """
+        first_row = 0
+        first_col = 0
+        for i in range(ws.nrows):
+            if any(cell for cell in ws.row_values(i)):
+                first_row = i
+                break
+
+        for i in range(ws.ncols):
+            if any(cell for cell in ws.col_values(i)):
+                first_col = i
+                break
+
+        return first_row, first_col
 
     @staticmethod
     def _load_csv_line(row, headers):
@@ -110,41 +181,108 @@ class ExcelLoader(BaseLoader):
             logger.error(f"{self.file_path} file type is not one of (csv, xlsx, xls).")
             return []
 
-    def _load_xls_sheet(self, ws):
-        res = ""
-        start_row, start_col = self._table_location_xls(ws)
-        if ws.nrows - start_row < 2:
-            logger.info(f"In file {self.file_path} sheet *{ws.name}* is empty")
-            return res
-        title = ws.row_values(start_row)[start_col:]  # 默认第一排为列名称
-        for line_ind in range(start_row + 1, ws.nrows):
+    def _get_xlsx_title(self, ws, first_row, first_col):
+        title = []
+        for col in range(first_col, ws.max_column + 1):
+            ti = str(self._parse_xlsx_cell(ws, first_row, col))
+            title.append(ti if ti else "None")
+
+        return title
+
+    def _get_xls_title(self, ws, first_row, first_col):
+        title = []
+        for col in range(first_col, ws.ncols):
+            ti = str(self._parse_xls_cell(ws, first_row, col))
+            title.append(ti if ti else "None")
+
+        return title
+
+    def _load_xlsx_one_sheet(self, ws):
+        """
+        功能：读取一个xlsx表单的值，每行值以title:value;title:value....的格式，行与行之间通过self.line_sep分隔
+        """
+        content = ""
+        blank_rows, blank_cols = self._get_xlsx_blank_rows_and_cols(ws)
+
+        # 获取有效第一行,列的索引
+        first_row, first_col = self._get_xlsx_first_not_blank_row_and_col(ws)
+
+        # 判断表单是否有标题+内容，默认至少两行有效行
+        if ws.max_row - len(blank_rows.keys()) < 2:
+            return content
+
+        # 获取标题列表
+        title = self._get_xlsx_title(ws, first_row, first_col)
+
+        for row_index in range(first_row + 1, ws.max_row + 1):
+            # 空行无数据，不解析
+            if row_index in blank_rows.keys():
+                continue
+
             text_line = ""
-            line_list = ws.row_values(line_ind)
-            for ind, ti in enumerate(title):
-                if not str(ti):
-                    ti = "None"
-                ind += start_col
-                if not str(line_list[ind]):
-                    line_list[ind] = "None"
-                if ti in ["time"] and 0 <= float(line_list[ind]) <= 1:
-                    text_line += str(ti) + ":" + str(self._exceltime_to_datetime(float(line_list[ind]))) + ";"
+            for col_index in range(1, ws.max_column + 1):
+                # 空列无数据，不解析
+                if col_index in blank_cols.keys():
+                    continue
+
+                val = self._parse_xlsx_cell(ws, row_index, col_index)
+                ti = title[col_index - first_col]
+                text_line += str(ti) + ":" + str(val) + ";"
+
+            content += text_line + self.line_sep
+
+        return content
+
+    def _load_xls_one_sheet(self, ws):
+        """
+        功能：读取一个xls表单的值，每行值以title:value;title:value....的格式，行与行之间通过self.line_sep分隔
+        """
+        content = ""
+        blank_rows, blank_cols = self._get_xls_blank_rows_and_cols(ws)
+        # 获取有效第一行,列的索引
+        first_row, first_col = self._get_xls_first_not_blank_row_and_col(ws)
+
+        # 判断表单是否有标题+内容，默认至少两行有效行
+        if ws.nrows - len(blank_rows.keys()) < 2:
+            return content
+
+        # 获取标题列表
+        title = self._get_xls_title(ws, first_row, first_col)
+
+        for row_index in range(first_row + 1, ws.nrows):
+            # 空行无数据，不解析
+            if row_index in blank_rows.keys():
+                continue
+
+            text_line = ""
+            for col_index in range(ws.ncols):
+                # 空列无数据，不解析
+                if col_index in blank_cols.keys():
+                    continue
+                val = self._parse_xls_cell(ws, row_index, col_index)
+                ti = title[col_index - first_col]
+                if ti in ["time"] and 0 <= float(val) <= 1:
+                    text_line += str(ti) + ":" + str(self._exceltime_to_datetime(float(val))) + ";"
                 else:
-                    text_line += str(ti) + ":" + str(line_list[ind]) + ";"
-            text_line += self.line_sep
-            res += text_line
-        return res
+                    text_line += str(ti) + ":" + str(val) + ";"
+
+            content += text_line + self.line_sep
+
+        return content
 
     def _load_xls(self):
         docs: List[Doc] = list()
-        wb = xlrd.open_workbook(self.file_path)
+        wb = xlrd.open_workbook(self.file_path, formatting_info=True)
         if wb.nsheets > self.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
             return docs
-        for i in range(wb.nsheets):  # 对于每一张表
-            content = ""
+        for i in range(wb.nsheets):
             ws = wb.sheet_by_index(i)
-            ws_texts = self._load_xls_sheet(ws)
-            content += ws_texts
+            content = self._load_xls_one_sheet(ws)
+            if not content:
+                logger.info(f"In file [{self.file_path}] sheet [{ws.name}] is empty")
+                continue
+
             doc = Doc(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
             docs.append(doc)
         logger.info(f"file {self.file_path} Loading completed")
@@ -152,25 +290,17 @@ class ExcelLoader(BaseLoader):
 
     def _load_xlsx(self):
         docs: List[Doc] = list()
-        wb = load_workbook(self.file_path)
+        wb = load_workbook(self.file_path, data_only=True)
         if len(wb.sheetnames) > self.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
             return docs
-        for sheet_name in wb.sheetnames:  # 每张表单
-            content = ""
-            ws_init = wb[sheet_name]
-            ws = self._cleanup_xlsx(ws_init)
-            rows = list(ws.rows)
-            # 判断表单是否有标题+内容，默认至少两行
-            if len(rows) < 2:
-                logger.info(f"In file {self.file_path} sheet *{sheet_name}* is empty")
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            content = self._load_xlsx_one_sheet(ws)
+            if not content:
+                logger.info(f"In file [{self.file_path}] sheet [{sheet_name}] is empty")
                 continue
-            title = list(rows[0])
-            for line in list(rows[1:]):
-                text_line = ""
-                for ind, ti in enumerate(title):
-                    text_line += str(ti.value) + ":" + str(line[ind].value) + ";"
-                content += text_line + self.line_sep
+
             doc = Doc(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
             docs.append(doc)
         logger.info(f"file {self.file_path} Loading completed")
