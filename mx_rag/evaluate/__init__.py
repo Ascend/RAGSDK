@@ -3,4 +3,4 @@ __all__ = [
     "model"
 ]
 
-from mx_rag.rag_test import model
+from mx_rag.evaluate import model
