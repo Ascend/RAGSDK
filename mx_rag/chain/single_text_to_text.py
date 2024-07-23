@@ -64,7 +64,7 @@ class SingleText2TextChain(Chain):
 
     def _query(self,
                text: str,
-               max_tokens: int = 1000,
+               max_tokens: int = 512,
                temperature: float = 0.5,
                top_p: float = 0.95,
                stream: bool = False) -> Union[Dict, Iterator[Dict]]:

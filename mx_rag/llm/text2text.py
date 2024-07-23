@@ -102,7 +102,7 @@ class Text2TextLLM:
                 logger.info("for the content length reason, it stopped.")
                 ans += "......"
         else:
-            logger.error("get response failed")
+            logger.error("get response failed, please check the server log for details")
         return ans
 
     def chat_streamly(self, query: str, history: List[dict] = None, role: str = "user", **kwargs):
