@@ -80,7 +80,7 @@ def get_all_so_files():
 def get_all_json_files():
     src_dir = f"{pwd}/mx_rag"
     file_list = []
-    for name in glob.glob(f"{src_dir}/rag_test/**/*.json", recursive=True):
+    for name in glob.glob(f"{src_dir}/evaluate/**/*.json", recursive=True):
         file = name[len(src_dir) + 1:]
         file_list.append(file)
 
