@@ -3,7 +3,6 @@
 import json
 import sys
 from typing import List
-from urllib.parse import urljoin
 
 from loguru import logger
 

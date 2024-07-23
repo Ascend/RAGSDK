@@ -3,7 +3,6 @@
 
 import json
 from typing import List
-from urllib.parse import urljoin
 
 from loguru import logger
 import numpy as np
@@ -19,7 +18,7 @@ class TEIEmbedding(Embedding):
     TEXT_MAX_LEN = 1000 * 1000
 
     def __init__(self, url: str, use_http: bool = False):
-        self.url = urljoin(url, 'embed')
+        self.url = url
         self.client = RequestUtils(use_http=use_http)
 
     def embed_texts(self,

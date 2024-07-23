@@ -3,7 +3,6 @@
 
 import json
 from typing import List
-from urllib.parse import urljoin
 
 from loguru import logger
 import numpy as np
@@ -20,7 +19,7 @@ class TEIReranker(Reranker):
 
     def __init__(self, url: str, use_http: bool = False, k: int = 1):
         super(TEIReranker, self).__init__(k)
-        self.url = urljoin(url, 'rerank')
+        self.url = url
         self.client = RequestUtils(use_http=use_http)
 
     @staticmethod

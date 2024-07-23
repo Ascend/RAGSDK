@@ -2,7 +2,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import base64
 import json
-from urllib.parse import urljoin
 
 from loguru import logger
 
