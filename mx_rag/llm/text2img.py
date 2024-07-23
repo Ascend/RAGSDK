@@ -36,8 +36,7 @@ class Text2ImgMultiModel:
             return resp
 
         request_body = {"prompt": prompt, "output_format": output_format}
-        img_url = urljoin(self._url, 'text2img')
-        response = self._client.post(url=img_url, body=json.dumps(request_body), headers=self.HEADER)
+        response = self._client.post(url=self._url, body=json.dumps(request_body), headers=self.HEADER)
         if not response.success:
             logger.error("text to generate image failed")
             return resp

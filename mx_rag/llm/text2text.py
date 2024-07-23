@@ -85,8 +85,7 @@ class Text2TextLLM:
             history = []
         request_body = self._get_request_body(query, history, role, **kwargs)
         request_body["stream"] = False
-        chat_url = urljoin(self._url, "v1/chat/completions")
-        response = self._client.post(url=chat_url, body=json.dumps(request_body), headers=self.HEADER)
+        response = self._client.post(url=self._url, body=json.dumps(request_body), headers=self.HEADER)
         if response.success:
             try:
                 data = json.loads(response.data)
@@ -116,9 +115,8 @@ class Text2TextLLM:
 
         request_body = self._get_request_body(query, history, role, **kwargs)
         request_body["stream"] = True
-        chat_url = urljoin(self._url, "v1/chat/completions")
         ans = ""
-        response = self._client.post_streamly(url=chat_url, body=json.dumps(request_body), headers=self.HEADER)
+        response = self._client.post_streamly(url=self._url, body=json.dumps(request_body), headers=self.HEADER)
         for result in response:
             if not result.success:
                 logger.error("get response failed")
