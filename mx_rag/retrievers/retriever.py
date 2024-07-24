@@ -6,7 +6,7 @@ from typing import List
 from loguru import logger
 
 from mx_rag.document.loader.docx_loader import Doc
-from mx_rag.storage import Docstore
+from mx_rag.storage.document_store import Docstore
 
 
 class Retriever(ABC):

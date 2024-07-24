@@ -6,7 +6,7 @@ from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from mx_rag.storage.base_storage import Docstore, Document, StorageError
+from mx_rag.storage.document_store.base_storage import Docstore, Document, StorageError
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
 
