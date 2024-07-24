@@ -2,15 +2,12 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from __future__ import annotations
 
-import inspect
-import time
-from pathlib import Path
-from typing import Optional, List, Any, Sized, Tuple, Callable, NoReturn, Union
+from typing import List, Union
 
 import numpy as np
 from pymilvus import MilvusClient, DataType
 
-from mx_rag.vectorstore.vectorstore import VectorStore
+from mx_rag.storage.vectorstore.vectorstore import VectorStore
 
 
 class MilvusError(Exception):

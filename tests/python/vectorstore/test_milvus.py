@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import os.path
 import unittest
 from unittest.mock import patch, MagicMock
 import numpy as np
@@ -9,7 +8,6 @@ import numpy as np
 class TestMlvusClient(unittest.TestCase):
     def test_faiss(self):
         with patch("pymilvus.MilvusClient") as MilvusClient:
-            from mx_rag.vectorstore import MilvusDB
             embeddings = np.random.random((3, 1024))
             query = embeddings[0]
             my_milvus = MagicMock()

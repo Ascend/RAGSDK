@@ -8,9 +8,9 @@ import numpy as np
 
 class TestMindFAISS(unittest.TestCase):
     def test_faiss(self):
-        with patch("mx_rag.vectorstore.faiss_npu.ascendfaiss") as ascendfaiss:
-            with patch("mx_rag.vectorstore.faiss_npu.faiss") as faiss:
-                from mx_rag.vectorstore.faiss_npu import MindFAISS
+        with patch("mx_rag.storage.vectorstore.faiss_npu.ascendfaiss") as ascendfaiss:
+            with patch("mx_rag.storage.vectorstore.faiss_npu.faiss") as faiss:
+                from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 
                 total = np.random.random((3, 1024))
                 query = np.array([total[0]])

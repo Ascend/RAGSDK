@@ -11,7 +11,7 @@ import numpy as np
 from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck
-from mx_rag.vectorstore.vectorstore import VectorStore
+from mx_rag.storage.vectorstore.vectorstore import VectorStore
 
 
 class MindFAISSError(Exception):

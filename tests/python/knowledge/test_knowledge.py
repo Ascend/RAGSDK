@@ -11,7 +11,7 @@ from mx_rag.chain.tree_text_to_text import TreeText2TextChain
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeStore
 from mx_rag.retrievers import TreeBuilderConfig
 
-from mx_rag.storage import SQLiteDocstore
+from mx_rag.storage.document_store import SQLiteDocstore
 
 SQL_PATH = "./sql.db"
 
@@ -23,10 +23,10 @@ class TestKnowledge(unittest.TestCase):
             os.remove(SQL_PATH)
 
     def test_knowledge(self):
-        with patch("mx_rag.vectorstore.MindFAISS") as MindFAISS:
+        with patch("mx_rag.storage.vectorstore.faiss_npu.MindFAISS") as MindFAISS:
             if __name__ == '__main__':
-                from mx_rag.vectorstore.faiss_npu import MindFAISS
-                from mx_rag.storage import SQLiteDocstore
+                from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+                from mx_rag.storage.document_store import SQLiteDocstore
                 from mx_rag.knowledge import KnowledgeDB, KnowledgeMgr
                 from mx_rag.knowledge.knowledge import KnowledgeStore, KnowledgeMgrStore
                 total = np.random.random((3, 1024))

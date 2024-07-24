@@ -12,10 +12,10 @@ from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
 from mx_rag.retrievers.tree_retriever import Tree
 
-from mx_rag.storage.base_storage import Docstore, Document
+from mx_rag.storage.document_store.base_storage import Docstore, Document
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
-from mx_rag.vectorstore import VectorStore
+from mx_rag.storage.vectorstore import VectorStore
 
 Base = declarative_base()
 
