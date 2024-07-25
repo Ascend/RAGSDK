@@ -21,6 +21,13 @@ class TEIEmbedding(Embedding):
         self.url = url
         self.client = RequestUtils(use_http=use_http)
 
+    @staticmethod
+    def create(**kwargs):
+        if "url" not in kwargs or not isinstance(kwargs.get("url"), str):
+            raise KeyError("url param error. ")
+
+        return TEIEmbedding(**kwargs)
+
     def embed_texts(self,
                     texts: List[str],
                     batch_size: int = 32):

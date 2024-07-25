@@ -50,6 +50,13 @@ class TextEmbedding(Embedding):
 
         self.model = self.model.eval()
 
+    @staticmethod
+    def create(**kwargs):
+        if "model_path" not in kwargs or not isinstance(kwargs.get("model_path"), str):
+            raise KeyError("model_path param error. ")
+
+        return TextEmbedding(**kwargs)
+
     def embed_texts(self,
                     texts: List[str],
                     batch_size: int = 32,

@@ -45,6 +45,13 @@ class LocalReranker(Reranker):
 
         self.model = self.model.eval()
 
+    @staticmethod
+    def create(**kwargs):
+        if "model_path" not in kwargs or not isinstance(kwargs.get("model_path"), str):
+            raise KeyError("model_path param error. ")
+
+        return LocalReranker(**kwargs)
+
     def rerank(self,
                query: str,
                texts: List[str],

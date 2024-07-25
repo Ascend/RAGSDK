@@ -46,6 +46,13 @@ class ImageEmbedding(Embedding):
             logger.warning('unable to import torch_npu, please check if torch_npu is properly installed. '
                            'currently running on cpu.')
 
+    @staticmethod
+    def create(**kwargs):
+        if "model_path" not in kwargs or not isinstance(kwargs.get("model_path"), str):
+            raise KeyError("model_path param error. ")
+
+        return ImageEmbedding(**kwargs)
+
     def embed_texts(self, texts: List[str]) -> np.ndarray:
         if len(texts) == 0:
             return np.array([])
