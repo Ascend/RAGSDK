@@ -5,8 +5,10 @@ __all__ = [
     "MindFAISS",
     "VectorStore",
     "MilvusDB",
+    "VectorStorageFactory"
 ]
 
 from .faiss_npu import MindFAISS
 from .vectorstore import VectorStore
 from .milvus import MilvusDB
+from .vector_storage_factory import VectorStorageFactory

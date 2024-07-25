@@ -56,6 +56,19 @@ class MindFAISS(VectorStore):
         except Exception as err:
             raise MindFAISSError(f"init index failed, {err}") from err
 
+    @staticmethod
+    def create(**kwargs):
+        if "x_dim" not in kwargs or not isinstance(kwargs.get("x_dim"), int):
+            raise KeyError("x_dim param error. ")
+
+        if "index_type" not in kwargs or not isinstance(kwargs.get("index_type"), str):
+            raise KeyError("index_type param error. ")
+
+        if "devs" not in kwargs or not isinstance(kwargs.get("devs"), List):
+            raise KeyError("devs param error. ")
+
+        return MindFAISS(**kwargs)
+
     @classmethod
     def load_local(cls, devs: List[int], index_path: str, auto_save_path: str = None) -> MindFAISS:
         return cls(0, "", devs, index_path, auto_save_path)
@@ -72,6 +85,9 @@ class MindFAISS(VectorStore):
             os.chmod(index_path, 0o600)
         except Exception as err:
             raise MindFAISSError(f"save index failed {err}") from err
+
+    def get_save_file(self):
+        return self.auto_save_path
 
     def delete(self, ids):
         res = self.index.remove_ids(np.array(ids))
@@ -90,3 +106,6 @@ class MindFAISS(VectorStore):
             raise MindFAISSError(f"add index failed, {err}") from err
         if self.auto_save_path is not None:
             self.save_local(self.auto_save_path)
+
+    def get_ntotal(self) -> int:
+        return self.index.ntotal

@@ -22,6 +22,34 @@ class MilvusDB(VectorStore):
         self.client = MilvusClient(url, **kwargs)
         self._collection_name = collection_name
 
+    @staticmethod
+    def create(**kwargs):
+        x_dim_name = "x_dim"
+        index_type_name = "index_type"
+        metric_type_name = "metric_type"
+        url_name = "url"
+
+        if x_dim_name not in kwargs or not isinstance(kwargs.get(x_dim_name), int):
+            raise KeyError("x_dim param error. ")
+
+        if index_type_name not in kwargs or not isinstance(kwargs.get(index_type_name), str):
+            raise KeyError("index_type param error. ")
+
+        if metric_type_name not in kwargs or not isinstance(kwargs.get(metric_type_name), str):
+            raise KeyError("metric_type param error. ")
+
+        if url_name not in kwargs or not isinstance(kwargs.get(url_name), str):
+            raise KeyError("url param error. ")
+
+        url = kwargs.get(url_name)
+        vector_dims = kwargs.get(x_dim_name)
+        index_type = kwargs.get(index_type_name)
+        metric_type = kwargs.get(metric_type_name)
+
+        milvus_db = MilvusDB(url, **kwargs)
+        milvus_db.create_collection(x_dim=vector_dims, index_type=index_type, metric_type=metric_type, **kwargs)
+        return milvus_db
+
     def set_collection_name(self, collection_name: str):
         self._collection_name = collection_name
 

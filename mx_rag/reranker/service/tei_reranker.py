@@ -23,6 +23,13 @@ class TEIReranker(Reranker):
         self.client = RequestUtils(use_http=use_http)
 
     @staticmethod
+    def create(**kwargs):
+        if "url" not in kwargs or not isinstance(kwargs.get("url"), str):
+            raise KeyError("url param error. ")
+
+        return TEIReranker(**kwargs)
+
+    @staticmethod
     def _process_data(scores_json, scores_len):
         if len(scores_json) != scores_len:
             raise ValueError('tei response has different data length with request')
