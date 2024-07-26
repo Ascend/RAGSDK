@@ -8,10 +8,10 @@ from loguru import logger
 from transformers import PreTrainedTokenizerBase
 
 from .tree_structures import Node, Tree
-from .utils import (distances_from_embeddings, get_embeddings,
-                    get_node_list, get_text,
-                    indices_of_nearest_neighbors_from_distances,
-                    reverse_mapping)
+from .utils import (_distances_from_embeddings, _get_embeddings,
+                    _get_node_list, _get_text,
+                    _indices_of_nearest_neighbors_from_distances,
+                    _reverse_mapping)
 
 
 class TreeRetrieverConfig:
@@ -61,7 +61,7 @@ class TreeRetriever:
         self.top_k = config.top_k
         self.threshold = config.threshold
         self.selection_mode = config.selection_mode
-        self.tree_node_index_to_layer = reverse_mapping(self.tree.layer_to_nodes)
+        self.tree_node_index_to_layer = _reverse_mapping(self.tree.layer_to_nodes)
         self.embed_func = config.embed_func
 
     def retrieve(
@@ -97,10 +97,10 @@ class TreeRetriever:
     def _retrieve_information_collapse_tree(self, query: str, top_k: int, max_tokens: int) -> tuple:
         query_embedding = self._create_embedding(query)
         selected_nodes = []
-        node_list = get_node_list(self.tree.all_nodes)
-        embeddings = get_embeddings(node_list)
-        distances = distances_from_embeddings(query_embedding, embeddings)
-        indices = indices_of_nearest_neighbors_from_distances(distances)
+        node_list = _get_node_list(self.tree.all_nodes)
+        embeddings = _get_embeddings(node_list)
+        distances = _distances_from_embeddings(query_embedding, embeddings)
+        indices = _indices_of_nearest_neighbors_from_distances(distances)
         total_tokens = 0
         for idx in indices[:top_k]:
             node = node_list[idx]
@@ -109,7 +109,7 @@ class TreeRetriever:
                 break
             selected_nodes.append(node)
             total_tokens += node_tokens
-        context = get_text(selected_nodes)
+        context = _get_text(selected_nodes)
         return selected_nodes, context
 
     def _retrieve_information(
@@ -119,9 +119,9 @@ class TreeRetriever:
         selected_nodes = []
         node_list = current_nodes
         for layer in range(num_layers):
-            embeddings = get_embeddings(node_list)
-            distances = distances_from_embeddings(query_embedding, embeddings)
-            indices = indices_of_nearest_neighbors_from_distances(distances)
+            embeddings = _get_embeddings(node_list)
+            distances = _distances_from_embeddings(query_embedding, embeddings)
+            indices = _indices_of_nearest_neighbors_from_distances(distances)
             if self.selection_mode == "threshold":
                 best_indices = [index for index in indices if distances[index] > self.threshold]
             elif self.selection_mode == "top_k":
@@ -138,5 +138,5 @@ class TreeRetriever:
                 child_nodes = list(dict.fromkeys(child_nodes))
                 node_list = [self.tree.all_nodes[i] for i in child_nodes]
 
-        context = get_text(selected_nodes)
+        context = _get_text(selected_nodes)
         return selected_nodes, context

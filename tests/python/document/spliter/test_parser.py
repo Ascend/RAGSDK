@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, Mock
 from mx_rag.document.loader import DocxLoader, ExcelLoader, PdfLoader
 from mx_rag.document.splitter import CharTextSplitter
 from mx_rag.retrievers.tree_retriever import split_text
-from mx_rag.retrievers.tree_retriever.utils import cal_chunks_when_exceed_max_tokens, distances_from_embeddings
+from mx_rag.retrievers.tree_retriever.utils import _cal_chunks_when_exceed_max_tokens, _distances_from_embeddings
 
 DOC_PARSER_MAP = {
     ".docx": (DocxLoader, CharTextSplitter),
@@ -68,10 +68,10 @@ class TestTokenParseDocumentFile(unittest.TestCase):
         tokenizer = Mock()
         tokenizer.encode = MagicMock(return_value=[1, 2, 3])
         chunks = ["this is a test chunk"]
-        cal_chunks_when_exceed_max_tokens(chunks, 3, 0, "test sentence", tokenizer)
+        _cal_chunks_when_exceed_max_tokens(chunks, 3, 0, "test sentence", tokenizer)
         self.assertEqual(['this is a test chunk', 'test sentence'], chunks)
 
 
     def test_distances_from_embeddings_not_in_metrics(self):
         with self.assertRaises(ValueError):
-            distances_from_embeddings([2.2], [[1.1]], "sine")
+            _distances_from_embeddings([2.2], [[1.1]], "sine")
