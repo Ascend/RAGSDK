@@ -96,11 +96,15 @@ function package()
     cp "${ROOT_PATH}"/requirements.txt "${CI_PACKAGE_DIR}"
 
     cd "${CI_PACKAGE_DIR}"
-    chmod 440 version.info
-    chmod 550 *.whl
-    find patches \( -name "*.md" -o -name "*.patch" \) -exec chmod 440 {} \;
-    chmod 550 `find patches -type d`
-    find patches -name "*.sh" -exec chmod 550 {} \;
+    #将所有目录设置为750，特殊目录单独处理
+    find ./ -type d -exec chmod 750 {} \;
+    #将所有文件设置为440，特殊文件单独处理
+    find ./ -type f -exec chmod 440 {} \;
+
+    find ./  \( -name "*.sh" -o -name "*.run" \)  -exec  chmod 550 {} \;
+
+    find patches -type d -exec chmod 550 {} \;
+    find ops -type d -exec chmod 550 {} \;
 
     cd ../
     tar -zcvf "${RELEASE_TAR}" "${PKG_DIR}" || {
