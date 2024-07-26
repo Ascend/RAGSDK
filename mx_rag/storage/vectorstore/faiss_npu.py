@@ -28,8 +28,8 @@ class MindFAISS(VectorStore):
             x_dim: int,
             index_type: str,
             devs: List[int],
-            load_local_index: str = None,
-            auto_save_path: str = None
+            load_local_index: str,
+            auto_save: bool = False
     ):
         self.device = ascendfaiss.IntVector()
         if not isinstance(devs, list) or not devs:
@@ -38,11 +38,12 @@ class MindFAISS(VectorStore):
             raise MindFAISSError("currently only supports to set one device")
         for d in devs:
             self.device.push_back(d)
-        self.auto_save_path = auto_save_path
-        if load_local_index is not None:
+        self.auto_save = auto_save
+        self.load_local_index = load_local_index
+        if os.path.exists(self.load_local_index):
             try:
-                FileCheck.check_input_path_valid(load_local_index, check_blacklist=True)
-                cpu_index = faiss.read_index(load_local_index)
+                FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
+                cpu_index = faiss.read_index(self.load_local_index)
                 self.index = ascendfaiss.index_cpu_to_ascend(self.device, cpu_index)
             except Exception as err:
                 raise MindFAISSError(f"load index failed, {err}") from err
@@ -69,30 +70,26 @@ class MindFAISS(VectorStore):
 
         return MindFAISS(**kwargs)
 
-    @classmethod
-    def load_local(cls, devs: List[int], index_path: str, auto_save_path: str = None) -> MindFAISS:
-        return cls(0, "", devs, index_path, auto_save_path)
-
-    def save_local(self, index_path: str) -> None:
-        FileCheck.check_input_path_valid(index_path, check_blacklist=True)
+    def save_local(self) -> None:
+        FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
         try:
-            if os.path.exists(index_path):
-                logger.warning(f"the index path {index_path} has already exist, will be overwritten")
-                os.remove(index_path)
+            if os.path.exists(self.load_local_index):
+                logger.warning(f"the index path {self.load_local_index} has already exist, will be overwritten")
+                os.remove(self.load_local_index)
 
             cpu_index = ascendfaiss.index_ascend_to_cpu(self.index)
-            faiss.write_index(cpu_index, index_path)
-            os.chmod(index_path, 0o600)
+            faiss.write_index(cpu_index, self.load_local_index)
+            os.chmod(self.load_local_index, 0o600)
         except Exception as err:
             raise MindFAISSError(f"save index failed {err}") from err
 
     def get_save_file(self):
-        return self.auto_save_path
+        return self.load_local_index
 
     def delete(self, ids):
         res = self.index.remove_ids(np.array(ids))
-        if self.auto_save_path is not None:
-            self.save_local(self.auto_save_path)
+        if self.auto_save:
+            self.save_local()
         return res
 
     def search(self, embeddings: np.ndarray, k: int = 3):
@@ -104,8 +101,8 @@ class MindFAISS(VectorStore):
             self.index.add_with_ids(embeddings, np.array(ids))
         except Exception as err:
             raise MindFAISSError(f"add index failed, {err}") from err
-        if self.auto_save_path is not None:
-            self.save_local(self.auto_save_path)
+        if self.auto_save:
+            self.save_local()
 
     def get_ntotal(self) -> int:
         return self.index.ntotal

@@ -92,7 +92,6 @@ class TestCacheVectorStorage(unittest.TestCase):
                 with patch('cache_mocker.MockerVecStorage.save_local',
                            vector_flush_mock):
                     cache_vector_storage.flush()
-            vector_flush_mock.assert_called_with("user_file.txt")
 
 
 if __name__ == '__main__':
