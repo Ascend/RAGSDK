@@ -5,12 +5,11 @@ import copy
 from typing import Dict, List, Optional, Set, Tuple, Callable
 
 import numpy as np
-from loguru import logger
 from transformers import PreTrainedTokenizerBase
 
-from .cluster_alg import clustering
+from .cluster_alg import _clustering
 from .tree_structures import Node, Tree
-from .utils import get_node_list, get_text
+from .utils import _get_node_list, _get_text
 from ...chain import TreeText2TextChain
 
 
@@ -89,10 +88,6 @@ class TreeBuilder:
         embeddings = embed_func([text]).flatten()
         return index, Node(text, index, children_indices, embeddings)
 
-    def summarize(self, context, max_tokens=150) -> Dict[str, str]:
-        # 使用mxRAG调用llm的方式
-        return self.summarization_model.summarize(context, max_tokens=max_tokens)
-
     def build_from_text(self, embed_func: Callable[[List[str]], np.ndarray], chunks: List[str]) -> Tree:
         leaf_nodes = {}
         for index, text in enumerate(chunks):
@@ -103,14 +98,18 @@ class TreeBuilder:
 
         all_nodes = copy.deepcopy(leaf_nodes)
 
-        root_nodes = self.construct_tree(all_nodes, all_nodes, layer_to_nodes, embed_func)
+        root_nodes = self._construct_tree(all_nodes, all_nodes, layer_to_nodes, embed_func)
         tree = Tree(all_nodes, root_nodes, leaf_nodes, self.num_layers, layer_to_nodes)
         return tree
 
-    def process_cluster(self, cluster: List[Node], new_level_nodes: {}, next_node_index: int,
-                        summarization_length: int, embed_func: Callable[[List[str]], np.ndarray]):
-        node_texts = get_text(cluster)
-        summarized_result = self.summarize(
+    def _summarize(self, context, max_tokens=150) -> Dict[str, str]:
+        # 使用mxRAG调用llm的方式
+        return self.summarization_model.summarize(context, max_tokens=max_tokens)
+
+    def _process_cluster(self, cluster: List[Node], new_level_nodes: {}, next_node_index: int,
+                         summarization_length: int, embed_func: Callable[[List[str]], np.ndarray]):
+        node_texts = _get_text(cluster)
+        summarized_result = self._summarize(
             context=node_texts,
             max_tokens=summarization_length,
         )
@@ -120,7 +119,7 @@ class TreeBuilder:
         )
         new_level_nodes[next_node_index] = new_parent_node
 
-    def construct_tree(
+    def _construct_tree(
             self,
             current_level_nodes: Dict[int, Node],
             all_tree_nodes: Dict[int, Node],
@@ -131,20 +130,20 @@ class TreeBuilder:
 
         for layer in range(self.num_layers):
             new_level_nodes = {}
-            node_list_current_layer = get_node_list(current_level_nodes)
+            node_list_current_layer = _get_node_list(current_level_nodes)
 
             if len(node_list_current_layer) <= self.reduction_dimension + 1:
                 self.num_layers = layer
                 break
 
-            clusters = clustering(
+            clusters = _clustering(
                 node_list_current_layer,
                 reduction_dimension=self.reduction_dimension,
                 tokenizer=self.tokenizer,
             )
 
             for cluster in clusters:
-                self.process_cluster(
+                self._process_cluster(
                     cluster,
                     new_level_nodes,
                     next_node_index,

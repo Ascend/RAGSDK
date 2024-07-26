@@ -35,7 +35,7 @@ def upload_files(
         raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, upload files failed')
 
     for file in files:
-        check_file(file, force, knowledge)
+        _check_file(file, force, knowledge)
         file_obj = Path(file)
         texts, metadatas = parse_func(file_obj.as_posix())
         try:
@@ -49,13 +49,13 @@ def upload_files(
             raise FileHandlerError(f"add {file_obj.name} failed, {err}") from err
 
 
-def check_file(file: str, force: bool, knowledge: KnowledgeBase):
+def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
     """
     检查文件路径
     """
     FileCheck.check_path_is_exist_and_valid(file)
     file_obj = Path(file)
-    if not is_in_white_paths(file_obj, knowledge.white_paths):
+    if not _is_in_white_paths(file_obj, knowledge.white_paths):
         raise FileHandlerError(f"{file_obj.as_posix()} is not in whitelist path")
     if not file_obj.is_file():
         raise FileHandlerError(f"{file} is not a normal file")
@@ -66,7 +66,7 @@ def check_file(file: str, force: bool, knowledge: KnowledgeBase):
             knowledge.delete_file(file_obj.name)
 
 
-def is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
+def _is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
     """
     判断是否在白名单路径中
     """
@@ -84,7 +84,7 @@ def upload_files_build_tree(knowledge: KnowledgeTreeDB,
     if len(files) > 1:
         raise FileHandlerError(f"Currently not supported for uploading multiple files simultaneously!")
     for file in files:
-        check_file(file, force, knowledge)
+        _check_file(file, force, knowledge)
     tokenizer = knowledge.tree_builder_config.tokenizer
     max_tokens = knowledge.tree_builder_config.max_tokens
     total_texts = []
@@ -171,7 +171,7 @@ def load_tree(file_path: str, white_paths: List[str], float_type: Union[np.float
     """
     real_path = os.path.realpath(file_path)
     file_obj = Path(real_path)
-    if not is_in_white_paths(file_obj, white_paths):
+    if not _is_in_white_paths(file_obj, white_paths):
         raise FileHandlerError(f"{file_obj.as_posix()} is not in whitelist path")
     file_check = SecFileCheck(file_path, 1024 * 1024 * 1024)
     file_check.check()

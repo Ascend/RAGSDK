@@ -14,7 +14,7 @@ RANDOM_SEED = 224
 random.seed(RANDOM_SEED)
 
 
-def global_cluster_embeddings(
+def _global_cluster_embeddings(
         embeddings: np.ndarray,
         dim: int,
         n_neighbors: Optional[int] = None,
@@ -28,7 +28,7 @@ def global_cluster_embeddings(
     return reduced_embeddings
 
 
-def local_cluster_embeddings(
+def _local_cluster_embeddings(
         embeddings: np.ndarray, dim: int, num_neighbors: int = 10, metric: str = "cosine"
 ) -> np.ndarray:
     reduced_embeddings = umap.UMAP(
@@ -37,7 +37,7 @@ def local_cluster_embeddings(
     return reduced_embeddings
 
 
-def get_optimal_clusters(
+def _get_optimal_clusters(
         embeddings: np.ndarray, max_clusters: int = 50, random_state: int = RANDOM_SEED
 ) -> int:
     max_clusters = min(max_clusters, len(embeddings))
@@ -51,8 +51,8 @@ def get_optimal_clusters(
     return int(optimal_clusters)
 
 
-def gmm_cluster(embeddings: np.ndarray, threshold: float):
-    n_clusters = get_optimal_clusters(embeddings)
+def _gmm_cluster(embeddings: np.ndarray, threshold: float):
+    n_clusters = _get_optimal_clusters(embeddings)
     gm = GaussianMixture(n_components=n_clusters, random_state=0)
     gm.fit(embeddings)
     probs = gm.predict_proba(embeddings)
@@ -60,11 +60,11 @@ def gmm_cluster(embeddings: np.ndarray, threshold: float):
     return labels, n_clusters
 
 
-def perform_clustering(
+def _perform_clustering(
         embeddings: np.ndarray, dim: int, threshold: float,
 ) -> List[np.ndarray]:
-    reduced_embeddings_global = global_cluster_embeddings(embeddings, min(dim, len(embeddings) - 2))
-    global_clusters, n_global_clusters = gmm_cluster(
+    reduced_embeddings_global = _global_cluster_embeddings(embeddings, min(dim, len(embeddings) - 2))
+    global_clusters, n_global_clusters = _gmm_cluster(
         reduced_embeddings_global, threshold
     )
 
@@ -82,10 +82,10 @@ def perform_clustering(
             local_clusters = [np.array([0]) for _ in global_cluster_embeddings_]
             n_local_clusters = 1
         else:
-            reduced_embeddings_local = local_cluster_embeddings(
+            reduced_embeddings_local = _local_cluster_embeddings(
                 global_cluster_embeddings_, dim
             )
-            local_clusters, n_local_clusters = gmm_cluster(
+            local_clusters, n_local_clusters = _gmm_cluster(
                 reduced_embeddings_local, threshold
             )
 
@@ -106,7 +106,7 @@ def perform_clustering(
     return all_local_clusters
 
 
-def clustering(
+def _clustering(
         nodes: List[Node],
         max_length_in_cluster: int = 3500,
         tokenizer=None,
@@ -116,7 +116,7 @@ def clustering(
     if tokenizer is None:
         raise ValueError("tokenizer cannot be None.")
     embeddings = np.array([node.embeddings for node in nodes])
-    clusters = perform_clustering(
+    clusters = _perform_clustering(
         embeddings, dim=reduction_dimension, threshold=threshold
     )
     node_clusters = []
@@ -136,7 +136,7 @@ def clustering(
 
         if total_length > max_length_in_cluster:
             node_clusters.extend(
-                perform_clustering(
+                _perform_clustering(
                     cluster_nodes, max_length_in_cluster
                 )
             )
