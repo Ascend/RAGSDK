@@ -1,0 +1,42 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import unittest
+from unittest import mock
+from unittest.mock import patch
+
+from mx_rag.cache.cache_emb import CacheEmb
+
+
+class TestCacheEmb(unittest.TestCase):
+    def test_cache_emb_init_type_exception(self):
+        self.assertRaises(KeyError, CacheEmb.create, **{
+            "x_dim": 1024,
+            "skip_emb": False,
+            "embedding_type": "xxxx"  # error happen,
+        })
+
+        self.assertRaises(KeyError, CacheEmb.create, **{
+            "x_dim": 1024,
+            "skip_emb": False,  # no embedding_type error
+        })
+
+        self.assertRaises(ValueError, CacheEmb.create, **{
+            "x_dim": 1024,
+            "skip_emb": False,
+            "embedding_type": 1234  # type error
+        })
+
+    def test_cache_emb(self):
+        def mock_create_embedding(*args, **kwargs):
+            return None
+
+        with patch('mx_rag.embedding.embedding_factory.EmbeddingFactory.create_embedding',
+                   mock.Mock(side_effect=mock_create_embedding)):
+            cache_emb = CacheEmb.create(embedding_type="xxxx", x_dim=1024, skip_emb=False)
+            self.assertIsInstance(cache_emb, CacheEmb)
+            self.assertEqual(cache_emb.dimension(), 1024)
+            self.assertEqual(cache_emb.to_embeddings(["1234567"]), ["1234567"])
+
+
+if __name__ == '__main__':
+    unittest.main()

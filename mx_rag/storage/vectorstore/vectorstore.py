@@ -17,14 +17,11 @@ class VectorStore(ABC):
     def add(self, embeddings, ids):
         pass
 
-    @abstractmethod
     def save_local(self, index_path: str) -> None:
         return
 
-    @abstractmethod
     def get_save_file(self):
         return ""
 
-    @abstractmethod
     def get_ntotal(self) -> int:
         return 0

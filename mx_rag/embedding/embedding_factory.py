@@ -26,23 +26,23 @@ class EmbeddingFactory(ABC):
     }
 
     @classmethod
-    def create_embedding(cls, embedding_config: Dict[str, Any]) -> Embedding:
+    def create_embedding(cls, **kwargs) -> Embedding:
         """
         功能描述:
             构造embedding
 
         Args:
-            embedding_config: Dict[str, Any] 构造embedding的参数
+            kwargs: Dict[str, Any] 构造embedding的参数
         Return:
             embedding: Embedding 返回的embedding的实例
         Raises:
             KeyError: 键值不存在
             ValueError: 数据类型不匹配
         """
-        if "embedding_type" not in embedding_config:
+        if "embedding_type" not in kwargs:
             raise KeyError("need embedding_type param. ")
 
-        embedding_type = embedding_config.pop("embedding_type")
+        embedding_type = kwargs.pop("embedding_type")
 
         if not isinstance(embedding_type, str):
             raise ValueError("embedding_type should be str type. ")
@@ -51,5 +51,5 @@ class EmbeddingFactory(ABC):
             raise KeyError(f"embedding_type is not support. {embedding_type}")
 
         creator = cls.NPU_SUPPORT_EMB.get(embedding_type)
-        embedding = creator(**embedding_config)
+        embedding = creator(**kwargs)
         return embedding
