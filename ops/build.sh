@@ -12,7 +12,6 @@ fi
 patch -p1 CMakePresets.json < CMakePresets.patch
 patch -p1 cmake/util/makeself/makeself-header.sh < cmake.patch
 sed -i 's|"customize"|"mxRAG"|' "CMakePresets.json"
-sed -i 's/# Huawei Technologies Co., Ltd. <foss@huawei.com>/# Huawei Technologies Co., Ltd./g' cmake/util/makeself/makeself-header.sh
 chmod -R +x ./build.sh
 find . -type f -name "*.sh" -print0 | xargs -0 dos2unix
 bash build.sh
