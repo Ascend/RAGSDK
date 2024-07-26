@@ -25,23 +25,23 @@ class RerankerFactory(ABC):
     }
 
     @classmethod
-    def create_reranker(cls, similarity_config: Dict[str, Any]):
+    def create_reranker(cls, **kwargs):
         """
         功能描述:
             构造vector storage
 
         Args:
-            similarity_config: Dict[str, Any] 构造reranker的参数
+            kwargs: Dict[str, Any] 构造reranker的参数
         Return:
             similarity: Reranker 返回的reranker的实例
         Raises:
             KeyError: 键值不存在
             ValueError: 数据类型不匹配
         """
-        if "similarity_type" not in similarity_config:
+        if "similarity_type" not in kwargs:
             raise KeyError("need similarity_config param. ")
 
-        similarity_type = similarity_config.pop("similarity_type")
+        similarity_type = kwargs.pop("similarity_type")
 
         if not isinstance(similarity_type, str):
             raise ValueError("similarity_type should be str type. ")
@@ -50,5 +50,5 @@ class RerankerFactory(ABC):
             raise KeyError(f"similarity_type is not support. {similarity_type}")
 
         creator = cls.NPU_SUPPORT_RERANKER.get(similarity_type)
-        similarity = creator(**similarity_config)
+        similarity = creator(**kwargs)
         return similarity

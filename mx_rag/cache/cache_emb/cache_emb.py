@@ -1,0 +1,79 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+"""
+MXRAGCache 的embedding 适配器类
+"""
+from typing import List, Optional, Union
+
+import numpy as np
+from gptcache.embedding.base import BaseEmbedding
+
+from mx_rag.embedding import Embedding, EmbeddingFactory
+
+
+class CacheEmb(BaseEmbedding):
+    """
+    功能描述:
+        CacheEmb 为MXRAG适配gptcache embedding功能的适配器
+
+    Attributes:
+        emb_obj:(Embedding) MXRAG的embedding 实例
+        x_dim: (int) embedding的维度
+        skip_emb: (bool) 是否需要跳过embedding 对于memory_cache 不需要做embedding
+    """
+
+    def __init__(self, emb_obj: Embedding = None, x_dim: int = 0, skip_emb: bool = False):
+        self.emb_obj = emb_obj
+        self.x_dim = x_dim
+        self.skip_emb = skip_emb
+
+    @staticmethod
+    def create(**kwargs):
+        """
+        构造CacheEmb的静态方法
+
+        Args:
+            kwargs:(Dict[str, Any]) embedding配置参数
+        Return:
+            embedding 适配器实例
+        """
+        x_dim = kwargs.pop("x_dim", 0)
+        skip_emb = kwargs.pop("skip_emb", False)
+
+        embedding = EmbeddingFactory.create_embedding(**kwargs)
+        embedding = CacheEmb(embedding, x_dim, skip_emb)
+        return embedding
+
+    def to_embeddings(self, data: Union[List[str], str], **kwargs):
+        """
+        调用MXRAG的embedding方法去embedding 来自gptcache的数据data
+
+        Args:
+            data:(List[str]) 需要被embedding的数据
+        Return:
+            embedding之后的数据, 如果是跳过embedding 则返回原始数据
+        """
+        if self.skip_emb:
+            return data
+
+        if isinstance(data, str):
+            data = [data]
+        return self._embedding_text(data)
+
+    def dimension(self) -> int:
+        """
+        由GPTCache 调用，返回embedding模块的维度信息
+
+        Return:
+            返回embedding的维度，由gptcache框架调用
+        """
+        return self.x_dim if not self.skip_emb else 0
+
+    def _embedding_text(self, data: List[str]) -> np.ndarray:
+        """
+        调用MXRAG的embedding方法去embedding 来自gptcache的数据data
+
+        Return:
+            返回embedding 之后的数据
+        """
+        return self.emb_obj.embed_texts(data) if self.emb_obj is not None else data
