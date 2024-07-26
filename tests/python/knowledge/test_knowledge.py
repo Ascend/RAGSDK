@@ -38,7 +38,7 @@ class TestKnowledge(unittest.TestCase):
                     return query
 
                 os.system = MagicMock(return_value=0)
-                index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", auto_save_path="faiss.index")
+                index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
                 db = SQLiteDocstore(SQL_PATH)
                 current_dir = os.path.dirname(os.path.realpath(__file__))
                 top_path = os.path.dirname(os.path.dirname(current_dir))

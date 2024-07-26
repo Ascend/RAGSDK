@@ -17,8 +17,8 @@ class VectorStore(ABC):
     def add(self, embeddings, ids):
         pass
 
-    def save_local(self, index_path: str) -> None:
-        return
+    def save_local(self):
+        pass
 
     def get_save_file(self):
         return ""

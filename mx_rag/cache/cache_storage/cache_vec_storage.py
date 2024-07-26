@@ -49,9 +49,8 @@ class CacheVecStorage(VectorBase):
         """
         vector_type = kwargs.get("vector_type", "")
         if isinstance(vector_type, str) and vector_type == "npu_faiss_db":
-            if os.path.exists(vector_save_file):
-                kwargs["load_local_index"] = vector_save_file
-            kwargs["auto_save_path"] = vector_save_file
+            kwargs["load_local_index"] = vector_save_file
+            kwargs["auto_save"] = True
 
         vector_base = VectorStorageFactory.create_storage(**kwargs)
         vector_base = CacheVecStorage(vector_base, top_k=top_k)
@@ -112,7 +111,7 @@ class CacheVecStorage(VectorBase):
         """
         user_save_file = self._vec_impl.get_save_file()
         if user_save_file:
-            self._vec_impl.save_local(user_save_file)
+            self._vec_impl.save_local()
 
     def close(self):
         """
