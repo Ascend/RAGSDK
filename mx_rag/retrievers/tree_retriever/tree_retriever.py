@@ -22,6 +22,8 @@ class TreeRetrieverConfig:
             top_k: int = 5,
             selection_mode: str = "top_k",
             embed_func: Callable[[List[str]], np.ndarray] = None,
+            collapse_tree: bool = True,
+            max_tokens: int = 3500
     ):
         if tokenizer is None:
             raise ValueError("tokenizer cannot be None.")
@@ -48,6 +50,13 @@ class TreeRetrieverConfig:
             raise ValueError("embed_func must be a callable function")
         self.embed_func = embed_func
 
+        if not isinstance(collapse_tree, bool):
+            raise ValueError("collapse_tree must be a boolean")
+        self.collapse_tree = collapse_tree
+        if not isinstance(max_tokens, int) or max_tokens < 1:
+            raise ValueError("max_tokens must be an integer and at least 1")
+        self.max_tokens = max_tokens
+
 
 class TreeRetriever:
     def __init__(self, config: TreeRetrieverConfig, tree: Tree) -> None:
@@ -63,25 +72,19 @@ class TreeRetriever:
         self.selection_mode = config.selection_mode
         self.tree_node_index_to_layer = _reverse_mapping(self.tree.layer_to_nodes)
         self.embed_func = config.embed_func
+        self.collapse_tree = config.collapse_tree
+        self.max_tokens = config.max_tokens
 
     def retrieve(
             self,
             query: str,
-            top_k: int = 10,
-            max_tokens: int = 3500,
-            collapse_tree: bool = True,
+            top_k: int = 10
     ) -> str:
         if not isinstance(query, str):
             raise ValueError("query must be a string")
 
-        if not isinstance(max_tokens, int) or max_tokens < 1:
-            raise ValueError("max_tokens must be an integer and at least 1")
-
-        if not isinstance(collapse_tree, bool):
-            raise ValueError("collapse_tree must be a boolean")
-
-        if collapse_tree:
-            selected_nodes, context = self._retrieve_information_collapse_tree(query, top_k, max_tokens)
+        if self.collapse_tree:
+            selected_nodes, context = self._retrieve_information_collapse_tree(query, top_k, self.max_tokens)
         else:
             layer_nodes = self.tree.layer_to_nodes[self.start_layer]
             selected_nodes, context = self._retrieve_information(layer_nodes, query, self.num_layers)

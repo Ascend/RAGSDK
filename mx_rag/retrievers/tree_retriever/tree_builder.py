@@ -5,6 +5,7 @@ import copy
 from typing import Dict, List, Optional, Set, Tuple, Callable
 
 import numpy as np
+from loguru import logger
 from transformers import PreTrainedTokenizerBase
 
 from .cluster_alg import _clustering
@@ -19,12 +20,11 @@ class TreeBuilderConfig:
             tokenizer: PreTrainedTokenizerBase = None,
             max_tokens: int = 100,
             num_layers: int = 5,
-            threshold: float = 0.5,
-            top_k: int = 5,
+            threshold: float = 0.1,
             reduction_dimension: int = 10,
-            selection_mode: str = "top_k",
             summarization_length: int = 100,
-            summarization_model: TreeText2TextChain = None
+            summarization_model: TreeText2TextChain = None,
+            max_length_in_cluster: int = 3500
     ):
         if tokenizer is None:
             raise ValueError("tokenizer cannot be None.")
@@ -42,17 +42,9 @@ class TreeBuilderConfig:
             raise ValueError("threshold must be a number between 0 and 1")
         self.threshold = threshold
 
-        if not isinstance(top_k, int) or top_k < 1:
-            raise ValueError("top_k must be an integer and at least 1")
-        self.top_k = top_k
-
-        if not isinstance(reduction_dimension, int) or top_k < 1:
-            raise ValueError("reduction_dimension must be an integer and at least 1")
+        if not isinstance(reduction_dimension, int):
+            raise ValueError("reduction_dimension must be an integer")
         self.reduction_dimension = reduction_dimension
-
-        if selection_mode not in ["top_k", "threshold"]:
-            raise ValueError("selection_mode must be either 'top_k' or 'threshold'")
-        self.selection_mode = selection_mode
 
         self.summarization_length = summarization_length
 
@@ -64,18 +56,21 @@ class TreeBuilderConfig:
             )
         self.summarization_model = summarization_model
 
+        if not isinstance(max_length_in_cluster, int):
+            raise ValueError("max_length_in_cluster must be an integer")
+        self.max_length_in_cluster = max_length_in_cluster
+
 
 class TreeBuilder:
     def __init__(self, config) -> None:
         self.tokenizer = config.tokenizer
         self.max_tokens = config.max_tokens
         self.num_layers = config.num_layers
-        self.top_k = config.top_k
         self.reduction_dimension = config.reduction_dimension
         self.threshold = config.threshold
-        self.selection_mode = config.selection_mode
         self.summarization_length = config.summarization_length
         self.summarization_model = config.summarization_model
+        self.max_length_in_cluster = config.max_length_in_cluster
 
     @staticmethod
     def create_node(
@@ -95,14 +90,14 @@ class TreeBuilder:
             leaf_nodes[index] = node
 
         layer_to_nodes = {0: list(leaf_nodes.values())}
-
+        logger.info(f"Layer 0, The number of leaf nodes is {len(leaf_nodes)}")
         all_nodes = copy.deepcopy(leaf_nodes)
 
         root_nodes = self._construct_tree(all_nodes, all_nodes, layer_to_nodes, embed_func)
         tree = Tree(all_nodes, root_nodes, leaf_nodes, self.num_layers, layer_to_nodes)
         return tree
 
-    def _summarize(self, context, max_tokens=150) -> Dict[str, str]:
+    def _summarize(self, context, max_tokens=100) -> Dict[str, str]:
         # 使用mxRAG调用llm的方式
         return self.summarization_model.summarize(context, max_tokens=max_tokens)
 
@@ -117,6 +112,7 @@ class TreeBuilder:
         _, new_parent_node = TreeBuilder.create_node(
             next_node_index, summarized_text, embed_func=embed_func, children_indices={node.index for node in cluster}
         )
+        logger.info(f"Created node {next_node_index}")
         new_level_nodes[next_node_index] = new_parent_node
 
     def _construct_tree(
@@ -133,6 +129,9 @@ class TreeBuilder:
             node_list_current_layer = _get_node_list(current_level_nodes)
 
             if len(node_list_current_layer) <= self.reduction_dimension + 1:
+                logger.info(
+                    f"Stopping Layer construction: Cannot Create More Layers. Total Layers in tree: {layer + 1}"
+                )
                 self.num_layers = layer
                 break
 
@@ -140,6 +139,8 @@ class TreeBuilder:
                 node_list_current_layer,
                 reduction_dimension=self.reduction_dimension,
                 tokenizer=self.tokenizer,
+                threshold=self.threshold,
+                max_length_in_cluster=self.max_length_in_cluster
             )
 
             for cluster in clusters:
@@ -155,5 +156,7 @@ class TreeBuilder:
             layer_to_nodes[layer + 1] = list(new_level_nodes.values())
             current_level_nodes = new_level_nodes
             all_tree_nodes.update(new_level_nodes)
-
+            logger.info(f"Layer {layer + 1}, The number of nodes is {len(current_level_nodes)}")
+        logger.info(f"Create tree success, total layers {self.num_layers + 1}, "
+                    f"total nodes {len(all_tree_nodes)}, the index start form 0")
         return current_level_nodes
