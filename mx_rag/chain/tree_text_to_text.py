@@ -28,7 +28,7 @@ class TreeText2TextChain(SingleText2TextChain):
         self.tree_retriever = tree_retriever
 
     def summarize(self, text: str,
-                  max_tokens: int = 1000,
+                  max_tokens: int = 100,
                   temperature: float = 0.5,
                   top_p: float = 0.95) -> Union[Dict, Iterator[Dict]]:
         # 不带历史内容
@@ -42,10 +42,10 @@ class TreeText2TextChain(SingleText2TextChain):
             text,
             temperature: float = 0.5,
             top_p: float = 0.95,
-            max_tokens: int = 3500,
+            max_tokens: int = 512,
             **kwargs
     ):
-        context = self._retrieve(text, max_tokens=max_tokens, **kwargs)
+        context = self._retrieve(text, **kwargs)
         final_question = (f"参考信息: {context} 我的问题或指令：{text} \n请根据上述参考信息回答我的问题或回复我的指令。"
                           f"前面的参考信息可能有用，也可能没用，你需要从我给出的参考信息中选出与我的问题最相关的那些，来为你的回答提供依据。"
                           f"回答一定要忠于原文，简洁但不丢信息，不要胡乱编造。我的问题或指令是什么语种，你就用什么语种回复, 你的回复: ")
@@ -56,16 +56,12 @@ class TreeText2TextChain(SingleText2TextChain):
     def _retrieve(
             self,
             question,
-            top_k: int = 10,
-            max_tokens: int = 3500,
-            collapse_tree: bool = True,
+            top_k: int = 10
     ):
         if self.tree_retriever is None:
             raise ValueError("The TreeRetriever instance has not been initialized. Call 'add_documents' first.")
 
         return self.tree_retriever.retrieve(
             question,
-            top_k,
-            max_tokens,
-            collapse_tree
+            top_k
         )

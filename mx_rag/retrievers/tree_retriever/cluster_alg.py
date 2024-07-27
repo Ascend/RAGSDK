@@ -136,9 +136,7 @@ def _clustering(
 
         if total_length > max_length_in_cluster:
             node_clusters.extend(
-                _perform_clustering(
-                    cluster_nodes, max_length_in_cluster
-                )
+                _clustering(cluster_nodes, max_length_in_cluster, tokenizer, reduction_dimension, threshold)
             )
         else:
             node_clusters.append(cluster_nodes)
