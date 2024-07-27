@@ -4,13 +4,14 @@
 
 参考：https://gitee.com/ascend/ModelZoo-PyTorch/tree/master/MindIE/MindIE-Torch/built-in/audio/Whisper
 
-| 配套         | 版本要求    |
-|------------|---------|
-| CANN       | 8.0.RC2 |
-| MindIE     | 1.0.RC2 |
-| Python     | 3.10.X  |
-| PyTorch    | 2.1.0   |
-| ffmpeg     | 4.2.7   |
+| 配套      | 版本要求    |
+|---------|---------|
+| CANN    | 8.0.RC2 |
+| MindIE  | 1.0.RC2 |
+| Python  | 3.10.X  |
+| PyTorch | 2.1.0   |
+| ffmpeg  | 4.2.7   |
+| onnx    | 1.16.1  |
 
 
 安装MindIE前需要先source toolkit的环境变量，然后直接安装，以默认安装路径/usr/local/Ascend为例：
@@ -34,8 +35,11 @@ git reset --hard ba3f3cd54b0e5b8ce1ab3de13e32122d0d5f98ab
 
 下载文件：compile.py, mindietorch_infer.patch, trace_model.patch
 
-注意:建议修改compile.py文件中_MAX_TOKEN 参数值为2240,以支持长语音(超过1分钟)的识别。
+注意:
 
+(1)建议修改compile.py文件中_MAX_TOKEN 参数值为2240,以支持长语音(超过1分钟)的识别。
+
+(2)默认编译的device值为0，可根据需求更改在mindietorch_infer.patch文件中device的值(第17、108、156行)
 
 3.在whisper源码项目下执行模型导出
 
@@ -67,6 +71,14 @@ patch -p1 < ../path/to/mindietorch_infer.patch
 pip3 install .
 cd ..
 whisper zh.wav --model tiny
+```
+Python调用
+```python
+from whisper import load_model
+from whisper.transcribe import transcribe
+#模型加载
+model = load_model('tiny')
+result = transcribe(model, audio="zh.wav", verbose=False, beam_size=5, temperature=0)
 ```
 
 ## 注意事项
