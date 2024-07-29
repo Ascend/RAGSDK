@@ -17,11 +17,11 @@ from .utils import (_distances_from_embeddings, _get_embeddings,
 class TreeRetrieverConfig:
     def __init__(
             self,
-            tokenizer: PreTrainedTokenizerBase = None,
+            tokenizer: PreTrainedTokenizerBase,
+            embed_func: Callable[[List[str]], np.ndarray],
             threshold: float = 0.5,
             top_k: int = 5,
             selection_mode: str = "top_k",
-            embed_func: Callable[[List[str]], np.ndarray] = None,
             collapse_tree: bool = True,
             max_tokens: int = 3500
     ):
@@ -77,14 +77,13 @@ class TreeRetriever:
 
     def retrieve(
             self,
-            query: str,
-            top_k: int = 10
+            query: str
     ) -> str:
         if not isinstance(query, str):
             raise ValueError("query must be a string")
 
         if self.collapse_tree:
-            selected_nodes, context = self._retrieve_information_collapse_tree(query, top_k, self.max_tokens)
+            selected_nodes, context = self._retrieve_information_collapse_tree(query, self.top_k, self.max_tokens)
         else:
             layer_nodes = self.tree.layer_to_nodes[self.start_layer]
             selected_nodes, context = self._retrieve_information(layer_nodes, query, self.num_layers)
