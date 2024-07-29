@@ -32,6 +32,10 @@ class EvictPolicy(Enum):
     RR: str = 'RR'
 
 
+def _get_default_save_folder():
+    return "/usr/local/Ascend/mxRag/cache_save_folder"
+
+
 class CacheConfig(Config):
     """
     功能描述:
@@ -50,7 +54,7 @@ class CacheConfig(Config):
                  cache_size: int,
                  eviction_policy: EvictPolicy = EvictPolicy.LRU,
                  pre_emb_func=get_prompt,
-                 data_save_folder: str = "",
+                 data_save_folder: str = _get_default_save_folder(),
                  **kwargs):
         super().__init__(**kwargs)
         self.config_type = "memory_cache_config"

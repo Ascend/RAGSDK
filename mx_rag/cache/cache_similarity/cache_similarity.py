@@ -29,6 +29,9 @@ class CacheSimilarity(SimilarityEvaluation):
         if not isinstance(similarity, Reranker):
             raise ValueError("similarity type error.")
 
+        if score_max < score_min:
+            raise ValueError("score max must greater than score min")
+
         self._similarity_impl = similarity
         self._score_min = score_min
         self._score_max = score_max
@@ -52,6 +55,19 @@ class CacheSimilarity(SimilarityEvaluation):
         similarity = CacheSimilarity(similarity, score_min, score_max, reverse)
         return similarity
 
+    def final_result(self, score: float):
+        if score > self._score_max:
+            score = self._score_max
+
+        if score < self._score_min:
+            score = self._score_min
+
+        score = score - self._score_min
+
+        if self._reverse:
+            score = (self._score_max - self._score_min - score)
+        return score
+
     def evaluation(
             self, src_dict: Dict[str, Any], cache_dict: Dict[str, Any], **kwargs
     ) -> float:
@@ -69,13 +85,13 @@ class CacheSimilarity(SimilarityEvaluation):
             cache_question = cache_dict["question"]
 
             if src_question.lower() == cache_question.lower():
-                return self._score_min if self._reverse else self._score_max
+                return self.final_result(self._score_max)
 
             scores = self._similarity_impl.rerank(src_question, [cache_question], batch_size=1)
-            return scores[0]
+            return self.final_result(scores[0])
         except Exception as e:
             logger.error(f"CacheSimilarity evaluation fatal error. {e}")
-            return self._score_max if self._reverse else self._score_min
+            return self.final_result(self._score_min)
 
     def range(self) -> Tuple[float, float]:
         return self._score_min, self._score_max
