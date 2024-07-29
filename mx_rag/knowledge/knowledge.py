@@ -172,8 +172,8 @@ class KnowledgeTreeDB(KnowledgeBase):
         self._document_store.add(documents)
         return tree
 
-    def add_file(self, doc_name: str, texts: List[str],
-                 embed_func: Callable[[List[str]], np.ndarray], metadatas: Optional[List[dict]]):
+    def add_file(self, doc_name: str, texts: Optional[List[str]],
+                 embed_func: Optional[Callable[[List[str]], np.ndarray]], metadatas: Optional[List[dict]]):
         self._knowledge_store.add(self.knowledge_name, doc_name)
 
     def delete_file(self, doc_name: str):

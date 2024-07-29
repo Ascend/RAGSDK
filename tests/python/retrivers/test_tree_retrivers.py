@@ -18,11 +18,11 @@ class TestTreeRetriever(unittest.TestCase):
         self.tree_retriever = TreeRetriever(tree_retriver_config, tree)
 
     def test_exception_parameters(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             TreeRetrieverConfig()
         tokenizer = MagicMock(spec=PreTrainedTokenizerBase)
         with self.assertRaises(ValueError):
-            TreeRetrieverConfig(tokenizer, 1)
+            TreeRetrieverConfig(tokenizer, None)
 
     def test_create_embedding(self):
         result = self.tree_retriever._create_embedding("test")

@@ -10,7 +10,7 @@ from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
 
 class TestTreeBuilder(unittest.TestCase):
     def test_exception_parameters(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             TreeBuilderConfig()
         tokenizer = MagicMock(spec=PreTrainedTokenizerBase)
         with self.assertRaises(ValueError):

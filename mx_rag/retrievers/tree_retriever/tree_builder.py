@@ -17,13 +17,13 @@ from ...chain import TreeText2TextChain
 class TreeBuilderConfig:
     def __init__(
             self,
-            tokenizer: PreTrainedTokenizerBase = None,
+            tokenizer: PreTrainedTokenizerBase,
+            summarization_model: TreeText2TextChain,
             max_tokens: int = 100,
             num_layers: int = 5,
             threshold: float = 0.1,
             reduction_dimension: int = 10,
             summarization_length: int = 100,
-            summarization_model: TreeText2TextChain = None,
             max_length_in_cluster: int = 3500
     ):
         if tokenizer is None:
