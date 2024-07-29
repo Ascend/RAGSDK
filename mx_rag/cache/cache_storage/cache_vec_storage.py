@@ -24,8 +24,8 @@ class CacheVecStorage(VectorBase):
     """
 
     def __init__(self, vec_store: VectorStore, top_k: int = 5):
-        if vec_store is None:
-            raise ValueError("vec_store is None.")
+        if not isinstance(vec_store, VectorStore):
+            raise ValueError("vec_store type error.")
 
         self._vec_impl = vec_store
         self._top_k = top_k
@@ -50,7 +50,7 @@ class CacheVecStorage(VectorBase):
         vector_type = kwargs.get("vector_type", "")
         if isinstance(vector_type, str) and vector_type == "npu_faiss_db":
             kwargs["load_local_index"] = vector_save_file
-            kwargs["auto_save"] = True
+            kwargs["auto_save"] = False  # 由gptcache 调用flush进行刷新 因此自动刷新关闭
 
         vector_base = VectorStorageFactory.create_storage(**kwargs)
         vector_base = CacheVecStorage(vector_base, top_k=top_k)

@@ -93,6 +93,9 @@ class TestCacheVectorStorage(unittest.TestCase):
                            vector_flush_mock):
                     cache_vector_storage.flush()
 
+            vector_save_file_mock.assert_called_once()
+            vector_flush_mock.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()

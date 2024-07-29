@@ -68,6 +68,9 @@ class MindFAISS(VectorStore):
         if "devs" not in kwargs or not isinstance(kwargs.get("devs"), List):
             raise KeyError("devs param error. ")
 
+        if "load_local_index" not in kwargs or not isinstance(kwargs.get("load_local_index"), str):
+            raise KeyError("load_local_index param error. ")
+
         return MindFAISS(**kwargs)
 
     def save_local(self) -> None:
