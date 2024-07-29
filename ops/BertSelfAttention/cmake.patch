@@ -1,5 +1,5 @@
---- makeself-header_origin.sh	2024-07-25 23:04:33.000000000 -0400
-+++ makeself-header.sh	2024-07-25 23:00:20.000000000 -0400
+--- makeself-header.sh	2024-07-28 22:31:07.720000000 -0400
++++ makeself-header-new.sh	2024-07-28 22:32:01.450000000 -0400
 @@ -3,12 +3,10 @@
  # This script was generated using Makeself $MS_VERSION
  # The license covering this archive and its contents, if any, is wholly independent of the Makeself license (GPL)
@@ -70,7 +70,7 @@
  		i=\`expr \$i + 1\`
  		offset=\`expr \$offset + \$s\`
      done
-@@ -406,36 +369,11 @@
+@@ -406,56 +369,11 @@
  	done
  	exit 0
  	;;
@@ -104,6 +104,26 @@
 -	nox11=y
 -	shift
 -	;;
-     --xwin)
- 	if test "$NOWAIT" = n; then
- 		finish="echo Press Return to close this window...; read junk"
+-    --xwin)
+-	if test "$NOWAIT" = n; then
+-		finish="echo Press Return to close this window...; read junk"
+-	fi
+-	xterm_loop=1
+-	shift
+-	;;
+-    --phase2)
+-	copy=phase2
+-	shift
+-	;;
+-    --repack | --repack-path=*)
+-	Script_Args_Check \$1
+-	scriptargs="\$scriptargs '\$1'"
+-	shift
+-	if [[ ! "\$1" =~ ^-.* ]]; then
+-		scriptargs="\$scriptargs '\$1'"
+-		shift
+-	fi
+-	;;
+     *)
+ 	Script_Args_Check \$1
+ 	scriptargs="\$scriptargs '\$1'"
