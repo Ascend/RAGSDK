@@ -21,15 +21,18 @@ class CacheSimilarity(SimilarityEvaluation):
         _similarity_impl: (Reranker) 来自MXRAG的reranker实例
         _score_min: (float) 相似度最小值 默认值0
         _score_max: (float) 相似度最大值 默认值1
+        _reverse: (bool) 相似度是否取反
     """
 
-    def __init__(self, similarity: Reranker, score_min: float = 0.0, score_max: float = 1.0):
-        if similarity is None:
-            raise ValueError("CacheSimilarity init failed reranker is None.")
+    def __init__(self, similarity: Reranker, score_min: float = 0.0, score_max: float = 1.0,
+                 reverse: bool = False):
+        if not isinstance(similarity, Reranker):
+            raise ValueError("similarity type error.")
 
         self._similarity_impl = similarity
         self._score_min = score_min
         self._score_max = score_max
+        self._reverse = reverse
 
     @staticmethod
     def create(**kwargs):
@@ -43,9 +46,10 @@ class CacheSimilarity(SimilarityEvaluation):
         """
         score_min = kwargs.pop("score_min", 0.0)
         score_max = kwargs.pop("score_max", 1.0)
+        reverse = kwargs.pop("reverse", False)
 
         similarity = RerankerFactory.create_reranker(**kwargs)
-        similarity = CacheSimilarity(similarity, score_min, score_max)
+        similarity = CacheSimilarity(similarity, score_min, score_max, reverse)
         return similarity
 
     def evaluation(
@@ -65,13 +69,13 @@ class CacheSimilarity(SimilarityEvaluation):
             cache_question = cache_dict["question"]
 
             if src_question.lower() == cache_question.lower():
-                return 1
+                return self._score_min if self._reverse else self._score_max
 
             scores = self._similarity_impl.rerank(src_question, [cache_question], batch_size=1)
             return scores[0]
         except Exception as e:
             logger.error(f"CacheSimilarity evaluation fatal error. {e}")
-            return 0
+            return self._score_max if self._reverse else self._score_min
 
     def range(self) -> Tuple[float, float]:
         return self._score_min, self._score_max
