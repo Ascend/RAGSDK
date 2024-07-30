@@ -1,6 +1,6 @@
---- makeself-header.sh	2024-07-28 22:31:07.720000000 -0400
-+++ makeself-header-new.sh	2024-07-28 22:32:01.450000000 -0400
-@@ -3,12 +3,10 @@
+--- makeself-header_origin.sh	2024-07-25 23:04:33.000000000 -0400
++++ makeself-header.sh	2024-07-30 04:46:00.000000000 -0400
+@@ -3,15 +3,13 @@
  # This script was generated using Makeself $MS_VERSION
  # The license covering this archive and its contents, if any, is wholly independent of the Makeself license (GPL)
  # 2022.3.19-Modified the MS_Help function and some options
@@ -13,7 +13,11 @@
 -MD5="$MD5sum"
  SHA="$SHAsum"
  SIGNATURE="$Signature"
- TMPROOT=\${TMPDIR:="\$HOME"}
+-TMPROOT=\${TMPDIR:="\$HOME"}
++TMPROOT="\$PWD"
+ if ! test -d "\$TMPROOT"; then
+     TMPROOT="\$PWD"
+ fi
 @@ -172,11 +170,6 @@
    --list                            Print the list of files in the archive
    --check                           Checks integrity and version dependency of the archive
@@ -26,7 +30,28 @@
  \${helpheader}
  EOH
  }
-@@ -232,7 +225,6 @@
+@@ -208,16 +201,12 @@
+ 
+ MS_Check()
+ {
+-    OLD_PATH="\$PATH"
+-    PATH=\${GUESS_MD5_PATH:-"\$OLD_PATH:/bin:/usr/bin:/sbin:/usr/local/ssl/bin:/usr/local/bin:/opt/openssl/bin"}
+-	MD5_ARG=""
+-    MD5_PATH=\`exec <&- 2>&-; which md5sum || command -v md5sum || type md5sum\`
+-    test -x "\$MD5_PATH" || MD5_PATH=\`exec <&- 2>&-; which md5 || command -v md5 || type md5\`
+-    test -x "\$MD5_PATH" || MD5_PATH=\`exec <&- 2>&-; which digest || command -v digest || type digest\`
+-    PATH="\$OLD_PATH"
+-
+     SHA_PATH=\`exec <&- 2>&-; which shasum || command -v shasum || type shasum\`
+     test -x "\$SHA_PATH" || SHA_PATH=\`exec <&- 2>&-; which sha256sum || command -v sha256sum || type sha256sum\`
++    if ! test -x "\$SHA_PATH"; then
++        MS_Printf "Error in checksums, There is no sha sum tool in system, please install first." >&2
++        exit 2
++    fi
+ 
+     if test x"\$quiet" = xn; then
+ 		MS_Printf "Verifying archive integrity..."
+@@ -232,7 +221,6 @@
      i=1
      for s in \$filesizes
      do
@@ -34,7 +59,7 @@
  		if test -x "\$SHA_PATH"; then
  			if test x"\`basename \$SHA_PATH\`" = xshasum; then
  				SHA_ARG="-a 256"
-@@ -251,35 +243,6 @@
+@@ -251,35 +239,6 @@
  				crc="0000000000";
  			fi
  		fi
@@ -70,7 +95,7 @@
  		i=\`expr \$i + 1\`
  		offset=\`expr \$offset + \$s\`
      done
-@@ -406,56 +369,11 @@
+@@ -406,56 +365,11 @@
  	done
  	exit 0
  	;;
