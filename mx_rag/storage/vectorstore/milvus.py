@@ -86,7 +86,8 @@ class MilvusDB(VectorStore):
         self.client.refresh_load(self._collection_name)
         return res
 
-    def search(self, embeddings: Union[np.ndarray, List[list], list], k: int = 3):
+    def search(self, embeddings: np.ndarray, k: int = 3):
+        embeddings = embeddings.astype(np.float32)
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
 
@@ -107,7 +108,8 @@ class MilvusDB(VectorStore):
             ids.append(k_id)
         return scores, ids
 
-    def add(self, embeddings, ids):
+    def add(self, embeddings: np.ndarray, ids):
+        embeddings = embeddings.astype(np.float32)
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
 
