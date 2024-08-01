@@ -58,6 +58,12 @@ class FileCheck:
     ]
 
     @staticmethod
+    def check_file_size(file_path: str, max_file_size: int):
+        file_size = os.path.getsize(file_path)
+        if file_size > max_file_size:
+            raise FileCheckError(f"FileSizeLimit: {file_path} size over Limit: {max_file_size}")
+
+    @staticmethod
     def check_input_path_valid(path: str, check_real_path: bool = True, check_blacklist: bool = False):
         if not path or not isinstance(path, str):
             raise FileCheckError(f"Input path {path} is not valid str")
