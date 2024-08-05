@@ -55,19 +55,6 @@ class CacheSimilarity(SimilarityEvaluation):
         similarity = CacheSimilarity(similarity, score_min, score_max, reverse)
         return similarity
 
-    def _final_result(self, score: float):
-        if score > self._score_max:
-            score = self._score_max
-
-        if score < self._score_min:
-            score = self._score_min
-
-        score = score - self._score_min
-
-        if self._reverse:
-            score = (self._score_max - self._score_min - score)
-        return score
-
     def evaluation(
             self, src_dict: Dict[str, Any], cache_dict: Dict[str, Any], **kwargs
     ) -> float:
@@ -95,3 +82,16 @@ class CacheSimilarity(SimilarityEvaluation):
 
     def range(self) -> Tuple[float, float]:
         return self._score_min, self._score_max
+
+    def _final_result(self, score: float):
+        if score > self._score_max:
+            score = self._score_max
+
+        if score < self._score_min:
+            score = self._score_min
+
+        score = score - self._score_min
+
+        if self._reverse:
+            score = (self._score_max - self._score_min - score)
+        return score
