@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+from ssl import SSLContext
 from typing import Dict, Iterator
 
 import urllib3
@@ -8,9 +8,9 @@ from loguru import logger
 
 from mx_rag.libs.glib.checker.url_checker import HttpUrlChecker, HttpsUrlChecker
 from .cert import TlsConfig
+from .cert_check import CertContentsChecker
 from .common import UrlUtilException
 from .file_check import FileCheck, SecFileCheck
-from .cert_check import CertContentsChecker
 
 LIMIT_1M_SIZE = 1024 * 1024
 
@@ -27,7 +27,7 @@ class Result:
         self.data = data
 
 
-def is_url_valid(url, use_http) -> bool:
+def _is_url_valid(url, use_http) -> bool:
     if url.startswith("http:") and not use_http:
         raise UrlError("http protocol is not support")
     check_key = "url"
@@ -49,7 +49,9 @@ class RequestUtils:
                  response_limit_size=LIMIT_1M_SIZE,
                  cert_file: str = "",
                  crl_file: str = "",
-                 use_http: bool = False):
+                 use_http: bool = False,
+                 proxy_url: str = "",
+                 ssl_context: SSLContext = None):
         self.use_http = use_http
         if cert_file:
             FileCheck.check_path_is_exist_and_valid(cert_file)
@@ -73,18 +75,28 @@ class RequestUtils:
             success, ssl_ctx = TlsConfig.get_client_ssl_context(cert_file, crl_file)
             if not success:
                 raise UrlUtilException('unable to add ca_file for request')
+        elif ssl_context:
+            ssl_ctx = ssl_context
         else:
             ssl_ctx = TlsConfig.get_init_context()
 
-        self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
-                                        retries=retries,
-                                        timeout=timeout,
-                                        num_pools=num_pools,
-                                        maxsize=maxsize)
+        if proxy_url:
+            self.pool = urllib3.ProxyManager(proxy_url=proxy_url,
+                                             ssl_context=ssl_ctx,
+                                             retries=retries,
+                                             timeout=timeout,
+                                             num_pools=num_pools,
+                                             maxsize=maxsize)
+        else:
+            self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
+                                            retries=retries,
+                                            timeout=timeout,
+                                            num_pools=num_pools,
+                                            maxsize=maxsize)
         self.response_limit_size = response_limit_size
 
     def post(self, url: str, body: str, headers: Dict):
-        if not is_url_valid(url, self.use_http):
+        if not _is_url_valid(url, self.use_http):
             logger.error("url check failed")
             return Result(False, "")
 
@@ -121,7 +133,7 @@ class RequestUtils:
             return Result(False, "")
 
     def post_streamly(self, url: str, body: str, headers: Dict, chunk_size: int = 1024):
-        if not is_url_valid(url, self.use_http):
+        if not _is_url_valid(url, self.use_http):
             logger.error("url check failed")
             yield Result(False, "")
 
@@ -150,6 +162,29 @@ class RequestUtils:
         else:
             logger.error(f"request failed with status code {response.status}")
             yield Result(False, "")
+
+    def get(self, url: str, headers: Dict):
+        if not _is_url_valid(url, self.use_http):
+            logger.error(f"url check failed, url: {url}, use_http: {self.use_http}")
+            return ""
+
+        try:
+            response = self.pool.request(method='GET',
+                                         url=url,
+                                         headers=headers,
+                                         preload_content=False)
+        except Exception as e:
+            logger.error(f"request {url} failed, find exception: {e}")
+            return ""
+        if response.status == HTTP_SUCCESS:
+            try:
+                return response.data
+            except Exception as e:
+                logger.error(f"read response failed, find exception: {e}")
+                return ""
+        else:
+            logger.error(f"request failed with status code {response.status}")
+            return ""
 
     def _iter_lines(self, response, chunk_size=1024) -> Iterator[Result]:
         buffer = b''

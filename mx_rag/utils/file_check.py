@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import inspect
 import os
 import re
 from pathlib import Path
@@ -97,6 +96,13 @@ class FileCheck:
             raise PathNotDirException(f"PathNotDirException: [{file_path}] is not a valid dir")
 
         FileCheck.check_input_path_valid(file_path, True)
+
+    @staticmethod
+    def check_files_num_in_directory(directory_path: str, suffix: str, limit: int):
+        files = os.listdir(directory_path)
+        filtered_files = [file for file in files if file.endswith(suffix)]
+        if len(filtered_files) > limit:
+            raise FileCheckError(f"The number of {suffix} files in {directory_path} exceed {limit}")
 
     @staticmethod
     def _check_normal_file_path(path):
