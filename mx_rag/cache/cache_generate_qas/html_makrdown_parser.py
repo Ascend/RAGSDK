@@ -1,0 +1,130 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import re
+from abc import abstractmethod, ABC
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from ssl import SSLContext
+from threading import Lock
+from typing import List, Any, Tuple
+
+from langchain_community.document_loaders import TextLoader
+
+from mx_rag.utils.file_check import FileCheck, SecFileCheck
+from mx_rag.utils.url import RequestUtils
+
+MAX_FILE_SIZE_10M = 10 * 1024 * 1024
+MAX_FILE_NUM = 1000
+
+
+class GenerateQaParser(ABC):
+
+    @abstractmethod
+    def parse(self):
+        pass
+
+
+class HTMLParser(GenerateQaParser):
+    """
+    功能描述:
+        这是一个用于解析HTML页面的类，它继承自GenerateQaParser类。
+        它使用多线程技术，通过HTTP请求获取HTML页面，并使用readability库提取页面的标题和内容。
+    Attributes:
+        urls: 需要解析的HTML页面的URL列表
+        headers: HTTP请求的头部信息
+        timeout: HTTP请求的超时时间，默认为10秒
+        cert_file: SSL证书文件的路径，默认为空
+        crl_file: SSL证书撤销列表文件的路径，默认为空
+        use_http: 是否使用HTTP协议，默认为False
+        proxy_url: 代理服务器的URL，默认为空
+        ssl_context: SSL上下文对象，默认为None
+        max_url_num: 最大解析url数量
+    """
+
+    def __init__(self, urls: List[str], headers=None, timeout: int = 10, cert_file: str = "",
+                 crl_file: str = "", use_http: bool = False, proxy_url: str = "", ssl_context: SSLContext = None,
+                 max_url_num: int = MAX_FILE_NUM):
+        if headers is None:
+            headers = {'Content-Type': 'application/json'}
+        if len(urls) > max_url_num:
+            raise ValueError(f"The length of urls cannot exceed {max_url_num}.")
+        self.urls = urls
+        self.headers = headers
+        self._client = RequestUtils(timeout=timeout, cert_file=cert_file, crl_file=crl_file,
+                                    use_http=use_http, proxy_url=proxy_url, ssl_context=ssl_context)
+
+    def parse(self) -> Tuple[List[str], List[str]]:
+        def _request(client: RequestUtils, url: str, lock: Lock, titles: List[str], contents: List[str]):
+            import readability
+            from html_text import html_text
+            response = client.get(url, self.headers)
+            html_doc = readability.Document(response)
+            title = html_doc.title()
+            content = html_text.extract_text(html_doc.summary(html_partial=True))
+            with lock:
+                titles.append(title)
+                contents.append(content)
+
+        titles = []
+        contents = []
+        lock = Lock()
+        for url in self.urls:
+            with ThreadPoolExecutor() as executor:
+                executor.submit(
+                    _request,
+                    self._client,
+                    url,
+                    lock,
+                    titles,
+                    contents
+                )
+        return titles, contents
+
+
+def _md_load(file_path: str) -> List[str]:
+    loader = TextLoader(file_path, encoding="utf-8")
+    documents = loader.load()
+    docs = []
+    for document in documents:
+        # 过滤markdown中以base64编码的图片内容
+        content = re.sub(r"!\[.*\]\(data:image.*?\)", "", document.page_content)
+        docs.append(content)
+    return docs
+
+
+class MarkDownParser(GenerateQaParser):
+    """
+    功能描述:
+        这是一个用于解析markdown的类，它继承自GenerateQaParser类。
+        返回内容为文件名和内容
+    Attributes:
+        file_path: 需要解析的markdown所在文件夹
+        max_file_num: 解析的最大文件数
+    """
+
+    def __init__(self, file_path: str, max_file_num: int = MAX_FILE_NUM):
+        FileCheck.dir_check(file_path)
+        FileCheck.check_files_num_in_directory(file_path, ".md", max_file_num)
+        self.file_path = file_path
+
+    def parse(self) -> Tuple[List[str], List[str]]:
+        def _load_file(_mk: Any, lock: Lock, titles: List[str], contents: List[str]):
+            SecFileCheck(_mk.as_posix(), MAX_FILE_SIZE_10M).check()
+            for doc in _md_load(_mk.as_posix()):
+                with lock:
+                    titles.append(_mk.name)
+                    contents.append(doc)
+
+        titles = []
+        contents = []
+        lock = Lock()
+        for _mk in Path(self.file_path).rglob("*.md"):
+            with ThreadPoolExecutor() as executor:
+                executor.submit(
+                    _load_file,
+                    _mk,
+                    lock,
+                    titles,
+                    contents
+                )
+        return titles, contents
