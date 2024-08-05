@@ -63,6 +63,18 @@ class CacheConfig(Config):
         self.pre_emb_func = pre_emb_func
         self.data_save_folder = data_save_folder
 
+        if not isinstance(self.cache_size, int):
+            raise TypeError("cache_size type error")
+
+        if self.cache_size <= 0:
+            raise ValueError("cache_size should greater than zero")
+
+        if not isinstance(self.eviction_policy, EvictPolicy):
+            raise TypeError("eviction_policy type error")
+
+        if not isinstance(self.data_save_folder, str):
+            raise TypeError("data_save_folder type error")
+
 
 class SimilarityCacheConfig(CacheConfig):
     """
@@ -98,3 +110,6 @@ class SimilarityCacheConfig(CacheConfig):
         self.emb_config = emb_config
         self.similarity_config = similarity_config
         self.retrieval_top_k = retrieval_top_k
+
+        if isinstance(self.cache_config, str) and self.cache_config != "sqlite":
+            raise ValueError("cache_config only support sqlite now.")

@@ -24,7 +24,7 @@ class CacheChainChat(Chain):
 
     def __init__(self,
                  cache: MxRAGCache,
-                 chain: Chain = None,
+                 chain: Chain,
                  convert_data_to_cache=_default_data_convert,
                  convert_data_to_user=_default_data_convert,
                  **kwargs: Any):
