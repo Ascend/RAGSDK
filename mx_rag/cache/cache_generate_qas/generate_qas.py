@@ -93,7 +93,7 @@ class QAGenerate:
         logger.info(f"LLM generating QA, source title {title}")
         title = title.split("-")[0] if len(title.split("-")) > 1 else title
         history = [{"role": "system", "content": system_prompt}]
-        prompt = USER_PROMPT.format(title_area=title).format(content_area=content)
+        prompt = USER_PROMPT.format(title_area=title, content_area=content)
         max_tokens = kwargs.get("max_tokens", 512)
         temperature = kwargs.get("temperature", 0.5)
         top_p = kwargs.get("top_p", 0.95)
