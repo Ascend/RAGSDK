@@ -67,7 +67,7 @@ class QAGenerationConfig:
     """
 
     def __init__(self, titles: List[str], contents: List[str], tokenizer: PreTrainedTokenizerBase, llm: Text2TextLLM,
-                 max_tokens: int = 512, qas_num: int = 5):
+                 max_tokens: int = 1000, qas_num: int = 5):
         self.titles = titles
         self.contents = contents
         self.tokenizer = tokenizer
@@ -94,7 +94,10 @@ class QAGenerate:
         title = title.split("-")[0] if len(title.split("-")) > 1 else title
         history = [{"role": "system", "content": system_prompt}]
         prompt = USER_PROMPT.format(title_area=title).format(content_area=content)
-        result = config.llm.chat(prompt, history=history, **kwargs)
+        max_tokens = kwargs.get("max_tokens", 512)
+        temperature = kwargs.get("temperature", 0.5)
+        top_p = kwargs.get("top_p", 0.95)
+        result = config.llm.chat(prompt, history=history, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
         results = [result.strip()
                    for result in re.split(r'Q\d[:：]', result)
                    if len(re.findall(r"参考段落[:：]", result)) > 0]

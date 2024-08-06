@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from ssl import SSLContext
 from threading import Lock
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Dict
 
 from langchain_community.document_loaders import TextLoader
 
@@ -41,7 +41,7 @@ class HTMLParser(GenerateQaParser):
         max_url_num: 最大解析url数量
     """
 
-    def __init__(self, urls: List[str], headers=None, timeout: int = 10, cert_file: str = "",
+    def __init__(self, urls: List[str], headers: Dict = None, timeout: int = 10, cert_file: str = "",
                  crl_file: str = "", use_http: bool = False, proxy_url: str = "", ssl_context: SSLContext = None,
                  max_url_num: int = MAX_FILE_NUM):
         if headers is None:
