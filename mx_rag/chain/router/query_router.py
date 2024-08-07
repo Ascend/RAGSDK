@@ -40,7 +40,7 @@ class QueryRouter:
             logger.warning(f"[{label}] chain has not been registered")
             return
 
-        del(self._chains[label])
+        del (self._chains[label])
         self._labels.remove(label)
 
     def route_to_llm(self, text: str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
