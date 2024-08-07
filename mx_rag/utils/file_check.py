@@ -70,7 +70,8 @@ class FileCheck:
         if len(path) > FileCheck.MAX_PATH_LENGTH:
             raise FileCheckError(f"Input path {path} length over limit")
 
-        FileCheck._check_normal_file_path(path)
+        if ".." in path:
+            raise FileCheckError("there are illegal characters in path")
 
         if check_real_path and os.path.islink(path):
             raise FileCheckError(f"Input path {path} is symbol link")
@@ -103,10 +104,3 @@ class FileCheck:
         filtered_files = [file for file in files if file.endswith(suffix)]
         if len(filtered_files) > limit:
             raise FileCheckError(f"The number of {suffix} files in {directory_path} exceed {limit}")
-
-    @staticmethod
-    def _check_normal_file_path(path):
-        pattern_name = re.compile(r"[^0-9a-zA-Z_./-]")
-        match_name = pattern_name.findall(path)
-        if match_name or ".." in path:
-            raise FileCheckError("there are illegal characters in path")
