@@ -214,13 +214,14 @@ class ExcelLoader(BaseLoader):
         # 获取标题列表
         title = self._get_xlsx_title(ws, first_row, first_col)
 
+        column_end = ws.max_column + 1
         for row_index in range(first_row + 1, ws.max_row + 1):
             # 空行无数据，不解析
             if row_index in blank_rows.keys():
                 continue
 
             text_line = ""
-            for col_index in range(1, ws.max_column + 1):
+            for col_index in range(1, column_end):
                 # 空列无数据，不解析
                 if col_index in blank_cols.keys():
                     continue
@@ -248,14 +249,14 @@ class ExcelLoader(BaseLoader):
 
         # 获取标题列表
         title = self._get_xls_title(ws, first_row, first_col)
-
+        ncols = ws.ncols
         for row_index in range(first_row + 1, ws.nrows):
             # 空行无数据，不解析
             if row_index in blank_rows.keys():
                 continue
 
             text_line = ""
-            for col_index in range(ws.ncols):
+            for col_index in range(ncols):
                 # 空列无数据，不解析
                 if col_index in blank_cols.keys():
                     continue
