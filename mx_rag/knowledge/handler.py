@@ -5,6 +5,7 @@ import os
 import stat
 from pathlib import Path
 from typing import Callable, List, Tuple, Dict, Union
+from dataclasses import dataclass
 
 import numpy as np
 from loguru import logger
@@ -30,6 +31,7 @@ def upload_files(
         embed_func: Callable[[List[str]], np.ndarray],
         force: bool = False
 ):
+
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
     if len(files) > knowledge.max_loop_limit:
         raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, upload files failed')
@@ -99,14 +101,23 @@ def upload_files_build_tree(knowledge: KnowledgeTreeDB,
     return knowledge.add_files(file_names, total_texts, embed_func, total_metadatas)
 
 
-def upload_dir(
-        knowledge: KnowledgeDB,
-        dir_path: str,
-        parse_func: Callable[[str], Tuple[List[str], List[Dict[str, str]]]],
-        embed_func: Callable[[List[str]], np.ndarray],
-        force=False,
-        load_image=False
-):
+@dataclass
+class FilesLoadInfo:
+    knowledge: KnowledgeDB
+    dir_path: str
+    parse_func: Callable[[str], Tuple[List[str], List[Dict[str, str]]]]
+    embed_func: Callable[[List[str]], np.ndarray]
+    force: bool = False
+    load_image: bool = False
+
+
+def upload_dir(params: FilesLoadInfo):
+    knowledge = params.knowledge
+    dir_path = params.dir_path
+    parse_func = params.parse_func
+    embed_func = params.embed_func
+    force = params.force
+    load_image = params.load_image
     """
     只遍历当前目录下的文件，不递归查找子目录文件，目录中不支持的文件类型会跳过，如果文档重复，可选择强制覆盖，超过最大文件数量则退出
     load_image为True时导入支持的类型图片, False时支持导入支持的文档
