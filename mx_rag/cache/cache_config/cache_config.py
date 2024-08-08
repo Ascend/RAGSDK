@@ -63,6 +63,10 @@ class CacheConfig(Config):
         self.pre_emb_func = pre_emb_func
         self.data_save_folder = data_save_folder
 
+        similarity_threshold = kwargs.get("similarity_threshold", 0.8)
+        if not (1 >= similarity_threshold >= 0):
+            raise ValueError("similarity_threshold must 0 ~ 1 range")
+
         if not isinstance(self.cache_size, int):
             raise TypeError("cache_size type error")
 
@@ -97,7 +101,7 @@ class SimilarityCacheConfig(CacheConfig):
     """
 
     def __init__(self,
-                 retrieval_top_k: int = 5,
+                 retrieval_top_k: int = 1,
                  vector_config: Union[VectorBase, Dict[str, Any]] = None,
                  cache_config: Union[CacheBase, str] = None,
                  emb_config: Union[BaseEmbedding, Dict[str, Any]] = None,
@@ -113,3 +117,9 @@ class SimilarityCacheConfig(CacheConfig):
 
         if isinstance(self.cache_config, str) and self.cache_config != "sqlite":
             raise ValueError("cache_config only support sqlite now.")
+
+        if not isinstance(self.retrieval_top_k, int):
+            raise TypeError("retrieval_top_k type error")
+
+        if self.retrieval_top_k <= 0:
+            raise ValueError("retrieval_top_k must greater than zero")
