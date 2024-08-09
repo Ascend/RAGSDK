@@ -25,6 +25,7 @@ def _default_load(data: str) -> Any:
 
 
 class MxRAGCache:
+    cache_limit: int = -1
     verbose: bool = False
 
     def __init__(self,
@@ -48,6 +49,12 @@ class MxRAGCache:
     def set_verbose(cls, verbose: bool):
         cls.verbose = verbose
 
+    @classmethod
+    def set_cache_limit(cls, cache_limit: int):
+        if not isinstance(cache_limit, int):
+            raise TypeError(f"cache limit type error")
+        cls.cache_limit = cache_limit
+
     def search(self, query: str):
         """
         MXRAGCache 查询缓存
@@ -57,6 +64,9 @@ class MxRAGCache:
         Return:
             answer: 如果命中则为缓存问题，未命中则返回None
         """
+        if not self.cache_obj.has_init:
+            raise KeyError("cache not init pls init first")
+
         from gptcache.adapter.api import adapt, _cache_data_converter
 
         def llm_handle_none(*llm_args, **llm_kwargs) -> None:
@@ -87,6 +97,13 @@ class MxRAGCache:
         Return:
             None
         """
+        if not self.cache_obj.has_init:
+            raise KeyError("cache not init pls init first")
+
+        if not self._check_limit(answer):
+            self._verbose_log("context length is large no caching")
+            return
+
         from gptcache.adapter.api import adapt, _cache_data_converter
 
         def llm_handle(*llm_args, **llm_kwargs):
@@ -109,6 +126,9 @@ class MxRAGCache:
         Return:
             None
         """
+        if not self.cache_obj.has_init:
+            raise KeyError("cache not init pls init first")
+
         self.cache_obj.flush()
         self._verbose_log("Flush!")
 
@@ -119,6 +139,9 @@ class MxRAGCache:
         Return:
             gptcache
         """
+        if not self.cache_obj.has_init:
+            raise KeyError("cache not init pls init first")
+
         return self.cache_obj
 
     def join(self, next_cache):
@@ -130,7 +153,19 @@ class MxRAGCache:
         Return:
             None
         """
+        if not self.cache_obj.has_init:
+            raise KeyError("cache not init pls init first")
+
+        if next_cache.get_obj() == self.cache_obj:
+            raise ValueError("forbidden join self cache")
+
         self.cache_obj.next_cache = next_cache.get_obj()
+
+    def _check_limit(self, input_text: str):
+        if self.cache_limit < 0:
+            return True
+
+        return True if (len(input_text) < self.cache_limit) else False
 
     def _verbose_log(self, log_str: str):
         """
