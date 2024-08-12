@@ -1,22 +1,22 @@
+import os
 import shutil
 import unittest
 from unittest.mock import MagicMock
-import os
 
-from transformers import is_torch_npu_available
-from loguru import logger
 import numpy as np
+from loguru import logger
+from transformers import is_torch_npu_available
 
-from mx_rag.document.doc import Doc
+from langchain_core.documents import Document
+from mx_rag.chain import MultiText2TextChain
 from mx_rag.embedding.local.text_embedding import TextEmbedding
+from mx_rag.knowledge import KnowledgeDB
+from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever
-from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.document_store import SQLiteDocstore
-from mx_rag.storage.document_store.base_storage import Document
-from mx_rag.knowledge import KnowledgeDB
-from mx_rag.chain import MultiText2TextChain
-from mx_rag.knowledge.knowledge import KnowledgeStore
+from mx_rag.storage.document_store.base_storage import MxDocument
+from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 
 
 class MyTestCase(unittest.TestCase):
@@ -58,12 +58,12 @@ class MyTestCase(unittest.TestCase):
         index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.similarity_search = MagicMock(
-            return_value=[[(Document(page_content="this is a test", document_name="test.txt"), 0.5)]])
+            return_value=[[(MxDocument(page_content="this is a test", document_name="test.txt"), 0.5)]])
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://127.0.0.1:7890")
 
         r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
         r.get_relevant_documents = MagicMock(
-            return_value=[Doc(page_content="this is a test", metadata={})])
+            return_value=[Document(page_content="this is a test", metadata={})])
 
         rag = MultiText2TextChain(retriever=r, llm=llm)
         llm.chat = MagicMock(return_value=("MultiQueryRetriever"))

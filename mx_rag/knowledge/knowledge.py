@@ -12,7 +12,7 @@ from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
 from mx_rag.retrievers.tree_retriever import Tree
 
-from mx_rag.storage.document_store.base_storage import Docstore, Document
+from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
 from mx_rag.storage.vectorstore import VectorStore
@@ -119,7 +119,7 @@ class KnowledgeDB(KnowledgeBase):
         metadatas = metadatas or [{} for _ in texts]
         if len(texts) != len(metadatas) != len(embeddings):
             raise KnowledgeError("texts, metadatas, embeddings expected to be equal length")
-        documents = [Document(page_content=t, metadata=m, document_name=doc_name) for t, m in zip(texts, metadatas)]
+        documents = [MxDocument(page_content=t, metadata=m, document_name=doc_name) for t, m in zip(texts, metadatas)]
         self._knowledge_store.add(self.knowledge_name, doc_name)
         ids = self._document_store.add(documents)
         self._vector_store.add(embeddings, np.array(ids))
@@ -166,7 +166,7 @@ class KnowledgeTreeDB(KnowledgeBase):
         tree = self.tree_builder.build_from_text(embed_func, chunks=texts)
         documents = []
         for text, metadata, file_name in zip(texts, metadatas, file_names):
-            documents.append(Document(page_content=text, metadata=metadata, document_name=file_name))
+            documents.append(MxDocument(page_content=text, metadata=metadata, document_name=file_name))
         for file_name in list(set(file_names)):
             self.add_file(file_name, [], None, [])
         self._document_store.add(documents)

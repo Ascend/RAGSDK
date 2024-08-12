@@ -12,7 +12,7 @@ from transformers import is_torch_npu_available
 
 from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.knowledge import KnowledgeDB
-from mx_rag.document.doc import Doc
+from langchain_core.documents import Document
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -47,10 +47,10 @@ class MyTestCase(unittest.TestCase):
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
-        vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
-        vector_store.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_texts)
+        knowledge_db = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
+        knowledge_db.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
-        r = Retriever(vector_store, document_store= db, score_threshold=0.5, embed_func=emb.embed_texts)
+        r = Retriever(index, document_store= db, score_threshold=0.5, embed_func=emb.embed_texts)
 
         def test_result(self):
             query = "what is unshare command?"
@@ -103,7 +103,7 @@ class MyTestCase(unittest.TestCase):
 
         def test_result(self):
             r._get_relevant_documents = MagicMock(
-                return_value=[Doc(page_content=EMBEDDING_TEXT, metadata={})])
+                return_value=[Document(page_content=EMBEDDING_TEXT, metadata={})])
             query = "what is unshare command?"
             logger.info(f"get_relevant_documents [{query}]")
             docs = r.get_relevant_documents(query)
@@ -112,7 +112,7 @@ class MyTestCase(unittest.TestCase):
 
         def test_result_with_prompt(self):
             r._get_relevant_documents = MagicMock(
-                return_value=[Doc(page_content=EMBEDDING_TEXT, metadata={})])
+                return_value=[Document(page_content=EMBEDDING_TEXT, metadata={})])
             prompt = "haha"
             query = "what is unshare command?"
             logger.info(f"get_relevant_documents [{query}]")
@@ -122,7 +122,7 @@ class MyTestCase(unittest.TestCase):
 
         def test_no_result(self):
             r._get_relevant_documents = MagicMock(
-                return_value=[Doc(page_content=EMBEDDING_TEXT, metadata={})])
+                return_value=[Document(page_content=EMBEDDING_TEXT, metadata={})])
             query = "xxxx xxx xx xxx xxx x"
             logger.info(f"get_relevant_documents [{query}]")
             docs = r.get_relevant_documents(query)
@@ -131,7 +131,7 @@ class MyTestCase(unittest.TestCase):
 
         def test_no_result_with_prompt(self):
             r._get_relevant_documents = MagicMock(
-                return_value=[Doc(page_content=EMBEDDING_TEXT, metadata={})])
+                return_value=[Document(page_content=EMBEDDING_TEXT, metadata={})])
             prompt = "haha"
             query = "xxxx xxx xx xxx xxx x"
             logger.info(f"get_relevant_documents [{query}]")

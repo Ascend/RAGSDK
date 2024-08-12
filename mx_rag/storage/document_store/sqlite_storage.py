@@ -6,7 +6,7 @@ from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from mx_rag.storage.document_store.base_storage import Docstore, Document, StorageError
+from mx_rag.storage.document_store.base_storage import Docstore, MxDocument, StorageError
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
 
@@ -51,7 +51,7 @@ class SQLiteDocstore(Docstore):
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    def add(self, documents: List[Document]) -> List[int]:
+    def add(self, documents: List[MxDocument]) -> List[int]:
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise StorageError("Insufficient remaining space, please clear disk space")
         with self.session() as session:
@@ -89,11 +89,11 @@ class SQLiteDocstore(Docstore):
                 session.rollback()
                 raise StorageError(f"delete chunk failed, {err}") from err
 
-    def search(self, index_id: int) -> Optional[Document]:
+    def search(self, index_id: int) -> Optional[MxDocument]:
         with self.session() as session:
             chunk = session.query(ChunkModel).filter_by(index_id=index_id).first()
             if chunk is not None:
-                return Document(
+                return MxDocument(
                     page_content=chunk.chunk_content,
                     metadata=chunk.chunk_metadata,
                     document_name=chunk.document_name

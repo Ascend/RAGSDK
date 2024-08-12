@@ -7,13 +7,12 @@ from loguru import logger
 from transformers import is_torch_npu_available
 
 from mx_rag.knowledge.knowledge import KnowledgeStore
-from mx_rag.document.doc import Doc
+from langchain_core.documents import Document
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.document_store import SQLiteDocstore
-from mx_rag.storage.document_store.base_storage import Document
 import numpy as np
 from mx_rag.knowledge import KnowledgeDB
 from mx_rag.chain import SingleText2TextChain
@@ -127,7 +126,7 @@ class MyTestCase(unittest.TestCase):
             res = rag._merge_query_prompt(query, docs=[], prompt=prompt)
             self.assertEqual(res, query)
 
-            docs = [Doc(page_content = "you are a smart assistants", metadata= {})]
+            docs = [Document(page_content = "you are a smart assistants", metadata= {})]
             res = rag._merge_query_prompt(query, docs=docs, prompt=prompt)
             self.assertEqual(res, "\n\n".join(("you are a smart assistants", prompt, query)))
 
