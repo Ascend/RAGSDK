@@ -5,9 +5,9 @@ import re
 from abc import abstractmethod, ABC
 from typing import List, Any
 
+from langchain_core.documents import Document
 from loguru import logger
 
-from mx_rag.document.doc import Doc
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers.retriever import Retriever
 
@@ -76,7 +76,7 @@ class MultiQueryRetriever(Retriever):
         self._prompt = prompt
         self._parser = parser
 
-    def _get_relevant_documents(self, query: str) -> List[Doc]:
+    def _get_relevant_documents(self, query: str) -> List[Document]:
         docs = []
 
         llm_query = self._prompt.format(question=query)
@@ -86,4 +86,5 @@ class MultiQueryRetriever(Retriever):
             doc = super()._get_relevant_documents(sub_query)
             docs.extend(doc)
 
-        return sorted(list(set(docs)))
+        docs = [doc for i, doc in enumerate(docs) if doc not in docs[:i]]
+        return sorted(docs, key=lambda x: len(x.page_content))

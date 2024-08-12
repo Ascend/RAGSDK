@@ -3,12 +3,10 @@
 
 import os
 import re
-import unicodedata
 from dataclasses import dataclass
 from typing import List, Tuple, Any, Iterator
 
 import docx
-from docx.document import Document as mxDocument
 from docx.oxml.table import CT_Tbl
 from docx.oxml.text.paragraph import CT_P
 from docx.table import Table
@@ -17,7 +15,6 @@ from loguru import logger
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
-from mx_rag.document.doc import Doc
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
 
@@ -49,17 +46,17 @@ class DocxLoader(BaseLoader, mxBaseLoader):
             return ""
 
     @staticmethod
-    def iter_block_items(parent: mxDocument):
+    def iter_block_items(parent: docx.document.Document):
         """
         获取Document对象的元素
         按文档顺序生成对*parent*中每个段落和表的引用。
         每个返回值都是Table或Paragraph。
         *parent*通常是对主Document对象的引用。
         """
-        if isinstance(parent, Document):
+        if isinstance(parent, docx.document.Document):
             parent_elm = parent.element.body
         else:
-            raise TypeError(f"TypeError {type(parent)}, should be mxDocument")
+            raise TypeError(f"TypeError {type(parent)}, should be docx.document.Document")
 
         for child in parent_elm.iterchildren():
             if isinstance(child, CT_P):

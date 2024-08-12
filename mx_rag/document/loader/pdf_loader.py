@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-import os
 from typing import List, Iterator
 from enum import Enum
 
@@ -16,7 +15,6 @@ from PIL import Image
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
-from mx_rag.document.doc import Doc
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
 
@@ -33,7 +31,6 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         self.ocr_engine = None
         self.lang = lang
 
-
     @staticmethod
     def _reconstruct(layout_res):
         pdf_content: List[str] = []
@@ -41,7 +38,6 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             for line in page_layout:
                 PdfLoader._reconstruct_line(line, pdf_content)
         return pdf_content
-
 
     @staticmethod
     def _reconstruct_line(line, pdf_content):
@@ -51,13 +47,11 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                 pdf_content.append(res['text'])
         pdf_content.append("\n")
 
-
     def lazy_load(self) -> Iterator[Document]:
         if not self._check():
             return []
 
         return self._parser() if self.layout_recognize else self._plain_parser()
-
 
     def _text_merger(self, pdf_content):
         one_text = " ".join(pdf_content)

@@ -3,9 +3,9 @@
 from abc import ABC
 from typing import List
 
+from langchain_core.documents import Document
 from loguru import logger
 
-from mx_rag.document.doc import Doc
 from mx_rag.storage.document_store import Docstore
 
 
@@ -19,11 +19,11 @@ class Retriever(ABC):
         self._k = k
         self._score_threshold = score_threshold
 
-    def get_relevant_documents(self, query: str) -> List[Doc]:
+    def get_relevant_documents(self, query: str) -> List[Document]:
         docs = self._get_relevant_documents(query)
         return docs[:self._k]
 
-    def _get_relevant_documents(self, query: str) -> List[Doc]:
+    def _get_relevant_documents(self, query: str) -> List[Document]:
         embedding = self._embed_func([query])
         scores, indices = self._vector_store.search(embedding, k=self._k)
         sr = []
@@ -37,7 +37,9 @@ class Retriever(ABC):
             sr.append((doc, scores[0][i]))
 
         logger.info(f"Filter is [<={self._score_threshold}]")
-        docs = [Doc(doc.page_content, doc.metadata) for doc, similarity in sr if similarity <= self._score_threshold]
+        docs = [Document(page_content=doc.page_content, metadata=doc.metadata)
+                for doc, similarity in sr
+                if similarity <= self._score_threshold]
 
         if len(docs) == 0:
             logger.warning("no relevant documents found!!!")

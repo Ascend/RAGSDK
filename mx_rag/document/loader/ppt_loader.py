@@ -8,7 +8,6 @@ from pptx import Presentation
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
-from mx_rag.document.doc import Doc
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import FileCheck
 

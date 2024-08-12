@@ -11,7 +11,7 @@ class StorageError(Exception):
     pass
 
 
-class Document(BaseModel):
+class MxDocument(BaseModel):
     page_content: str
     metadata: dict = Field(default_factory=dict)
     document_name: str
@@ -19,7 +19,7 @@ class Document(BaseModel):
 
 class Docstore(ABC):
     @abstractmethod
-    def search(self, index_id) -> Document:
+    def search(self, index_id) -> MxDocument:
         pass
 
     @abstractmethod

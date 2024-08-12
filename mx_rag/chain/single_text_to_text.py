@@ -4,10 +4,10 @@
 import copy
 from typing import Union, Iterator, List, Dict
 
+from langchain_core.documents import Document
 from loguru import logger
 
 from mx_rag.chain import Chain
-from mx_rag.document.doc import Doc
 from mx_rag.reranker.reranker import Reranker
 
 DEFAULT_RAG_PROMPT = """根据上述已知信息，简洁和专业的来回答用户的问题。如果无法从中已知信息中得到答案，请根据自身经验做出的的回答"""
@@ -34,7 +34,7 @@ class SingleText2TextChain(Chain):
         self._history = []
         return self._query(text, *args, **kwargs)
 
-    def _merge_query_prompt(self, query: str, docs: List[Doc], prompt: str):
+    def _merge_query_prompt(self, query: str, docs: List[Document], prompt: str):
         final_prompt = ""
         if len(docs) != 0:
             if prompt != "":

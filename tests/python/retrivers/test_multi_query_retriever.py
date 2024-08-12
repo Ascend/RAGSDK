@@ -19,14 +19,13 @@ if not is_torch_npu_available():
 
 from loguru import logger
 from mx_rag.knowledge.knowledge import KnowledgeStore
-from mx_rag.document.doc import Doc
+from langchain_core.documents import Document
 from mx_rag.knowledge import KnowledgeDB
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import MultiQueryRetriever
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.document_store import SQLiteDocstore
-from mx_rag.storage.document_store.base_storage import Document
 
 
 class MyTestCase(unittest.TestCase):
@@ -41,12 +40,12 @@ class MyTestCase(unittest.TestCase):
         os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
 
-        vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
-        vector_store.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
+        knowledge_db = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
+        knowledge_db.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
 
-        r = MultiQueryRetriever(llm, vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
+        r = MultiQueryRetriever(llm, vector_store=index, document_store= db, embed_func=emb.embed_texts)
         doc = r.get_relevant_documents("what is test?")
 
         self.assertEqual("this is a test", doc[0].page_content)
@@ -70,7 +69,7 @@ class MyTestCase(unittest.TestCase):
 
         r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
         r._get_relevant_documents = MagicMock(
-            return_value=[Doc(page_content="this is a test", metadata={})])
+            return_value=[Document(page_content="this is a test", metadata={})])
 
         doc = r.get_relevant_documents("what is test?")
         logger.info(f"relevant doc {doc}")
@@ -105,7 +104,7 @@ class MyTestCase(unittest.TestCase):
 
         r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store=db, embed_func=embed_func, k=10)
         r._get_relevant_documents = MagicMock(
-            return_value=[Doc(page_content="this is a test", metadata={})])
+            return_value=[Document(page_content="this is a test", metadata={})])
         doc = r.get_relevant_documents("what is test?")
         logger.info(f"relevant doc {doc}")
         self.assertEqual("this is a test", doc[0].page_content)

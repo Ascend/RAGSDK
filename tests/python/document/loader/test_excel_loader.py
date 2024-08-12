@@ -10,7 +10,7 @@ class TestExcelLoader(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
     def test_class_init_case(self):
-        loader = ExcelLoader("./data/test.xlsx")
+        loader = ExcelLoader(os.path.join(self.current_dir,"../../../data/test.xlsx"))
         self.assertIsInstance(loader, ExcelLoader)
 
     @patch.object(ExcelLoader, '_load_xls')

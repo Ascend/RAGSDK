@@ -8,7 +8,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from loguru import logger
 
-from mx_rag.document.doc import Doc
+from langchain_core.documents import Document
 from mx_rag.llm import Text2TextLLM
 from mx_rag.tools.finetune.dataprocess import generate_qa_embedding_pairs, improve_query, MineHardNegative
 from mx_rag.tools.finetune.generator.common import BaseGenerator
@@ -156,7 +156,7 @@ class TrainDataGenerator(BaseGenerator):
             documents = loader.load()
             docs = []
             for document in documents:
-                docs.append(Doc(page_content=document.page_content, metadata=document.metadata))
+                docs.append(Document(page_content=document.page_content, metadata=document.metadata))
             return docs
 
         doc_cnt = 0
