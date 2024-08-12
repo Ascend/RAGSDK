@@ -5,12 +5,15 @@ import itertools
 from loguru import logger
 from paddleocr import PaddleOCR
 from pptx import Presentation
-from mx_rag.document.loader.base_loader import BaseLoader
+from langchain_core.documents import Document
+from langchain_community.document_loaders.base import BaseLoader
+
 from mx_rag.document.doc import Doc
+from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import FileCheck
 
 
-class PowerPointLoader(BaseLoader):
+class PowerPointLoader(BaseLoader, mxBaseLoader):
     EXTENSION = (".pptx",)
     MAX_SIZE = 100 * 1024 * 1024
 
@@ -21,18 +24,18 @@ class PowerPointLoader(BaseLoader):
         except Exception as err:
             raise ValueError(f"init ocr failed, {err}") from err
 
-    def load(self):
+    def lazy_load(self):
         try:
             self._check_file_valid()
         except Exception as err:
             logger.error(f"check {self.file_path} failed, {err}")
-            return []
+            return iter([])
 
         try:
             return self._load_ppt()
         except Exception as err:
             logger.error(f"load {self.file_path} failed, {err}")
-            return []
+            return iter([])
 
     def _check_file_valid(self):
         FileCheck.check_path_is_exist_and_valid(self.file_path)
@@ -91,10 +94,7 @@ class PowerPointLoader(BaseLoader):
         return " ".join(slide_text)
 
     def _load_ppt(self):
-        docs = []
         prs = Presentation(self.file_path)
         for slide in prs.slides:
             slide_text = self._load_slide(slide)
-            doc = Doc(page_content=slide_text, metadata={"source": self.file_path})
-            docs.append(doc)
-        return docs
+            yield Document(page_content=slide_text, metadata={"source": self.file_path})

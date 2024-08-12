@@ -5,6 +5,8 @@ from unittest.mock import MagicMock
 
 from loguru import logger
 from transformers import is_torch_npu_available
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 
 from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.document.loader import DocxLoader
@@ -15,7 +17,6 @@ from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.chain import SingleText2TextChain, MultiText2TextChain
-from mx_rag.document.splitter.char_text_splitter import CharTextSplitter
 from mx_rag.retrievers import PromptTemplate, OutputParser
 
 
@@ -32,7 +33,7 @@ class MyTestCase(unittest.TestCase):
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
         loader = DocxLoader(os.path.realpath(os.path.join(current_dir, "../../data/mxVision.docx")))
-        spliter = CharTextSplitter()
+        spliter = RecursiveCharacterTextSplitter()
         res = loader.load_and_split(spliter)
         emb = TextEmbedding("/workspace/bge-large-zh/", 2)
         db = SQLiteDocstore("/tmp/sql.db")

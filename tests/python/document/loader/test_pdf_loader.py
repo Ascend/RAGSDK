@@ -6,7 +6,6 @@ import os
 import unittest
 
 from mx_rag.document.loader.pdf_loader import PdfLoader
-from mx_rag.document.loader.pdf_loader import PdfLang
 
 
 class TestPdfLoader(unittest.TestCase):
@@ -52,3 +51,9 @@ class TestPdfLoader(unittest.TestCase):
         pdf_doc = loader.load()
         self.assertEqual(15, pdf_doc[0].metadata["page_count"])
         self.assertTrue(pdf_doc[0].metadata["source"].find("files/test.pdf"))
+
+    def test_lazy_load(self):
+        loader = PdfLoader(os.path.join(self.current_dir, "../../../data/test.pdf"))
+        pdf_doc = loader.lazy_load()
+        self.assertTrue(hasattr(pdf_doc, '__iter__'), "lazy_load 应返回一个迭代器")
+        self.assertTrue(hasattr(pdf_doc, '__next__'), "lazy_load 应返回一个迭代器")

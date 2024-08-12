@@ -4,17 +4,18 @@ from pathlib import Path
 from typing import List, Tuple, Dict
 from unittest.mock import MagicMock, Mock
 
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 from mx_rag.document.loader import DocxLoader, ExcelLoader, PdfLoader
-from mx_rag.document.splitter import CharTextSplitter
 from mx_rag.retrievers.tree_retriever import split_text
 from mx_rag.retrievers.tree_retriever.utils import _cal_chunks_when_exceed_max_tokens, _distances_from_embeddings
 
 DOC_PARSER_MAP = {
-    ".docx": (DocxLoader, CharTextSplitter),
-    ".xlsx": (ExcelLoader, CharTextSplitter),
-    ".xls": (ExcelLoader, CharTextSplitter),
-    ".csv": (ExcelLoader, CharTextSplitter),
-    ".pdf": (PdfLoader, CharTextSplitter),
+    ".docx": (DocxLoader, RecursiveCharacterTextSplitter),
+    ".xlsx": (ExcelLoader, RecursiveCharacterTextSplitter),
+    ".xls": (ExcelLoader, RecursiveCharacterTextSplitter),
+    ".csv": (ExcelLoader, RecursiveCharacterTextSplitter),
+    ".pdf": (PdfLoader, RecursiveCharacterTextSplitter),
 }
 
 
