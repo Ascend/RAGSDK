@@ -4,11 +4,11 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from loguru import logger
 
 from mx_rag.document.doc import Doc
-from mx_rag.document.splitter import CharTextSplitter
 from mx_rag.llm import Text2TextLLM
 from mx_rag.tools.finetune.dataprocess import generate_qa_embedding_pairs, improve_query, MineHardNegative
 from mx_rag.tools.finetune.generator.common import BaseGenerator
@@ -168,7 +168,8 @@ class TrainDataGenerator(BaseGenerator):
             if not mk.is_file():
                 continue
             for doc in md_load(mk.as_posix()):
-                splitter = CharTextSplitter(chunk_size=DEFAULT_TRUNC_SIZE, chunk_overlap=DEFAULT_TRUNC_OVERLAP)
+                splitter = RecursiveCharacterTextSplitter(chunk_size=DEFAULT_TRUNC_SIZE,
+                                                          chunk_overlap=DEFAULT_TRUNC_OVERLAP)
                 split_doc_list.extend(splitter.split_text(doc.page_content))
             doc_cnt = doc_cnt + 1
 

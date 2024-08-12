@@ -13,6 +13,7 @@ from transformers import PreTrainedTokenizerBase
 
 from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
+from mx_rag.knowledge.doc_loader_mng import LoaderMng
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeDB
 from mx_rag.retrievers.tree_retriever import Tree
 from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
@@ -27,7 +28,7 @@ class FileHandlerError(Exception):
 def upload_files(
         knowledge: KnowledgeDB,
         files: List[str],
-        parse_func: Callable[[str], Tuple[List[str], List[Dict[str, str]]]],
+        loader_mng: LoaderMng,
         embed_func: Callable[[List[str]], np.ndarray],
         force: bool = False
 ):
@@ -39,9 +40,20 @@ def upload_files(
     for file in files:
         _check_file(file, force, knowledge)
         file_obj = Path(file)
-        texts, metadatas = parse_func(file_obj.as_posix())
+
+        loader_info = loader_mng.get_loader(file_obj.suffix)
+        splitter_info = loader_mng.get_splitter(file_obj.suffix)
+
+        loader = loader_info.loader_class(file_path=file_obj.as_posix(), **loader_info.loader_params)
+        if splitter_info.splitter_class is not None:
+            splitter = splitter_info.splitter_class(**splitter_info.splitter_params)
+            docs = loader.load_and_split(splitter)
+        else:
+            docs = loader.load()
+        texts = [doc.page_content for doc in docs if doc.page_content]
+        meta_data = [doc.metadata for doc in docs if doc.page_content]
         try:
-            knowledge.add_file(file_obj.name, texts, embed_func, metadatas)
+            knowledge.add_file(file_obj.name, texts, embed_func, meta_data)
         except Exception as err:
             # 当添加文档失败时，删除已添加的部分文档做回滚，捕获异常是为了正常回滚
             try:
@@ -105,7 +117,7 @@ def upload_files_build_tree(knowledge: KnowledgeTreeDB,
 class FilesLoadInfo:
     knowledge: KnowledgeDB
     dir_path: str
-    parse_func: Callable[[str], Tuple[List[str], List[Dict[str, str]]]]
+    loader_mng: LoaderMng
     embed_func: Callable[[List[str]], np.ndarray]
     force: bool = False
     load_image: bool = False
@@ -114,7 +126,7 @@ class FilesLoadInfo:
 def upload_dir(params: FilesLoadInfo):
     knowledge = params.knowledge
     dir_path = params.dir_path
-    parse_func = params.parse_func
+    loader_mng = params.loader_mng
     embed_func = params.embed_func
     force = params.force
     load_image = params.load_image
@@ -140,7 +152,7 @@ def upload_dir(params: FilesLoadInfo):
             files.append(file.as_posix())
         count += 1
 
-    upload_files(knowledge, files, parse_func, embed_func, force)
+    upload_files(knowledge, files, loader_mng, embed_func, force)
 
 
 def delete_files(

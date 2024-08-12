@@ -7,7 +7,7 @@ from typing import List, Any
 
 from loguru import logger
 
-from mx_rag.document.loader.docx_loader import Doc
+from mx_rag.document.doc import Doc
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers.retriever import Retriever
 

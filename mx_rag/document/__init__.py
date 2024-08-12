@@ -9,7 +9,6 @@ __all__ = [
 ]
 
 from mx_rag.document import loader
-from mx_rag.document import splitter
 
 
 SUPPORT_IMAGE_TYPE = (".jpg", ".png")

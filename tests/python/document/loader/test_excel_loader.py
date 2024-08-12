@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import os
 import unittest
 from unittest.mock import patch
 from mx_rag.document.loader.excel_loader import ExcelLoader
 
 
 class TestExcelLoader(unittest.TestCase):
+    current_dir = os.path.dirname(os.path.realpath(__file__))
 
     def test_class_init_case(self):
         loader = ExcelLoader("./data/test.xlsx")
@@ -15,15 +16,14 @@ class TestExcelLoader(unittest.TestCase):
     @patch.object(ExcelLoader, '_load_xls')
     def test_call_load_xls(self, mock_load_xls):
         # Arrange
-        loader = ExcelLoader("./data/test.xls")
-        loader.load()
+        loader = ExcelLoader(os.path.join(self.current_dir, "../../../data/test.xls"))
+        loader.lazy_load()
         mock_load_xls.assert_called_once()
 
     def test_load_xls(self):
-        loader = ExcelLoader("./data/test.xls")
+        loader = ExcelLoader(os.path.join(self.current_dir, "../../../data/test.xls"))
         docs = loader.load()
         self.assertEqual(1, len(docs))
-
         content = (f'None:中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;{loader.line_sep}'
                     f'None:中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
                     f'None:中文资讯;source:新智元;link:https://www.zhihu.com/org/xin-zhi-yuan-88-3;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
@@ -37,12 +37,12 @@ class TestExcelLoader(unittest.TestCase):
     @patch.object(ExcelLoader, '_load_xlsx')
     def test_call_load_xlsx(self, mock_load_xlsx):
         # Arrange
-        loader = ExcelLoader("./data/test.xlsx")
-        loader.load()
+        loader = ExcelLoader(os.path.join(self.current_dir, "../../../data/test.xlsx"))
+        loader.lazy_load()
         mock_load_xlsx.assert_called_once()
 
     def test_load_xlsx(self):
-        loader = ExcelLoader("./data/test.xlsx")
+        loader = ExcelLoader(os.path.join(self.current_dir, "../../../data/test.xlsx"))
         docs = loader.load()
         content = (f'None:中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;{loader.line_sep}'
                     f'None:中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
@@ -60,12 +60,12 @@ class TestExcelLoader(unittest.TestCase):
     @patch.object(ExcelLoader, '_load_csv')
     def test_call_load_csv(self, mock_load_csv):
         # Arrange
-        loader = ExcelLoader("./data/test.csv")
-        loader.load()
+        loader = ExcelLoader(os.path.join(self.current_dir, "../../../data/test.csv"))
+        loader.lazy_load()
         mock_load_csv.assert_called_once()
 
     def test_load_csv(self):
-        loader = ExcelLoader("./data/test.csv")
+        loader = ExcelLoader(os.path.join(self.current_dir, "../../../data/test.csv"))
         docs = loader.load()
         content = (f'None:中文资讯;source:机器之心;link:入门|机器之心(jiqizhixin.com);count\n（3月15日为例）:9篇;SUM:24篇;{loader.line_sep}'
                    'None:None;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count\n（3月15日为例）:'
@@ -73,3 +73,10 @@ class TestExcelLoader(unittest.TestCase):
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0].page_content, content)
         self.assertEqual(len(docs[0].metadata), 1)
+
+
+    def test_lazy_load(self):
+        loader = ExcelLoader(os.path.join(self.current_dir, "../../../data/test.xlsx"))
+        d = loader.lazy_load()
+        self.assertTrue(hasattr(d, '__iter__'), "lazy_load 应返回一个迭代器")
+        self.assertTrue(hasattr(d, '__next__'), "lazy_load 应返回一个迭代器")

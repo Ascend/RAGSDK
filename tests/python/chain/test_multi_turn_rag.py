@@ -24,7 +24,7 @@ class MyTestCase(unittest.TestCase):
         if not is_torch_npu_available():
             return
 
-        emb = TextEmbedding("/workspace/bge-large-zh/")
+        emb = TextEmbedding("/data/workspace/bge-large-zh/")
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
         logger.info("set_device done")

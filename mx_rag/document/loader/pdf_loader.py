@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import os
-from typing import List
+from typing import List, Iterator
 from enum import Enum
 
 import fitz
@@ -13,9 +13,11 @@ from loguru import logger
 from paddleocr import PPStructure
 from paddleocr.ppstructure.recovery.recovery_to_doc import sorted_layout_boxes
 from PIL import Image
+from langchain_core.documents import Document
+from langchain_community.document_loaders.base import BaseLoader
 
-from mx_rag.document.loader.base_loader import BaseLoader
 from mx_rag.document.doc import Doc
+from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
 
 
@@ -24,12 +26,13 @@ class PdfLang(Enum):
     CH: str = 'ch'
 
 
-class PdfLoader(BaseLoader):
+class PdfLoader(BaseLoader, mxBaseLoader):
     def __init__(self, file_path: str, lang: PdfLang = PdfLang.EN, layout_recognize: bool = False):
         super().__init__(file_path)
         self.layout_recognize = layout_recognize
         self.ocr_engine = None
         self.lang = lang
+
 
     @staticmethod
     def _reconstruct(layout_res):
@@ -39,6 +42,7 @@ class PdfLoader(BaseLoader):
                 PdfLoader._reconstruct_line(line, pdf_content)
         return pdf_content
 
+
     @staticmethod
     def _reconstruct_line(line, pdf_content):
         line.pop('img')
@@ -47,22 +51,23 @@ class PdfLoader(BaseLoader):
                 pdf_content.append(res['text'])
         pdf_content.append("\n")
 
-    def load(self) -> List[Doc]:
+
+    def lazy_load(self) -> Iterator[Document]:
         if not self._check():
             return []
 
         return self._parser() if self.layout_recognize else self._plain_parser()
 
+
     def _text_merger(self, pdf_content):
-        docs: List[Doc] = list()
-        one_text = " ".join([t for t in pdf_content])
-        docs.append(Doc(page_content=one_text, metadata={"source": self.file_path,
-                                                         "page_count": self._get_pdf_page_count()}))
-        return docs
+        one_text = " ".join(pdf_content)
+        yield Document(page_content=one_text, metadata={"source": self.file_path,
+                                                        "page_count": self._get_pdf_page_count()})
 
     def _layout_recognize(self, pdf_document):
         layout_res = []
         imgs = []
+
         for page_num in range(pdf_document.page_count):
             page = pdf_document.load_page(page_num)
             mat = fitz.Matrix(2, 2)
