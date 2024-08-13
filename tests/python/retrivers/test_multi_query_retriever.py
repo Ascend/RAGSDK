@@ -41,11 +41,11 @@ class MyTestCase(unittest.TestCase):
         index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
 
         knowledge_db = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
-        knowledge_db.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_texts)
+        knowledge_db.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_documents)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
 
-        r = MultiQueryRetriever(llm, vector_store=index, document_store= db, embed_func=emb.embed_texts)
+        r = MultiQueryRetriever(llm, vector_store=index, document_store= db, embed_func=emb.embed_documents)
         doc = r.get_relevant_documents("what is test?")
 
         self.assertEqual("this is a test", doc[0].page_content)

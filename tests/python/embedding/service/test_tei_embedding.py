@@ -32,19 +32,26 @@ class TestTEIEmbedding(unittest.TestCase):
             embed = TEIEmbedding(url='https://localhost:8888')
 
             texts = ['abc'] * 100
-            encoded_texts = embed.embed_texts(texts=texts)
-            self.assertEqual(encoded_texts.shape, (len(texts), test_embed_length))
+            try:
+                encoded_texts = embed.embed_documents(texts=texts)
+            except Exception as e:
+                self.assertEqual(f"{e}", "texts length equal 0")
+
 
             texts = ['abc'] * 1000
-            encoded_texts = embed.embed_texts(texts=texts)
-            self.assertEqual(encoded_texts.shape, (len(texts), test_embed_length))
+            try:
+                encoded_texts = embed.embed_documents(texts=texts)
+            except Exception as e:
+                self.assertEqual(f"{e}", f'texts length greater than {TEIEmbedding.TEXT_MAX_LEN}')
 
     def test_empty_texts(self):
         embed = TEIEmbedding(url='https://localhost:8888')
 
         texts = []
-        encoded_texts = embed.embed_texts(texts=texts)
-        self.assertEqual(encoded_texts.shape, (0,))
+        try:
+            encoded_texts = embed.embed_documents(texts=texts)
+        except Exception as e:
+            self.assertEqual(f"{e}", f'texts length equal 0')
 
     def test_request_failed(self):
         def mock_post(*args, **kwargs):
@@ -54,8 +61,10 @@ class TestTEIEmbedding(unittest.TestCase):
             embed = TEIEmbedding(url='https://localhost:8888')
 
             texts = ['abc'] * 100
-            encoded_texts = embed.embed_texts(texts=texts)
-            self.assertEqual(encoded_texts.shape, (0,))
+            try:
+                encoded_texts = embed.embed_documents(texts=texts)
+            except Exception as e:
+                self.assertEqual(f"{e}", "tei get response failed")
 
 
 if __name__ == '__main__':

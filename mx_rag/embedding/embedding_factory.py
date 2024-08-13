@@ -6,7 +6,8 @@ embedding的工厂类，用于生产mxrag的embedding
 from abc import ABC
 from typing import Dict, Any, Callable
 
-from mx_rag.embedding import Embedding
+from langchain_core.embeddings import Embeddings
+
 from mx_rag.embedding.local import TextEmbedding, ImageEmbedding
 from mx_rag.embedding.service import TEIEmbedding
 
@@ -19,14 +20,14 @@ class EmbeddingFactory(ABC):
     Attributes:
         NPU_SUPPORT_EMB 字典，用于映射embedding和对应的构造函数
     """
-    NPU_SUPPORT_EMB: Dict[str, Callable[[Dict[str, Any]], Embedding]] = {
+    NPU_SUPPORT_EMB: Dict[str, Callable[[Dict[str, Any]], Embeddings]] = {
         "local_text_embedding": TextEmbedding.create,
         "local_imags_embedding": ImageEmbedding.create,
         "tei_embedding": TEIEmbedding.create
     }
 
     @classmethod
-    def create_embedding(cls, **kwargs) -> Embedding:
+    def create_embedding(cls, **kwargs) -> Embeddings :
         """
         功能描述:
             构造embedding

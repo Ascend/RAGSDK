@@ -5,6 +5,7 @@ from typing import List
 
 from langchain_core.documents import Document
 from loguru import logger
+import numpy as np
 
 from mx_rag.storage.document_store import Docstore
 
@@ -25,7 +26,7 @@ class Retriever(ABC):
 
     def _get_relevant_documents(self, query: str) -> List[Document]:
         embedding = self._embed_func([query])
-        scores, indices = self._vector_store.search(embedding, k=self._k)
+        scores, indices = self._vector_store.search(np.array(embedding), k=self._k)
         sr = []
 
         for i, idx in enumerate(indices[0]):

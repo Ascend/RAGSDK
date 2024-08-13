@@ -18,8 +18,8 @@ class LocalEmbedding(BaseRagasEmbeddings):
         self.set_run_config(RunConfig())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        return self.model.embed_texts(texts, self.batch_size, self.max_length).tolist()
+        return self.model.embed_documents(texts, self.batch_size, self.max_length)
 
     def embed_query(self, text: str) -> List[float]:
-        result = self.model.embed_texts([text], self.batch_size, self.max_length).tolist()
+        result = self.model.embed_documents([text], self.batch_size, self.max_length)
         return result[0] if result else []

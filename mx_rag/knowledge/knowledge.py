@@ -110,11 +110,11 @@ class KnowledgeDB(KnowledgeBase):
             self,
             doc_name: str,
             texts: List[str],
-            embed_func: Callable[[List[str]], np.ndarray],
+            embed_func: Callable[[List[str]], List[List[float]]],
             metadatas: Optional[List[dict]] = None
     ) -> NoReturn:
         embeddings = embed_func(texts)
-        if not isinstance(embeddings, np.ndarray):
+        if not isinstance(embeddings, List):
             raise KnowledgeError("The data type of embedding should be np.ndarray")
         metadatas = metadatas or [{} for _ in texts]
         if len(texts) != len(metadatas) != len(embeddings):
@@ -122,7 +122,7 @@ class KnowledgeDB(KnowledgeBase):
         documents = [MxDocument(page_content=t, metadata=m, document_name=doc_name) for t, m in zip(texts, metadatas)]
         self._knowledge_store.add(self.knowledge_name, doc_name)
         ids = self._document_store.add(documents)
-        self._vector_store.add(embeddings, np.array(ids))
+        self._vector_store.add(np.array(embeddings), np.array(ids))
 
     def delete_file(self, doc_name: str):
         self._knowledge_store.delete(self.knowledge_name, doc_name)
