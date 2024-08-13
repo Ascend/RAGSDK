@@ -44,7 +44,7 @@ class MyTestCase(unittest.TestCase):
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("mxVision.docx",
                               [d.page_content for d in res],
-                              embed_func=emb.embed_texts,
+                              embed_func=emb.embed_documents,
                               metadatas=[d.metadata for d in res]
                                 )
 
@@ -55,7 +55,7 @@ class MyTestCase(unittest.TestCase):
             """
             测试单条搜索结果，包含source_documents和不包含source_documents进行测试
             """
-            r = Retriever(vector_store=vector_store, k=1, score_threshold=0.5, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, k=1, score_threshold=0.5, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             good_prompt = "mxVision软件架构包含哪些模块？"
 
@@ -99,7 +99,7 @@ class MyTestCase(unittest.TestCase):
 
         def test_rag_chain_npu_multi_doc(self):
             multi_sr_prompt = "mxVision软件包介绍"
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_texts, k=5, score_threshold=0.7)
+            r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, k=5, score_threshold=0.7)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             query_response = ""
@@ -131,7 +131,7 @@ class MyTestCase(unittest.TestCase):
             )
 
             r = MultiQueryRetriever(llm=llm, prompt=prompt, parser=Parse(), vector_store=vector_store,
-                                    embed_func=emb.embed_texts, k=5,
+                                    embed_func=emb.embed_documents, k=5,
                                     score_threshold=0.7)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
@@ -142,7 +142,7 @@ class MyTestCase(unittest.TestCase):
             logger.debug(f"response {query_response}")
 
         def test_multi_turn_rag_chain_npu_multi_doc(self):
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_texts, k=5, score_threshold=0.5)
+            r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, k=5, score_threshold=0.5)
             rag = MultiText2TextChain(retriever=r, llm=llm)
             rag.source = True
 
@@ -174,7 +174,7 @@ class MyTestCase(unittest.TestCase):
             self.assertTrue(len(rag._history) == 39)
 
         def test_rag_chain_npu_no_doc(self):
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_texts, score_threshold=0.5)
+            r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, score_threshold=0.5)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             for response in rag.query("CANN是什么呢", max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):

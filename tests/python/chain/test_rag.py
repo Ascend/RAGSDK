@@ -36,31 +36,31 @@ class MyTestCase(unittest.TestCase):
         os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
-        vector_store.add_file("test_file.txt", ["this is a test"], metadatas=[{"filepath": "xxx.file"}], embed_func=emb.embed_texts)
+        vector_store.add_file("test_file.txt", ["this is a test"], metadatas=[{"filepath": "xxx.file"}], embed_func=emb.embed_documents)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
 
         def test_rag_chain_npu(self):
-            r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
             logger.debug(f"response {response}")
 
         def test_rag_chain_npu_stream(self):
-            r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
                                       stream=True):
                 logger.debug(f"stream response {response}")
 
         def test_rag_chain_npu_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_texts)
+            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
             logger.debug(f"response {response}")
 
         def test_rag_chain_npu_stream_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_texts)
+            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,

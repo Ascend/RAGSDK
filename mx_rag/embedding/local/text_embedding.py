@@ -6,11 +6,11 @@ from typing import Optional
 
 import numpy as np
 import torch
+from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
 from mx_rag.utils.file_check import FileCheck
-from mx_rag.embedding.embedding import Embedding
 
 try:
     import torch_npu
@@ -20,7 +20,7 @@ except Exception as e:
     logger.warning(f"import torch_npu failed:{e}, text_embedding will running on cpu")
 
 
-class TextEmbedding(Embedding):
+class TextEmbedding(Embeddings):
     TEXT_MAX_LEN = 1000 * 1000
 
     def __init__(self,
@@ -57,18 +57,28 @@ class TextEmbedding(Embedding):
 
         return TextEmbedding(**kwargs)
 
-    def embed_texts(self,
-                    texts: List[str],
-                    batch_size: int = 32,
-                    max_length: int = 512):
+    def embed_documents(self,
+                        texts: List[str],
+                        batch_size: int = 32,
+                        max_length: int = 512) -> List[List[float]]:
 
         result, _ = self._encode(texts, batch_size, max_length, False)
-        return result
+        if result.size == 0:
+            raise ValueError("embedding text error")
 
-    def embed_texts_with_last_hidden_state(self,
-                                           texts: List[str],
-                                           batch_size: int = 32,
-                                           max_length: int = 512):
+        return result.tolist()
+
+    def embed_query(self, text: str, max_length: int = 512) -> List[float]:
+        embeddings = self.embed_documents([text])
+        if not embeddings:
+            raise ValueError("embedding text failed")
+
+        return embeddings[0]
+
+    def embed_documents_with_last_hidden_state(self,
+                                               texts: List[str],
+                                               batch_size: int = 32,
+                                               max_length: int = 512):
         return self._encode(texts, batch_size, max_length, True)
 
     def _encode(self,
@@ -77,10 +87,10 @@ class TextEmbedding(Embedding):
                 max_length: int = 512,
                 with_last_hidden_state: bool = False):
         if len(texts) == 0:
-            return np.array([]), np.array([])
+            raise ValueError('texts length equal 0')
+
         elif len(texts) > self.TEXT_MAX_LEN:
-            logger.error(f'texts list length must less than {self.TEXT_MAX_LEN}')
-            return np.array([]), np.array([])
+            raise ValueError(f'texts length greater than {self.TEXT_MAX_LEN}')
 
         result = []
         last_hidden_states = []
@@ -116,8 +126,7 @@ class TextEmbedding(Embedding):
 
                 last_hidden_states.append(last_hidden_state)
             except Exception as le:
-                logger.error(f'process last_hidden_state failed, find exception {le}')
-                return np.array([]), np.array([])
+                raise Exception('process last_hidden_state failed') from le
 
         last_hidden_states = np.concatenate(last_hidden_states, axis=0) if with_last_hidden_state else np.array([])
         return np.concatenate(result, axis=0), last_hidden_states

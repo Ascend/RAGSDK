@@ -4,14 +4,13 @@ from pathlib import Path
 from typing import List
 
 import PIL
-import numpy as np
 import torch
 
 from PIL import Image
+from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoProcessor, AutoModel, is_torch_npu_available
 
-from mx_rag.embedding.embedding import Embedding
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 
 try:
@@ -21,7 +20,7 @@ except Exception as e:
     logger.warning(f"import torch_npu failed:{e}, img_embedding will running on cpu")
 
 
-class ImageEmbedding(Embedding):
+class ImageEmbedding(Embeddings):
     SUPPORT_IMG_TYPE = (".jpg", ".png")
     MAX_IMAGE_SIZE = 100 * 1024 * 1024
     TEXT_COUNT = 1000 * 1000
@@ -34,7 +33,7 @@ class ImageEmbedding(Embedding):
 
         self.use_fp16 = use_fp16
         self.model = AutoModel.from_pretrained(self.model_path)
-        self.preprocess = AutoProcessor.from_pretrained(self.model_path)
+        self.processor = AutoProcessor.from_pretrained(self.model_path)
 
         if self.use_fp16:
             self.model = self.model.half()
@@ -53,33 +52,39 @@ class ImageEmbedding(Embedding):
 
         return ImageEmbedding(**kwargs)
 
-    def embed_texts(self, texts: List[str]) -> np.ndarray:
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
         if len(texts) == 0:
-            return np.array([])
+            raise ValueError("texts length equal 0")
+
         elif len(texts) > self.TEXT_COUNT:
-            logger.error(f'texts list length must less than {self.TEXT_COUNT}')
-            return np.array([])
+            raise ValueError(f'texts length greater than{self.TEXT_COUNT}')
 
         for text in texts:
-            if len(text) > self.TEXT_LEN:
-                logger.error(f"text len can not greater than {self.TEXT_LEN}")
-                return np.array([])
+            if len(text) > self.TEXT_LEN or len(text) == 0:
+                raise ValueError(f"the length of text in texts greater than {self.TEXT_LEN} or equal 0")
 
-        inputs = self.preprocess(text=texts, padding=True, return_tensors="pt", max_length=512).to(self.model.device)
+        inputs = self.processor(text=texts, padding=True, return_tensors="pt", max_length=512).to(self.model.device)
         with torch.no_grad():
             text_features = self.model.get_text_features(**inputs).detach().cpu()
             text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
 
-        return text_features.numpy()
+        return text_features.tolist()
 
-    def embed_images(self, images: List[str]) -> np.ndarray:
+    def embed_query(self, text: str) -> List[float]:
+        embeddings = self.embed_documents([text])
+        if not embeddings:
+            raise ValueError("embedding text failed")
+
+        return embeddings[0]
+
+    def embed_images(self, images: List[str]) -> List[List[float]]:
         image_features = []
 
         if len(images) == 0:
-            return np.array([])
+            raise ValueError("images length equal 0")
+
         elif len(images) > self.IMAGE_COUNT:
-            logger.error(f'texts list length must less than {self.IMAGE_COUNT}')
-            return np.array([])
+            raise ValueError(f'images length greater than {self.IMAGE_COUNT}')
 
         for image in images:
             FileCheck.check_path_is_exist_and_valid(image)
@@ -87,12 +92,15 @@ class ImageEmbedding(Embedding):
             if Path(image).suffix not in self.SUPPORT_IMG_TYPE:
                 raise TypeError(f"embed img:[{image}] failed because the file type not be supported")
 
-            fi = PIL.Image.open(image)
-            inputs = self.preprocess(images=fi, return_tensors="pt").to(self.model.device)
-            fi.close()
+            with PIL.Image.open(image) as fi:
+                inputs = self.processor(images=fi, return_tensors="pt").to(self.model.device)
+
             image_feature = self.model.get_image_features(**inputs)
             image_feature = image_feature / image_feature.norm(p=2, dim=-1, keepdim=True)
 
-            image_features.extend(image_feature.detach().cpu().numpy())
+            image_features.append(image_feature)
 
-        return np.stack(image_features)
+        if not image_features:
+            raise Exception("embedding image failed")
+
+        return torch.cat(image_features).tolist()

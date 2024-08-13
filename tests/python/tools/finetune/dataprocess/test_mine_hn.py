@@ -13,12 +13,12 @@ class TestMineHn(unittest.TestCase):
     @patch("mx_rag.utils.file_check.FileCheck.check_input_path_valid")
     @patch("mx_rag.utils.file_check.SecFileCheck.check")
     @patch("mx_rag.embedding.local.TextEmbedding.__init__")
-    @patch("mx_rag.embedding.local.TextEmbedding.embed_texts")
-    def test_run_success(self, fake_embed_texts, fake_embed_init, fake_check, fake_check_path):
+    @patch("mx_rag.embedding.local.TextEmbedding.embed_documents")
+    def test_run_success(self, fake_embed_documents, fake_embed_init, fake_check, fake_check_path):
         def embed_text(texts: list[str]):
             return np.array([[1] * 1024] * len(texts))
 
-        fake_embed_texts.side_effect = embed_text
+        fake_embed_documents.side_effect = embed_text
         fake_embed_init.return_value = None
 
         train_datas = []

@@ -3,6 +3,7 @@
 import random
 
 import faiss
+import numpy as np
 from loguru import logger
 from tqdm import tqdm
 
@@ -18,14 +19,14 @@ class MineHardNegative:
         self.model = TextEmbedding(model, dev_id=dev_id)
 
     @staticmethod
-    def _create_index(embeddings):
+    def _create_index(embeddings: np.ndarray):
         index = faiss.IndexFlatIP(len(embeddings[0]))
         index.add(embeddings)
         return index
 
     @staticmethod
     def _batch_search(index,
-                      query,
+                      query: np.ndarray,
                       top_k: int = 200,
                       batch_size: int = 64):
         all_scores, all_inxs = [], []
@@ -71,10 +72,10 @@ class MineHardNegative:
         corpus = list(set(corpus))
 
         logger.info(f"inference embedding for corpus (number={len(corpus)})")
-        p_vecs = self.model.embed_texts(corpus)
+        p_vecs = np.array(self.model.embed_documents(corpus))
 
         logger.info(f"inference embedding for queries (number={len(queries)})")
-        q_vecs = self.model.embed_texts(queries)
+        q_vecs = np.array(self.model.embed_documents(queries))
 
         logger.info("create index and search")
         index = self._create_index(p_vecs)

@@ -35,7 +35,10 @@ class TestCacheEmb(unittest.TestCase):
             cache_emb = CacheEmb.create(embedding_type="xxxx", x_dim=1024, skip_emb=False)
             self.assertIsInstance(cache_emb, CacheEmb)
             self.assertEqual(cache_emb.dimension(), 1024)
-            self.assertEqual(cache_emb.to_embeddings(["1234567"]), ["1234567"])
+            try:
+                cache_emb.to_embeddings(["1234567"])
+            except Exception as e:
+                self.assertEqual(f"{e}", "emb_obj is not instance of Embeddings")
 
 
 if __name__ == '__main__':

@@ -48,9 +48,9 @@ class MyTestCase(unittest.TestCase):
         os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
         knowledge_db = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
-        knowledge_db.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_texts)
+        knowledge_db.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_documents)
         logger.info("create MindFAISS done")
-        r = Retriever(index, document_store= db, score_threshold=0.5, embed_func=emb.embed_texts)
+        r = Retriever(index, document_store= db, score_threshold=0.5, embed_func=emb.embed_documents)
 
         def test_result(self):
             query = "what is unshare command?"

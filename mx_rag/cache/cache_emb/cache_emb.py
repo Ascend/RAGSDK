@@ -3,12 +3,12 @@
 """
 MXRAGCache 的embedding 适配器类
 """
-from typing import List, Optional, Union
+from typing import List, Union
 
-import numpy as np
+from langchain_core.embeddings import Embeddings
 from gptcache.embedding.base import BaseEmbedding
 
-from mx_rag.embedding import Embedding, EmbeddingFactory
+from mx_rag.embedding import EmbeddingFactory
 
 
 class CacheEmb(BaseEmbedding):
@@ -22,7 +22,7 @@ class CacheEmb(BaseEmbedding):
         skip_emb: (bool) 是否需要跳过embedding 对于memory_cache 不需要做embedding
     """
 
-    def __init__(self, emb_obj: Embedding = None, x_dim: int = 0, skip_emb: bool = False):
+    def __init__(self, emb_obj: Embeddings = None, x_dim: int = 0, skip_emb: bool = False):
         self.emb_obj = emb_obj
         self.x_dim = x_dim
         self.skip_emb = skip_emb
@@ -69,11 +69,14 @@ class CacheEmb(BaseEmbedding):
         """
         return self.x_dim if not self.skip_emb else 0
 
-    def _embedding_text(self, data: List[str]) -> np.ndarray:
+    def _embedding_text(self, data: List[str]) -> List[List[float]]:
         """
         调用MXRAG的embedding方法去embedding 来自gptcache的数据data
 
         Return:
             返回embedding 之后的数据
         """
-        return self.emb_obj.embed_texts(data) if self.emb_obj is not None else data
+        if not isinstance(self.emb_obj, Embeddings):
+            raise TypeError("emb_obj is not instance of Embeddings")
+
+        return self.emb_obj.embed_documents(data)

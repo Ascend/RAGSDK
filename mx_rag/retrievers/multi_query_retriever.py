@@ -55,15 +55,16 @@ class OutputParser(ABC):
 
 
 class DefaultOutputParser(OutputParser):
+    @staticmethod
+    def _is_starting_with_number(query: str):
+        return bool(re.match(r'\d.*', query))
+
     def parse(self, output: str) -> List[str]:
         lines = []
         for line in output.splitlines():
-            if self.is_starting_with_number(line.strip()):
+            if self._is_starting_with_number(line.strip()):
                 lines.append(line)
         return lines
-
-    def is_starting_with_number(self, query: str):
-        return bool(re.match(r'\d.*', query))
 
 
 class MultiQueryRetriever(Retriever):

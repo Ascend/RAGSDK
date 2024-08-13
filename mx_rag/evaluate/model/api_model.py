@@ -70,11 +70,8 @@ class APIEmbedding(BaseRagasEmbeddings):
         self.set_run_config(RunConfig())
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        result = self.embed.embed_texts(texts, self.batch_size)
-        result = result.tolist()
-        return result if result else [[]]
+        return self.embed.embed_documents(texts, self.batch_size)
 
     def embed_query(self, text: str) -> List[float]:
-        result = self.embed.embed_texts([text], self.batch_size)
-        result = result.tolist()
+        result = self.embed.embed_documents([text], self.batch_size)
         return result[0] if result else []
