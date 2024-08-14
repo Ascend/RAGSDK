@@ -8,18 +8,15 @@ from mx_rag.chain.single_text_to_text import SingleText2TextChain
 
 class ParallelText2TextChain(SingleText2TextChain):
     FIRST_RAG_PROMPT = (
-        "<指令>根据已知信息，简洁和专业的来回答用户的问题，并保存对应知识的URL。"
-        "如果无法从中已知信息中得到答案，请在事先声明 “没有搜索到足够的相关信息，"
-        "以下是根据我的经验做出的的回答”后，根据先前训练过的知识回答问题，"
-        "不需要提到提供的知识片段。</指令> 用户问题:"
+        "根据已知信息，简洁和专业的来回答用户的问题。如果无法从中已知信息中得到答案，请根据自身经验做出的的回答 用户问题:"
     )
 
     NEXT_RAG_PROMPT = (
         "下面是已知信息:"
     )
 
-    def __init__(self, llm, retriever):
-        super().__init__(llm, retriever)
+    def __init__(self, prompt: str = FIRST_RAG_PROMPT, **kwargs):
+        super().__init__(prompt=prompt, **kwargs)
         self.prefill_done = Value('i', 0)
         self.prefill_queue = Queue()
         self.lock = Lock()
@@ -61,7 +58,7 @@ class ParallelText2TextChain(SingleText2TextChain):
             answer = answer[0]
         # 否则 走正常推理流程
         else:
-            question = self.FIRST_RAG_PROMPT + text + "\n" + self.NEXT_RAG_PROMPT
+            question = self._prompt + text + "\n" + self.NEXT_RAG_PROMPT
             for doc in self._docs:
                 question = question + doc.page_content
 
@@ -80,7 +77,7 @@ class ParallelText2TextChain(SingleText2TextChain):
         Returns:
             流式推理结果
         """
-        question = self.FIRST_RAG_PROMPT + text
+        question = self._prompt + text
         answer_interator = self._do_stream_query(question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
         result = ""
 
