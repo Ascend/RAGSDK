@@ -93,7 +93,7 @@ def _is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
 def upload_files_build_tree(knowledge: KnowledgeTreeDB,
                             files: List[str],
                             parse_func: Callable[[str, PreTrainedTokenizerBase, int], Tuple],
-                            embed_func: Callable[[List[str]], np.ndarray],
+                            embed_func: Callable[[List[str]], List[List[float]]],
                             force: bool = False) -> Tree:
     if len(files) > 1:
         raise FileHandlerError(f"Currently not supported for uploading multiple files simultaneously!")

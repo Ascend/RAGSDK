@@ -12,7 +12,7 @@ from mx_rag.retrievers.tree_retriever import Node
 class TestTreeRetriever(unittest.TestCase):
     def setUp(self):
         tree = TestTreeRetriever.mock_tree()
-        embed_func = MagicMock(return_value=np.array([1, 2, 3]))
+        embed_func = MagicMock(return_value=[[1, 2, 3]])
         tokenizer = MagicMock(spec=PreTrainedTokenizerBase)
         tree_retriver_config = TreeRetrieverConfig(tokenizer=tokenizer, embed_func=embed_func)
         self.tree_retriever = TreeRetriever(tree_retriver_config, tree)
@@ -26,7 +26,7 @@ class TestTreeRetriever(unittest.TestCase):
 
     def test_create_embedding(self):
         result = self.tree_retriever._create_embedding("test")
-        self.assertEqual([1, 2, 3], result)
+        self.assertSequenceEqual([1, 2, 3], result)
 
     def test_retrieve_information_collapse_tree(self):
         selected_nodes, context = self.tree_retriever._retrieve_information_collapse_tree("hello", 2, 5)
@@ -41,7 +41,7 @@ class TestTreeRetriever(unittest.TestCase):
 
     @staticmethod
     def mock_tree():
-        embed_func = MagicMock(return_value=np.array([1, 2, 3]))
+        embed_func = MagicMock(return_value=[[1, 2, 3]])
         tokenizer = MagicMock(spec=PreTrainedTokenizerBase)
         tree_build_config = TreeBuilderConfig(tokenizer, summarization_model=MagicMock(spec=TreeText2TextChain))
         tree_builder = TreeBuilder(tree_build_config)
