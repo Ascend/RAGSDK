@@ -62,7 +62,7 @@ class TreeBuilderConfig:
 
 
 class TreeBuilder:
-    def __init__(self, config) -> None:
+    def __init__(self, config: TreeBuilderConfig) -> None:
         self.tokenizer = config.tokenizer
         self.max_tokens = config.max_tokens
         self.num_layers = config.num_layers
@@ -74,16 +74,21 @@ class TreeBuilder:
 
     @staticmethod
     def create_node(
-            index: int, text: str, embed_func: Callable[[List[str]], np.ndarray],
+            index: int, text: str, embed_func: Callable[[List[str]], List[List[float]]],
             children_indices: Optional[Set[int]] = None
     ) -> Tuple[int, Node]:
         if children_indices is None:
             children_indices = set()
-        # 使用传入的embed_func进行embedding, embed_func传入类型是List[str], 返回类型为np.ndarray
-        embeddings = embed_func([text]).flatten()
-        return index, Node(text, index, children_indices, embeddings)
+        # 使用传入的embed_func进行embedding, embed_func传入类型是List[str], 返回类型为List[List[float]]
+        embeddings = embed_func([text])
 
-    def build_from_text(self, embed_func: Callable[[List[str]], np.ndarray], chunks: List[str]) -> Tree:
+        flat_list = []
+        for row in embeddings:
+            flat_list += row
+
+        return index, Node(text, index, children_indices, flat_list)
+
+    def build_from_text(self, embed_func: Callable[[List[str]], List[List[float]]], chunks: List[str]) -> Tree:
         leaf_nodes = {}
         for index, text in enumerate(chunks):
             _, node = TreeBuilder.create_node(index, text, embed_func=embed_func)
@@ -102,7 +107,7 @@ class TreeBuilder:
         return self.summarization_model.summarize(context, max_tokens=max_tokens)
 
     def _process_cluster(self, cluster: List[Node], new_level_nodes: {}, next_node_index: int,
-                         summarization_length: int, embed_func: Callable[[List[str]], np.ndarray]):
+                         summarization_length: int, embed_func: Callable[[List[str]], List[List[float]]]):
         node_texts = _get_text(cluster)
         summarized_result = self._summarize(
             context=node_texts,
@@ -120,7 +125,7 @@ class TreeBuilder:
             current_level_nodes: Dict[int, Node],
             all_tree_nodes: Dict[int, Node],
             layer_to_nodes: Dict[int, List[Node]],
-            embed_func: Callable[[List[str]], np.ndarray]
+            embed_func: Callable[[List[str]], List[List[float]]]
     ) -> Dict[int, Node]:
         next_node_index = len(all_tree_nodes)
 

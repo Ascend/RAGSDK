@@ -158,7 +158,7 @@ class KnowledgeTreeDB(KnowledgeBase):
     def add_files(self,
                   file_names: List[str],
                   texts: List[str],
-                  embed_func: Callable[[List[str]], np.ndarray],
+                  embed_func: Callable[[List[str]], List[List[float]]],
                   metadatas: List[dict]) -> Tree:
         if len(texts) != len(metadatas) != len(file_names):
             raise KnowledgeError("chunks, metadatas, file_names expected to be equal length")
@@ -173,7 +173,7 @@ class KnowledgeTreeDB(KnowledgeBase):
         return tree
 
     def add_file(self, doc_name: str, texts: Optional[List[str]],
-                 embed_func: Optional[Callable[[List[str]], np.ndarray]], metadatas: Optional[List[dict]]):
+                 embed_func: Optional[Callable[[List[str]], List[List[float]]]], metadatas: Optional[List[dict]]):
         self._knowledge_store.add(self.knowledge_name, doc_name)
 
     def delete_file(self, doc_name: str):

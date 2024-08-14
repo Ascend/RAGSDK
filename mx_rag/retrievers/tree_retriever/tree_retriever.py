@@ -18,7 +18,7 @@ class TreeRetrieverConfig:
     def __init__(
             self,
             tokenizer: PreTrainedTokenizerBase,
-            embed_func: Callable[[List[str]], np.ndarray],
+            embed_func: Callable[[List[str]], List[List[float]]],
             threshold: float = 0.5,
             top_k: int = 5,
             selection_mode: str = "top_k",
@@ -92,9 +92,14 @@ class TreeRetriever:
         return context
 
     def _create_embedding(self, text: str) -> List[float]:
-        embeddings = self.embed_func([text]).flatten().tolist()
-        logger.debug(f"the create_embedding embeddings dim is {len(embeddings)}")
-        return embeddings
+        embeddings = self.embed_func([text])
+
+        flat_list = []
+        for row in embeddings:
+            flat_list += row
+
+        logger.debug(f"the create_embedding embeddings dim is {len(flat_list)}")
+        return flat_list
 
     def _retrieve_information_collapse_tree(self, query: str, top_k: int, max_tokens: int) -> tuple:
         query_embedding = self._create_embedding(query)

@@ -71,17 +71,19 @@ class MultiQueryRetriever(Retriever):
     def __init__(self, llm: Text2TextLLM,
                  prompt: PromptTemplate = DEFAULT_QUERY_PROMPT_CH,
                  parser: OutputParser = DefaultOutputParser(),
+                 max_tokens: int = 512,
                  **data: Any):
         super().__init__(**data)
         self._llm = llm
         self._prompt = prompt
         self._parser = parser
+        self._max_tokens = max_tokens
 
     def _get_relevant_documents(self, query: str) -> List[Document]:
         docs = []
 
         llm_query = self._prompt.format(question=query)
-        llm_response = self._llm.chat(query=llm_query, history=[], role="user", max_tokens=2048)
+        llm_response = self._llm.chat(query=llm_query, history=[], role="user", max_tokens=self._max_tokens)
         for sub_query in self._parser.parse(output=str(llm_response)):
             logger.success(f"sub_query {sub_query}")
             doc = super()._get_relevant_documents(sub_query)
