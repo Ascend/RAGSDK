@@ -10,7 +10,7 @@ from mx_rag.chain import ParallelText2TextChain
 
 class TestParallelChain(unittest.TestCase):
     def test_init(self):
-        parallel_chain = ParallelText2TextChain(None, None)
+        parallel_chain = ParallelText2TextChain(llm=None, retriever=None)
         self.assertIsInstance(parallel_chain, ParallelText2TextChain)
 
     def test_query_prefill_first_done(self):
@@ -24,7 +24,7 @@ class TestParallelChain(unittest.TestCase):
                    mock.Mock(side_effect=mock_do_stream_query)):
             with patch('mx_rag.chain.ParallelText2TextChain._retrieve_process',
                        mock.Mock(side_effect=mock_retrieve_process)):
-                parallel_chain = ParallelText2TextChain(None, None)
+                parallel_chain = ParallelText2TextChain(llm=None, retriever=None)
                 answer = parallel_chain.query("123456")
                 self.assertEqual(answer, "prefill query done")
                 self.assertEqual(parallel_chain.prefill_done.value, 0)
@@ -46,7 +46,7 @@ class TestParallelChain(unittest.TestCase):
                        mock.Mock(side_effect=mock_retrieve_process)):
                 with patch('mx_rag.chain.SingleText2TextChain._do_query',
                            mock.Mock(side_effect=mock_do_query)):
-                    parallel_chain = ParallelText2TextChain(None, None)
+                    parallel_chain = ParallelText2TextChain(llm=None, retriever=None)
                     answer = parallel_chain.query("123456")
                     self.assertEqual(answer, "retrieve query done")
                     self.assertEqual(parallel_chain.prefill_done.value, 0)
