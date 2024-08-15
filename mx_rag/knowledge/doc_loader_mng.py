@@ -9,22 +9,22 @@ from langchain_text_splitters.base import Language, TextSplitter
 
 @dataclass
 class LoaderInfo:
-    loader_class: BaseLoader
+    loader_class: Type
     loader_params: Dict[str, Any]
 
 
 @dataclass
 class SplitterInfo:
-    splitter_class: TextSplitter
+    splitter_class: Type
     splitter_params: Dict[str, Any]
 
 
 class LoaderMng:
     def __init__(self):
-        self.loaders: Dict[BaseLoader, Tuple[List[str], LoaderInfo]] = {}
+        self.loaders: Dict[Type, Tuple[List[str], LoaderInfo]] = {}
         self.splitters: Dict[Type, Tuple[List[str], SplitterInfo]] = {}
 
-    def register_loader(self, loader_class: TextSplitter, file_types: List[str],
+    def register_loader(self, loader_class: Type, file_types: List[str],
                         loader_params: Optional[Dict[str, Any]] = None):
         self.loaders[loader_class] = (file_types, LoaderInfo(loader_class, loader_params or {}))
 
@@ -42,7 +42,7 @@ class LoaderMng:
         for file_types, splitter_info in self.splitters.values():
             if file_suffix in file_types:
                 return splitter_info
-        raise KeyError(f"No splitter registered for file type '{file_suffix}'")
+        return None
 
     def unregister_loader(self, loader_class: Type):
         if loader_class in self.loaders:
