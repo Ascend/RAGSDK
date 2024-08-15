@@ -39,8 +39,8 @@ class LoaderMngTestCase(unittest.TestCase):
         loader_mng.register_splitter(RecursiveCharacterTextSplitter, [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
                                      {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False})
         loader_mng.unregister_splitter(RecursiveCharacterTextSplitter)
-        with self.assertRaises(KeyError):
-            loader_mng.get_splitter(".xlsx")
+        splitter_info = loader_mng.get_splitter(".xlsx")
+        self.assertIsNone(splitter_info)
 
     def test_get_loader(self):
         loader_mng = LoaderMng()

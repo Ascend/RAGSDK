@@ -59,7 +59,7 @@ class DocxLoaderTestCase(unittest.TestCase):
         document.save(test_file)
         loader = DocxLoader(test_file)
         res = loader.load_and_split(RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=100))
-        self.assertEqual(77, len(res))
+        self.assertEqual(0, len(res))
 
 
 if __name__ == '__main__':

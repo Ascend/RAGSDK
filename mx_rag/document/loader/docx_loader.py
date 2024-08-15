@@ -92,7 +92,7 @@ class DocxLoader(BaseLoader, mxBaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
         if not self._is_document_valid():
-            yield Document(page_content='')
+            return
 
         all_text = []
         doc = docx.Document(self.file_path)

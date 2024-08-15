@@ -45,7 +45,7 @@ def upload_files(
         splitter_info = loader_mng.get_splitter(file_obj.suffix)
 
         loader = loader_info.loader_class(file_path=file_obj.as_posix(), **loader_info.loader_params)
-        if splitter_info.splitter_class is not None:
+        if splitter_info and splitter_info.splitter_class is not None:
             splitter = splitter_info.splitter_class(**splitter_info.splitter_params)
             docs = loader.load_and_split(splitter)
         else:
@@ -60,7 +60,8 @@ def upload_files(
                 knowledge.delete_file(file_obj.name)
             except Exception as e:
                 logger.warning(f"exception encountered while rollback, {e}")
-            raise FileHandlerError(f"add {file_obj.name} failed, {err}") from err
+            logger.error(f"add {file_obj.name} failed, {err}")
+            continue
 
 
 def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
@@ -151,7 +152,6 @@ def upload_dir(params: FilesLoadInfo):
         if file.suffix in support_file_type:
             files.append(file.as_posix())
         count += 1
-
     upload_files(knowledge, files, loader_mng, embed_func, force)
 
 

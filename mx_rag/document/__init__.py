@@ -3,7 +3,6 @@
 
 __all__ = [
     "loader",
-    "splitter",
     "SUPPORT_IMAGE_TYPE",
     "SUPPORT_DOC_TYPE"
 ]

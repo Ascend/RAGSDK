@@ -278,7 +278,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         wb = xlrd.open_workbook(self.file_path, formatting_info=True)
         if wb.nsheets > self.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
-            yield Document(page_content='')
+            return
         for i in range(wb.nsheets):
             ws = wb.sheet_by_index(i)
             content = self._load_xls_one_sheet(ws)
@@ -293,7 +293,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         wb = load_workbook(self.file_path, data_only=True)
         if len(wb.sheetnames) > self.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
-            yield Document(page_content='')
+            return
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
             content = self._load_xlsx_one_sheet(ws)
@@ -322,10 +322,9 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                 content = self._load_csv_lines(reader, headers)
         except Exception as e:
             logger.error(e)
-            yield Document(page_content='')
+            return
         if content:
             yield Document(page_content=content, metadata={"source": self.file_path})
         else:
             logger.info(f"file {self.file_path} is empty")
-            yield Document(page_content='')
 
