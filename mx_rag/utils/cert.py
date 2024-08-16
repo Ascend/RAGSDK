@@ -60,7 +60,7 @@ class TlsConfig(object):
 
     @staticmethod
     def get_init_context():
-        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        context = ssl.create_default_context()
         context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.maximum_version = ssl.TLSVersion.TLSv1_3
         context.set_ciphers(':'.join(SAFE_CIPHER_SUITES))
