@@ -24,8 +24,8 @@ class APILLM(BaseRagasLLM):
                  crl_file: str = "",
                  use_http: bool = False):
         self.url = llm_url
-        self.llm = Text2TextLLM(self.url,
-                                model_name,
+        self.llm = Text2TextLLM(base_url=self.url,
+                                model_name=model_name,
                                 timeout=10 * 60,
                                 cert_file=cert_file,
                                 crl_file=crl_file,

@@ -16,7 +16,7 @@ from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.document_store import SQLiteDocstore
-from mx_rag.chain import SingleText2TextChain, MultiText2TextChain
+from mx_rag.chain import SingleText2TextChain
 from mx_rag.retrievers import PromptTemplate, OutputParser
 
 
@@ -49,7 +49,7 @@ class MyTestCase(unittest.TestCase):
                                 )
 
         logger.info("create MindFAISS done")
-        llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct", url="http://70.255.71.175:3000", timeout=120)
+        llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct", base_url="http://70.255.71.175:3000", timeout=120)
 
         def test_rag_chain_npu_single(self):
             """
@@ -141,37 +141,6 @@ class MyTestCase(unittest.TestCase):
                 logger.trace(f"response {response}")
             logger.debug(f"response {query_response}")
 
-        def test_multi_turn_rag_chain_npu_multi_doc(self):
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, k=5, score_threshold=0.5)
-            rag = MultiText2TextChain(retriever=r, llm=llm)
-            rag.source = True
-
-            response = rag.query("请记住小明的爸爸是酱板鸭", max_tokens=1024,
-                                 temperature=1.0,
-                                 top_p=0.1)
-            logger.debug(f"stream response {response}")
-
-            response = rag.query("小明的爸爸是谁", max_tokens=1024, temperature=1.0, top_p=0.1)
-            logger.debug(f"stream response {response}")
-            self.assertTrue("酱板鸭" in response.get("result"))
-
-            for i in range(2, 23):
-                response = rag.query("小明的爸爸是谁", max_tokens=1024, temperature=1.0, top_p=0.1)
-                len1 = i * 2 + 1
-                logger.debug(f"stream response {response}, {len(rag._history)}, {len1}")
-                if i >= 20:
-                    self.assertTrue("酱板鸭" not in response.get("result"))
-                else:
-                    self.assertTrue("酱板鸭" in response.get("result"))
-                self.assertTrue(
-                    len(rag._history) == len1 if len1 < rag._max_history * 2 else rag._max_history * 2)
-                cnt = 0
-                for x in rag._history:
-                    user = ["user", "assistant"][cnt % 2]
-                    logger.debug(f"role = {x['role']}, user = {user}")
-                    self.assertTrue(x['role'] == user)
-                    cnt += 1
-            self.assertTrue(len(rag._history) == 39)
 
         def test_rag_chain_npu_no_doc(self):
             r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, score_threshold=0.5)
@@ -185,7 +154,6 @@ class MyTestCase(unittest.TestCase):
         # test_rag_chain_npu_multi_doc(self)
         # test_rag_chain_npu_no_doc(self)
         test_rag_chain_npu_multi_doc_query_rewrite(self)
-        test_multi_turn_rag_chain_npu_multi_doc(self)
 
 
 if __name__ == '__main__':

@@ -2,34 +2,41 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import json
 import sys
-from typing import List
+from typing import List, Optional, Any, Iterator
 
+from langchain.llms.base import LLM
+from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.outputs import GenerationChunk
 from loguru import logger
 
 from mx_rag.utils.common import safe_get
 from mx_rag.utils.url import RequestUtils
 
+HEADER = {
+    "Content-Type": "application/json"
+}
+INT64_MAX = (1 << 63) - 1
 
-class Text2TextLLM:
-    HEADER = {
-        "Content-Type": "application/json"
-    }
-    INT64_MAX = (1 << 63) - 1
 
-    def __init__(self,
-                 url: str,
-                 model_name: str,
-                 timeout: int = 10,
-                 max_prompt_len=128 * 1024 * 1024,
-                 max_history_len=100,
-                 cert_file: str = "",
-                 crl_file: str = "",
-                 use_http: bool = False):
-        self._model_name = model_name
-        self._url = url
-        self._client = RequestUtils(timeout=timeout, cert_file=cert_file, crl_file=crl_file, use_http=use_http)
-        self._max_history_len = max_history_len
-        self._max_prompt_len = max_prompt_len
+class Text2TextLLM(LLM):
+    base_url: str
+    model_name: str
+    timeout: int = 10
+    max_prompt_len: int = 128 * 1024 * 1024
+    max_history_len: int = 100
+    cert_file: str = ""
+    crl_file: str = ""
+    use_http: bool = False
+    max_tokens: int = 512
+    presence_penalty: float = 0.0
+    frequency_penalty: float = 0.0
+    temperature: float = 0.5
+    top_p: float = 0.95
+
+    @property
+    def _client(self):
+        return RequestUtils(timeout=self.timeout, cert_file=self.cert_file, crl_file=self.crl_file,
+                            use_http=self.use_http)
 
     @staticmethod
     def _validate_range(value, value_range, expected_type, inclusive_min=True, param_name=""):
@@ -77,14 +84,14 @@ class Text2TextLLM:
             logger.error(f"query cannot be None")
             return ans
 
-        if len(query) > self._max_prompt_len or len(query) == 0:
-            logger.error(f"query content len [{len(query)}] not in (0, {self._max_prompt_len}]")
+        if len(query) > self.max_prompt_len or len(query) == 0:
+            logger.error(f"query content len [{len(query)}] not in (0, {self.max_prompt_len}]")
             return ans
         if history is None:
             history = []
         request_body = self._get_request_body(query, history, role, **kwargs)
         request_body["stream"] = False
-        response = self._client.post(url=self._url, body=json.dumps(request_body), headers=self.HEADER)
+        response = self._client.post(url=self.base_url, body=json.dumps(request_body), headers=HEADER)
         if response.success:
             try:
                 data = json.loads(response.data)
@@ -105,8 +112,8 @@ class Text2TextLLM:
 
     def chat_streamly(self, query: str, history: List[dict] = None, role: str = "user", **kwargs):
         ans = ""
-        if query is None or len(query) > self._max_prompt_len:
-            logger.error(f"query cannot be None or content len not in  (0, {self._max_prompt_len})")
+        if query is None or len(query) > self.max_prompt_len:
+            logger.error(f"query cannot be None or content len not in  (0, {self.max_prompt_len})")
             yield ans
             return
         if history is None:
@@ -115,7 +122,7 @@ class Text2TextLLM:
         request_body = self._get_request_body(query, history, role, **kwargs)
         request_body["stream"] = True
         ans = ""
-        response = self._client.post_streamly(url=self._url, body=json.dumps(request_body), headers=self.HEADER)
+        response = self._client.post_streamly(url=self.base_url, body=json.dumps(request_body), headers=HEADER)
         for result in response:
             if not result.success:
                 logger.error("get response failed")
@@ -146,8 +153,8 @@ class Text2TextLLM:
             yield ans
 
     def _get_request_body(self, query: str, history: List[dict], role: str, **kwargs):
-        if len(history) > self._max_history_len:
-            raise ValueError(f"The length of the history parameter cannot exceed {self._max_history_len}")
+        if len(history) > self.max_history_len:
+            raise ValueError(f"The length of the history parameter cannot exceed {self.max_history_len}")
 
         if not self._validate_history_format(history):
             raise ValueError("the history parameter is not valid, can only contain role and context")
@@ -164,13 +171,13 @@ class Text2TextLLM:
 
         seed = kwargs.get(seed_str, None)
         if seed is not None:
-            seed = self._validate_range(kwargs.get(seed_str, None), (0, self.INT64_MAX), int,
+            seed = self._validate_range(kwargs.get(seed_str, None), (0, INT64_MAX), int,
                                         inclusive_min=False, param_name=seed_str)
         # 适配MindIE参数范围
         request_body = {
-            "model": self._model_name,
+            "model": self.model_name,
             "messages": history,
-            max_tokens: self._validate_range(kwargs.get(max_tokens, 16), (1, self.INT64_MAX), int,
+            max_tokens: self._validate_range(kwargs.get(max_tokens, 16), (1, INT64_MAX), int,
                                              inclusive_min=False, param_name=max_tokens),
             presence_penalty: self._validate_range(kwargs.get(presence_penalty, 0.0), (-2.0, 2.0), float,
                                                    param_name=presence_penalty),
@@ -183,3 +190,30 @@ class Text2TextLLM:
                                         inclusive_min=False, param_name=top_p)
         }
         return request_body
+
+    def _llm_type(self):
+        return self.model_name
+
+    def _call(
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            callbacks: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+    ) -> str:
+        return self.chat(prompt, max_tokens=self.max_tokens, temperature=self.temperature,
+                         presence_penalty=self.presence_penalty, frequency_penalty=self.frequency_penalty,
+                         top_p=self.top_p)
+
+    def _stream(
+            self,
+            prompt: str,
+            stop: Optional[List[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        for response in self.chat_streamly(prompt, max_tokens=self.max_tokens, temperature=self.temperature,
+                                           presence_penalty=self.presence_penalty,
+                                           frequency_penalty=self.frequency_penalty,
+                                           top_p=self.top_p):
+            yield GenerationChunk(text=response)
