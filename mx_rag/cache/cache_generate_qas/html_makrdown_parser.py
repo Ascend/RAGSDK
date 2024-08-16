@@ -9,6 +9,7 @@ from threading import Lock
 from typing import List, Any, Tuple, Dict
 
 from langchain_community.document_loaders import TextLoader
+from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.url import RequestUtils
@@ -22,6 +23,13 @@ class GenerateQaParser(ABC):
     @abstractmethod
     def parse(self):
         pass
+
+
+def _thread_pool_callback(worker):
+    worker_exception = worker.exception()
+    if worker_exception:
+        logger.error(
+            "called thread pool executor callback function, worker return exception: {}".format(worker_exception))
 
 
 class HTMLParser(GenerateQaParser):
@@ -70,7 +78,7 @@ class HTMLParser(GenerateQaParser):
         lock = Lock()
         for url in self.urls:
             with ThreadPoolExecutor() as executor:
-                executor.submit(
+                thread_pool_exc = executor.submit(
                     _request,
                     self._client,
                     url,
@@ -78,6 +86,7 @@ class HTMLParser(GenerateQaParser):
                     titles,
                     contents
                 )
+                thread_pool_exc.add_done_callback(_thread_pool_callback)
         return titles, contents
 
 
@@ -120,11 +129,12 @@ class MarkDownParser(GenerateQaParser):
         lock = Lock()
         for _mk in Path(self.file_path).rglob("*.md"):
             with ThreadPoolExecutor() as executor:
-                executor.submit(
+                thread_pool_exc = executor.submit(
                     _load_file,
                     _mk,
                     lock,
                     titles,
                     contents
                 )
+                thread_pool_exc.add_done_callback(_thread_pool_callback)
         return titles, contents
