@@ -6,7 +6,8 @@ from unittest.mock import MagicMock
 from loguru import logger
 from transformers import is_torch_npu_available
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import PromptTemplate
 
 from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.document.loader import DocxLoader
@@ -17,7 +18,6 @@ from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.chain import SingleText2TextChain
-from mx_rag.retrievers import PromptTemplate, OutputParser
 
 
 class MyTestCase(unittest.TestCase):
@@ -115,7 +115,7 @@ class MyTestCase(unittest.TestCase):
         def test_rag_chain_npu_multi_doc_query_rewrite(self):
             multi_sr_prompt = "mxVision软件包介绍"
 
-            class Parse(OutputParser):
+            class Parse(BaseOutputParser):
                 def parse(self, output: str) -> List[str]:
                     lines = []
                     for line in output.splitlines()[1:]:
@@ -125,7 +125,8 @@ class MyTestCase(unittest.TestCase):
                     return lines[0:3]
 
             prompt = PromptTemplate(
-                "你是AI语言助手。你的任务是通过用户给定的原始问题生成3"
+                input_variables=["question"],
+                template="你是AI语言助手。你的任务是通过用户给定的原始问题生成3"
                 "个不同版本问题，以便用户从向量数据库中检索相关文档。通过生成多个相似问题来帮助用户克服一些基于距离的相似性搜索的限制。"
                 "请使用中文简洁回答，问题之间使用换行符分隔。原始问题: {question}"
             )

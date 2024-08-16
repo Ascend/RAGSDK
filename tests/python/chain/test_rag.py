@@ -55,13 +55,13 @@ class MyTestCase(unittest.TestCase):
                 logger.debug(f"stream response {response}")
 
         def test_rag_chain_npu_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_documents)
+            r = MultiQueryRetriever(llm=llm, vector_store=vector_store, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
             logger.debug(f"response {response}")
 
         def test_rag_chain_npu_stream_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_documents)
+            r = MultiQueryRetriever(llm=llm, vector_store=vector_store, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
@@ -107,7 +107,7 @@ class MyTestCase(unittest.TestCase):
 
         @patch("mx_rag.llm.Text2TextLLM.chat")
         def test_rag_chain_npu_multi_query_retriever(self, chat_mock):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
+            r = MultiQueryRetriever(llm=llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             chat_mock.return_value = ("MultiQueryRetriever")
             response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
@@ -115,7 +115,7 @@ class MyTestCase(unittest.TestCase):
 
         @patch("mx_rag.llm.Text2TextLLM.chat_streamly")
         def test_rag_chain_npu_stream_multi_query_retriever(self, chat_mock):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
+            r = MultiQueryRetriever(llm=llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             chat_mock.return_value = (yield "MultiQueryRetriever steam")

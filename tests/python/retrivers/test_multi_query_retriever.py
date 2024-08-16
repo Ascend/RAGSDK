@@ -42,13 +42,13 @@ class MyTestCase(unittest.TestCase):
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://71.14.88.12:7890")
 
-        r = MultiQueryRetriever(llm, vector_store=index, document_store=db, embed_func=emb.embed_documents)
-        doc = r.get_relevant_documents("what is test?")
+        r = MultiQueryRetriever(llm=llm, vector_store=index, document_store=db, embed_func=emb.embed_documents)
+        doc = r.invoke("what is test?")
 
         self.assertEqual("this is a test", doc[0].page_content)
 
-    @patch("mx_rag.llm.Text2TextLLM.chat")
-    def test_MultiQueryRetrieverBase(self, chat_mock):
+    @patch("mx_rag.retrievers.multi_query_retriever.MultiQueryRetriever._get_relevant_documents")
+    def test_MultiQueryRetrieverBase(self, get_relevant_documents_mock):
         if is_torch_npu_available():
             return
 
@@ -56,54 +56,37 @@ class MyTestCase(unittest.TestCase):
             return np.random.random((1, 1024))
 
         mind_llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://127.0.0.1:7890")
-        chat_mock.return_value = "1. Test is a framework for testing and evaluating the quality of a product or service.\n" \
-                                 "2. Test is a process of verifying that a product or service meets certain requirements.\n" \
-                                 "3. Test is a type of software or application designed to simulate a real-world scenario."
+
+
+        get_relevant_documents_mock.return_value = [Document(page_content="this is a test", metadata={})]
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
         vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
 
-        r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
-        r._get_relevant_documents = MagicMock(
-            return_value=[Document(page_content="this is a test", metadata={})])
+        r = MultiQueryRetriever(llm=mind_llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
 
-        doc = r.get_relevant_documents("what is test?")
+        doc = r.invoke("what is test?")
         logger.info(f"relevant doc {doc}")
         self.assertEqual("this is a test", doc[0].page_content)
 
-    @patch("mx_rag.llm.Text2TextLLM.chat")
-    def test_MultiQueryRetrieverMulti(self, chat_mock):
+    @patch("mx_rag.retrievers.multi_query_retriever.MultiQueryRetriever._get_relevant_documents")
+    def test_MultiQueryRetrieverMulti(self, get_relevant_documents_mock):
         if is_torch_npu_available():
             return
-
-        def my_side_effect():
-            yield [[(Document(page_content="this is a test1", document_name="test1.txt"), 0.01)]]
-            yield [[(Document(page_content="this is a test2", document_name="test2.txt"), 0.01)]]
-            yield [[(Document(page_content="this is a test3", document_name="test3.txt"), 0.01)]]
-
-        similarity_search_mock = MagicMock()
-        similarity_search_mock.side_effect = my_side_effect()
 
         def embed_func(texts):
             return np.random.random((1, 1024))
 
         mind_llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://127.0.0.1:7890")
 
-        chat_mock.return_value = "1. Test is a framework for testing and evaluating the quality of a product or service.\n" \
-                                 "2. Test is a process of verifying that a product or service meets certain requirements.\n" \
-                                 "3. Test is a type of software or application designed to simulate a real-world scenario."
-        shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
+        get_relevant_documents_mock.return_value = [Document(page_content="this is a test", metadata={})]
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
         vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
 
-        vector_store.similarity_search = similarity_search_mock
-
-        r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store=db, embed_func=embed_func, k=10)
-        r._get_relevant_documents = MagicMock(
-            return_value=[Document(page_content="this is a test", metadata={})])
-        doc = r.get_relevant_documents("what is test?")
+        r = MultiQueryRetriever(llm=mind_llm, vector_store=vector_store, document_store=db, embed_func=embed_func, k=10)
+        doc = r.invoke("what is test?")
         logger.info(f"relevant doc {doc}")
         self.assertEqual("this is a test", doc[0].page_content)
 

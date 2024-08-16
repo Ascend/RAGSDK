@@ -58,7 +58,7 @@ class SingleText2TextChain(Chain):
                stream: bool = False) -> Union[Dict, Iterator[Dict]]:
 
         self._query_str = text
-        self._docs = self._retriever.get_relevant_documents(text)
+        self._docs = self._retriever.invoke(text)
 
         if self._reranker is not None:
             scores = self._reranker.rerank(text, [doc.page_content for doc in self._docs])
