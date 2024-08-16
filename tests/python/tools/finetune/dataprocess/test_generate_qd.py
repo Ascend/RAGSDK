@@ -13,7 +13,7 @@ class TestGenerateQD(unittest.TestCase):
     @patch("mx_rag.llm.Text2TextLLM.chat")
     def test_run_success(self, chat):
         chat.return_value = "question?"
-        llm = Text2TextLLM("test_url", "test_model_name")
+        llm = Text2TextLLM(base_url="test_url", model_name="test_model_name")
         qd = generate_qa_embedding_pairs(llm, ["hello"], 1)
         self.assertEqual(qd["hello"], ["question?"])
 

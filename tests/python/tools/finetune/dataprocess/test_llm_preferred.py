@@ -14,7 +14,7 @@ class TestLlmPreferred(unittest.TestCase):
     def test_run_success(self, chat):
         chat.return_value = "得分是62.13"
 
-        llm = Text2TextLLM("test_url", "test_model_name")
+        llm = Text2TextLLM(base_url="test_url", model_name="test_model_name")
         scores = llm_preferred(llm, ["query"], ["document"])
 
         self.assertEqual(scores, [62.13])

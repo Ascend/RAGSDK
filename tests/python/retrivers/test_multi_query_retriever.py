@@ -5,13 +5,10 @@ import os
 import shutil
 import sys
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 from transformers import is_torch_npu_available
-
-
-
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))
@@ -43,31 +40,31 @@ class MyTestCase(unittest.TestCase):
         knowledge_db = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         knowledge_db.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_documents)
         logger.info("create MindFAISS done")
-        llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
+        llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://71.14.88.12:7890")
 
-        r = MultiQueryRetriever(llm, vector_store=index, document_store= db, embed_func=emb.embed_documents)
+        r = MultiQueryRetriever(llm, vector_store=index, document_store=db, embed_func=emb.embed_documents)
         doc = r.get_relevant_documents("what is test?")
 
         self.assertEqual("this is a test", doc[0].page_content)
 
-    def test_MultiQueryRetrieverBase(self):
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_MultiQueryRetrieverBase(self, chat_mock):
         if is_torch_npu_available():
             return
 
         def embed_func(texts):
             return np.random.random((1, 1024))
 
-        mind_llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://127.0.0.1:7890")
-        mind_llm.chat = MagicMock(
-            return_value="1. Test is a framework for testing and evaluating the quality of a product or service.\n"
-                         "2. Test is a process of verifying that a product or service meets certain requirements.\n"
-                         "3. Test is a type of software or application designed to simulate a real-world scenario.")
+        mind_llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://127.0.0.1:7890")
+        chat_mock.return_value = "1. Test is a framework for testing and evaluating the quality of a product or service.\n" \
+                                 "2. Test is a process of verifying that a product or service meets certain requirements.\n" \
+                                 "3. Test is a type of software or application designed to simulate a real-world scenario."
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
         vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
 
-        r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
+        r = MultiQueryRetriever(mind_llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
         r._get_relevant_documents = MagicMock(
             return_value=[Document(page_content="this is a test", metadata={})])
 
@@ -75,7 +72,8 @@ class MyTestCase(unittest.TestCase):
         logger.info(f"relevant doc {doc}")
         self.assertEqual("this is a test", doc[0].page_content)
 
-    def test_MultiQueryRetrieverMulti(self):
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_MultiQueryRetrieverMulti(self, chat_mock):
         if is_torch_npu_available():
             return
 
@@ -90,11 +88,11 @@ class MyTestCase(unittest.TestCase):
         def embed_func(texts):
             return np.random.random((1, 1024))
 
-        mind_llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://127.0.0.1:7890")
-        mind_llm.chat = MagicMock(
-            return_value="1. Test is a framework for testing and evaluating the quality of a product or service.\n"
-                         "2. Test is a process of verifying that a product or service meets certain requirements.\n"
-                         "3. Test is a type of software or application designed to simulate a real-world scenario.")
+        mind_llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://127.0.0.1:7890")
+
+        chat_mock.return_value = "1. Test is a framework for testing and evaluating the quality of a product or service.\n" \
+                                 "2. Test is a process of verifying that a product or service meets certain requirements.\n" \
+                                 "3. Test is a type of software or application designed to simulate a real-world scenario."
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)

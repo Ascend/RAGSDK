@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     logger.info("Fine-tuning beginning")
-    text_llm = Text2TextLLM(url=args.llm_url, model_name=args.llm_model_name, timeout=DEFAULT_LLM_TIMEOUT,
+    text_llm = Text2TextLLM(base_url=args.llm_url, model_name=args.llm_model_name, timeout=DEFAULT_LLM_TIMEOUT,
                             use_http=args.use_http)
     finetune = Finetune(args.document_path,
                         args.generate_dataset_path,

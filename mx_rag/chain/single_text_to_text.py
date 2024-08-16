@@ -75,7 +75,7 @@ class SingleText2TextChain(Chain):
         logger.info("invoke normal query")
         resp = {"query": self._query_str, "result": ""}
         if self._source:
-            resp['source_documents'] = [vars(x) for x in self._docs]
+            resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in self._docs]
         llm_response = self._llm.chat(text, self._history, self._role, **kwargs)
         self._content = llm_response
         resp['result'] = llm_response
@@ -85,7 +85,7 @@ class SingleText2TextChain(Chain):
         logger.info("invoke stream query")
         resp = {"query": self._query_str, "result": ""}
         if self._source:
-            resp['source_documents'] = [vars(x) for x in self._docs]
+            resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in self._docs]
 
         for response in self._llm.chat_streamly(text, self._history, self._role, **kwargs):
             self._content = response
