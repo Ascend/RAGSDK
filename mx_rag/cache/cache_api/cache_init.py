@@ -5,12 +5,13 @@ MXRAGCache 提供的对外API，用于初始化MXRAGCache的参数，在MXRAGCac
 import os
 from typing import Dict
 
+import cachetools
 from gptcache import Cache
 from gptcache.manager.scalar_data import CacheBase
 from gptcache.similarity_evaluation import ExactMatchEvaluation
 from loguru import logger
 
-from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig
+from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig, EvictPolicy
 from mx_rag.cache.cache_similarity import CacheSimilarity
 from mx_rag.cache.cache_storage import CacheVecStorage
 from mx_rag.cache.cache_emb import CacheEmb
@@ -118,18 +119,21 @@ def _init_mxrag_memory_cache(cache_obj: Cache, cache_name: str, config: CacheCon
     Return:
         None
     """
-    from gptcache.manager import get_data_manager
+    from gptcache.manager.data_manager import MapDataManager
     from gptcache.adapter.api import init_similar_cache
 
     _, _, data_save_file = _get_data_save_file(config.data_save_folder, cache_name, True)
 
-    data_manager = get_data_manager(
-        cache_base=None,
-        vector_base=None,
-        max_size=config.cache_size,
-        eviction=config.eviction_policy.value,
-        data_path=data_save_file
-    )
+    evict_policy_memory_map = {
+        EvictPolicy.LRU.value: cachetools.LRUCache,
+        EvictPolicy.LFU.value: cachetools.LFUCache,
+        EvictPolicy.FIFO.value: cachetools.FIFOCache,
+        EvictPolicy.RR.value: cachetools.RRCache
+    }
+
+    data_manager = MapDataManager(data_save_file,
+                                  config.cache_size,
+                                  evict_policy_memory_map.get(config.eviction_policy.value, cachetools.LRUCache))
 
     init_similar_cache(
         pre_func=config.pre_emb_func,
