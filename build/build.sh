@@ -73,8 +73,6 @@ function package()
     cd "${OUTPUT_DIR}"
     cp *.whl "${CI_PACKAGE_DIR}"
 
-    cp -r "${ROOT_PATH}"/patches "${CI_PACKAGE_DIR}"
-
     if [ ! -d "${CI_PACKAGE_DIR}/ops" ]; then
       mkdir -p "${CI_PACKAGE_DIR}/ops"
     fi
@@ -103,7 +101,6 @@ function package()
 
     find ./  \( -name "*.sh" -o -name "*.run" \)  -exec  chmod 550 {} \;
 
-    find patches -type d -exec chmod 550 {} \;
     find ops -type d -exec chmod 550 {} \;
 
     cd ../
