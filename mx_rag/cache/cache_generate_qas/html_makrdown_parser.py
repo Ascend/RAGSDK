@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import concurrent
 import re
 from abc import abstractmethod, ABC
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from ssl import SSLContext
-from threading import Lock
 from typing import List, Any, Tuple, Dict
 
 from langchain_community.document_loaders import TextLoader
@@ -62,32 +62,32 @@ class HTMLParser(GenerateQaParser):
                                     use_http=use_http, proxy_url=proxy_url, ssl_context=ssl_context)
 
     def parse(self) -> Tuple[List[str], List[str]]:
-        def _request(client: RequestUtils, url: str, lock: Lock, titles: List[str], contents: List[str]):
+        def _request(client: RequestUtils, url: str):
             import readability
             from html_text import html_text
             response = client.get(url, self.headers)
             html_doc = readability.Document(response)
             title = html_doc.title()
             content = html_text.extract_text(html_doc.summary(html_partial=True))
-            with lock:
-                titles.append(title)
-                contents.append(content)
+            return title, content
 
         titles = []
         contents = []
-        lock = Lock()
-        for url in self.urls:
-            with ThreadPoolExecutor() as executor:
+        task_list = []
+        with ThreadPoolExecutor() as executor:
+            for url in self.urls:
                 thread_pool_exc = executor.submit(
                     _request,
                     self._client,
-                    url,
-                    lock,
-                    titles,
-                    contents
+                    url
                 )
                 thread_pool_exc.add_done_callback(_thread_pool_callback)
-        return titles, contents
+                task_list.append(thread_pool_exc)
+        for future in concurrent.futures.as_completed(task_list):
+            title, content = future.result()
+            titles.append(title)
+            contents.append(content)
+            return titles, contents
 
 
 def _md_load(file_path: str) -> List[str]:
@@ -117,24 +117,25 @@ class MarkDownParser(GenerateQaParser):
         self.file_path = file_path
 
     def parse(self) -> Tuple[List[str], List[str]]:
-        def _load_file(_mk: Any, lock: Lock, titles: List[str], contents: List[str]):
+        def _load_file(_mk: Any):
             SecFileCheck(_mk.as_posix(), MAX_FILE_SIZE_10M).check()
             for doc in _md_load(_mk.as_posix()):
-                with lock:
-                    titles.append(_mk.name)
-                    contents.append(doc)
+                return _mk.name, doc
 
         titles = []
         contents = []
-        lock = Lock()
-        for _mk in Path(self.file_path).glob("*.md"):
-            with ThreadPoolExecutor() as executor:
+        task_list = []
+
+        with ThreadPoolExecutor() as executor:
+            for _mk in Path(self.file_path).glob("*.md"):
                 thread_pool_exc = executor.submit(
                     _load_file,
-                    _mk,
-                    lock,
-                    titles,
-                    contents
+                    _mk
                 )
                 thread_pool_exc.add_done_callback(_thread_pool_callback)
+                task_list.append(thread_pool_exc)
+        for future in concurrent.futures.as_completed(task_list):
+            title, content = future.result()
+            titles.append(title)
+            contents.append(content)
         return titles, contents
