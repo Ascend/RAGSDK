@@ -12,9 +12,19 @@ from .utils import (_distances_from_embeddings, _get_embeddings,
                     _get_node_list, _get_text,
                     _indices_of_nearest_neighbors_from_distances,
                     _reverse_mapping)
+from ...utils.common import validate_params
 
 
 class TreeRetrieverConfig:
+    @validate_params(
+        tokenizer=dict(validator=lambda x: isinstance(x, PreTrainedTokenizerBase)),
+        embed_func=dict(validator=lambda x: isinstance(x, Callable)),
+        threshold=dict(validator=lambda x: 0 <= x <= 1),
+        top_k=dict(validator=lambda x: 1 <= x <= 10000),
+        selection_mode=dict(validator=lambda x: x in ["top_k", "threshold"]),
+        collapse_tree=dict(validator=lambda x: isinstance(x, bool)),
+        max_tokens=dict(validator=lambda x: 50 <= x <= 10000)
+    )
     def __init__(
             self,
             tokenizer: PreTrainedTokenizerBase,
@@ -25,36 +35,12 @@ class TreeRetrieverConfig:
             collapse_tree: bool = True,
             max_tokens: int = 3500
     ):
-        if tokenizer is None:
-            raise ValueError("tokenizer cannot be None.")
         self.tokenizer = tokenizer
-
-        if not isinstance(threshold, float) or not (0 <= threshold <= 1):
-            raise ValueError("threshold must be a float between 0 and 1")
         self.threshold = threshold
-
-        if not isinstance(top_k, int) or top_k < 1:
-            raise ValueError("top_k must be an integer and at least 1")
         self.top_k = top_k
-
-        if not isinstance(selection_mode, str) or selection_mode not in [
-            "top_k",
-            "threshold",
-        ]:
-            raise ValueError(
-                "selection_mode must be a string and either 'top_k' or 'threshold'"
-            )
         self.selection_mode = selection_mode
-
-        if embed_func is None:
-            raise ValueError("embed_func must be a callable function")
         self.embed_func = embed_func
-
-        if not isinstance(collapse_tree, bool):
-            raise ValueError("collapse_tree must be a boolean")
         self.collapse_tree = collapse_tree
-        if not isinstance(max_tokens, int) or max_tokens < 1:
-            raise ValueError("max_tokens must be an integer and at least 1")
         self.max_tokens = max_tokens
 
 

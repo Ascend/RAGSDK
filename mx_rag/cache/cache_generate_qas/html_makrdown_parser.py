@@ -127,7 +127,7 @@ class MarkDownParser(GenerateQaParser):
         titles = []
         contents = []
         lock = Lock()
-        for _mk in Path(self.file_path).rglob("*.md"):
+        for _mk in Path(self.file_path).glob("*.md"):
             with ThreadPoolExecutor() as executor:
                 thread_pool_exc = executor.submit(
                     _load_file,

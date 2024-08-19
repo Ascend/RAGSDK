@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import inspect
 from datetime import datetime
 from enum import Enum
 
@@ -27,6 +28,47 @@ def safe_get(data, keys, default=None):
         else:
             return default
     return data
+
+
+def _get_value_from_param(arg_name, func, *args, **kwargs):
+    sig = inspect.signature(func)
+    # 从传入参数中获取要校验的value
+    for param_name, param in sig.bind(*args, **kwargs).arguments.items():
+        if arg_name == param_name:
+            return param
+    # 传入参数中没有则从方法定义中取默认值
+    for name, param in sig.parameters.items():
+        if arg_name == name:
+            return param.default
+    # 都没有抛出异常
+    raise ValueError(f"Required parameter '{arg_name}' of function {func.__name__} is missing.")
+
+
+def validate_params(**validators):
+    """
+    定义一个装饰器，用于验证函数的多个参数。在方法上使用注释
+    @validate_params(
+        name=dict(validator=lambda x: isinstance(x, str)),
+        age=dict(validator=lambda x: 10 <= x <= 30)
+    )
+    :param validators: 一个包含验证函数的字典，每个函数用于验证一个特定的参数。
+    :return: 装饰器函数
+    """
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            # 对每个参数应用验证函数
+            for arg_name, validator in validators.items():
+                # 检查是否通过位置或关键字传递了参数
+                value = _get_value_from_param(arg_name, func, *args, **kwargs)
+                # 运行验证函数
+                if not validator['validator'](value):
+                    raise ValueError(f"The parameter '{arg_name}' of function {func.__name__} is invalid.")
+
+            # 如果所有参数都通过验证，则调用原始函数
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 class PubkeyType(Enum):
