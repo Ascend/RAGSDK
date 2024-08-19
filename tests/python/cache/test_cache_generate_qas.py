@@ -28,10 +28,10 @@ class TestQAGenerate(unittest.TestCase):
     def test_generate_qas_with_qas(self, generate_mock, split_mock):
         config = QAGenerationConfig(['title1', 'title2'], ['content1', 'content2'], Mock(), Mock())
         qa_generate = QAGenerate(config)
-        generate_mock.return_value = ['qa1', 'qa2']
+        generate_mock.return_value = ["q1?参考段落:answer1", "q2?参考段落:answer2"]
         split_mock.return_value = "text"
         result = qa_generate.generate_qa()
-        self.assertEqual(result, ['qa1', 'qa2', 'qa1', 'qa2'])
+        self.assertEqual(result, {'q1?': 'answer1', 'q2?': 'answer2'})
 
     @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     def test_markdown_parse(self, dir_check_mock):

@@ -5,14 +5,19 @@ MXRAGCache 配置功能类
 提供对外的配置参数，CacheConfig继承子gptCache的Config类，默认为memory_cache
 SimilarityCacheConfig 继承CacheConfig提供 语义相似cache
 """
+import os
 from enum import Enum
 from typing import Dict, Any, Union
 
 from gptcache.config import Config
-from gptcache.manager import CacheBase, VectorBase
 from gptcache.embedding.base import BaseEmbedding
-from gptcache.similarity_evaluation import SimilarityEvaluation
+from gptcache.manager import CacheBase, VectorBase
 from gptcache.processor.pre import get_prompt
+from gptcache.similarity_evaluation import SimilarityEvaluation
+
+from mx_rag.utils.file_operate import check_disk_free_space
+
+FREE_SPACE_LIMIT = 1024 * 1024 * 1024
 
 
 class EvictPolicy(Enum):
@@ -55,6 +60,7 @@ class CacheConfig(Config):
                  eviction_policy: EvictPolicy = EvictPolicy.LRU,
                  pre_emb_func=get_prompt,
                  data_save_folder: str = _get_default_save_folder(),
+                 min_free_space: int = FREE_SPACE_LIMIT,
                  **kwargs):
         super().__init__(**kwargs)
         self.config_type = "memory_cache_config"
@@ -62,6 +68,7 @@ class CacheConfig(Config):
         self.eviction_policy = eviction_policy
         self.pre_emb_func = pre_emb_func
         self.data_save_folder = data_save_folder
+        self.min_free_space = min_free_space
 
         similarity_threshold = kwargs.get("similarity_threshold", 0.8)
         if not (1 >= similarity_threshold >= 0):
@@ -78,6 +85,9 @@ class CacheConfig(Config):
 
         if not isinstance(self.data_save_folder, str):
             raise TypeError("data_save_folder type error")
+
+        if check_disk_free_space(os.path.dirname(self.data_save_folder), self.min_free_space):
+            raise Exception("Insufficient remaining space, please clear disk space")
 
 
 class SimilarityCacheConfig(CacheConfig):

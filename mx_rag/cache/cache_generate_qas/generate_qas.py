@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import re
-from typing import List
+from typing import List, Dict
 
 from loguru import logger
 from transformers import PreTrainedTokenizerBase
@@ -132,7 +132,7 @@ class QAGenerate:
             return QAGenerate._split_html_text("\n".join(text_lines), tokenizer, max_tokens)
         return "\n".join(text_lines)
 
-    def generate_qa(self, **kwargs) -> List[str]:
+    def generate_qa(self, **kwargs) -> Dict:
         if len(self.config.titles) != len(self.config.contents):
             raise ValueError("The length of titles and contents must be equal.")
         final_qas = []
@@ -148,4 +148,11 @@ class QAGenerate:
             if not qas:
                 continue
             final_qas.extend(qas)
-        return final_qas
+        qa_pair = {}
+        for final_qa in final_qas:
+            split_txts = re.split(r"参考段落[:：]", final_qa)
+            if len(split_txts) != 2:
+                logger.info(f"Can't split {final_qa}, skip")
+                continue
+            qa_pair[split_txts[0]] = split_txts[1]
+        return qa_pair
