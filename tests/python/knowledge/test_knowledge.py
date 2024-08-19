@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch, Mock, MagicMock
 
 import numpy as np
+from transformers import PreTrainedTokenizerBase
 
 from mx_rag.chain.tree_text_to_text import TreeText2TextChain
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeStore
@@ -79,7 +80,7 @@ class TestKnowledge(unittest.TestCase):
         mock_build_from_text.return_value = None
         current_dir = os.path.dirname(os.path.realpath(__file__))
         top_path = os.path.dirname(os.path.dirname(current_dir))
-        tree_builder_config = TreeBuilderConfig(tokenizer=Mock(), summarization_model=Mock(spec=TreeText2TextChain))
+        tree_builder_config = TreeBuilderConfig(tokenizer=Mock(spec=PreTrainedTokenizerBase), summarization_model=Mock(spec=TreeText2TextChain))
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         knwoledge_tree_db = KnowledgeTreeDB(KnowledgeStore(SQL_PATH), chunk_store=SQLiteDocstore(SQL_PATH),
                                             knowledge_name="test_knowledge",

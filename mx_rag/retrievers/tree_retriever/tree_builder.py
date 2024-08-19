@@ -4,7 +4,6 @@
 import copy
 from typing import Dict, List, Optional, Set, Tuple, Callable
 
-import numpy as np
 from loguru import logger
 from transformers import PreTrainedTokenizerBase
 
@@ -12,9 +11,20 @@ from .cluster_alg import _clustering
 from .tree_structures import Node, Tree
 from .utils import _get_node_list, _get_text
 from ...chain import TreeText2TextChain
+from ...utils.common import validate_params
 
 
 class TreeBuilderConfig:
+    @validate_params(
+        tokenizer=dict(validator=lambda x: isinstance(x, PreTrainedTokenizerBase)),
+        summarization_model=dict(validator=lambda x: isinstance(x, TreeText2TextChain)),
+        max_tokens=dict(validator=lambda x: 50 <= x <= 10000),
+        num_layers=dict(validator=lambda x: 1 <= x <= 10),
+        threshold=dict(validator=lambda x: 0 <= x <= 1),
+        reduction_dimension=dict(validator=lambda x: 5 <= x <= 50),
+        summarization_length=dict(validator=lambda x: 50 <= x <= 10000),
+        max_length_in_cluster=dict(validator=lambda x: 500 <= x <= 10000)
+    )
     def __init__(
             self,
             tokenizer: PreTrainedTokenizerBase,
@@ -26,38 +36,13 @@ class TreeBuilderConfig:
             summarization_length: int = 100,
             max_length_in_cluster: int = 3500
     ):
-        if tokenizer is None:
-            raise ValueError("tokenizer cannot be None.")
         self.tokenizer = tokenizer
-
-        if not isinstance(max_tokens, int) or max_tokens < 1:
-            raise ValueError("max_tokens must be an integer and at least 1")
-        self.max_tokens = max_tokens
-
-        if not isinstance(num_layers, int) or num_layers < 1:
-            raise ValueError("num_layers must be an integer and at least 1")
-        self.num_layers = num_layers
-
-        if not isinstance(threshold, (int, float)) or not (0 <= threshold <= 1):
-            raise ValueError("threshold must be a number between 0 and 1")
-        self.threshold = threshold
-
-        if not isinstance(reduction_dimension, int):
-            raise ValueError("reduction_dimension must be an integer")
-        self.reduction_dimension = reduction_dimension
-
-        self.summarization_length = summarization_length
-
-        if summarization_model is None:
-            raise ValueError("summarization model must be defined")
-        if not isinstance(summarization_model, TreeText2TextChain):
-            raise ValueError(
-                "summarization_model must be an instance of TreeText2TextChain"
-            )
         self.summarization_model = summarization_model
-
-        if not isinstance(max_length_in_cluster, int):
-            raise ValueError("max_length_in_cluster must be an integer")
+        self.max_tokens = max_tokens
+        self.num_layers = num_layers
+        self.threshold = threshold
+        self.reduction_dimension = reduction_dimension
+        self.summarization_length = summarization_length
         self.max_length_in_cluster = max_length_in_cluster
 
 

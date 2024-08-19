@@ -29,7 +29,7 @@ class TestQAGenerate(unittest.TestCase):
         config = QAGenerationConfig(['title1', 'title2'], ['content1', 'content2'], Mock(), Mock())
         qa_generate = QAGenerate(config)
         generate_mock.return_value = ['qa1', 'qa2']
-        split_mock.return_value = ""
+        split_mock.return_value = "text"
         result = qa_generate.generate_qa()
         self.assertEqual(result, ['qa1', 'qa2', 'qa1', 'qa2'])
 

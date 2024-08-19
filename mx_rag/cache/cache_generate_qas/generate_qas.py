@@ -7,6 +7,7 @@ from loguru import logger
 from transformers import PreTrainedTokenizerBase
 
 from mx_rag.llm import Text2TextLLM
+from mx_rag.utils.common import validate_params
 
 DEFAULT_LLM_TIMEOUT = 10 * 60
 
@@ -66,6 +67,10 @@ class QAGenerationConfig:
         qas_num: 生成的问题数，默认为5
     """
 
+    @validate_params(
+        max_tokens=dict(validator=lambda x: 500 <= x <= 10000),
+        qas_num=dict(validator=lambda x: 1 <= x <= 10)
+    )
     def __init__(self, titles: List[str], contents: List[str], tokenizer: PreTrainedTokenizerBase, llm: Text2TextLLM,
                  max_tokens: int = 1000, qas_num: int = 5):
         self.titles = titles
@@ -103,7 +108,7 @@ class QAGenerate:
                    if len(re.findall(r"参考段落[:：]", result)) > 0]
         qas_num = config.qas_num
         if len(results) < qas_num:
-            logger.info(f"The answer does not meet the requirements, skip")
+            logger.warning(f"The answer does not meet the requirements, skip")
             return []
         # 取出前qas_num个数据
         results = ["".join(result.split("\n")) for result in results[:qas_num]]
@@ -117,14 +122,14 @@ class QAGenerate:
         text_lines = [item.strip() for item in text.split("\n") if item.strip()]
         # 句子tokens数量通常长于字符长度，粗略截取接近max_tokens的长度
         for i, text_line in enumerate(text_lines[::-1]):
-            if current_tokens_length - len(text_line) <= max_tokens:
-                text_lines = text_lines[:len(text_lines) - i]
+            if current_tokens_length - len(tokenizer.encode(text_line)) <= max_tokens:
+                text_lines = text_lines[:len(text_lines) - i - 1]
                 break
             current_tokens_length -= len(text_line)
         else:
             return text_lines[0]
-        while len(tokenizer.encode("\n".join(text_lines))) > max_tokens:
-            text_lines = text_lines[:len(text_lines) - 1]
+        if len(tokenizer.encode("\n".join(text_lines))) > max_tokens:
+            return QAGenerate._split_html_text("\n".join(text_lines), tokenizer, max_tokens)
         return "\n".join(text_lines)
 
     def generate_qa(self, **kwargs) -> List[str]:
@@ -134,6 +139,11 @@ class QAGenerate:
         system_prompt = SYSTEM_PROMPT.format(qas_num_area=str(self.config.qas_num))
         for title, content in zip(self.config.titles, self.config.contents):
             content = QAGenerate._split_html_text(content, self.config.tokenizer, self.config.max_tokens)
+            if not content:
+                logger.warning(
+                    f"The number of tokens in all lines exceeds the max_tokens value {self.config.max_tokens},"
+                    f" generate qa of {title} skip")
+                continue
             qas = QAGenerate._generate_qa_from_html(self.config, title, content, system_prompt, **kwargs)
             if not qas:
                 continue
