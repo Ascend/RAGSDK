@@ -7,7 +7,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from loguru import logger
+
 
 from mx_rag.llm import Text2TextLLM
 
@@ -38,7 +38,10 @@ class BMRetriever(BaseRetriever):
     temperature = 0.5
     top_p = 0.95
     prompt: PromptTemplate = _KEY_WORD_TEMPLATE_ZH
-    preprocess_func: Callable[[str], List[str]] = _default_preprocessing_func
+
+    @property
+    def preprocess_func(self) -> Callable[[str], List[str]]:
+        return _default_preprocessing_func
 
     def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
@@ -50,8 +53,7 @@ class BMRetriever(BaseRetriever):
         if not res.strip():
             raise ValueError("generate keywords failed")
 
-        retriever = BM25Retriever.from_documents(self.docs)
-        retriever.preprocess_func = self.preprocess_func
-        retriever.k = self.k
+        retriever = BM25Retriever.from_documents(documents=self.docs, bm25_params=None,
+                                                 preprocess_func=self.preprocess_func, k=self.k)
 
         return retriever.invoke(res)
