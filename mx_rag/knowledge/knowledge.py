@@ -173,7 +173,7 @@ class KnowledgeTreeDB(KnowledgeBase):
         return tree
 
     def add_file(self, doc_name: str, texts: Optional[List[str]],
-                 embed_func: Optional[Callable[[List[str]], List[List[float]]]], metadatas: Optional[List[dict]]):
+                 embed_func: Callable[[List[str]], List[List[float]]], metadatas: Optional[List[dict]]):
         self._knowledge_store.add(self.knowledge_name, doc_name)
 
     def delete_file(self, doc_name: str):
