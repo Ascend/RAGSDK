@@ -66,9 +66,13 @@ class HTMLParser(GenerateQaParser):
             import readability
             from html_text import html_text
             response = client.get(url, self.headers)
+            if not response:
+                return "", ""
             html_doc = readability.Document(response)
             title = html_doc.title()
             content = html_text.extract_text(html_doc.summary(html_partial=True))
+            if not title or not content:
+                logger.warning(f"Failed to get title or content of {url}, skip")
             return title, content
 
         titles = []
@@ -85,9 +89,11 @@ class HTMLParser(GenerateQaParser):
                 task_list.append(thread_pool_exc)
         for future in concurrent.futures.as_completed(task_list):
             title, content = future.result()
+            if not title or not content:
+                continue
             titles.append(title)
             contents.append(content)
-            return titles, contents
+        return titles, contents
 
 
 def _md_load(file_path: str) -> List[str]:

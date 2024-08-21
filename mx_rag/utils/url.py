@@ -176,6 +176,9 @@ class RequestUtils:
         except Exception as e:
             logger.error(f"request {url} failed, find exception: {e}")
             return ""
+        if response.headers.get('Content-Type').find("text/html") == -1:
+            logger.warning(f"The Content-Type in the response headers is not text/html, skip url: {url}.")
+            return ""
         if response.status == HTTP_SUCCESS:
             try:
                 return response.data
