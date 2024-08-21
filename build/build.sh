@@ -3,14 +3,6 @@
 # Copyright © Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 set -e
-function install_dep() {
-  pip3.10 install Cython
-  pip3.10 install pyyaml
-  pip3.10 install wheel
-  pip3.10 install torch==2.1.0
-}
-
-install_dep
 
 warn() { echo >&2 -e "\033[1;31m[WARN ][Depend  ] $1\033[1;37m" ; }
 ARCH=$(uname -m)
@@ -43,11 +35,11 @@ export LDFLAGS="-Wl,-z,relro,-z,now,-z,noexecstack -s"
 
 function clean()
 {
-    rm -rf "$OUTPUT_DIR"
-    rm -rf "$SO_OUTPUT_DIR"
-    rm -rf "$CI_PACKAGE_DIR"
-    rm -rf "${ROOT_PATH}"/dist
-    rm -rf "${ROOT_PATH}"/mx_rag/build
+    [ -n "$OUTPUT_DIR" ] && rm -rf "$OUTPUT_DIR"
+    [ -n "$SO_OUTPUT_DIR" ] && rm -rf "$SO_OUTPUT_DIR"
+    [ -n "$CI_PACKAGE_DIR" ] && rm -rf "$CI_PACKAGE_DIR"
+    [ -n "${ROOT_PATH}" ] && rm -rf "${ROOT_PATH}"/dist
+    [ -n "${ROOT_PATH}" ] && rm -rf "${ROOT_PATH}"/mx_rag/build
     find "${ROOT_PATH}/mx_rag" -name "*.so" -exec rm {} \;
     echo "clean .so output dir"
     find "${ROOT_PATH}/mx_rag" -name "*.c" -exec rm {} \;
