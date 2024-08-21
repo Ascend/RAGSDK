@@ -53,6 +53,9 @@ class BMRetriever(BaseRetriever):
         if not res.strip():
             raise ValueError("generate keywords failed")
 
+        if not self.docs:
+            return []
+
         retriever = BM25Retriever.from_documents(documents=self.docs, bm25_params=None,
                                                  preprocess_func=self.preprocess_func, k=self.k)
 
