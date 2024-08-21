@@ -106,12 +106,13 @@ class SimilarityCacheConfig(CacheConfig):
         similarity_config: Union[SimilarityEvaluation, Dict[str, Any]] 相似度 配置参数，当为SimilarityEvaluation
                         则需要用户构建，当为Dict时则内部构建
         retrieval_top_k: int 检索时的TOPK参数
-
+        clean_size: int 每次添加满的时候删除的元素个数 1 表示每次删除一个
         **kwargs: 配置基类的参数
     """
 
     def __init__(self,
                  retrieval_top_k: int = 1,
+                 clean_size: int = 1,
                  vector_config: Union[VectorBase, Dict[str, Any]] = None,
                  cache_config: Union[CacheBase, str] = None,
                  emb_config: Union[BaseEmbedding, Dict[str, Any]] = None,
@@ -124,6 +125,7 @@ class SimilarityCacheConfig(CacheConfig):
         self.emb_config = emb_config
         self.similarity_config = similarity_config
         self.retrieval_top_k = retrieval_top_k
+        self.clean_size = clean_size
 
         if isinstance(self.cache_config, str) and self.cache_config != "sqlite":
             raise ValueError("cache_config only support sqlite now.")
@@ -132,4 +134,10 @@ class SimilarityCacheConfig(CacheConfig):
             raise TypeError("retrieval_top_k type error")
 
         if self.retrieval_top_k <= 0:
-            raise ValueError("retrieval_top_k must greater than zero")
+            raise ValueError("retrieval_top_k must greater equal than zero")
+
+        if not isinstance(self.clean_size, int):
+            raise TypeError("clean size type error")
+
+        if not (0 < self.clean_size <= self.cache_size):
+            raise ValueError("clean size value range is (0, cache_size]")

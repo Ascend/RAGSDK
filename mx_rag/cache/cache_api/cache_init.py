@@ -95,6 +95,7 @@ def _init_mxrag_similar_cache(cache_obj: Cache, cache_name: str, config: Similar
         vector_base=vector_base,
         max_size=config.cache_size,
         eviction=config.eviction_policy.value,
+        clean_size=config.clean_size
     )
 
     init_similar_cache(
