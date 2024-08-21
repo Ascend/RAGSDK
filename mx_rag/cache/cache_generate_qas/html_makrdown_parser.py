@@ -96,7 +96,7 @@ def _md_load(file_path: str) -> List[str]:
     docs = []
     for document in documents:
         # 过滤markdown中以base64编码的图片内容
-        content = re.sub(r"!\[.*\]\(data:image.*?\)", "", document.page_content)
+        content = re.sub(r"^.*data:image.*$", "", document.page_content, flags=re.I | re.M)
         docs.append(content)
     return docs
 
