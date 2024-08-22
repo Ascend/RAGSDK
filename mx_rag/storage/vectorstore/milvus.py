@@ -28,6 +28,7 @@ class MilvusDB(VectorStore):
         index_type_name = "index_type"
         metric_type_name = "metric_type"
         url_name = "url"
+        param = "param"
 
         if x_dim_name not in kwargs or not isinstance(kwargs.get(x_dim_name), int):
             raise KeyError("x_dim param error. ")
@@ -41,22 +42,20 @@ class MilvusDB(VectorStore):
         if url_name not in kwargs or not isinstance(kwargs.get(url_name), str):
             raise KeyError("url param error. ")
 
-        url = kwargs.get(url_name)
-        vector_dims = kwargs.get(x_dim_name)
-        index_type = kwargs.get(index_type_name)
-        metric_type = kwargs.get(metric_type_name)
+        url = kwargs.pop(url_name)
+        vector_dims = kwargs.pop(x_dim_name)
+        index_type = kwargs.pop(index_type_name)
+        metric_type = kwargs.pop(metric_type_name)
+        param = kwargs.pop(param)
 
         milvus_db = MilvusDB(url, **kwargs)
-        milvus_db.create_collection(x_dim=vector_dims, index_type=index_type, metric_type=metric_type, **kwargs)
+        milvus_db.create_collection(x_dim=vector_dims, index_type=index_type, metric_type=metric_type, param=param)
         return milvus_db
 
     def set_collection_name(self, collection_name: str):
         self._collection_name = collection_name
 
     def create_collection(self, x_dim, index_type, metric_type, param=None):
-        if self.client.has_collection(self._collection_name):
-            raise MilvusError(f"collection {self._collection_name} has been created")
-
         schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
         schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=x_dim)
