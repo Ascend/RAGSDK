@@ -33,32 +33,38 @@ class Summary(BaseModel):
     top_p: float = 0.95
 
     @staticmethod
-    def _split_summary_by_threshold(texts: List[str], merge_limit) -> List[Tuple[int, int]]:
+    def _split_summary_by_threshold(texts: List[str], merge_threshold) -> List[Tuple[int, int]]:
         split_indices = []
         start_index = 0
         current_length = 0
 
         for i, s in enumerate(texts):
-            if current_length + len(s) <= merge_limit:
+            if current_length + len(s) <= merge_threshold:
                 current_length += len(s)
             else:
-                split_indices.append((start_index, i - 1))
-                start_index = i
-                current_length = len(s)
+                if i != start_index:
+                    split_indices.append((start_index, i - 1))
+                    start_index = i
+                    current_length = len(s)
+                else:
+                    split_indices.append((start_index, start_index))
+                    start_index = i + 1
+                    current_length = 0
 
         if start_index < len(texts):
             split_indices.append((start_index, len(texts) - 1))
 
         return split_indices
 
-    def summarize(self, texts: List[str], no_summarize_size: int = 30,
+    def summarize(self, texts: List[str], not_summarize_threshold: int = 30,
                   prompt: PromptTemplate = _SUMMARY_TEMPLATE) -> List[str]:
         with ThreadPoolExecutor() as executor:
             submits = []
             no_summary_texts_set = set()
             for i, text in enumerate(texts):
-                if len(text) <= no_summarize_size:
-                    logger.warning(f" the {i} text no summary because the length <= {no_summarize_size} ")
+                if len(text) <= not_summarize_threshold:
+                    logger.warning(f"the length of the {i}th text is less than {not_summarize_threshold}. therefore, "
+                                   f"the summary is not performed.")
                     no_summary_texts_set.add(i)
                     continue
 
@@ -77,12 +83,11 @@ class Summary(BaseModel):
 
         return res
 
-    def merge_text_summarize(self, texts: List[str], merge_limit: int = 4 * 1024, no_summarize_size=30,
+    def merge_text_summarize(self, texts: List[str], merge_threshold: int = 4 * 1024, not_summarize_threshold=30,
                              prompt: PromptTemplate = _MERGE_TEXT_SUMMARY_TEMPLATE) -> str:
 
-        splits = self._split_summary_by_threshold(texts, merge_limit)
-
-        res = self.summarize(["\n\n".join(texts[s[0]:s[1] + 1]) for s in splits], no_summarize_size, prompt)
+        splits = self._split_summary_by_threshold(texts, merge_threshold)
+        res = self.summarize(["\n\n".join(texts[s[0]:s[1] + 1]) for s in splits], not_summarize_threshold, prompt)
 
         if len(res) > len(texts):
             raise Exception("sub summary number should less than origin summary number")
@@ -90,7 +95,7 @@ class Summary(BaseModel):
         if len(res) == 1:
             return res[0]
         elif len(res) > 1:
-            return self.merge_text_summarize(res, merge_limit, no_summarize_size, prompt)
+            return self.merge_text_summarize(res, merge_threshold, not_summarize_threshold, prompt)
         else:
             raise ValueError("summarize failed, get null content")
 
