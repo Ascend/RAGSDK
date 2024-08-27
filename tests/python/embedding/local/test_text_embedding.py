@@ -143,12 +143,12 @@ class TestTextEmbedding(unittest.TestCase):
         model_pre_mock.return_value = self.Model(1024)
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
-
-        embed = TextEmbedding(model_path='/model/embedding',
-                              pooling_method='no valid')
-
+        with self.assertRaises(ValueError):
+            embed = TextEmbedding(model_path='/model/embedding',
+                                  pooling_method='no valid')
+        embed = TextEmbedding(model_path='/model/embedding')
         texts = ['test_txt'] * 100
-        self.assertRaises(NotImplementedError, embed.embed_documents, texts=texts)
+        embed.embed_documents(texts)
 
 
 if __name__ == '__main__':

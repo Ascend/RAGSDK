@@ -6,6 +6,11 @@ from enum import Enum
 
 from OpenSSL import crypto
 
+INT_32_MAX = 2 ** 31 - 1
+MAX_DEVICE_ID = 63
+MAX_TOP_K = 10000
+MAX_QUERY_LENGTH = 128 * 1024 * 1024
+
 
 class UrlUtilException(Exception):
     pass
@@ -63,11 +68,16 @@ def validate_params(**validators):
                 value = _get_value_from_param(arg_name, func, *args, **kwargs)
                 # 运行验证函数
                 if not validator['validator'](value):
-                    raise ValueError(f"The parameter '{arg_name}' of function {func.__name__} is invalid.")
+                    expression = inspect.getsource(validator['validator']).strip().split("validator=")[1][:-1]
+                    expression = expression[:-1] if expression.endswith(")") else expression
+                    raise ValueError(f"The parameter '{arg_name}' of function {func.__name__} is invalid, "
+                                     f"check rule: {expression.strip()}")
 
             # 如果所有参数都通过验证，则调用原始函数
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 

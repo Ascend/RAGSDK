@@ -10,6 +10,7 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, INT_32_MAX
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -23,18 +24,20 @@ except Exception as e:
 class TextEmbedding(Embeddings):
     TEXT_MAX_LEN = 1000 * 1000
 
+    @validate_params(
+        model_path=dict(validator=lambda x: isinstance(x, str)),
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool)),
+        pooling_method=dict(validator=lambda x: x in ["cls", "mean"])
+    )
     def __init__(self,
                  model_path: str,
                  dev_id: int = 0,
                  use_fp16: bool = True,
-                 pooling_method: Optional[str] = None):
+                 pooling_method: str = 'cls'):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
-
-        self.pooling_method = 'cls'
-        if pooling_method is not None:
-            self.pooling_method = pooling_method
-
+        self.pooling_method = pooling_method
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModel.from_pretrained(model_path, local_files_only=True)
 
@@ -57,24 +60,35 @@ class TextEmbedding(Embeddings):
 
         return TextEmbedding(**kwargs)
 
+    @validate_params(
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+    )
     def embed_documents(self,
                         texts: List[str],
                         batch_size: int = 32,
                         max_length: int = 512) -> List[List[float]]:
-
         result, _ = self._encode(texts, batch_size, max_length, False)
         if result.size == 0:
             raise ValueError("embedding text error")
 
         return result.tolist()
 
+    @validate_params(
+        text=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+    )
     def embed_query(self, text: str, max_length: int = 512) -> List[float]:
-        embeddings = self.embed_documents([text])
+        embeddings = self.embed_documents([text], max_length=max_length)
         if not embeddings:
             raise ValueError("embedding text failed")
 
         return embeddings[0]
 
+    @validate_params(
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+    )
     def embed_documents_with_last_hidden_state(self,
                                                texts: List[str],
                                                batch_size: int = 32,
