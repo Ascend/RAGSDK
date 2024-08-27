@@ -8,6 +8,7 @@ from loguru import logger
 import numpy as np
 
 from mx_rag.reranker.reranker import Reranker
+from mx_rag.utils.common import validate_params, MAX_TOP_K, INT_32_MAX, MAX_QUERY_LENGTH
 from mx_rag.utils.url import RequestUtils
 
 
@@ -17,10 +18,16 @@ class TEIReranker(Reranker):
     }
     TEXT_MAX_LEN = 1000 * 1000
 
+    @validate_params(
+        url=dict(validator=lambda x: isinstance(x, str)),
+        use_http=dict(validator=lambda x: isinstance(x, bool)),
+        k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K)
+    )
     def __init__(self, url: str, use_http: bool = False, k: int = 1):
         super(TEIReranker, self).__init__(k)
         self.url = url
         self.client = RequestUtils(use_http=use_http)
+
 
     @staticmethod
     def create(**kwargs):
@@ -52,6 +59,10 @@ class TEIReranker(Reranker):
             scores[idx] = sco
         return scores
 
+    @validate_params(
+        query=dict(validator=lambda x: 1 <= len(x) <= MAX_QUERY_LENGTH),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+    )
     def rerank(self,
                query: str,
                texts: List[str],

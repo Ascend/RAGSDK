@@ -6,6 +6,7 @@ from typing import List
 
 from langchain_core.embeddings import Embeddings
 
+from mx_rag.utils.common import validate_params, INT_32_MAX
 from mx_rag.utils.url import RequestUtils
 
 
@@ -15,9 +16,14 @@ class TEIEmbedding(Embeddings):
     }
     TEXT_MAX_LEN = 1000 * 1000
 
+    @validate_params(
+        url=dict(validator=lambda x: isinstance(x, str)),
+        use_http=dict(validator=lambda x: isinstance(x, bool))
+    )
     def __init__(self, url: str, use_http: bool = False):
         self.url = url
         self.client = RequestUtils(use_http=use_http)
+        self.use_http = use_http
 
     @staticmethod
     def create(**kwargs):
@@ -26,17 +32,15 @@ class TEIEmbedding(Embeddings):
 
         return TEIEmbedding(**kwargs)
 
+    @validate_params(
+        texts=dict(validator=lambda x: 1 <= len(x) <= TEIEmbedding.TEXT_MAX_LEN),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+    )
     def embed_documents(self,
                         texts: List[str],
                         batch_size: int = 32) -> List[List[float]]:
 
         texts_len = len(texts)
-        if texts_len == 0:
-            raise ValueError("texts length equal 0")
-
-        elif texts_len > self.TEXT_MAX_LEN:
-            raise ValueError(f'texts length greater than {self.TEXT_MAX_LEN}')
-
         result = []
         for start_index in range(0, texts_len, batch_size):
             texts_batch = texts[start_index: start_index + batch_size]
@@ -61,6 +65,9 @@ class TEIEmbedding(Embeddings):
 
         return result
 
+    @validate_params(
+        text=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX)
+    )
     def embed_query(self, text: str) -> List[float]:
         embeddings = self.embed_documents([text])
         if not embeddings:

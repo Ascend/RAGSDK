@@ -11,6 +11,7 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoProcessor, AutoModel, is_torch_npu_available
 
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 
 try:
@@ -27,6 +28,10 @@ class ImageEmbedding(Embeddings):
     IMAGE_COUNT = 1000
     TEXT_LEN = 256
 
+    @validate_params(
+        dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool))
+    )
     def __init__(self, model_path: str, dev_id: int = 0, use_fp16: bool = True):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
@@ -52,13 +57,10 @@ class ImageEmbedding(Embeddings):
 
         return ImageEmbedding(**kwargs)
 
+    @validate_params(
+        texts=dict(validator=lambda x: 1 <= len(x) <= ImageEmbedding.TEXT_COUNT)
+    )
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        if len(texts) == 0:
-            raise ValueError("texts length equal 0")
-
-        elif len(texts) > self.TEXT_COUNT:
-            raise ValueError(f'texts length greater than{self.TEXT_COUNT}')
-
         for text in texts:
             if len(text) > self.TEXT_LEN or len(text) == 0:
                 raise ValueError(f"the length of text in texts greater than {self.TEXT_LEN} or equal 0")
@@ -77,15 +79,11 @@ class ImageEmbedding(Embeddings):
 
         return embeddings[0]
 
+    @validate_params(
+        images=dict(validator=lambda x: 1 <= len(x) <= ImageEmbedding.IMAGE_COUNT)
+    )
     def embed_images(self, images: List[str]) -> List[List[float]]:
         image_features = []
-
-        if len(images) == 0:
-            raise ValueError("images length equal 0")
-
-        elif len(images) > self.IMAGE_COUNT:
-            raise ValueError(f'images length greater than {self.IMAGE_COUNT}')
-
         for image in images:
             FileCheck.check_path_is_exist_and_valid(image)
             SecFileCheck(image, self.MAX_IMAGE_SIZE).check()

@@ -42,7 +42,7 @@ class APILLM(BaseRagasLLM):
         generations = []
         llm_output = {}
 
-        generate_texts = self.llm.chat(prompt.to_string(), [], temperature=temperature, max_tokens=1024)
+        generate_texts = self.llm.chat(prompt.to_string(), [], temperature=temperature, max_tokens=512)
 
         generations.append([Generation(text=generate_texts)])
         llm_output['token_total'] = len(generate_texts)

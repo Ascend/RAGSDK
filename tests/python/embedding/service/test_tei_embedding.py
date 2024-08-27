@@ -48,10 +48,9 @@ class TestTEIEmbedding(unittest.TestCase):
         embed = TEIEmbedding(url='https://localhost:8888')
 
         texts = []
-        try:
-            encoded_texts = embed.embed_documents(texts=texts)
-        except Exception as e:
-            self.assertEqual(f"{e}", f'texts length equal 0')
+        with self.assertRaises(ValueError):
+            embed.embed_documents(texts=texts)
+
 
     def test_request_failed(self):
         def mock_post(*args, **kwargs):

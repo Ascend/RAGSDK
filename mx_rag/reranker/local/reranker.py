@@ -8,6 +8,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_torch_npu_available
 
 from mx_rag.reranker.reranker import Reranker
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, MAX_TOP_K, INT_32_MAX
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -21,6 +22,12 @@ except Exception as e:
 class LocalReranker(Reranker):
     TEXT_MAX_LEN = 1000 * 1000
 
+    @validate_params(
+        model_path=dict(validator=lambda x: isinstance(x, str)),
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID),
+        k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool))
+    )
     def __init__(self,
                  model_path: str,
                  dev_id: int = 0,
@@ -52,17 +59,16 @@ class LocalReranker(Reranker):
 
         return LocalReranker(**kwargs)
 
+    @validate_params(
+        texts=dict(validator=lambda x: 1 <= len(x) <= LocalReranker.TEXT_MAX_LEN),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+    )
     def rerank(self,
                query: str,
                texts: List[str],
                batch_size: int = 32,
                max_length: int = 512) -> np.array:
-        if len(texts) == 0:
-            return np.array([])
-        elif len(texts) > LocalReranker.TEXT_MAX_LEN:
-            logger.error(f'texts list length must less than {LocalReranker.TEXT_MAX_LEN}')
-            return np.array([])
-
         sentence_pairs = [[query, text] for text in texts]
 
         result = []
