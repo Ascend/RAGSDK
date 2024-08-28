@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import functools
 import inspect
 from datetime import datetime
 from enum import Enum
@@ -61,6 +62,7 @@ def validate_params(**validators):
     """
 
     def decorator(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             # 对每个参数应用验证函数
             for arg_name, validator in validators.items():

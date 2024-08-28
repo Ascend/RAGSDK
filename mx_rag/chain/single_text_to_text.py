@@ -60,7 +60,7 @@ class SingleText2TextChain(Chain):
         self._query_str = text
         self._docs = self._retriever.invoke(text)
 
-        if self._reranker is not None:
+        if self._reranker is not None and len(self._docs) > 0:
             scores = self._reranker.rerank(text, [doc.page_content for doc in self._docs])
             self._docs = self._reranker.rerank_top_k(self._docs, scores)
 

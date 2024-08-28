@@ -1,8 +1,8 @@
 import unittest
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from pydantic.v1 import ValidationError, BaseModel
+from pydantic import Field, BaseModel, ValidationError, field_validator, ConfigDict
 
 from mx_rag.utils.common import validate_params
 
@@ -56,6 +56,24 @@ class Animal(BaseModel):
     def _call(self, prompt: str, stop: Optional[List[str]] = None,
               run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs: Any) -> str:
         pass
+
+
+class Cat(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    age: int = Field(ge=0, le=10)
+    gender: str
+    color: str = Field(min_length=0, max_length=10, default="white")
+    # 或者master: Person = None，如果Person未继承BaseModel，必须设置arbitrary_types_allowed = True
+    master: Optional[Person] = None
+    attribute: Optional[str] = None
+    # min_length支持iterables；多层只校验最外层
+    multidict: List[Dict[str, str]] = Field(min_length=0, max_length=1, default=None)
+
+    @field_validator('gender')
+    def validate_gender(cls, input_value):
+        if input_value not in ["male", "female"]:
+            raise ValueError(f"month value must be in [male, female]")
+        return input_value
 
 
 @validate_params(
@@ -114,3 +132,26 @@ class TestValidateParams(unittest.TestCase):
         Animal(name="panda", master=person, weight=0)
         with self.assertRaises(ValueError):
             Animal(name="panda", master=person, weight=-1)
+
+    def test_pydantic(self):
+        person = Person(18, 140, 2)
+        cat = Cat(age=10, gender="male", master=person, attribute="attribute")
+        self.assertEqual(cat.color, "white")
+        # gender不符合要求
+        with self.assertRaises(ValidationError):
+            Cat(age=10, gender="median", attribute=None)
+        # age不符合要求
+        with self.assertRaises(ValidationError):
+            Cat(age=20, gender="male", attribute=None)
+        # 传入attribute
+        Cat(age=0, gender="male", attribute=None)
+        # 不传入attribute
+        Cat(age=0, gender="male")
+        # color不满足要求
+        with self.assertRaises(ValidationError):
+            Cat(age=10, gender="male", master=person, attribute="attribute", color="hello world!")
+        # multidict不满足要求
+        with self.assertRaises(ValidationError):
+            Cat(age=10, gender="male", master=person, attribute="attribute", multidict=[{"1": "a"}, {"2": "b"}])
+        # 只校验了multidict最外层格式
+        Cat(age=10, gender="male", master=person, attribute="attribute", multidict=[])
