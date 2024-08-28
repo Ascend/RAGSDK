@@ -10,6 +10,7 @@ from loguru import logger
 
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.reranker.reranker_factory import RerankerFactory
+from mx_rag.utils.common import validate_params
 
 
 class CacheSimilarity(SimilarityEvaluation):
@@ -24,11 +25,14 @@ class CacheSimilarity(SimilarityEvaluation):
         _reverse: (bool) 相似度是否取反
     """
 
+    @validate_params(
+        similarity=dict(validator=lambda x: isinstance(x, Reranker)),
+        score_min=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0),
+        score_max=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0),
+        reverse=dict(validator=lambda x: isinstance(x, bool))
+    )
     def __init__(self, similarity: Reranker, score_min: float = 0.0, score_max: float = 1.0,
                  reverse: bool = False):
-        if not isinstance(similarity, Reranker):
-            raise ValueError("similarity type error.")
-
         if score_max < score_min:
             raise ValueError("score max must greater than score min")
 

@@ -5,6 +5,7 @@ import json
 
 from mx_rag.chain import Chain
 from mx_rag.cache.cache_core import MxRAGCache
+from mx_rag.utils.common import validate_params
 
 
 def _default_data_convert(data):
@@ -22,6 +23,10 @@ class CacheChainChat(Chain):
         _chain: 同大模型对话的模块
     """
 
+    @validate_params(
+        cache=dict(validator=lambda x: isinstance(x, MxRAGCache)),
+        chain=dict(validator=lambda x: isinstance(x, Chain))
+    )
     def __init__(self,
                  cache: MxRAGCache,
                  chain: Chain,

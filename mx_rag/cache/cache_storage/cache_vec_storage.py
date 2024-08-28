@@ -11,6 +11,7 @@ from gptcache.manager.vector_data.base import VectorBase, VectorData
 
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.storage.vectorstore.vector_storage_factory import VectorStorageFactory
+from mx_rag.utils.common import validate_params
 
 
 class CacheVecStorage(VectorBase):
@@ -23,10 +24,11 @@ class CacheVecStorage(VectorBase):
         _top_k: (int) 检索时的top_k参数
     """
 
-    def __init__(self, vec_store: VectorStore, top_k: int = 5):
-        if not isinstance(vec_store, VectorStore):
-            raise ValueError("vec_store type error.")
-
+    @validate_params(
+        vec_store=dict(validator=lambda x: isinstance(x, VectorStore)),
+        top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1000)
+    )
+    def __init__(self, vec_store: VectorStore, top_k: int = 1):
         self._vec_impl = vec_store
         self._top_k = top_k
 
