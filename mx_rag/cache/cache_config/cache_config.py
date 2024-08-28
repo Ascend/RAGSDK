@@ -16,6 +16,7 @@ from gptcache.processor.pre import get_prompt
 from gptcache.similarity_evaluation import SimilarityEvaluation
 
 from mx_rag.utils.file_operate import check_disk_free_space
+from mx_rag.utils.common import validate_params
 
 FREE_SPACE_LIMIT = 1024 * 1024 * 1024
 
@@ -55,6 +56,12 @@ class CacheConfig(Config):
         **kwargs: 配置基类的参数
     """
 
+    @validate_params(
+        cache_size=dict(validator=lambda x: isinstance(x, int) and 0 < x < 100000),
+        eviction_policy=dict(validator=lambda x: isinstance(x, EvictPolicy)),
+        data_save_folder=dict(validator=lambda x: isinstance(x, str)),
+        min_free_space=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 20 * 1024 * 1024 * 1024)
+    )
     def __init__(self,
                  cache_size: int,
                  eviction_policy: EvictPolicy = EvictPolicy.LRU,
@@ -73,18 +80,6 @@ class CacheConfig(Config):
         similarity_threshold = kwargs.get("similarity_threshold", 0.8)
         if not (1 >= similarity_threshold >= 0):
             raise ValueError("similarity_threshold must 0 ~ 1 range")
-
-        if not isinstance(self.cache_size, int):
-            raise TypeError("cache_size type error")
-
-        if self.cache_size <= 0:
-            raise ValueError("cache_size should greater than zero")
-
-        if not isinstance(self.eviction_policy, EvictPolicy):
-            raise TypeError("eviction_policy type error")
-
-        if not isinstance(self.data_save_folder, str):
-            raise TypeError("data_save_folder type error")
 
         if check_disk_free_space(os.path.dirname(self.data_save_folder), self.min_free_space):
             raise Exception("Insufficient remaining space, please clear disk space")
@@ -110,6 +105,11 @@ class SimilarityCacheConfig(CacheConfig):
         **kwargs: 配置基类的参数
     """
 
+    @validate_params(
+        retrieval_top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x < 1000),
+        clean_size=dict(validator=lambda x: isinstance(x, int) and x > 0),
+        cache_config=dict(validator=lambda x: isinstance(x, str) and x == "sqlite")
+    )
     def __init__(self,
                  retrieval_top_k: int = 1,
                  clean_size: int = 1,
@@ -127,17 +127,5 @@ class SimilarityCacheConfig(CacheConfig):
         self.retrieval_top_k = retrieval_top_k
         self.clean_size = clean_size
 
-        if isinstance(self.cache_config, str) and self.cache_config != "sqlite":
-            raise ValueError("cache_config only support sqlite now.")
-
-        if not isinstance(self.retrieval_top_k, int):
-            raise TypeError("retrieval_top_k type error")
-
-        if self.retrieval_top_k <= 0:
-            raise ValueError("retrieval_top_k must greater equal than zero")
-
-        if not isinstance(self.clean_size, int):
-            raise TypeError("clean size type error")
-
-        if not (0 < self.clean_size <= self.cache_size):
+        if self.clean_size > self.cache_size:
             raise ValueError("clean size value range is (0, cache_size]")

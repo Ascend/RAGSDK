@@ -12,8 +12,9 @@ from typing import Any
 from gptcache.core import Cache
 from loguru import logger
 
-from mx_rag.cache.cache_config import CacheConfig
+from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig
 from mx_rag.cache.cache_api import init_mxrag_cache
+from mx_rag.utils.common import validate_params
 
 
 def _default_dump(data: Any) -> str:
@@ -28,6 +29,10 @@ class MxRAGCache:
     cache_limit: int = -1
     verbose: bool = False
 
+    @validate_params(
+        cache_name=dict(validator=lambda x: isinstance(x, str)),
+        config=dict(validator=lambda x: isinstance(x, CacheConfig) or isinstance(x, SimilarityCacheConfig))
+    )
     def __init__(self,
                  cache_name: str,
                  config: CacheConfig):
@@ -51,8 +56,6 @@ class MxRAGCache:
 
     @classmethod
     def set_cache_limit(cls, cache_limit: int):
-        if not isinstance(cache_limit, int):
-            raise TypeError(f"cache limit type error")
         cls.cache_limit = cache_limit
 
     def search(self, query: str):
