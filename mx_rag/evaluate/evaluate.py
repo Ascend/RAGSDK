@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
+import ast
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 import pandas as pd
 from langchain_core.embeddings import Embeddings
 from langchain.llms.base import LLM
+from loguru import logger
 from datasets import Dataset
 from ragas import evaluate
 from ragas.evaluation import Result
@@ -62,7 +64,7 @@ class Evaluate:
         self.eval_llm = llm
 
     @staticmethod
-    def load_data(file_path: str) -> Dict[str, Any]:
+    def load_data(file_path: str) -> Optional[Dict[str, Any]]:
         """
         加载本地用户数据集 要求是csv 格式
         Args:
@@ -74,28 +76,23 @@ class Evaluate:
         FileCheck.check_path_is_exist_and_valid(file_path)
         FileCheck.check_file_size(file_path, 100 * 1024 * 1024)
 
-        df = pd.read_csv(file_path)
-        question_list = df.loc[:, "question"].tolist()
-        ground_truth_list = df.loc[:, "ground_truth"].tolist()
-        answer_list = df.loc[:, "answer"].tolist()
-        contexts_list = df.loc[:, "contexts"].tolist()
+        try:
+            data = pd.read_csv(file_path)
+        except Exception as e:
+            logger.error(f"load_data error {e}")
+            return None
 
-        for i, ground_truth in enumerate(ground_truth_list):
-            ground_truth_list[i] = eval(ground_truth)
-
-        for i, contexts in enumerate(contexts_list):
-            contexts_list[i] = eval(contexts)
-
-        datasets = {
-            "question": question_list,
-            "answer": answer_list,
-            "contexts": contexts_list,
-            "ground_truths": ground_truth_list
-        }
-
+        context_key_words = 'contexts'
+        if context_key_words in data:
+            data[context_key_words] = data[context_key_words].apply(ast.literal_eval)
+        datasets = data.to_dict(orient='list')
         return datasets
 
     @classmethod
+    @validate_params(
+        metrics_name=dict(
+            validator=lambda x: isinstance(x, list) and all(isinstance(i, str) for i in x) and 0 < len(x) <= 14),
+    )
     def save_data(cls, data: Result, metrics_name: list[str], save_path: str):
         """
         将ragas 评估结果存放在save_path的目录下
@@ -115,19 +112,9 @@ class Evaluate:
         formatted_time = current_time.strftime('%Y%m%d%H%M%S')
         filename = f'rag_evaluate_{formatted_time}.csv'
         filepath = os.path.join(save_path, filename)
-        df = data.to_pandas()
-        row_number = df.shape[0]
 
-        if row_number == 0:
-            raise ValueError("row_number except greater than zero")
-
-        for element in metrics_name:
-            value = 0
-            for i in range(row_number):
-                value += df.loc[i, element]
-            ave = value / row_number
-            df.loc[row_number + 1, element] = ave
-        df.to_csv(filepath, index=False)
+        data.to_pandas().to_csv(filepath, index=False)
+        logger.info(f"evaluate save data to {filepath}")
 
     @classmethod
     def _check_metric_name(cls, metrics_name: list[str]):
@@ -140,12 +127,16 @@ class Evaluate:
 
         """
         for metric_name in metrics_name:
-            if not isinstance(metric_name, str):
-                raise TypeError("metrics_name element type must be string")
-
             if metric_name not in cls.RAG_TEST_METRIC:
                 raise KeyError(f"{metric_name} not support in Evaluate")
 
+    @validate_params(
+        metrics_name=dict(
+            validator=lambda x: isinstance(x, list) and all(isinstance(i, str) for i in x) and 0 < len(x) <= 14),
+        datasets=dict(
+            validator=lambda x: isinstance(x, Dict) and all(isinstance(key, str) for key in x) and 0 < len(x) <= 4096),
+        language=dict(validator=lambda x: x is None or (isinstance(x, str) and 0 < len(x) <= 64))
+    )
     def evaluate(self,
                  metrics_name: list[str],
                  datasets: Dict[str, Any],
@@ -163,9 +154,6 @@ class Evaluate:
 
         Returns:ragas 评估结果 Result
         """
-        if not isinstance(metrics_name, list):
-            raise TypeError("metrics_name must be list")
-
         self._check_metric_name(metrics_name)
 
         metrics = [self.RAG_TEST_METRIC.get(metric_name) for metric_name in metrics_name]
@@ -180,6 +168,13 @@ class Evaluate:
                         **kwargs)
         return data
 
+    @validate_params(
+        metrics_name=dict(
+            validator=lambda x: isinstance(x, list) and all(isinstance(i, str) for i in x) and 0 < len(x) <= 14),
+        datasets=dict(
+            validator=lambda x: isinstance(x, Dict) and all(isinstance(key, str) for key in x) and 0 < len(x) <= 4096),
+        language=dict(validator=lambda x: x is None or (isinstance(x, str) and 0 < len(x) <= 64))
+    )
     def evaluate_scores(self,
                         metrics_name: list[str],
                         datasets: Dict[str, Any],
@@ -218,6 +213,12 @@ class Evaluate:
         """
         from ragas.adaptation import adapt
         from ragas.llms.base import LangchainLLMWrapper
+
+        if language is None or cache_dir is None:
+            logger.warning(f"because local param is None will not adapt local")
+            return
+
+        logger.info(f"local param language:{language} cache_dir:{cache_dir}")
 
         _exclude_adapt_metric: list[str] = [
             "context_entity_recall",
