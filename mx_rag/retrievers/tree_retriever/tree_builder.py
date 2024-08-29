@@ -58,6 +58,11 @@ class TreeBuilder:
         self.max_length_in_cluster = config.max_length_in_cluster
 
     @staticmethod
+    @validate_params(
+        children_indices=dict(
+            validator=lambda x: x is None or (isinstance(x, set) and all(isinstance(i, int) for i in x)))
+    )
+
     def create_node(
             index: int, text: str, embed_func: Callable[[List[str]], List[List[float]]],
             children_indices: Optional[Set[int]] = None
@@ -73,6 +78,10 @@ class TreeBuilder:
 
         return index, Node(text, index, children_indices, flat_list)
 
+    @validate_params(
+        embed_func=dict(validator=lambda x: isinstance(x, Callable)),
+        chunks=dict(validator=lambda x: isinstance(x, List) and all(isinstance(i, str) for i in x))
+    )
     def build_from_text(self, embed_func: Callable[[List[str]], List[List[float]]], chunks: List[str]) -> Tree:
         leaf_nodes = {}
         for index, text in enumerate(chunks):
