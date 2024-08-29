@@ -16,6 +16,7 @@ from mx_rag.cache.cache_similarity import CacheSimilarity
 from mx_rag.cache.cache_storage import CacheVecStorage
 from mx_rag.cache.cache_emb import CacheEmb
 from mx_rag.utils.file_check import FileCheck
+from mx_rag.utils.common import validate_params
 
 
 def _get_data_save_file(data_save_folder: str, cache_name: str, memory_only: bool = False):
@@ -146,6 +147,9 @@ def _init_mxrag_memory_cache(cache_obj: Cache, cache_name: str, config: CacheCon
     )
 
 
+@validate_params(
+    cache_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 64),
+)
 def init_mxrag_cache(cache_obj: Cache, cache_name: str, config):
     """
     功能描述:
