@@ -7,6 +7,7 @@ from loguru import logger
 from langchain.prompts import PromptTemplate
 
 from mx_rag.llm import Text2TextLLM
+from mx_rag.utils.common import validate_params
 
 LLM_PREFERRED_MAX_LEN = 10000
 SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关性。相关性评分应该在0到1之间，其中1表示非常相关，0表示不相关。评分应该基于文档内容回答问题的直接程度。
@@ -32,12 +33,12 @@ SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关
 """
 
 
+@validate_params(
+    query_list=dict(validator=lambda x: 0 < len(x) <= LLM_PREFERRED_MAX_LEN),
+    doc_list=dict(validator=lambda x: 0 < len(x) <= LLM_PREFERRED_MAX_LEN)
+)
 def llm_preferred(llm: Text2TextLLM, query_list: list[str], doc_list: list[str]):
     """大模型打分"""
-
-    if len(query_list) > LLM_PREFERRED_MAX_LEN or len(doc_list) > LLM_PREFERRED_MAX_LEN:
-        logger.error(f"llm_preferred's inputs len should not bigger than {LLM_PREFERRED_MAX_LEN}")
-        return []
 
     if len(query_list) != len(doc_list):
         logger.error(f"llm_preferred's query_list and doc_list has different length")

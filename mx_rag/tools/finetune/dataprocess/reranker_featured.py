@@ -4,16 +4,18 @@
 from loguru import logger
 
 from mx_rag.reranker.local import LocalReranker
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID
 
 RERANKER_FEATURED_MAX_LEN = 10000
 
 
+@validate_params(
+    query_list=dict(validator=lambda x: 0 < len(x) <= RERANKER_FEATURED_MAX_LEN),
+    doc_list=dict(validator=lambda x: 0 < len(x) <= RERANKER_FEATURED_MAX_LEN),
+    dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID)
+)
 def reranker_featured(model_path: str, query_list: list[str], doc_list: list[str], dev_id: int = 0):
     """重排模型打分"""
-
-    if len(query_list) > RERANKER_FEATURED_MAX_LEN or len(doc_list) > RERANKER_FEATURED_MAX_LEN:
-        logger.error(f"reranker_featured inputs len should not bigger than {RERANKER_FEATURED_MAX_LEN}")
-        return []
 
     if len(query_list) != len(doc_list):
         logger.error(f"reranker_featured query_list and doc_list has different len")

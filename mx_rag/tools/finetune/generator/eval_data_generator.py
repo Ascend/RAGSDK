@@ -10,16 +10,28 @@ from mx_rag.tools.finetune.dataprocess.generate_qd import generate_qa_embedding_
 from mx_rag.tools.finetune.generator.common import BaseGenerator
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.file_operate import write_jsonl_to_file, read_jsonl_from_file
+from mx_rag.utils.common import validate_params, INT_32_MAX
 
 MAX_FILE_SIZE_100M = 100 * 1024 * 1024
 
 
 class EvalDataGenerator(BaseGenerator):
+    @validate_params(
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
+        dataset_path=dict(validator=lambda x: isinstance(x, str)),
+        reranker=dict(validator=lambda x: isinstance(x, str))
+    )
     def __init__(self, llm: Text2TextLLM, dataset_path: str, reranker: str):
         super().__init__(llm)
         self.dataset_path = dataset_path
         self.reranker = reranker
 
+    @validate_params(
+        max_samples=dict(validator=lambda x: 0 < x < INT_32_MAX),
+        question_number=dict(validator=lambda x: 0 < x < INT_32_MAX),
+        featured_percentage=dict(validator=lambda x: 0 <= x <= 1),
+        llm_threshold_score=dict(validator=lambda x: 0 <= x <= 1)
+    )
     def generate_eval_data(self,
                            max_samples: int = 500,
                            question_number: int = 2,

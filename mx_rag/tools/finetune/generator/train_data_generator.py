@@ -14,6 +14,7 @@ from mx_rag.tools.finetune.dataprocess import generate_qa_embedding_pairs, impro
 from mx_rag.tools.finetune.generator.common import BaseGenerator
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.file_operate import write_jsonl_to_file, read_jsonl_from_file
+from mx_rag.utils.common import validate_params, INT_32_MAX
 
 MAX_DATASET_LEN = 10000
 MAX_FILE_SIZE_100M = 100 * 1024 * 1024
@@ -24,6 +25,13 @@ DEFAULT_TRUNC_OVERLAP = 10
 
 
 class TrainDataGenerator(BaseGenerator):
+    @validate_params(
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
+        document_path=dict(validator=lambda x: isinstance(x, str)),
+        dataset_path=dict(validator=lambda x: isinstance(x, str)),
+        embedding=dict(validator=lambda x: isinstance(x, str)),
+        reranker=dict(validator=lambda x: isinstance(x, str))
+    )
     def __init__(self, llm: Text2TextLLM, document_path: str, dataset_path: str, embedding: str, reranker: str):
         super().__init__(llm)
         self.document_path = document_path
@@ -31,6 +39,13 @@ class TrainDataGenerator(BaseGenerator):
         self.embedding = embedding
         self.reranker = reranker
 
+    @validate_params(
+        featured_percentage=dict(validator=lambda x: 0 <= x <= 1),
+        llm_threshold_score=dict(validator=lambda x: 0 <= x <= 1),
+        question_number=dict(validator=lambda x: 0 < x < INT_32_MAX),
+        query_rewrite_numer=dict(validator=lambda x: 0 < x < INT_32_MAX),
+        negative_number=dict(validator=lambda x: 0 < x < INT_32_MAX)
+    )
     def generate_train_data(self,
                             featured_percentage: float = 0.8,
                             llm_threshold_score: float = 0.8,
