@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from mx_rag.embedding.local import ImageEmbedding
+from mx_rag.utils.common import IMG_EMBBEDDING_TEXT_LEN
 
 
 class TestImageEmbedding(unittest.TestCase):
@@ -45,10 +46,8 @@ class TestImageEmbedding(unittest.TestCase):
         processor_pre_mock.return_value = None
 
         emb = ImageEmbedding(model_path="/tmp/chinese-clip-vit-base-patch16/", dev_id=3, use_fp16=False)
-        try:
-            ret = emb.embed_query("")
-        except Exception as e:
-            self.assertEqual(f"{e}", f"the length of text in texts greater than {emb.TEXT_LEN} or equal 0")
+        with self.assertRaises(ValueError):
+            emb.embed_query("")
 
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoProcessor.from_pretrained")

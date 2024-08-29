@@ -2,8 +2,10 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import functools
 import inspect
+import re
 from datetime import datetime
 from enum import Enum
+from typing import List
 
 from OpenSSL import crypto
 
@@ -11,6 +13,11 @@ INT_32_MAX = 2 ** 31 - 1
 MAX_DEVICE_ID = 63
 MAX_TOP_K = 10000
 MAX_QUERY_LENGTH = 128 * 1024 * 1024
+EMBBEDDING_TEXT_COUNT = 1000 * 1000
+IMG_EMBBEDDING_IMAGE_COUNT = 1000
+IMG_EMBBEDDING_TEXT_LEN = 256
+MAX_FILE_SIZE = 100 * 1024 * 1024
+TEXT_MAX_LEN = 1000 * 1000
 
 
 class UrlUtilException(Exception):
@@ -71,7 +78,8 @@ def validate_params(**validators):
                 # 运行验证函数
                 if not validator['validator'](value):
                     expression = inspect.getsource(validator['validator']).strip().split("validator=")[1][:-1]
-                    expression = expression[:-1] if expression.endswith(")") else expression
+                    if len(re.findall(r"\(", expression)) - len(re.findall(r"\)", expression)) < 0:
+                        expression = expression[:-1]
                     raise ValueError(f"The parameter '{arg_name}' of function {func.__name__} is invalid, "
                                      f"check rule: {expression.strip()}")
 
@@ -131,3 +139,28 @@ class ParseCertInfo:
             "Fingerprint": self.fingerprint,
             "Date": f"{self.start_time}--{self.end_time}",
         }
+
+
+def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List[int]):
+    """
+    用于List[str]类型的数据校验
+    Args:
+        texts: 输入数据字符串列表
+        length_limit: 列表长度范围
+        str_limit: 字符串长度范围
+
+    Returns:
+
+    """
+    min_length_limit = length_limit[0]
+    max_length_limit = length_limit[1]
+    min_str_limit = str_limit[0]
+    max_str_limit = str_limit[1]
+    if not min_length_limit <= len(texts) <= max_length_limit:
+        return False
+    for text in texts:
+        if not isinstance(text, str):
+            return False
+        if not min_str_limit <= len(text) <= max_str_limit:
+            return False
+    return True

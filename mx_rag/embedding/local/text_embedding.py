@@ -10,7 +10,7 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, INT_32_MAX
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, INT_32_MAX, TEXT_MAX_LEN, validata_list_str
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -22,8 +22,6 @@ except Exception as e:
 
 
 class TextEmbedding(Embeddings):
-    TEXT_MAX_LEN = 1000 * 1000
-
     @validate_params(
         model_path=dict(validator=lambda x: isinstance(x, str)),
         dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID),
@@ -95,17 +93,14 @@ class TextEmbedding(Embeddings):
                                                max_length: int = 512):
         return self._encode(texts, batch_size, max_length, True)
 
+    @validate_params(
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]))
+    )
     def _encode(self,
                 texts: List[str],
                 batch_size: int = 32,
                 max_length: int = 512,
                 with_last_hidden_state: bool = False):
-        if len(texts) == 0:
-            raise ValueError('texts length equal 0')
-
-        elif len(texts) > self.TEXT_MAX_LEN:
-            raise ValueError(f'texts length greater than {self.TEXT_MAX_LEN}')
-
         result = []
         last_hidden_states = []
         for start_index in range(0, len(texts), batch_size):

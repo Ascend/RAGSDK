@@ -39,7 +39,7 @@ class TestTEIReranker(unittest.TestCase):
     def test_empty_texts(self):
         rerank = TEIReranker(url='https://localhost:8888')
 
-        texts = []
+        texts = ["text"]
         scores = rerank.rerank(query='你好', texts=texts)
         self.assertEqual(scores.shape, (0,))
 
@@ -47,8 +47,8 @@ class TestTEIReranker(unittest.TestCase):
         rerank = TEIReranker(url='https://localhost:8888')
 
         texts = ['我是小黑', '我是小红'] * 500001
-        scores = rerank.rerank(query='你好', texts=texts)
-        self.assertEqual(scores.shape, (0,))
+        with self.assertRaises(ValueError):
+            rerank.rerank(query='你好', texts=texts)
 
     def test_request_failed(self):
         def mock_post(url: str, body: str, headers: Dict):

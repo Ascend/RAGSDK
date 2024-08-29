@@ -8,7 +8,8 @@ from loguru import logger
 import numpy as np
 
 from mx_rag.reranker.reranker import Reranker
-from mx_rag.utils.common import validate_params, MAX_TOP_K, INT_32_MAX, MAX_QUERY_LENGTH
+from mx_rag.utils.common import validate_params, MAX_TOP_K, INT_32_MAX, MAX_QUERY_LENGTH, TEXT_MAX_LEN, \
+    validata_list_str
 from mx_rag.utils.url import RequestUtils
 
 
@@ -61,6 +62,7 @@ class TEIReranker(Reranker):
 
     @validate_params(
         query=dict(validator=lambda x: 1 <= len(x) <= MAX_QUERY_LENGTH),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX])),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
     )
     def rerank(self,
@@ -68,12 +70,6 @@ class TEIReranker(Reranker):
                texts: List[str],
                batch_size: int = 32):
         texts_len = len(texts)
-        if texts_len == 0:
-            return np.array([])
-        elif texts_len > TEIReranker.TEXT_MAX_LEN:
-            logger.error(f'texts list length must less than {TEIReranker.TEXT_MAX_LEN}')
-            return np.array([])
-
         result = []
         for start_index in range(0, texts_len, batch_size):
             texts_batch = texts[start_index: start_index + batch_size]
