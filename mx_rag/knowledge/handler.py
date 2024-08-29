@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import numpy as np
 from loguru import logger
 from transformers import PreTrainedTokenizerBase
-from mx_rag.utils.common import validate_params
+
 from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.doc_loader_mng import LoaderMng
@@ -19,6 +19,7 @@ from mx_rag.retrievers.tree_retriever import Tree
 from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
+from mx_rag.utils.common import validate_params
 
 
 class FileHandlerError(Exception):
@@ -192,12 +193,18 @@ def save_tree(tree: Tree, file_path: str):
 
 
 @validate_params(
-    white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x))
+    white_paths=dict(validator=lambda x: len(x) > 0),
+    float_type=dict(validator=lambda x: x in [np.float16, np.float32])
 )
 def load_tree(file_path: str, white_paths: List[str], float_type: Union[np.float16, np.float32] = np.float16):
     """
     从文件加载Tree，反序列化
     """
+    # 检查file_path
+    FileCheck.check_path_is_exist_and_valid(file_path)
+    # 检查white_paths
+    for p in white_paths:
+        FileCheck.check_path_is_exist_and_valid(p)
     real_path = os.path.realpath(file_path)
     file_obj = Path(real_path)
     if not _is_in_white_paths(file_obj, white_paths):

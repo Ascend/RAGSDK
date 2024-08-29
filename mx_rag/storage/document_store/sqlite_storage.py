@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument, StorageError
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
+from mx_rag.utils.common import validate_params
 
 Base = declarative_base()
 
@@ -42,6 +43,7 @@ class ChunkModel(Base):
 class SQLiteDocstore(Docstore):
 
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
+    MAX_DOC_NAME_LEN = 1024
 
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
@@ -51,6 +53,7 @@ class SQLiteDocstore(Docstore):
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
+    @validate_params(documents=dict(validator=lambda x: all(isinstance(it, MxDocument) for it in x)))
     def add(self, documents: List[MxDocument]) -> List[int]:
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise StorageError("Insufficient remaining space, please clear disk space")
@@ -77,6 +80,7 @@ class SQLiteDocstore(Docstore):
                 session.rollback()
                 raise StorageError(f"add chunk failed, {err}") from err
 
+    @validate_params(doc_name=dict(validator=lambda x: 0 < len(x) <= SQLiteDocstore.MAX_DOC_NAME_LEN))
     def delete(self, doc_name: str) -> List[int]:
         with self.session() as session:
             try:
@@ -89,6 +93,7 @@ class SQLiteDocstore(Docstore):
                 session.rollback()
                 raise StorageError(f"delete chunk failed, {err}") from err
 
+    @validate_params(index_id=dict(validator=lambda x: x >= 0))
     def search(self, index_id: int) -> Optional[MxDocument]:
         with self.session() as session:
             chunk = session.query(ChunkModel).filter_by(index_id=index_id).first()
