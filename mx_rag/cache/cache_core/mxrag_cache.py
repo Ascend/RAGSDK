@@ -14,7 +14,7 @@ from loguru import logger
 
 from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig
 from mx_rag.cache.cache_api import init_mxrag_cache
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_QUERY_LENGTH
 
 
 def _default_dump(data: Any) -> str:
@@ -26,7 +26,7 @@ def _default_load(data: str) -> Any:
 
 
 class MxRAGCache:
-    cache_limit: int = -1
+    cache_limit: int = TEXT_MAX_LEN
     verbose: bool = False
 
     @validate_params(
@@ -55,9 +55,15 @@ class MxRAGCache:
         cls.verbose = verbose
 
     @classmethod
+    @validate_params(
+        cache_limit=dict(validator=lambda x: 0 < x <= TEXT_MAX_LEN),
+    )
     def set_cache_limit(cls, cache_limit: int):
         cls.cache_limit = cache_limit
 
+    @validate_params(
+        query=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH),
+    )
     def search(self, query: str):
         """
         MXRAGCache 查询缓存
@@ -90,6 +96,10 @@ class MxRAGCache:
             self._verbose_log("Miss!")
         return answer
 
+    @validate_params(
+        query=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH),
+        answer=dict(validator=lambda x: 0 < len(x) <= TEXT_MAX_LEN)
+    )
     def update(self, query: str, answer: str):
         """
         MXRAGCache 更新缓存
@@ -147,6 +157,9 @@ class MxRAGCache:
 
         return self.cache_obj
 
+    @validate_params(
+        next_cache=dict(validator=lambda x: isinstance(x, MxRAGCache)),
+    )
     def join(self, next_cache):
         """
         MXRAGCache 缓存级联
@@ -165,9 +178,6 @@ class MxRAGCache:
         self.cache_obj.next_cache = next_cache.get_obj()
 
     def _check_limit(self, input_text: str):
-        if self.cache_limit < 0:
-            return True
-
         return True if (len(input_text) < self.cache_limit) else False
 
     def _verbose_log(self, log_str: str):

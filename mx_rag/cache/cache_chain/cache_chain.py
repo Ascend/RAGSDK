@@ -5,7 +5,7 @@ import json
 
 from mx_rag.chain import Chain
 from mx_rag.cache.cache_core import MxRAGCache
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, MAX_QUERY_LENGTH
 
 
 def _default_data_convert(data):
@@ -39,6 +39,9 @@ class CacheChainChat(Chain):
         self._convert_data_to_cache = convert_data_to_cache
         self._convert_data_to_user = convert_data_to_user
 
+    @validate_params(
+        text=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH),
+    )
     def query(self, text: str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
         """
         MXRAGCache 根据verbose标志 用于表示是否记录日志。
