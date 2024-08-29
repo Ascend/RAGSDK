@@ -126,9 +126,9 @@ class TestMindieLLM(unittest.TestCase):
     def test_chat_param_history(self):
         error = False
         llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
-        history = [{"role": "users", "content": "test"}] * 101
+        sys_messages = [{"role": "users", "content": "test"}] * 101
         try:
-            llm_model.chat(query="你好", history=history)
+            llm_model.chat(query="你好", sys_messages=sys_messages)
         except ValueError:
             error = True
         self.assertTrue(error)
@@ -136,12 +136,22 @@ class TestMindieLLM(unittest.TestCase):
     def test_chat_param_history_2(self):
         error = False
         llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
-        history = [{"role": "users", "content": "test", "111": "1"}]
+        sys_messages = [{"role": "users", "content": "test", "111": "1"}]
         try:
-            llm_model.chat(query="你好", history=history)
+            llm_model.chat(query="你好", sys_messages=sys_messages)
         except ValueError:
             error = True
-        self.assertTrue(error)
+        self.assertFalse(error)
+
+    def test_chat_param_history_3(self):
+        error = False
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
+        sys_messages = [{"role": "user", "contentcontentcontentcontent": "test", "111": "1"}]
+        try:
+            llm_model.chat(query="你好", sys_messages=sys_messages)
+        except ValueError:
+            error = False
+        self.assertFalse(error)
 
     def test_chat_param_presence_penalty(self):
         error = False

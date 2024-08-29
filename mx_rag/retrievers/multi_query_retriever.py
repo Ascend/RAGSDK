@@ -62,7 +62,7 @@ class MultiQueryRetriever(Retriever):
         docs = []
 
         llm_query = self.prompt.format(question=query)
-        llm_response = self.llm.chat(query=llm_query, history=[], role="user", max_tokens=self.max_tokens)
+        llm_response = self.llm.chat(query=llm_query, role="user", max_tokens=self.max_tokens)
         for sub_query in self.parser.parse(text=str(llm_response)):
             logger.success(f"sub_query {sub_query}")
             doc = super(MultiQueryRetriever, self)._get_relevant_documents(sub_query)

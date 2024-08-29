@@ -10,7 +10,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from mx_rag.utils.common import MAX_TOP_K
 
-
 from mx_rag.llm import Text2TextLLM
 
 _KEY_WORD_TEMPLATE_ZH = PromptTemplate(

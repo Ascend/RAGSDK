@@ -5,6 +5,8 @@ import json
 
 from loguru import logger
 
+from mx_rag.utils.common import validate_params, INT_32_MAX, MAX_PROMPT_LENGTH, MAX_URL_LENGTH, \
+    MAX_MODEL_NAME_LENGTH
 from mx_rag.utils.url import RequestUtils
 
 
@@ -13,26 +15,24 @@ class Text2ImgMultiModel:
         'Content-Type': 'application/json'
     }
 
+    @validate_params(
+        url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_URL_LENGTH),
+        model_name=dict(validator=lambda x: x is None or isinstance(x, str) and 0 < len(x) <= MAX_MODEL_NAME_LENGTH),
+        timeout=dict(validator=lambda x: isinstance(x, int) and 0 < x <= INT_32_MAX),
+        use_http=dict(validator=lambda x: isinstance(x, bool)),
+    )
     def __init__(self, url: str, model_name: str = None, timeout: int = 10, max_prompt_len=1000,
                  use_http: bool = False):
         self._model_name = model_name
         self._url = url
         self._client = RequestUtils(timeout=timeout, use_http=use_http)
-        self._max_prompt_len = max_prompt_len
 
+    @validate_params(
+        prompt=dict(validator=lambda x: 0 < len(x) <= MAX_PROMPT_LENGTH),
+        output_format=dict(validator=lambda x: x in ["png", "jpeg", "jpg", "webp"]),
+    )
     def text2img(self, prompt: str, output_format: str = "png"):
         resp = {"prompt": prompt, "result": ""}
-        if prompt is None:
-            logger.error(f"prompt cannot be None")
-            return resp
-
-        if len(prompt) > self._max_prompt_len or len(prompt) == 0:
-            logger.error(f"prompt content len [{len(prompt)}] not in (0, {self._max_prompt_len}]")
-            return resp
-
-        if output_format.lower() not in ["png", "jpeg", "jpg", "webp"]:
-            logger.error("output format are not valid")
-            return resp
 
         request_body = {"prompt": prompt, "output_format": output_format}
         response = self._client.post(url=self._url, body=json.dumps(request_body), headers=self.HEADER)
