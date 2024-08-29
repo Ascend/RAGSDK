@@ -4,12 +4,20 @@ from typing import Dict
 
 from loguru import logger
 
+from langchain_core.retrievers import BaseRetriever
+
+from mx_rag.utils.common import validate_params
 from mx_rag.chain.base import Chain
+from mx_rag.llm import Text2ImgMultiModel
 
 
 class Text2ImgChain(Chain):
     """ 大模型输入prompt，生成prompt相关的图片 """
 
+    @validate_params(
+        multi_model=dict(validator=lambda x: isinstance(x, Text2ImgMultiModel)),
+        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever) or x is None)
+    )
     def __init__(self, multi_model, retriever=None):
         self._multi_model = multi_model
         self._retriever = retriever

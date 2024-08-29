@@ -4,12 +4,20 @@ from typing import Dict
 
 from loguru import logger
 
+from langchain_core.retrievers import BaseRetriever
+
+from mx_rag.utils.common import validate_params
 from mx_rag.chain.base import Chain
+from mx_rag.llm import Img2ImgMultiModel
 
 
 class Img2ImgChain(Chain):
     """ 检索出输入文本最相关的图片与prompt合并发送给大模型，生成相应图片 """
 
+    @validate_params(
+        multi_model=dict(validator=lambda x: isinstance(x, Img2ImgMultiModel)),
+        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever))
+    )
     def __init__(self, multi_model, retriever):
         self._multi_model = multi_model
         self._retriever = retriever
