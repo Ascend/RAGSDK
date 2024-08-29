@@ -33,8 +33,8 @@ class Test(TestCase):
         self.assertEqual(5, len(result))
 
     def test_clustering_none_tokenizer(self):
-        node_list= [Node("test1", 0, {0}, {}),
-        Node("test2", 1, {0}, {})]
+        node_list= [Node("test1", 0, {0}, np.array([], dtype=np.float16)),
+                    Node("test2", 1, {0}, np.array([], dtype=np.float16))]
         self.assertRaises(ValueError, _clustering, node_list)
 
     def test_gmm_cluster(self):

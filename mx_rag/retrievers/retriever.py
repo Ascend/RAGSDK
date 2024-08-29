@@ -36,6 +36,8 @@ class Retriever(BaseRetriever):
 
         for i, idx in enumerate(indices[0]):
             logger.debug(f"check {i}/{idx}")
+            if idx < 0:
+                continue
             doc = self.document_store.search(idx)
             if doc is None:
                 continue

@@ -12,6 +12,7 @@ from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K
 
 
 class MindFAISSError(Exception):
@@ -23,6 +24,11 @@ class MindFAISS(VectorStore):
         "FLAT:L2": ascendfaiss.AscendIndexFlatL2,
     }
 
+    @validate_params(
+        x_dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
+        index_type=dict(validator=lambda x: isinstance(x, str) and x in MindFAISS.INDEX_MAP),
+        auto_save=dict(validator=lambda x: isinstance(x, bool))
+    )
     def __init__(
             self,
             x_dim: int,
@@ -89,17 +95,20 @@ class MindFAISS(VectorStore):
     def get_save_file(self):
         return self.load_local_index
 
-    def delete(self, ids):
+    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x)))
+    def delete(self, ids: List[int]):
         res = self.index.remove_ids(np.array(ids))
         if self.auto_save:
             self.save_local()
         return res
 
+    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K))
     def search(self, embeddings: np.ndarray, k: int = 3):
         scores, indices = self.index.search(embeddings, k)
         return scores.tolist(), indices.tolist()
 
-    def add(self, embeddings, ids):
+    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x)))
+    def add(self, embeddings: np.ndarray, ids: List[int]):
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
         except Exception as err:

@@ -8,6 +8,7 @@ import numpy as np
 from pymilvus import MilvusClient, DataType
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MILVUS_INDEX_TYPES, MILVUS_METRIC_TYPES, MAX_TOP_K
 
 
 class MilvusError(Exception):
@@ -15,8 +16,15 @@ class MilvusError(Exception):
 
 
 class MilvusDB(VectorStore):
+    MAX_COLLECTION_NAME_LENGTH = 1024
+    MAX_URL_LENGTH = 1024
 
-    def __init__(self, url: str, collection_name="mxRag", use_http=False, **kwargs):
+    @validate_params(
+        url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < MilvusDB.MAX_URL_LENGTH),
+        collection=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH),
+        use_http=dict(validator=lambda x: isinstance(x, bool))
+    )
+    def __init__(self, url: str, collection_name: str = "mxRag", use_http: bool = False, **kwargs):
         if url.startswith("http:") and not use_http:
             raise MilvusError("http protocol is not support")
         self.client = MilvusClient(url, **kwargs)
@@ -52,10 +60,16 @@ class MilvusDB(VectorStore):
         milvus_db.create_collection(x_dim=vector_dims, index_type=index_type, metric_type=metric_type, param=param)
         return milvus_db
 
+    @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH))
     def set_collection_name(self, collection_name: str):
         self._collection_name = collection_name
 
-    def create_collection(self, x_dim, index_type, metric_type, param=None):
+    @validate_params(
+        x_dim=dict(validator=lambda x: 0 < x <= MAX_VEC_DIM),
+        index_type=dict(validator=lambda x: x in MILVUS_INDEX_TYPES),
+        metric_type=dict(validator=lambda x: x in MILVUS_METRIC_TYPES)
+    )
+    def create_collection(self, x_dim: int, index_type: str, metric_type: str, param=None):
         schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
         schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=x_dim)
@@ -78,13 +92,15 @@ class MilvusDB(VectorStore):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         self.client.drop_collection(self._collection_name)
 
-    def delete(self, ids):
+    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x)))
+    def delete(self, ids: List[int]):
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
         self.client.refresh_load(self._collection_name)
         return res
 
+    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K))
     def search(self, embeddings: np.ndarray, k: int = 3):
         embeddings = embeddings.astype(np.float32)
         if not self.client.has_collection(self._collection_name):
@@ -107,7 +123,12 @@ class MilvusDB(VectorStore):
             ids.append(k_id)
         return scores, ids
 
-    def add(self, embeddings: np.ndarray, ids):
+    @validate_params(
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x))
+    )
+    def add(self, embeddings: np.ndarray, ids: List[int]):
+        if embeddings.shape[0] != len(ids):
+            raise MilvusError("Length of embeddings is not equal to number of ids")
         embeddings = embeddings.astype(np.float32)
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")

@@ -140,7 +140,7 @@ class KnowledgeDB(KnowledgeBase):
         documents = [MxDocument(page_content=t, metadata=m, document_name=doc_name) for t, m in zip(texts, metadatas)]
         self._knowledge_store.add(self.knowledge_name, doc_name)
         ids = self._document_store.add(documents)
-        self._vector_store.add(np.array(embeddings), np.array(ids))
+        self._vector_store.add(np.array(embeddings), ids)
 
     def delete_file(self, doc_name: str):
         self._knowledge_store.delete(self.knowledge_name, doc_name)

@@ -34,7 +34,10 @@ class TestTreeRetriever(unittest.TestCase):
         self.assertEqual(2, len(selected_nodes))
 
     def test_retrieve_information(self):
-        node_list = [Node("test1", 0, {0}, {"filepath": "xxx"}), Node("test2", 1, {1}, [1, 2, 3])]
+        with self.assertRaises(ValueError):
+            _ = Node("test1", {"test1": "test2"}, 2, np.array([1, 2, 3]))
+        node_list = [Node("test1", 0, {0}, np.array([1, 2, 3], dtype=np.float16)),
+                     Node("test2", 1, {1}, np.array([4, 5, 6], dtype=np.float16))]
         selected_nodes, context = self.tree_retriever._retrieve_information(node_list, "test", 0)
         self.assertEqual("", context)
         self.assertEqual([], selected_nodes)

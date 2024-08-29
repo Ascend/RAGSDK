@@ -3,6 +3,7 @@
 
 import copy
 from typing import Dict, List, Optional, Set, Tuple, Callable
+import numpy as np
 
 from loguru import logger
 from transformers import PreTrainedTokenizerBase
@@ -76,7 +77,7 @@ class TreeBuilder:
         for row in embeddings:
             flat_list += row
 
-        return index, Node(text, index, children_indices, flat_list)
+        return index, Node(text, index, children_indices, np.array(flat_list, dtype=np.float32))
 
     @validate_params(
         embed_func=dict(validator=lambda x: isinstance(x, Callable)),
