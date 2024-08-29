@@ -9,6 +9,7 @@ from langchain_core.prompts import PromptTemplate
 from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
+from mx_rag.utils.common import validate_params
 
 _SUMMARY_TEMPLATE = PromptTemplate(
     input_variables=["text"],
@@ -56,6 +57,10 @@ class Summary(BaseModel):
 
         return split_indices
 
+    @validate_params(
+        texts=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 4*1024),
+        not_summarize_threshold=dict(validator=lambda x: 0 <= x <= 4*1024)
+    )
     def summarize(self, texts: List[str], not_summarize_threshold: int = 30,
                   prompt: PromptTemplate = _SUMMARY_TEMPLATE) -> List[str]:
         with ThreadPoolExecutor() as executor:
@@ -83,6 +88,11 @@ class Summary(BaseModel):
 
         return res
 
+    @validate_params(
+        texts=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 4*1024),
+        merge_threshold=dict(validator=lambda x: 0 <= x <= 1024*1024),
+        not_summarize_threshold=dict(validator=lambda x: 0 <= x <= 4*1024)
+    )
     def merge_text_summarize(self, texts: List[str], merge_threshold: int = 4 * 1024, not_summarize_threshold=30,
                              prompt: PromptTemplate = _MERGE_TEXT_SUMMARY_TEMPLATE) -> str:
 

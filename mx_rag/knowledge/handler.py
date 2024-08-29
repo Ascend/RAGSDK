@@ -10,7 +10,7 @@ from dataclasses import dataclass
 import numpy as np
 from loguru import logger
 from transformers import PreTrainedTokenizerBase
-
+from mx_rag.utils.common import validate_params
 from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.doc_loader_mng import LoaderMng
@@ -155,6 +155,9 @@ def upload_dir(params: FilesLoadInfo):
     upload_files(knowledge, files, loader_mng, embed_func, force)
 
 
+@validate_params(
+    file_names=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 1000)
+)
 def delete_files(
         knowledge: KnowledgeDB,
         file_names: List[str]
@@ -188,6 +191,9 @@ def save_tree(tree: Tree, file_path: str):
         ff.write(json.dumps(tree, default=_tree2dict))
 
 
+@validate_params(
+    white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x))
+)
 def load_tree(file_path: str, white_paths: List[str], float_type: Union[np.float16, np.float32] = np.float16):
     """
     从文件加载Tree，反序列化

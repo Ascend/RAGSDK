@@ -17,7 +17,7 @@ from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
-
+from mx_rag.utils.common import validate_params
 
 
 @dataclass
@@ -30,39 +30,14 @@ class DocxLoader(BaseLoader, mxBaseLoader):
     """Loading logic for loading documents from docx."""
     EXTENSION = (".docx",)
 
-    def __init__(self, file_path: str, image_inline=False):
+    @validate_params(
+        image_inline=dict(validator=lambda x: isinstance(x, bool))
+    )
+    def __init__(self, file_path: str, image_inline: bool = False):
         """Initialize with filepath and options."""
         super().__init__(file_path)
         self.do_ocr = image_inline
         self.table_index = 0
-
-    @staticmethod
-    def extract_hyperlink(block):
-        try:
-            hyperlink_rid = re.findall(r"<w:hyperlink r:id='(rId\d+)'", str(block.paragraph_format.element.xml))[0]
-            return f" {block.part.rels[hyperlink_rid].target_ref} "
-        except Exception as e:
-            logger.warning(f"extract_hyperlink {str(e)}")
-            return ""
-
-    @staticmethod
-    def iter_block_items(parent: docx.document.Document):
-        """
-        获取Document对象的元素
-        按文档顺序生成对*parent*中每个段落和表的引用。
-        每个返回值都是Table或Paragraph。
-        *parent*通常是对主Document对象的引用。
-        """
-        if isinstance(parent, docx.document.Document):
-            parent_elm = parent.element.body
-        else:
-            raise TypeError(f"TypeError {type(parent)}, should be docx.document.Document")
-
-        for child in parent_elm.iterchildren():
-            if isinstance(child, CT_P):
-                yield Paragraph(child, parent)
-            elif isinstance(child, CT_Tbl):
-                yield Table(child, parent)
 
     @classmethod
     def _handle_paragraph_heading(cls, all_content: List[ContentsHeading], block: Paragraph,

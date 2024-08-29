@@ -5,6 +5,7 @@ from typing import Dict, Any, List, Tuple, Type, Optional
 from dataclasses import dataclass
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import Language, TextSplitter
+from mx_rag.utils.common import validate_params
 
 
 @dataclass
@@ -24,10 +25,16 @@ class LoaderMng:
         self.loaders: Dict[Type, Tuple[List[str], LoaderInfo]] = {}
         self.splitters: Dict[Type, Tuple[List[str], SplitterInfo]] = {}
 
+    @validate_params(
+        file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 32)
+                         )
     def register_loader(self, loader_class: Type, file_types: List[str],
                         loader_params: Optional[Dict[str, Any]] = None):
         self.loaders[loader_class] = (file_types, LoaderInfo(loader_class, loader_params or {}))
 
+    @validate_params(
+        file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 32)
+                         )
     def register_splitter(self, splitter_class: Type, file_types: List[str],
                           splitter_params: Optional[Dict[str, Any]] = None):
         self.splitters[splitter_class] = (file_types, SplitterInfo(splitter_class, splitter_params or {}))
