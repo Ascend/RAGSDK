@@ -6,6 +6,8 @@ from pathlib import Path
 
 from loguru import logger
 
+from mx_rag.utils.common import validate_params, INT_32_MAX, MAX_PROMPT_LENGTH, MAX_URL_LENGTH, \
+    MAX_MODEL_NAME_LENGTH
 from mx_rag.utils.url import RequestUtils
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 
@@ -18,22 +20,22 @@ class Img2ImgMultiModel:
     }
     IMAGE_ITEM = "image"
 
-    def __init__(self, url: str, model_name=None, timeout: int = 10, max_prompt_len=1000, use_http: bool = False):
+    @validate_params(
+        url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_URL_LENGTH),
+        model_name=dict(validator=lambda x: x is None or isinstance(x, str) and 0 < len(x) <= MAX_MODEL_NAME_LENGTH),
+        timeout=dict(validator=lambda x: isinstance(x, int) and 0 < x <= INT_32_MAX),
+        use_http=dict(validator=lambda x: isinstance(x, bool)),
+    )
+    def __init__(self, url: str, model_name=None, timeout: int = 10, use_http: bool = False):
         self._url = url
         self._model_name = model_name
         self._client = RequestUtils(timeout=timeout, use_http=use_http)
-        self._max_prompt_len = max_prompt_len
 
+    @validate_params(
+        prompt=dict(validator=lambda x: 0 < len(x) <= MAX_PROMPT_LENGTH),
+    )
     def img2img(self, prompt: str, img_path: str) -> dict:
         resp = {"prompt": prompt, "result": ""}
-
-        if prompt is None:
-            logger.error(f"prompt cannot be None")
-            return resp
-
-        if len(prompt) > self._max_prompt_len or len(prompt) == 0:
-            logger.error(f"prompt content len [{len(prompt)}] not in (0, {self._max_prompt_len}]")
-            return resp
 
         FileCheck.check_path_is_exist_and_valid(img_path)
         SecFileCheck(img_path, self.MAX_IMAGE_SIZE).check()

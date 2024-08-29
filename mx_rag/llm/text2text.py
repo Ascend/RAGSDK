@@ -4,34 +4,49 @@ import json
 import sys
 from typing import List, Optional, Any, Iterator
 
+from pydantic.v1 import Field
+
 from langchain.llms.base import LLM
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.outputs import GenerationChunk
 from loguru import logger
 
-from mx_rag.utils.common import safe_get
+from mx_rag.utils.common import safe_get, MB, INT_32_MAX, validate_params, MAX_URL_LENGTH, MAX_MODEL_NAME_LENGTH
 from mx_rag.utils.url import RequestUtils
 
 HEADER = {
     "Content-Type": "application/json"
 }
-INT64_MAX = (1 << 63) - 1
+
+
+def _check_sys_messages(sys_messages: List[dict] = None) -> bool:
+    if sys_messages is None:
+        return True
+
+    if len(sys_messages) > 16:
+        return False
+
+    for d in sys_messages:
+        if not isinstance(d, dict) or len(d) > 16:
+            return False
+        for k, v in d.items():
+            if len(k) > 16 or len(v) > 4 * MB:
+                return False
+    return True
 
 
 class Text2TextLLM(LLM):
-    base_url: str
-    model_name: str
-    timeout: int = 10
-    max_prompt_len: int = 128 * 1024 * 1024
-    max_history_len: int = 100
-    cert_file: str = ""
-    crl_file: str = ""
-    use_http: bool = False
+    base_url: str = Field(min_length=1, max_length=MAX_URL_LENGTH)
+    model_name: str = Field(min_length=1, max_length=MAX_MODEL_NAME_LENGTH)
+    timeout: int = Field(ge=1, le=INT_32_MAX, default=10)
+    cert_file: str = Field(min_length=0, max_length=128, default="")
+    crl_file: str = Field(min_length=0, max_length=128, default="")
+    use_http: bool = Field(default=False)
     max_tokens: int = 512
     presence_penalty: float = 0.0
     frequency_penalty: float = 0.0
-    temperature: float = 0.5
-    top_p: float = 0.95
+    temperature: float = 1.0
+    top_p: float = 1.0
 
     @property
     def _client(self):
@@ -63,33 +78,19 @@ class Text2TextLLM(LLM):
 
         return value
 
-    @staticmethod
-    def _validate_history_format(history: List[dict]):
-        if history is None:
-            return False
-
-        required_keys = {"role", "content"}
-
-        for item in history:
-            if not isinstance(item, dict):
-                return False
-            if set(item.keys()) != required_keys:
-                return False
-
-        return True
-
-    def chat(self, query: str, history: List[dict] = None, role: str = "user", **kwargs):
+    @validate_params(
+        query=dict(validator=lambda x: 0 < len(x) <= 4 * MB),
+        sys_messages=dict(validator=lambda x: _check_sys_messages(x)),
+        role=dict(validator=lambda x: 0 < len(x) <= 16),
+    )
+    def chat(self, query: str,
+             sys_messages: List[dict] = None,
+             role: str = "user",
+             **kwargs):
         ans = ""
-        if query is None:
-            logger.error(f"query cannot be None")
-            return ans
-
-        if len(query) > self.max_prompt_len or len(query) == 0:
-            logger.error(f"query content len [{len(query)}] not in (0, {self.max_prompt_len}]")
-            return ans
-        if history is None:
-            history = []
-        request_body = self._get_request_body(query, history, role, **kwargs)
+        if sys_messages is None:
+            sys_messages = []
+        request_body = self._get_request_body(query, sys_messages, role, **kwargs)
         request_body["stream"] = False
         response = self._client.post(url=self.base_url, body=json.dumps(request_body), headers=HEADER)
         if response.success:
@@ -110,16 +111,19 @@ class Text2TextLLM(LLM):
             logger.error("get response failed, please check the server log for details")
         return ans
 
-    def chat_streamly(self, query: str, history: List[dict] = None, role: str = "user", **kwargs):
-        ans = ""
-        if query is None or len(query) > self.max_prompt_len:
-            logger.error(f"query cannot be None or content len not in  (0, {self.max_prompt_len})")
-            yield ans
-            return
-        if history is None:
-            history = []
+    @validate_params(
+        query=dict(validator=lambda x: 0 < len(x) <= 4 * MB),
+        sys_messages=dict(validator=lambda x: _check_sys_messages(x)),
+        role=dict(validator=lambda x: 0 < len(x) <= 16),
+    )
+    def chat_streamly(self, query: str,
+                      sys_messages: List[dict] = None,
+                      role: str = "user",
+                      **kwargs):
+        if sys_messages is None:
+            sys_messages = []
 
-        request_body = self._get_request_body(query, history, role, **kwargs)
+        request_body = self._get_request_body(query, sys_messages, role, **kwargs)
         request_body["stream"] = True
         ans = ""
         response = self._client.post_streamly(url=self.base_url, body=json.dumps(request_body), headers=HEADER)
@@ -152,14 +156,8 @@ class Text2TextLLM(LLM):
             ans += safe_get(data, ["choices", 0, "delta", "content"], "")
             yield ans
 
-    def _get_request_body(self, query: str, history: List[dict], role: str, **kwargs):
-        if len(history) > self.max_history_len:
-            raise ValueError(f"The length of the history parameter cannot exceed {self.max_history_len}")
-
-        if not self._validate_history_format(history):
-            raise ValueError("the history parameter is not valid, can only contain role and context")
-
-        history.append({"role": role, "content": query})
+    def _get_request_body(self, query: str, messages: List[dict], role: str, **kwargs):
+        messages.append({"role": role, "content": query})
 
         max_tokens = "max_tokens"
         presence_penalty = "presence_penalty"
@@ -171,20 +169,20 @@ class Text2TextLLM(LLM):
 
         seed = kwargs.get(seed_str, None)
         if seed is not None:
-            seed = self._validate_range(kwargs.get(seed_str, None), (0, INT64_MAX), int,
+            seed = self._validate_range(kwargs.get(seed_str, None), (0, INT_32_MAX), int,
                                         inclusive_min=False, param_name=seed_str)
         # 适配MindIE参数范围
         request_body = {
             "model": self.model_name,
-            "messages": history,
-            max_tokens: self._validate_range(kwargs.get(max_tokens, 16), (1, INT64_MAX), int,
+            "messages": messages,
+            max_tokens: self._validate_range(kwargs.get(max_tokens, 512), (1, INT_32_MAX), int,
                                              inclusive_min=False, param_name=max_tokens),
             presence_penalty: self._validate_range(kwargs.get(presence_penalty, 0.0), (-2.0, 2.0), float,
                                                    param_name=presence_penalty),
             frequency_penalty: self._validate_range(kwargs.get(frequency_penalty, 0.0), (-2.0, 2.0), float,
                                                     param_name=frequency_penalty),
             seed_str: seed,
-            temperature: self._validate_range(kwargs.get(temperature, 1.0), (0.0, sys.float_info.max), float,
+            temperature: self._validate_range(kwargs.get(temperature, 1.0), (0.0, 2.0), float,
                                               inclusive_min=False, param_name=temperature),
             top_p: self._validate_range(kwargs.get(top_p, 1.0), (0.0, 1.0), float,
                                         inclusive_min=False, param_name=top_p)
