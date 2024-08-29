@@ -3,6 +3,7 @@
 
 import re
 from typing import List
+from langchain_core.pydantic_v1 import validator, Field
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -46,11 +47,15 @@ class DefaultOutputParser(BaseOutputParser):
         return lines
 
 
-class MultiQueryRetriever(Retriever, BaseRetriever):
+class MultiQueryRetriever(Retriever):
     llm: Text2TextLLM
     prompt: PromptTemplate = DEFAULT_QUERY_PROMPT_CH
     parser: BaseOutputParser = DefaultOutputParser()
     max_tokens: int = 512
+
+
+    class Config:
+        arbitrary_types_allowed = True  # 允许自定义类型
 
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:

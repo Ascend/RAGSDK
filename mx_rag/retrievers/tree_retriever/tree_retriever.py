@@ -12,7 +12,7 @@ from .utils import (_distances_from_embeddings, _get_embeddings,
                     _get_node_list, _get_text,
                     _indices_of_nearest_neighbors_from_distances,
                     _reverse_mapping)
-from ...utils.common import validate_params
+from ...utils.common import validate_params, MAX_TOP_K
 
 
 class TreeRetrieverConfig:
@@ -20,7 +20,7 @@ class TreeRetrieverConfig:
         tokenizer=dict(validator=lambda x: isinstance(x, PreTrainedTokenizerBase)),
         embed_func=dict(validator=lambda x: isinstance(x, Callable)),
         threshold=dict(validator=lambda x: 0 <= x <= 1),
-        top_k=dict(validator=lambda x: 1 <= x <= 10000),
+        top_k=dict(validator=lambda x: 1 <= x <= MAX_TOP_K),
         selection_mode=dict(validator=lambda x: x in ["top_k", "threshold"]),
         collapse_tree=dict(validator=lambda x: isinstance(x, bool)),
         max_tokens=dict(validator=lambda x: 50 <= x <= 10000)

@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 from typing import List, Callable
+from langchain_core.pydantic_v1 import validator, Field
 
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
+from mx_rag.utils.common import MAX_TOP_K
 
 
 from mx_rag.llm import Text2TextLLM
@@ -33,11 +35,14 @@ def _default_preprocessing_func(text: str) -> List[str]:
 class BMRetriever(BaseRetriever):
     docs: List[Document]
     llm: Text2TextLLM
-    k: int = 1
+    k: int = Field(default=1, ge=1, le=MAX_TOP_K)
     max_tokens = 512
     temperature = 0.5
     top_p = 0.95
     prompt: PromptTemplate = _KEY_WORD_TEMPLATE_ZH
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @property
     def preprocess_func(self) -> Callable[[str], List[str]]:
