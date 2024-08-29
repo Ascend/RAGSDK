@@ -7,7 +7,11 @@ from typing import Union, Iterator, List, Dict
 from langchain_core.documents import Document
 from loguru import logger
 
+from langchain_core.retrievers import BaseRetriever
+
+from mx_rag.utils.common import validate_params
 from mx_rag.chain import Chain
+from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
 
 DEFAULT_RAG_PROMPT = """根据上述已知信息，简洁和专业的来回答用户的问题。如果无法从中已知信息中得到答案，请根据自身经验做出的的回答"""
@@ -16,7 +20,17 @@ DEFAULT_RAG_PROMPT = """根据上述已知信息，简洁和专业的来回答�
 class SingleText2TextChain(Chain):
     document_separator: str = "\n\n"
 
-    def __init__(self, llm, retriever, reranker: Reranker = None, prompt: str = DEFAULT_RAG_PROMPT,
+    @validate_params(
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
+        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever)),
+        reranker=dict(validator=lambda x: isinstance(x, Reranker) or x is None),
+        prompt=dict(validator=lambda x:isinstance(x, str) and 0 < len(x) <= 512 * 1024),
+        source=dict(validator=lambda x: isinstance(x, bool))
+    )
+    def __init__(self, llm: Text2TextLLM,
+                 retriever: BaseRetriever,
+                 reranker: Reranker = None,
+                 prompt: str = DEFAULT_RAG_PROMPT,
                  source: bool = True):
         super().__init__()
         self._retriever = retriever

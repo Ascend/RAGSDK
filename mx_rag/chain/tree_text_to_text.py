@@ -7,14 +7,21 @@ from typing import Union, Dict, Iterator
 
 from loguru import logger
 
+from mx_rag.utils.common import validate_params
+from mx_rag.llm import Text2TextLLM
 from mx_rag.chain import SingleText2TextChain
+from mx_rag.llm import Text2TextLLM
 
 if TYPE_CHECKING:
     from mx_rag.retrievers import TreeRetriever
 
 
 class TreeText2TextChain(SingleText2TextChain):
-    def __init__(self, llm, retriever=None):
+
+    @validate_params(
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
+    )
+    def __init__(self, llm, retriever: TreeRetriever = None):
         super().__init__(llm, retriever)
         self._llm = llm
         self.tree_retriever = retriever
