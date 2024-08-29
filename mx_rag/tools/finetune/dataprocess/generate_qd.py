@@ -7,6 +7,7 @@ from tqdm import tqdm
 from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
+from mx_rag.utils.common import validate_params, INT_32_MAX
 
 GENERATE_QA_MAX_LEN = 10000
 GENERATE_QA_PROMPT = """阅读文章，生成一个相关的问题，例如：
@@ -25,12 +26,12 @@ GENERATE_QA_PROMPT = """阅读文章，生成一个相关的问题，例如：
 """
 
 
+@validate_params(
+    doc_list=dict(validator=lambda x: 0 < len(x) <= GENERATE_QA_MAX_LEN),
+    question_number=dict(validator=lambda x: 0 < x < INT_32_MAX),
+)
 def generate_qa_embedding_pairs(llm: Text2TextLLM, doc_list: list[str], question_number: int = 1):
     """使用大模型生成问题对"""
-
-    if len(doc_list) > GENERATE_QA_MAX_LEN:
-        logger.error(f"generate_qa_embedding_pairs's inputs len should not bigger than {GENERATE_QA_MAX_LEN}")
-        return {}
 
     generate_qa_prompt = PromptTemplate(
         input_variables=["doc", "question_number"],

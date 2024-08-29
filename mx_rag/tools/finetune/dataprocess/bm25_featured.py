@@ -5,16 +5,17 @@ import jieba
 from rank_bm25 import BM25Okapi
 from tqdm import tqdm
 from loguru import logger
+from mx_rag.utils.common import validate_params
 
 BM25_FEATURED_MAX_LEN = 10000
 
 
+@validate_params(
+    query_list=dict(validator=lambda x: 0 < len(x) <= BM25_FEATURED_MAX_LEN),
+    doc_list=dict(validator=lambda x: 0 < len(x) <= BM25_FEATURED_MAX_LEN)
+)
 def bm25_featured(query_list: list[str], doc_list: list[str]):
     """bm25对文档对打分"""
-
-    if len(query_list) > BM25_FEATURED_MAX_LEN or len(doc_list) > BM25_FEATURED_MAX_LEN:
-        logger.error(f"bm25_featured inputs len should not bigger than {BM25_FEATURED_MAX_LEN}")
-        return []
 
     if len(query_list) != len(doc_list):
         logger.error(f"bm25_featured query_list and doc_list has different len")

@@ -4,6 +4,7 @@ import os
 import unittest
 from unittest.mock import patch
 
+from mx_rag.llm import Text2TextLLM
 from mx_rag.tools.finetune.generator import TrainDataGenerator
 
 
@@ -12,7 +13,8 @@ class TestTrainDataGenerator(unittest.TestCase):
     def setUp(self):
         current_dir = os.path.dirname(os.path.realpath(__file__))
         self.file_path = os.path.join(current_dir, "../../data/")
-        self.train_data_generator = TrainDataGenerator(None, "", self.file_path, "", "")
+        llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://71.14.88.12:7890")
+        self.train_data_generator = TrainDataGenerator(llm, "", self.file_path, "", "")
 
     @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("mx_rag.tools.finetune.generator.train_data_generator.TrainDataGenerator._generate_origin_document")

@@ -4,6 +4,7 @@ import os
 import unittest
 from unittest.mock import patch
 
+from mx_rag.llm import Text2TextLLM
 from mx_rag.tools.finetune.generator import EvalDataGenerator
 
 
@@ -11,7 +12,8 @@ class TestEvalDataGenerator(unittest.TestCase):
     def setUp(self):
         current_dir = os.path.dirname(os.path.realpath(__file__))
         self.file_path = os.path.join(current_dir, "../../../../data/")
-        self.eval_data_generator = EvalDataGenerator(None, self.file_path, "")
+        llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://71.14.88.12:7890")
+        self.eval_data_generator = EvalDataGenerator(llm, self.file_path, "")
         if os.path.exists(os.path.join(self.file_path, "eval_data.jsonl")):
             os.remove(os.path.join(self.file_path, "eval_data.jsonl"))
 
