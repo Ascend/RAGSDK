@@ -4,7 +4,7 @@ from typing import Optional, List, Any, Dict
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from pydantic import Field, BaseModel, ValidationError, field_validator, ConfigDict
 
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, validata_list_str
 
 
 class Person():
@@ -69,6 +69,7 @@ class Cat(BaseModel):
     # min_length支持iterables；多层只校验最外层
     multidict: List[Dict[str, str]] = Field(min_length=0, max_length=1, default=None)
 
+    # 继承langchain的都是v1的BaseModel，自定义校验要修改为v1的@validator
     @field_validator('gender')
     def validate_gender(cls, input_value):
         if input_value not in ["male", "female"]:
@@ -88,6 +89,22 @@ def non_class_funciton(param1, param2: int, param3=None):
     param3=dict(validator=lambda x: x > 0)
 )
 def non_class_funciton1(param1, param2: int, param3: int = 50):
+    pass
+
+
+@validate_params(
+    param1=dict(validator=lambda x: isinstance(x, int)),
+    param2=dict(validator=lambda x: x > 0),
+    param3=dict(validator=lambda x: all(len(item) > 1 for item in x))
+)
+def non_class_funciton2(param1: int, param2: int, param3: List[dict]):
+    pass
+
+
+@validate_params(
+    param1=dict(validator=lambda x: validata_list_str(x, [1, 3], [5, 10]))
+)
+def non_class_funciton3(param1: List[str]):
     pass
 
 
@@ -155,3 +172,26 @@ class TestValidateParams(unittest.TestCase):
             Cat(age=10, gender="male", master=person, attribute="attribute", multidict=[{"1": "a"}, {"2": "b"}])
         # 只校验了multidict最外层格式
         Cat(age=10, gender="male", master=person, attribute="attribute", multidict=[])
+
+    def test_log_info(self):
+        try:
+            non_class_funciton2("1", 1, [{1: "a", 2: "b", 3: "c"}, {4: "a", 5: "b", 6: "c"}])
+        except Exception as e:
+            self.assertTrue(str(e).endswith("lambda x: isinstance(x, int)"))
+        try:
+            non_class_funciton2(1, -1, [{1: "a", 2: "b", 3: "c"}, {4: "a", 5: "b", 6: "c"}])
+        except Exception as e:
+            self.assertTrue(str(e).endswith("lambda x: x > 0"))
+        try:
+            non_class_funciton2(1, 1, [{1: "a"}, {4: "a"}])
+        except Exception as e:
+            self.assertTrue(str(e).endswith("lambda x: all(len(item) > 1 for item in x)"))
+
+    def test_validata_list_str(self):
+        non_class_funciton3(["hello!", "world!", "beautiful"])
+        with self.assertRaises(ValueError):
+            non_class_funciton3([123, "world!", "beautiful"])
+        with self.assertRaises(ValueError):
+            non_class_funciton3(["hello!", "world!", "beautiful", "xxxxx"])
+        with self.assertRaises(ValueError):
+            non_class_funciton3(["hi!", "world!", "beautiful"])

@@ -6,7 +6,7 @@ from typing import List
 
 from langchain_core.embeddings import Embeddings
 
-from mx_rag.utils.common import validate_params, INT_32_MAX
+from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str
 from mx_rag.utils.url import RequestUtils
 
 
@@ -14,7 +14,6 @@ class TEIEmbedding(Embeddings):
     HEADERS = {
         'Content-Type': 'application/json'
     }
-    TEXT_MAX_LEN = 1000 * 1000
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str)),
@@ -33,7 +32,7 @@ class TEIEmbedding(Embeddings):
         return TEIEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: 1 <= len(x) <= TEIEmbedding.TEXT_MAX_LEN),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, INT_32_MAX])),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
     )
     def embed_documents(self,

@@ -5,13 +5,13 @@ from typing import List
 
 import PIL
 import torch
-
 from PIL import Image
 from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoProcessor, AutoModel, is_torch_npu_available
 
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBBEDDING_TEXT_COUNT, IMG_EMBBEDDING_IMAGE_COUNT, \
+    IMG_EMBBEDDING_TEXT_LEN, MAX_FILE_SIZE, validata_list_str
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 
 try:
@@ -23,10 +23,6 @@ except Exception as e:
 
 class ImageEmbedding(Embeddings):
     SUPPORT_IMG_TYPE = (".jpg", ".png")
-    MAX_IMAGE_SIZE = 100 * 1024 * 1024
-    TEXT_COUNT = 1000 * 1000
-    IMAGE_COUNT = 1000
-    TEXT_LEN = 256
 
     @validate_params(
         dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID),
@@ -58,13 +54,9 @@ class ImageEmbedding(Embeddings):
         return ImageEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: 1 <= len(x) <= ImageEmbedding.TEXT_COUNT)
+        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, IMG_EMBBEDDING_TEXT_LEN]))
     )
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        for text in texts:
-            if len(text) > self.TEXT_LEN or len(text) == 0:
-                raise ValueError(f"the length of text in texts greater than {self.TEXT_LEN} or equal 0")
-
         inputs = self.processor(text=texts, padding=True, return_tensors="pt", max_length=512).to(self.model.device)
         with torch.no_grad():
             text_features = self.model.get_text_features(**inputs).detach().cpu()
@@ -80,13 +72,13 @@ class ImageEmbedding(Embeddings):
         return embeddings[0]
 
     @validate_params(
-        images=dict(validator=lambda x: 1 <= len(x) <= ImageEmbedding.IMAGE_COUNT)
+        images=dict(validator=lambda x: 1 <= len(x) <= IMG_EMBBEDDING_IMAGE_COUNT)
     )
     def embed_images(self, images: List[str]) -> List[List[float]]:
         image_features = []
         for image in images:
             FileCheck.check_path_is_exist_and_valid(image)
-            SecFileCheck(image, self.MAX_IMAGE_SIZE).check()
+            SecFileCheck(image, MAX_FILE_SIZE).check()
             if Path(image).suffix not in self.SUPPORT_IMG_TYPE:
                 raise TypeError(f"embed img:[{image}] failed because the file type not be supported")
 
