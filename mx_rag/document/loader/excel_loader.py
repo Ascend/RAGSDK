@@ -12,7 +12,7 @@ from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
-
+from mx_rag.utils.common import validate_params
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
@@ -20,8 +20,10 @@ CSV_EXTENSION = (".csv",)
 
 
 class ExcelLoader(BaseLoader, mxBaseLoader):
-
-    def __init__(self, file_path, line_sep="**;"):
+    @validate_params(
+        line_sep=dict(validator=lambda x: isinstance(x, str))
+    )
+    def __init__(self, file_path: str, line_sep: str = "**;"):
         super().__init__(file_path)
         self.line_sep = str(line_sep)
 

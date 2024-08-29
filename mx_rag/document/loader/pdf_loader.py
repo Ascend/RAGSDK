@@ -17,6 +17,7 @@ from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.common import validate_params
 
 
 class PdfLang(Enum):
@@ -25,6 +26,10 @@ class PdfLang(Enum):
 
 
 class PdfLoader(BaseLoader, mxBaseLoader):
+    @validate_params(
+        lang=dict(validator=lambda x: isinstance(x, PdfLang)),
+        layout_recognize=dict(validator=lambda x: isinstance(x, bool))
+    )
     def __init__(self, file_path: str, lang: PdfLang = PdfLang.EN, layout_recognize: bool = False):
         super().__init__(file_path)
         self.layout_recognize = layout_recognize

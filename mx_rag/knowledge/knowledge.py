@@ -13,6 +13,9 @@ from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
 from mx_rag.retrievers.tree_retriever import Tree
 
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
+from mx_rag.utils.common import validate_params, INT_32_MAX
+from mx_rag.utils.common import validate_params
+
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
 from mx_rag.storage.vectorstore import VectorStore
@@ -39,7 +42,10 @@ class KnowledgeStore:
 
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
-    def __init__(self, db_path):
+    @validate_params(
+        db_path=dict(validator=lambda x: isinstance(x, str))
+    )
+    def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
         self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
@@ -47,7 +53,7 @@ class KnowledgeStore:
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    def add(self, knowledge_name, doc_name):
+    def add(self, knowledge_name: str, doc_name: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
         with self.session() as session:
@@ -58,7 +64,7 @@ class KnowledgeStore:
                 session.rollback()
                 raise KnowledgeError(f"add chunk failed, {err}") from err
 
-    def delete(self, knowledge_name, doc_name):
+    def delete(self, knowledge_name: str, doc_name: str):
         with self.session() as session:
             try:
                 session.query(KnowledgeModel).filter_by(
@@ -68,7 +74,7 @@ class KnowledgeStore:
                 session.rollback()
                 raise KnowledgeError(f"delete chunk failed, {err}") from err
 
-    def get_all(self, knowledge_name):
+    def get_all(self, knowledge_name: str):
         with self.session() as session:
             ret = []
             for doc in session.query(
@@ -77,7 +83,7 @@ class KnowledgeStore:
                 ret.append(doc[0])
             return ret
 
-    def check_document_exist(self, knowledge_name, doc_name) -> bool:
+    def check_document_exist(self, knowledge_name: str, doc_name: str) -> bool:
         with self.session() as session:
             chunk = session.query(KnowledgeModel).filter_by(
                 knowledge_name=knowledge_name, document_name=doc_name).first()
@@ -85,7 +91,14 @@ class KnowledgeStore:
 
 
 class KnowledgeDB(KnowledgeBase):
-
+    @validate_params(
+        knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore)),
+        chunk_store=dict(validator=lambda x: isinstance(x, Docstore)),
+        vector_store=dict(validator=lambda x: isinstance(x, VectorStore)),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str)),
+        white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x)),
+        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= INT_32_MAX)
+    )
     def __init__(
             self,
             knowledge_store: KnowledgeStore,
@@ -106,6 +119,11 @@ class KnowledgeDB(KnowledgeBase):
         """获取当前已上传的所有文档"""
         return self._knowledge_store.get_all(self.knowledge_name)
 
+
+    @validate_params(
+        texts=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX),
+        metadatas=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX)
+    )
     def add_file(
             self,
             doc_name: str,
@@ -117,7 +135,7 @@ class KnowledgeDB(KnowledgeBase):
         if not isinstance(embeddings, List):
             raise KnowledgeError("The data type of embedding should be np.ndarray")
         metadatas = metadatas or [{} for _ in texts]
-        if len(texts) != len(metadatas) != len(embeddings):
+        if not len(texts) == len(metadatas) == len(embeddings):
             raise KnowledgeError("texts, metadatas, embeddings expected to be equal length")
         documents = [MxDocument(page_content=t, metadata=m, document_name=doc_name) for t, m in zip(texts, metadatas)]
         self._knowledge_store.add(self.knowledge_name, doc_name)
@@ -136,6 +154,13 @@ class KnowledgeDB(KnowledgeBase):
 
 
 class KnowledgeTreeDB(KnowledgeBase):
+    @validate_params(
+        knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore)),
+        chunk_store=dict(validator=lambda x: isinstance(x, Docstore)),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str)),
+        white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x)),
+        tree_builder_config=dict(validator=lambda x: isinstance(x, TreeBuilderConfig))
+    )
     def __init__(
             self,
             knowledge_store: KnowledgeStore,
@@ -155,12 +180,17 @@ class KnowledgeTreeDB(KnowledgeBase):
         """获取当前已上传的所有文档"""
         return self._knowledge_store.get_all(self.knowledge_name)
 
+    @validate_params(
+        file_names=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX),
+        texts=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX),
+        metadatas=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX)
+    )
     def add_files(self,
                   file_names: List[str],
                   texts: List[str],
                   embed_func: Callable[[List[str]], List[List[float]]],
                   metadatas: List[dict]) -> Tree:
-        if len(texts) != len(metadatas) != len(file_names):
+        if not len(texts) == len(metadatas) == len(file_names):
             raise KnowledgeError("chunks, metadatas, file_names expected to be equal length")
         # 需要将索引tree返回
         tree = self.tree_builder.build_from_text(embed_func, chunks=texts)
@@ -188,7 +218,10 @@ class KnowledgeMgrStore:
 
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
-    def __init__(self, db_path):
+    @validate_params(
+        db_path=dict(validator=lambda x: isinstance(x, str))
+    )
+    def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
         self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
@@ -196,7 +229,7 @@ class KnowledgeMgrStore:
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    def add(self, knowledge_name):
+    def add(self, knowledge_name: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
         with self.session() as session:
@@ -207,7 +240,7 @@ class KnowledgeMgrStore:
                 session.rollback()
                 raise KnowledgeError(f"add knowledge failed, {err}") from err
 
-    def delete(self, knowledge_name):
+    def delete(self, knowledge_name: str):
         with self.session() as session:
             try:
                 session.query(KnowledgeMgrModel).filter_by(knowledge_name=knowledge_name).delete()
@@ -225,7 +258,9 @@ class KnowledgeMgrStore:
 
 
 class KnowledgeMgr:
-
+    @validate_params(
+        mgr_store=dict(validator=lambda x: isinstance(x, KnowledgeMgrStore))
+    )
     def __init__(self, mgr_store: KnowledgeMgrStore):
         self.mgr_store = mgr_store
 
