@@ -6,7 +6,7 @@ from unittest import mock
 from unittest.mock import patch
 
 from mx_rag.reranker.reranker import Reranker
-from mx_rag.cache.cache_similarity import CacheSimilarity
+from mx_rag.cache.cache_similarity.cache_similarity import CacheSimilarity
 from cache_mocker import MockerReranker
 
 

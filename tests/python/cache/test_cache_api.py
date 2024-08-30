@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from gptcache import Cache
 
-from mx_rag.cache.cache_api import init_mxrag_cache
+from mx_rag.cache.cache_api.cache_init import init_mxrag_cache
 from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig
 
 
@@ -27,9 +27,9 @@ class TestCacheApi(unittest.TestCase):
             init_mxrag_cache(cache, "test_init_memory_config", cache_config)
         mock_init_similar_cache.assert_called_once()
 
-    @patch("mx_rag.cache.cache_storage.CacheVecStorage.create")
-    @patch("mx_rag.cache.cache_similarity.CacheSimilarity.create")
-    @patch("mx_rag.cache.cache_emb.CacheEmb.create")
+    @patch("mx_rag.cache.cache_storage.cache_vec_storage.CacheVecStorage.create")
+    @patch("mx_rag.cache.cache_similarity.cache_similarity.CacheSimilarity.create")
+    @patch("mx_rag.cache.cache_emb.cache_emb.CacheEmb.create")
     @patch("gptcache.manager.get_data_manager")
     def test_init_similarity_api(self, vector_create, similarity_create, emb_create, mock_get_data_manager):
         vector_create.return_value = None

@@ -4,7 +4,7 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-from mx_rag.cache.cache_emb import CacheEmb
+from mx_rag.cache.cache_emb.cache_emb import CacheEmb
 
 
 class TestCacheEmb(unittest.TestCase):
