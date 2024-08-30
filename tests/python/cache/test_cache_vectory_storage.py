@@ -8,7 +8,7 @@ from unittest.mock import patch
 import numpy as np
 from gptcache.manager.vector_data.base import VectorData
 
-from mx_rag.cache.cache_storage import CacheVecStorage
+from mx_rag.cache.cache_storage.cache_vec_storage import CacheVecStorage
 from cache_mocker import MockerVecStorage
 
 

@@ -3,8 +3,7 @@
 """
 MXRAGCache 的vector storage 适配器类
 """
-import os
-from typing import List, Dict, Any
+from typing import List
 
 import numpy as np
 from gptcache.manager.vector_data.base import VectorBase, VectorData

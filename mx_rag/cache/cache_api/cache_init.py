@@ -12,9 +12,9 @@ from gptcache.similarity_evaluation import ExactMatchEvaluation
 from loguru import logger
 
 from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig, EvictPolicy
-from mx_rag.cache.cache_similarity import CacheSimilarity
-from mx_rag.cache.cache_storage import CacheVecStorage
-from mx_rag.cache.cache_emb import CacheEmb
+from mx_rag.cache.cache_similarity.cache_similarity import CacheSimilarity
+from mx_rag.cache.cache_storage.cache_vec_storage import CacheVecStorage
+from mx_rag.cache.cache_emb.cache_emb import CacheEmb
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.common import validate_params
 
