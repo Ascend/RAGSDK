@@ -71,7 +71,7 @@ class FileCheck:
             raise FileCheckError(f"Input path {path} length over limit")
 
         if ".." in path:
-            raise FileCheckError("there are illegal characters in path")
+            raise FileCheckError(f"there are illegal characters in path {path}")
 
         if check_real_path and os.path.islink(path):
             raise FileCheckError(f"Input path {path} is symbol link")
@@ -84,14 +84,14 @@ class FileCheck:
     @staticmethod
     def check_path_is_exist_and_valid(path: str, check_real_path: bool = True):
         if not isinstance(path, str) or not os.path.exists(path):
-            raise FileCheckError("path is not exists")
+            raise FileCheckError(f"path {path} is not exists")
 
         FileCheck.check_input_path_valid(path, check_real_path)
 
     @staticmethod
     def dir_check(file_path: str):
         if not file_path.startswith("/"):
-            raise FileCheckError("dir must be an absolute path")
+            raise FileCheckError(f"dir {file_path} must be an absolute path")
 
         if not os.path.isdir(file_path):
             raise PathNotDirException(f"PathNotDirException: [{file_path}] is not a valid dir")
