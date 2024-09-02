@@ -6,7 +6,7 @@ set -e
 
 warn() { echo >&2 -e "\033[1;31m[WARN ][Depend  ] $1\033[1;37m" ; }
 ARCH=$(uname -m)
-PY_VER=py$(python3.10 -c "import platform; print(platform.python_version().replace('.','')[0:1])")
+PY_VER=py$(python3.11 -c "import platform; print(platform.python_version().replace('.','')[0:1])")
 CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 SO_OUTPUT_DIR="${ROOT_PATH}"/mx_rag/lib
@@ -29,7 +29,7 @@ function build_so_package()
 {
     echo "prepare .so resource"
     cd "${ROOT_PATH}/mx_rag"
-    python3.10 ./setup.py build_ext -j"$(nproc)"
+    python3.11 ./setup.py build_ext -j"$(nproc)"
     mkdir -p "${SO_OUTPUT_DIR}"
     cp -arfv build/lib.linux-*/mx_rag/* .
     rm -rf build
@@ -38,7 +38,7 @@ function build_so_package()
 function build_wheel_package()
 {
     cd "${ROOT_PATH}"
-    python3.10 ./setup.py bdist_wheel --plat-name linux_"${ARCH}" --python-tag "${PY_VER}"
+    python3.11 ./setup.py bdist_wheel --plat-name linux_"${ARCH}" --python-tag "${PY_VER}"
     echo "prepare resource"
 }
 

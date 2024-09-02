@@ -19,8 +19,8 @@ if [ ! $ASCEND_HOME_DIR ]; then
 fi
 source $ASCEND_HOME_DIR/bin/setenv.bash
 
-PYTHON_VERSION=3.10
-PYTORCH_VESION=`pip3.10 show torch | grep "Version:" | awk '{print $2}' | awk -F '.' '{print $1"."$2"."$3}' | awk -F '+' '{print $1}'`
+PYTHON_VERSION=3.11
+PYTORCH_VESION=`pip3.11 show torch | grep "Version:" | awk '{print $2}' | awk -F '.' '{print $1"."$2"."$3}' | awk -F '+' '{print $1}'`
 export HI_PYTHON=python${PYTHON_VERSION}
 export PYTHONPATH=$ASCEND_HOME_DIR/python/site-packages:$PYTHONPATH
 export PATH=$ASCEND_HOME_DIR/python/site-packages/bin:$PATH
@@ -38,7 +38,7 @@ function main() {
     # 2. 编译PTA插件并安装
     cp -rf op_plugin_patch/*.cpp ${PTA_DIR}/op_plugin/ops/v2r1/opapi
     cd ${PTA_DIR};
-    (bash ci/build.sh --python=${PYTHON_VERSION} --pytorch=v$PYTORCH_VESION ; pip3.10 uninstall torch-npu -y ; pip3.10 install dist/*.whl)
+    (bash ci/build.sh --python=${PYTHON_VERSION} --pytorch=v$PYTORCH_VESION ; pip3.11 uninstall torch-npu -y ; pip3.11 install dist/*.whl)
 
 }
 main
