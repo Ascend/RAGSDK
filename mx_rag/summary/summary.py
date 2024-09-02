@@ -9,7 +9,7 @@ from langchain_core.prompts import PromptTemplate
 from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, MB, MAX_PROMPT_LENGTH
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 _SUMMARY_TEMPLATE = PromptTemplate(
@@ -36,7 +36,7 @@ class Summary(BaseModel):
         arbitrary_types_allowed = True
 
     @staticmethod
-    def _split_summary_by_threshold(texts: List[str], merge_threshold) -> List[Tuple[int, int]]:
+    def _split_summary_by_threshold(texts: List[str], merge_threshold: int) -> List[Tuple[int, int]]:
         split_indices = []
         start_index = 0
         current_length = 0
@@ -60,8 +60,10 @@ class Summary(BaseModel):
         return split_indices
 
     @validate_params(
-        texts=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 4 * 1024),
-        not_summarize_threshold=dict(validator=lambda x: 0 <= x <= 4 * 1024)
+        texts=dict(
+            validator=lambda x: all(isinstance(item, str) for item in x) and 0 < sum(len(item) for item in x) <= 1*MB),
+        not_summarize_threshold=dict(validator=lambda x: 0 < x <= 1 * MB),
+        prompt=dict(validator=lambda x: set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH)
     )
     def summarize(self, texts: List[str], not_summarize_threshold: int = 30,
                   prompt: PromptTemplate = _SUMMARY_TEMPLATE) -> List[str]:
@@ -91,9 +93,11 @@ class Summary(BaseModel):
         return res
 
     @validate_params(
-        texts=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 4 * 1024),
-        merge_threshold=dict(validator=lambda x: 0 <= x <= 1024 * 1024),
-        not_summarize_threshold=dict(validator=lambda x: 0 <= x <= 4 * 1024)
+        texts=dict(
+            validator=lambda x: all(isinstance(item, str) for item in x) and 0 < sum(len(item) for item in x) <= 1*MB),
+        merge_threshold=dict(validator=lambda x: 0 < x <= 1 * MB),
+        not_summarize_threshold=dict(validator=lambda x: 0 < x <= 1 * MB),
+        prompt=dict(validator=lambda x: set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH)
     )
     def merge_text_summarize(self, texts: List[str], merge_threshold: int = 4 * 1024, not_summarize_threshold=30,
                              prompt: PromptTemplate = _MERGE_TEXT_SUMMARY_TEMPLATE) -> str:
