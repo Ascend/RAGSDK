@@ -38,13 +38,10 @@ class BMRetriever(BaseRetriever):
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
     llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)
     prompt: PromptTemplate = _KEY_WORD_TEMPLATE_ZH
+    preprocess_func: Callable[[str], List[str]]= _default_preprocessing_func
 
     class Config:
         arbitrary_types_allowed = True
-
-    @property
-    def preprocess_func(self) -> Callable[[str], List[str]]:
-        return _default_preprocessing_func
 
     def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
