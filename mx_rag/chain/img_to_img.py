@@ -24,16 +24,17 @@ class Img2ImgChain(Chain):
         self._retriever = retriever
 
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
-        if "prompt" not in kwargs:
-            logger.error("input param must contain prompt and question")
+        image_content = self._retrieve_img(text)
+        if not image_content:
+            logger.error("retrieve similarity image failed")
             return {}
 
-        img_path = self._retrieve_img(text)
-        return self._multi_model.img2img(kwargs["prompt"], img_path=img_path)
+        return self._multi_model.img2img(prompt=kwargs.get("prompt"), image_content=image_content,
+                                         size=kwargs.get("size", "512*512"))
 
     def _retrieve_img(self, text: str) -> str:
         """ 从向量数据库中检视text最相近的图片 """
-        docs = self._retriever.get_relevant_documents(text)
+        docs = self._retriever.invoke(text)
         if not isinstance(docs, list) or len(docs) == 0:
             logger.error("retrieve similarity image failed")
             return ""

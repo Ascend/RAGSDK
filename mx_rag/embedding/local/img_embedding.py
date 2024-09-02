@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from pathlib import Path
+import base64
+import io
 from typing import List
 
-import PIL
 import torch
 from PIL import Image
 from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoProcessor, AutoModel, is_torch_npu_available
 
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBBEDDING_TEXT_COUNT, IMG_EMBBEDDING_IMAGE_COUNT, \
-    IMG_EMBBEDDING_TEXT_LEN, MAX_FILE_SIZE, validata_list_str
-from mx_rag.utils.file_check import FileCheck, SecFileCheck
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBBEDDING_TEXT_COUNT, \
+    IMG_EMBBEDDING_TEXT_LEN, validata_list_str, MB, EMBBEDDING_IMG_COUNT
+from mx_rag.utils.file_check import FileCheck
 
 try:
     import torch_npu
+
     torch.npu.set_compile_mode(jit_compile=False)
 except Exception as e:
     logger.warning(f"import torch_npu failed:{e}, img_embedding will running on cpu")
@@ -72,17 +73,14 @@ class ImageEmbedding(Embeddings):
         return embeddings[0]
 
     @validate_params(
-        images=dict(validator=lambda x: 1 <= len(x) <= IMG_EMBBEDDING_IMAGE_COUNT)
+        images=dict(
+            validator=lambda x: 1 <= len(x) <= EMBBEDDING_IMG_COUNT and all(1 < len(item) <= 100*MB for item in x))
     )
     def embed_images(self, images: List[str]) -> List[List[float]]:
         image_features = []
-        for image in images:
-            FileCheck.check_path_is_exist_and_valid(image)
-            SecFileCheck(image, MAX_FILE_SIZE).check()
-            if Path(image).suffix not in self.SUPPORT_IMG_TYPE:
-                raise TypeError(f"embed img:[{image}] failed because the file type not be supported")
 
-            with PIL.Image.open(image) as fi:
+        for image_content in images:
+            with Image.open(io.BytesIO(base64.b64decode(image_content))) as fi:
                 inputs = self.processor(images=fi, return_tensors="pt").to(self.model.device)
 
             image_feature = self.model.get_image_features(**inputs)
