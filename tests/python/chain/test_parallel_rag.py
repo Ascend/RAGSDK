@@ -11,7 +11,7 @@ from mx_rag.knowledge import KnowledgeDB
 from mx_rag.retrievers import Retriever
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.chain import ParallelText2TextChain
-from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+from mx_rag.storage.vectorstore.faiss_npu import MindFAISS, SimilarityStrategy
 from mx_rag.storage.document_store import SQLiteDocstore
 
 
@@ -19,7 +19,8 @@ class TestParallelChain(unittest.TestCase):
 
     def test_init(self):
         db = SQLiteDocstore("/tmp/sql.db")
-        vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        vector_store = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                                 load_local_index="./faiss.index")
         retrieve = Retriever(vector_store=vector_store, document_store=db,
                             embed_func=lambda input_list: [[float(num) for num in sub.split()] for sub in input_list],
                             k=1,  score_threshold=0.1)
@@ -29,7 +30,8 @@ class TestParallelChain(unittest.TestCase):
 
     def test_query_prefill_first_done(self):
         db = SQLiteDocstore("/tmp/sql.db")
-        vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        vector_store = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                                 load_local_index="./faiss.index")
         retrieve = Retriever(vector_store=vector_store, document_store=db,
                             embed_func=lambda input_list: [[float(num) for num in sub.split()] for sub in input_list],
                             k=1,  score_threshold=0.1)
@@ -51,7 +53,8 @@ class TestParallelChain(unittest.TestCase):
 
     def test_query_retrieve_first_done(self):
         db = SQLiteDocstore("/tmp/sql.db")
-        vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        vector_store = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                                 load_local_index="./faiss.index")
         retrieve = Retriever(vector_store=vector_store, document_store=db,
                             embed_func=lambda input_list: [[float(num) for num in sub.split()] for sub in input_list],
                             k=1,  score_threshold=0.1)
