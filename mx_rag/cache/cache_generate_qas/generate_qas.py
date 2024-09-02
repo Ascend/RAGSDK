@@ -8,6 +8,7 @@ from transformers import PreTrainedTokenizerBase
 
 from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import validate_params
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 DEFAULT_LLM_TIMEOUT = 10 * 60
 
@@ -94,18 +95,14 @@ class QAGenerate:
 
     @staticmethod
     def _generate_qa_from_html(config: QAGenerationConfig, title: str, content: str,
-                               system_prompt: str, **kwargs) -> List[str]:
+                               system_prompt: str, llm_config: LLMParameterConfig) -> List[str]:
         logger.info(f"LLM generating QA, source title {title}")
         title = title.split("-")[0] if len(title.split("-")) > 1 else title
         sys_messages = [{"role": "system", "content": system_prompt}]
         prompt = USER_PROMPT.format(title_area=title, content_area=content)
-        max_tokens = kwargs.get("max_tokens", 512)
-        temperature = kwargs.get("temperature", 0.5)
-        top_p = kwargs.get("top_p", 0.95)
-        result = config.llm.chat(prompt, sys_messages=sys_messages, max_tokens=max_tokens,
-                                 temperature=temperature, top_p=top_p)
+        result = config.llm.chat(prompt, sys_messages=sys_messages, llm_config=llm_config)
         results = [result.strip()
-                   for result in re.split(r'Q\d[:：]', result)
+                   for result in re.split(r'Q\d+[:：]', result)
                    if len(re.findall(r"参考段落[:：]", result)) > 0]
         qas_num = config.qas_num
         if len(results) < qas_num:
@@ -133,7 +130,7 @@ class QAGenerate:
             return QAGenerate._split_html_text("\n".join(text_lines), tokenizer, max_tokens)
         return "\n".join(text_lines)
 
-    def generate_qa(self, **kwargs) -> Dict:
+    def generate_qa(self, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)) -> Dict:
         if len(self.config.titles) != len(self.config.contents):
             raise ValueError("The length of titles and contents must be equal.")
         final_qas = []
@@ -145,7 +142,7 @@ class QAGenerate:
                     f"The number of tokens in all lines exceeds the max_tokens value {self.config.max_tokens},"
                     f" generate qa of {title} skip")
                 continue
-            qas = QAGenerate._generate_qa_from_html(self.config, title, content, system_prompt, **kwargs)
+            qas = QAGenerate._generate_qa_from_html(self.config, title, content, system_prompt, llm_config)
             if not qas:
                 continue
             final_qas.extend(qas)

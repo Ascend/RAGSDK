@@ -10,6 +10,7 @@ from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import validate_params
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 _SUMMARY_TEMPLATE = PromptTemplate(
     input_variables=["text"],
@@ -29,9 +30,10 @@ def _thread_pool_callback(worker):
 
 class Summary(BaseModel):
     llm: Text2TextLLM
-    max_tokens: int = 512
-    temperature: float = 0.5
-    top_p: float = 0.95
+    llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)
+
+    class Config:
+        arbitrary_types_allowed = True
 
     @staticmethod
     def _split_summary_by_threshold(texts: List[str], merge_threshold) -> List[Tuple[int, int]]:
@@ -58,8 +60,8 @@ class Summary(BaseModel):
         return split_indices
 
     @validate_params(
-        texts=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 4*1024),
-        not_summarize_threshold=dict(validator=lambda x: 0 <= x <= 4*1024)
+        texts=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 4 * 1024),
+        not_summarize_threshold=dict(validator=lambda x: 0 <= x <= 4 * 1024)
     )
     def summarize(self, texts: List[str], not_summarize_threshold: int = 30,
                   prompt: PromptTemplate = _SUMMARY_TEMPLATE) -> List[str]:
@@ -89,9 +91,9 @@ class Summary(BaseModel):
         return res
 
     @validate_params(
-        texts=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 4*1024),
-        merge_threshold=dict(validator=lambda x: 0 <= x <= 1024*1024),
-        not_summarize_threshold=dict(validator=lambda x: 0 <= x <= 4*1024)
+        texts=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 4 * 1024),
+        merge_threshold=dict(validator=lambda x: 0 <= x <= 1024 * 1024),
+        not_summarize_threshold=dict(validator=lambda x: 0 <= x <= 4 * 1024)
     )
     def merge_text_summarize(self, texts: List[str], merge_threshold: int = 4 * 1024, not_summarize_threshold=30,
                              prompt: PromptTemplate = _MERGE_TEXT_SUMMARY_TEMPLATE) -> str:
@@ -110,5 +112,4 @@ class Summary(BaseModel):
             raise ValueError("summarize failed, get null content")
 
     def _summarize(self, text: str, prompt: PromptTemplate) -> str:
-        return self.llm.chat(prompt.format(text=text), max_tokens=self.max_tokens, temperature=self.temperature,
-                             top_p=self.top_p)
+        return self.llm.chat(prompt.format(text=text), llm_config=self.llm_config)

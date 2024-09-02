@@ -10,6 +10,7 @@ from loguru import logger
 from langchain_core.retrievers import BaseRetriever
 
 from mx_rag.utils.common import validate_params
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import Chain
 from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
@@ -24,7 +25,7 @@ class SingleText2TextChain(Chain):
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
         retriever=dict(validator=lambda x: isinstance(x, BaseRetriever)),
         reranker=dict(validator=lambda x: isinstance(x, Reranker) or x is None),
-        prompt=dict(validator=lambda x:isinstance(x, str) and 0 < len(x) <= 512 * 1024),
+        prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 512 * 1024),
         source=dict(validator=lambda x: isinstance(x, bool))
     )
     def __init__(self, llm: Text2TextLLM,
@@ -44,9 +45,11 @@ class SingleText2TextChain(Chain):
         self._docs = []
         self._query_str = ""
 
-    def query(self, text: str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
+    def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95),
+              *args, **kwargs) \
+            -> Union[Dict, Iterator[Dict]]:
         self._history = []
-        return self._query(text, *args, **kwargs)
+        return self._query(text, llm_config)
 
     def _merge_query_prompt(self, query: str, docs: List[Document], prompt: str):
         final_prompt = ""
@@ -66,10 +69,7 @@ class SingleText2TextChain(Chain):
 
     def _query(self,
                text: str,
-               max_tokens: int = 512,
-               temperature: float = 0.5,
-               top_p: float = 0.95,
-               stream: bool = False) -> Union[Dict, Iterator[Dict]]:
+               llm_config: LLMParameterConfig) -> Union[Dict, Iterator[Dict]]:
 
         self._query_str = text
         self._docs = self._retriever.invoke(text)
@@ -80,28 +80,28 @@ class SingleText2TextChain(Chain):
 
         question = self._merge_query_prompt(text, copy.deepcopy(self._docs), self._prompt)
 
-        if not stream:
-            return self._do_query(question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
+        if not llm_config.stream:
+            return self._do_query(question, llm_config)
 
-        return self._do_stream_query(question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
+        return self._do_stream_query(question, llm_config)
 
-    def _do_query(self, text: str, **kwargs) -> Dict:
+    def _do_query(self, text: str, llm_config: LLMParameterConfig) -> Dict:
         logger.info("invoke normal query")
         resp = {"query": self._query_str, "result": ""}
         if self._source:
             resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in self._docs]
-        llm_response = self._llm.chat(text, self._history, self._role, **kwargs)
+        llm_response = self._llm.chat(text, self._history, self._role, llm_config)
         self._content = llm_response
         resp['result'] = llm_response
         return resp
 
-    def _do_stream_query(self, text: str, **kwargs) -> Iterator[Dict]:
+    def _do_stream_query(self, text: str, llm_config: LLMParameterConfig) -> Iterator[Dict]:
         logger.info("invoke stream query")
         resp = {"query": self._query_str, "result": ""}
         if self._source:
             resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in self._docs]
 
-        for response in self._llm.chat_streamly(text, self._history, self._role, **kwargs):
+        for response in self._llm.chat_streamly(text, self._history, self._role, llm_config):
             self._content = response
             resp['result'] = response
             yield resp

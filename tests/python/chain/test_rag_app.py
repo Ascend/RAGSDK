@@ -18,6 +18,7 @@ from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.chain import SingleText2TextChain
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 
 class MyTestCase(unittest.TestCase):
@@ -60,7 +61,7 @@ class MyTestCase(unittest.TestCase):
             good_prompt = "mxVision软件架构包含哪些模块？"
 
             # 非流式输出，结果不包含source_documents
-            query_response = rag.query(good_prompt, max_tokens=1024, temperature=0.1, top_p=1.0)
+            query_response = rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1, top_p=1.0))
             logger.debug(f"response {query_response}")
             self.assertEqual(query_response.get('query', None), "mxVision软件架构包含哪些模块？")
             self.assertTrue(query_response.get('result', None) is not None)
@@ -68,7 +69,7 @@ class MyTestCase(unittest.TestCase):
 
             rag.source = True
             # 非流式输出，结果包含source_documents
-            query_response = rag.query(good_prompt, max_tokens=1024, temperature=0.1, top_p=1.0)
+            query_response = rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1, top_p=1.0))
             self.assertTrue(query_response.get('query', None) == "mxVision软件架构包含哪些模块？")
             self.assertTrue(query_response.get('result', None) is not None)
             source_documents = query_response.get('source_documents', None)
@@ -78,7 +79,8 @@ class MyTestCase(unittest.TestCase):
 
             # 流式输出，结果不包含source_documents
             rag.source = False
-            for response in rag.query(good_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                      top_p=1.0, stream=True)):
                 query_response = response
                 self.assertEqual(response.get('query', None), "mxVision软件架构包含哪些模块？")
                 self.assertTrue(response.get('result', None) is not None)
@@ -87,7 +89,8 @@ class MyTestCase(unittest.TestCase):
 
             # 流式输出，结果包含source_documents
             rag.source = True
-            for response in rag.query(good_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                      top_p=1.0, stream=True)):
                 query_response = response
                 self.assertEqual(response.get('query', None), "mxVision软件架构包含哪些模块？")
                 self.assertTrue(response.get('result', None) is not None)
@@ -103,7 +106,8 @@ class MyTestCase(unittest.TestCase):
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             query_response = ""
-            for response in rag.query(multi_sr_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query(multi_sr_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                          top_p=1.0, stream=True)):
                 query_response = response
                 logger.trace(f"response {response}")
                 self.assertEqual(response.get('query', None), "mxVision软件包介绍")
@@ -137,7 +141,8 @@ class MyTestCase(unittest.TestCase):
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             query_response = ""
-            for response in rag.query(multi_sr_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query(multi_sr_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                          top_p=1.0, stream=True)):
                 query_response = response
                 logger.trace(f"response {response}")
             logger.debug(f"response {query_response}")
@@ -147,7 +152,8 @@ class MyTestCase(unittest.TestCase):
             r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, score_threshold=0.5)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
-            for response in rag.query("CANN是什么呢", max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query("CANN是什么呢", LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                         top_p=1.0, stream=True)):
                 logger.trace(f"response {response}")
                 self.assertTrue(len(response.get('source_documents', None)) == 0)
 

@@ -7,6 +7,7 @@ from loguru import logger
 from langchain_core.retrievers import BaseRetriever
 
 from mx_rag.utils.common import validate_params
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain.base import Chain
 from mx_rag.llm import Img2ImgMultiModel
 
@@ -22,7 +23,7 @@ class Img2ImgChain(Chain):
         self._multi_model = multi_model
         self._retriever = retriever
 
-    def query(self, text : str, *args, **kwargs) -> Dict:
+    def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
         if "prompt" not in kwargs:
             logger.error("input param must contain prompt and question")
             return {}
@@ -30,7 +31,7 @@ class Img2ImgChain(Chain):
         img_path = self._retrieve_img(text)
         return self._multi_model.img2img(kwargs["prompt"], img_path=img_path)
 
-    def _retrieve_img(self, text : str) -> str:
+    def _retrieve_img(self, text: str) -> str:
         """ 从向量数据库中检视text最相近的图片 """
         docs = self._retriever.get_relevant_documents(text)
         if not isinstance(docs, list) or len(docs) == 0:

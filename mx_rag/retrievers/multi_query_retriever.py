@@ -3,7 +3,6 @@
 
 import re
 from typing import List
-from langchain_core.pydantic_v1 import validator, Field
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
@@ -11,9 +10,9 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
 from loguru import logger
 
-from langchain_core.retrievers import BaseRetriever
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers.retriever import Retriever
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 DEFAULT_QUERY_PROMPT_EN = PromptTemplate(
     input_variables=["question"],
@@ -51,8 +50,7 @@ class MultiQueryRetriever(Retriever):
     llm: Text2TextLLM
     prompt: PromptTemplate = DEFAULT_QUERY_PROMPT_CH
     parser: BaseOutputParser = DefaultOutputParser()
-    max_tokens: int = 512
-
+    llm_config: LLMParameterConfig = LLMParameterConfig()
 
     class Config:
         arbitrary_types_allowed = True  # 允许自定义类型
@@ -62,7 +60,7 @@ class MultiQueryRetriever(Retriever):
         docs = []
 
         llm_query = self.prompt.format(question=query)
-        llm_response = self.llm.chat(query=llm_query, role="user", max_tokens=self.max_tokens)
+        llm_response = self.llm.chat(query=llm_query, role="user", llm_config=self.llm_config)
         for sub_query in self.parser.parse(text=str(llm_response)):
             logger.success(f"sub_query {sub_query}")
             doc = super(MultiQueryRetriever, self)._get_relevant_documents(sub_query)
