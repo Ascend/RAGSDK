@@ -28,6 +28,16 @@ class TestSummary(unittest.TestCase):
     def mock_summary(self, text: str, prompt: PromptTemplate) -> str:
         return text[0:len(text) - 1]
 
+    def test_summarize_none_str(self):
+        su = Summary(llm=self.llm)
+        res = True
+        try:
+            su.summarize([""])
+        except Exception as e:
+            res = False
+
+        self.assertEqual(res, False)
+
     @patch("mx_rag.summary.summary.Summary._summarize")
     def test_summarize(self, summary_mock):
         summary_mock.side_effect = self.mock_summary

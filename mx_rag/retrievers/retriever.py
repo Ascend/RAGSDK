@@ -8,7 +8,6 @@ from langchain_core.documents import Document
 from loguru import logger
 import numpy as np
 
-
 from langchain_core.retrievers import BaseRetriever
 from mx_rag.storage.document_store import Docstore
 from mx_rag.storage.vectorstore import VectorStore
@@ -16,17 +15,14 @@ from mx_rag.utils.common import MAX_TOP_K
 
 
 class Retriever(BaseRetriever):
-
     vector_store: VectorStore
     document_store: Docstore
     embed_func: Callable[[List[str]], List[List[float]]]
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
     score_threshold: float = Field(default=0.1, ge=0.0)
 
-
     class Config:
         arbitrary_types_allowed = True
-
 
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
