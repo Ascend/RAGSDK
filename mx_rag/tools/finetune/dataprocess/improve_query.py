@@ -20,7 +20,7 @@ def improve_query(llm: Text2TextLLM, old_query_list: list[str]):
     for query in tqdm(old_query_list):
         rewriter = RuleComplexInstructionRewriter()
         prompt = rewriter.get_rewrite_prompts(query, "更改指令语言风格")
-        result = llm.chat(prompt, max_tokens=512)
+        result = llm.chat(prompt)
         new_query_list.append(result)
 
     return new_query_list

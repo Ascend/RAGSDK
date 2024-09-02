@@ -9,6 +9,7 @@ from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from mx_rag.utils.common import MAX_TOP_K
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 from mx_rag.llm import Text2TextLLM
 
@@ -35,9 +36,7 @@ class BMRetriever(BaseRetriever):
     docs: List[Document]
     llm: Text2TextLLM
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
-    max_tokens = 512
-    temperature = 0.5
-    top_p = 0.95
+    llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)
     prompt: PromptTemplate = _KEY_WORD_TEMPLATE_ZH
 
     class Config:
@@ -50,9 +49,7 @@ class BMRetriever(BaseRetriever):
     def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
-        res = self.llm.chat(self.prompt.format(user_request=query), max_tokens=self.max_tokens,
-                            temperature=self.temperature,
-                            top_p=self.top_p)
+        res = self.llm.chat(self.prompt.format(user_request=query), llm_config=self.llm_config)
 
         if not res.strip():
             raise ValueError("generate keywords failed")

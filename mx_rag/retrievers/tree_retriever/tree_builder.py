@@ -13,6 +13,7 @@ from .tree_structures import Node, Tree
 from .utils import _get_node_list, _get_text
 from ...chain import TreeText2TextChain
 from ...utils.common import validate_params
+from ...llm.llm_parameter import LLMParameterConfig
 
 
 class TreeBuilderConfig:
@@ -50,7 +51,6 @@ class TreeBuilderConfig:
 class TreeBuilder:
     def __init__(self, config: TreeBuilderConfig) -> None:
         self.tokenizer = config.tokenizer
-        self.max_tokens = config.max_tokens
         self.num_layers = config.num_layers
         self.reduction_dimension = config.reduction_dimension
         self.threshold = config.threshold
@@ -63,7 +63,6 @@ class TreeBuilder:
         children_indices=dict(
             validator=lambda x: x is None or (isinstance(x, set) and all(isinstance(i, int) for i in x)))
     )
-
     def create_node(
             index: int, text: str, embed_func: Callable[[List[str]], List[List[float]]],
             children_indices: Optional[Set[int]] = None
@@ -97,16 +96,16 @@ class TreeBuilder:
         tree = Tree(all_nodes, root_nodes, leaf_nodes, self.num_layers, layer_to_nodes)
         return tree
 
-    def _summarize(self, context, max_tokens=100) -> Dict[str, str]:
+    def _summarize(self, context, llm_config: LLMParameterConfig) -> Dict[str, str]:
         # 使用mxRAG调用llm的方式
-        return self.summarization_model.summarize(context, max_tokens=max_tokens)
+        return self.summarization_model.summarize(context, llm_config)
 
     def _process_cluster(self, cluster: List[Node], new_level_nodes: {}, next_node_index: int,
                          summarization_length: int, embed_func: Callable[[List[str]], List[List[float]]]):
         node_texts = _get_text(cluster)
         summarized_result = self._summarize(
             context=node_texts,
-            max_tokens=summarization_length,
+            llm_config=LLMParameterConfig(max_tokens=summarization_length, temperature=0.5, top_p=0.95)
         )
         summarized_text = summarized_result.get('result', '')
         _, new_parent_node = TreeBuilder.create_node(

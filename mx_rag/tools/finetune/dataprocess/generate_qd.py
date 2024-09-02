@@ -44,7 +44,7 @@ def generate_qa_embedding_pairs(llm: Text2TextLLM, doc_list: list[str], question
             doc=doc_content,
             question_number=question_number
         )
-        result = llm.chat(prompt, max_tokens=512)
+        result = llm.chat(prompt)
         rs_list = [re.sub(r"^[^：]+：", "", item) for item in result.split("\n")]
         doc_queries[doc_content] = rs_list
 

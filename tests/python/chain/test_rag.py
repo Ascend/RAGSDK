@@ -16,6 +16,7 @@ from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 
 class MyTestCase(unittest.TestCase):
@@ -44,28 +45,28 @@ class MyTestCase(unittest.TestCase):
         def test_rag_chain_npu(self):
             r = Retriever(vector_store=vector_store, document_store=db, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
+            response = rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
             logger.debug(f"response {response}")
 
         def test_rag_chain_npu_stream(self):
             r = Retriever(vector_store=vector_store, document_store=db, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
-                                      stream=True):
+            for response in rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0,
+                                                                          top_p=0.1, stream=True)):
                 logger.debug(f"stream response {response}")
 
         def test_rag_chain_npu_multi_query_retriever(self):
             r = MultiQueryRetriever(llm=llm, vector_store=vector_store, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
+            response = rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
             logger.debug(f"response {response}")
 
         def test_rag_chain_npu_stream_multi_query_retriever(self):
             r = MultiQueryRetriever(llm=llm, vector_store=vector_store, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
-            for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
-                                      stream=True):
+            for response in rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0,
+                                                                          top_p=0.1, stream=True)):
                 logger.debug(f"stream response {response}")
 
         test_rag_chain_npu(self)
@@ -93,7 +94,7 @@ class MyTestCase(unittest.TestCase):
             r = Retriever(vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             chat_mock.return_value = "test test test"
-            response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
+            response = rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
             self.assertEqual("test test test", response.get("result"))
 
         @patch("mx_rag.llm.Text2TextLLM.chat_streamly")
@@ -101,8 +102,8 @@ class MyTestCase(unittest.TestCase):
             r = Retriever(vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             chat_mock.return_value = (yield "Retriever steam")
-            for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
-                                      stream=True):
+            for response in rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0,
+                                                                          top_p=0.1, stream=True)):
                 self.assertEqual("Retriever steam", response.get("result"))
 
         @patch("mx_rag.llm.Text2TextLLM.chat")
@@ -110,7 +111,7 @@ class MyTestCase(unittest.TestCase):
             r = MultiQueryRetriever(llm=llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             chat_mock.return_value = ("MultiQueryRetriever")
-            response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
+            response = rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
             self.assertEqual("MultiQueryRetriever", response.get("result"))
 
         @patch("mx_rag.llm.Text2TextLLM.chat_streamly")
@@ -119,8 +120,8 @@ class MyTestCase(unittest.TestCase):
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             chat_mock.return_value = (yield "MultiQueryRetriever steam")
-            for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
-                                      stream=True):
+            for response in rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0,
+                                                                          top_p=0.1, stream=True)):
                 self.assertEqual("MultiQueryRetriever steam", response.get("result"))
 
         def test_merge_query_prompt(self):

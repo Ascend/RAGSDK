@@ -3,9 +3,11 @@
 from abc import ABC, abstractmethod
 from typing import Union, Iterator, Dict
 
+from mx_rag.llm.llm_parameter import LLMParameterConfig
+
 
 class Chain(ABC):
     @abstractmethod
-    def query(self, text : str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
+    def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) \
+            -> Union[Dict, Iterator[Dict]]:
         """ query by text"""
-

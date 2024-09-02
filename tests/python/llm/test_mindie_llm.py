@@ -9,6 +9,7 @@ from unittest.mock import patch
 from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 
 class MockResponse:
@@ -76,8 +77,8 @@ class TestMindieLLM(unittest.TestCase):
             llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
             data = llm_model.chat(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
-                history=[],
-                max_tokens=1024
+                sys_messages=[],
+                llm_config=LLMParameterConfig(max_tokens=1024)
             )
             self.assertEqual(data, CONTENT)
 
@@ -88,8 +89,8 @@ class TestMindieLLM(unittest.TestCase):
             llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
             stream_data = llm_model.chat_streamly(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
-                history=[],
-                max_tokens=1024
+                sys_messages=[],
+                llm_config=LLMParameterConfig(max_tokens=1024)
             )
             for i, data in enumerate(stream_data):
                 self.assertEqual(data, CONTENT[:i + 1])
@@ -100,7 +101,7 @@ class TestMindieLLM(unittest.TestCase):
             "Content-Length": 200
         }, 404))):
             llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
-            data = llm_model.chat(query="你好", history=[], max_tokens=1024)
+            data = llm_model.chat(query="你好", sys_messages=[], llm_config=LLMParameterConfig(max_tokens=1024))
             self.assertEqual(data, "")
 
     def test_chat_stream_interrupt(self):
@@ -108,7 +109,8 @@ class TestMindieLLM(unittest.TestCase):
             "Content-Type": "text/event-stream",
         }, 404))):
             llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
-            stream_data = llm_model.chat_streamly(query="你好", history=[], max_tokens=1024)
+            stream_data = llm_model.chat_streamly(query="你好", sys_messages=[],
+                                                  llm_config=LLMParameterConfig(max_tokens=1024))
             data = False
             for _ in stream_data:
                 data = True
@@ -118,7 +120,7 @@ class TestMindieLLM(unittest.TestCase):
         error = False
         llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
         try:
-            llm_model.chat(query="你好", max_tokens=0)
+            llm_model.chat(query="你好", llm_config=LLMParameterConfig(max_tokens=0))
         except ValueError:
             error = True
         self.assertTrue(error)
@@ -157,7 +159,7 @@ class TestMindieLLM(unittest.TestCase):
         error = False
         llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
         try:
-            llm_model.chat(query="你好", seed=None, presence_penalty=-5.0)
+            llm_model.chat(query="你好", llm_config=LLMParameterConfig(presence_penalty=-5.0))
         except ValueError:
             error = True
         self.assertTrue(error)
@@ -166,8 +168,8 @@ class TestMindieLLM(unittest.TestCase):
         error = False
         llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888")
         try:
-            llm_model.chat(query="你好", seed=None, presence_penalty=-5)
-        except TypeError:
+            llm_model.chat(query="你好", llm_config=LLMParameterConfig(presence_penalty=-5.0))
+        except ValueError:
             error = True
         self.assertTrue(error)
 

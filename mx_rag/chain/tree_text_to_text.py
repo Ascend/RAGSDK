@@ -8,7 +8,7 @@ from typing import Union, Dict, Iterator
 from loguru import logger
 
 from mx_rag.utils.common import validate_params
-from mx_rag.llm import Text2TextLLM
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import SingleText2TextChain
 from mx_rag.llm import Text2TextLLM
 
@@ -27,30 +27,29 @@ class TreeText2TextChain(SingleText2TextChain):
         self.tree_retriever = retriever
         self._source = False
 
-    def query(self, text: str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
+    def query(self, text: str,
+              llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95),
+              *args,
+              **kwargs) -> Union[Dict, Iterator[Dict]]:
         self._history = []
-        return self._answer_question(text, *args, **kwargs)
+        return self._answer_question(text, llm_config)
 
     def set_tree_retriever(self, tree_retriever: TreeRetriever):
         self.tree_retriever = tree_retriever
 
     def summarize(self, text: str,
-                  max_tokens: int = 100,
-                  temperature: float = 0.5,
-                  top_p: float = 0.95) -> Union[Dict, Iterator[Dict]]:
+                  llm_config: LLMParameterConfig = LLMParameterConfig(max_tokens=100, temperature=0.5, top_p=0.95)) -> \
+            Union[Dict, Iterator[Dict]]:
         # 不带历史内容
         self._history = []
         self._query_str = text
         question = f"为以下内容生成摘要，包含尽可能多的关键细节，请用中文回答: \n\n{text}:"
-        return self._do_query(question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
+        return self._do_query(question, llm_config)
 
     def _answer_question(
             self,
-            text,
-            temperature: float = 0.5,
-            top_p: float = 0.95,
-            max_tokens: int = 512,
-            stream: bool = False
+            text: str,
+            llm_config: LLMParameterConfig
     ):
 
         context = self._retrieve(text)
@@ -59,9 +58,9 @@ class TreeText2TextChain(SingleText2TextChain):
                           f"回答一定要忠于原文，简洁但不丢信息，不要胡乱编造。我的问题或指令是什么语种，你就用什么语种回复, 你的回复: ")
         self._query_str = final_question
         logger.info(f"the fianl question to llm : {final_question}")
-        if not stream:
-            return self._do_query(final_question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
-        return self._do_stream_query(final_question, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
+        if not llm_config.stream:
+            return self._do_query(final_question, llm_config)
+        return self._do_stream_query(final_question, llm_config)
 
     def _retrieve(
             self,

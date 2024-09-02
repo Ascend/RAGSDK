@@ -180,3 +180,5 @@ def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List
         if not min_str_limit <= len(text) <= max_str_limit:
             return False
     return True
+
+

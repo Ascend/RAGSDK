@@ -48,7 +48,7 @@ def llm_preferred(llm: Text2TextLLM, query_list: list[str], doc_list: list[str])
     score_list = []
     for query, doc in tqdm(list(zip(query_list, doc_list))):
         prompt = scoring_qd_prompt.format(query=query, doc=doc)
-        result = llm.chat(prompt, max_tokens=512)
+        result = llm.chat(prompt)
         # 使用正则表达式提取相关性评分中的小数
         match = re.search(r"\d+\.\d+", result)
         score = float(0)
