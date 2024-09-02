@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import json
-import sys
 from typing import List, Optional, Any, Iterator
 
 from pydantic.v1 import Field

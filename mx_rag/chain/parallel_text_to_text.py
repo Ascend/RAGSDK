@@ -104,7 +104,7 @@ class ParallelText2TextChain(SingleText2TextChain):
             流式推理结果
         """
         if self._retriever is not None:
-            self._docs = self._retriever.get_relevant_documents(text)
+            self._docs = self._retriever.invoke(text)
 
         if self._reranker is not None and len(self._docs) > 0:
             scores = self._reranker.rerank(text, [doc.page_content for doc in self._docs])
