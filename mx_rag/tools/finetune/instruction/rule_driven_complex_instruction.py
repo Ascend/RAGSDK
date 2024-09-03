@@ -19,7 +19,7 @@ class RuleComplexInstructionRewriter:
 
         requirement_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'prompt', 'rewrite_requirements_AIGC_SR.json')
-        FileCheck.check_path_is_exist_and_valid(requirement_path)
+
         SecFileCheck(requirement_path, MAX_FILE_SIZE_100M).check()
         try:
             with open(requirement_path, encoding='utf-8') as out:
@@ -33,7 +33,7 @@ class RuleComplexInstructionRewriter:
 
         paraphrase_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'prompt', 'requirement_paraphrase.json')
-        FileCheck.check_path_is_exist_and_valid(paraphrase_path)
+
         SecFileCheck(paraphrase_path, MAX_FILE_SIZE_100M).check()
         try:
             with open(paraphrase_path, encoding='utf-8') as out:

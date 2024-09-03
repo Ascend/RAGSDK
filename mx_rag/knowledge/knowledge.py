@@ -14,7 +14,6 @@ from mx_rag.retrievers.tree_retriever import Tree
 
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.utils.common import validate_params, INT_32_MAX
-from mx_rag.utils.common import validate_params
 
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
