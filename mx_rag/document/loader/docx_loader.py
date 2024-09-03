@@ -88,7 +88,6 @@ class DocxLoader(BaseLoader, mxBaseLoader):
         one_text = "\n\n".join([t for t in all_text])
         yield Document(page_content=one_text, metadata={"source": os.path.basename(self.file_path)})
 
-
     def _handle_table(self, element):
         """docx.oxml.table.CT_Tbl"""
 

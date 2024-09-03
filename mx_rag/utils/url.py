@@ -54,7 +54,6 @@ class RequestUtils:
                  ssl_context: SSLContext = None):
         self.use_http = use_http
         if cert_file:
-            FileCheck.check_path_is_exist_and_valid(cert_file)
             SecFileCheck(cert_file, self.MAX_FILE_SIZE).check()
             try:
                 with open(cert_file, "r") as f:
@@ -69,7 +68,6 @@ class RequestUtils:
                 raise UrlUtilException('invalid cert content')
 
             if crl_file:
-                FileCheck.check_path_is_exist_and_valid(crl_file)
                 SecFileCheck(crl_file, self.MAX_FILE_SIZE).check()
 
             success, ssl_ctx = TlsConfig.get_client_ssl_context(cert_file, crl_file)

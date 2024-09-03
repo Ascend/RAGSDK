@@ -47,7 +47,7 @@ class TestParallelChain(unittest.TestCase):
             with patch('mx_rag.chain.ParallelText2TextChain._retrieve_process',
                        mock.Mock(side_effect=mock_retrieve_process)):
                 parallel_chain = ParallelText2TextChain(llm=llm, retriever=retrieve)
-                answer = parallel_chain.query("123456")
+                answer = parallel_chain.query(text="123456")
                 self.assertEqual(answer, "prefill query done")
                 self.assertEqual(parallel_chain.prefill_done.value, 0)
 

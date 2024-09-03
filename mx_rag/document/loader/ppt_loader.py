@@ -9,7 +9,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
-from mx_rag.utils.file_check import FileCheck
+from mx_rag.utils.file_check import SecFileCheck
 
 
 class PowerPointLoader(BaseLoader, mxBaseLoader):
@@ -37,8 +37,7 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
             return iter([])
 
     def _check_file_valid(self):
-        FileCheck.check_path_is_exist_and_valid(self.file_path)
-        FileCheck.check_file_size(self.file_path, self.MAX_SIZE)
+        SecFileCheck(self.file_path, self.MAX_SIZE).check()
         if not self.file_path.endswith(self.EXTENSION):
             raise ValueError("file type not correct")
         if self._is_zip_bomb():

@@ -120,7 +120,7 @@ class FilesLoadInfo:
     knowledge: KnowledgeDB
     dir_path: str
     loader_mng: LoaderMng
-    embed_func: Callable[[List[str]], np.ndarray]
+    embed_func: Callable[[List[str]], List[List[float]]]
     force: bool = False
     load_image: bool = False
 
