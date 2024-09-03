@@ -10,7 +10,7 @@ class TestMindFAISS(unittest.TestCase):
     def test_faiss(self):
         with patch("mx_rag.storage.vectorstore.faiss_npu.ascendfaiss") as ascendfaiss:
             with patch("mx_rag.storage.vectorstore.faiss_npu.faiss") as faiss:
-                from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+                from mx_rag.storage.vectorstore.faiss_npu import MindFAISS, SimilarityStrategy
 
                 total = np.random.random((3, 1024))
                 query = np.array([total[0]])
@@ -22,7 +22,8 @@ class TestMindFAISS(unittest.TestCase):
 
                 os.system = MagicMock(return_value=0)
                 os.chmod = MagicMock()
-                index = MindFAISS(1024, "FLAT:L2", devs=[0], load_local_index="./faiss.index")
+                index = MindFAISS(1024, similarity_strategy=SimilarityStrategy.FLAT_L2, devs=[0],
+                                  load_local_index="./faiss.index")
                 index.search(query, k=1)
                 index.add(query, [1])
                 index.delete([1])

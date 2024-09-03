@@ -26,7 +26,7 @@ class TestKnowledge(unittest.TestCase):
     def test_knowledge(self):
         with patch("mx_rag.storage.vectorstore.faiss_npu.MindFAISS") as MindFAISS:
             if __name__ == '__main__':
-                from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+                from mx_rag.storage.vectorstore.faiss_npu import MindFAISS, SimilarityStrategy
                 from mx_rag.storage.document_store import SQLiteDocstore
                 from mx_rag.knowledge import KnowledgeDB, KnowledgeMgr
                 from mx_rag.knowledge.knowledge import KnowledgeStore, KnowledgeMgrStore
@@ -39,7 +39,8 @@ class TestKnowledge(unittest.TestCase):
                     return query
 
                 os.system = MagicMock(return_value=0)
-                index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+                index = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                                  load_local_index="./faiss.index")
                 db = SQLiteDocstore(SQL_PATH)
                 current_dir = os.path.dirname(os.path.realpath(__file__))
                 top_path = os.path.dirname(os.path.dirname(current_dir))

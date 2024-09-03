@@ -3,7 +3,7 @@
 import numpy as np
 
 
-class AscendIndexFlatL2:
+class AscendIndexFlat:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -31,7 +31,7 @@ class IntVector:
 
 
 def index_cpu_to_ascend(*args, **kwargs):
-    return AscendIndexFlatL2()
+    return AscendIndexFlat()
 
 
 def index_ascend_to_cpu(*args, **kwargs):
