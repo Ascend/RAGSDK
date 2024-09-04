@@ -110,8 +110,11 @@ class DocxLoader(BaseLoader, mxBaseLoader):
                 return False
 
             doc = docx.Document(self.file_path)
-            if len(doc.paragraphs) > self.MAX_PAGE_NUM:
-                logger.error(f"too many pages {len(doc.paragraphs)}")
+            word_count = 0
+            for paragraph in doc.paragraphs:
+                word_count += len(paragraph.text)
+            if word_count > self.MAX_WORD_NUM:
+                logger.error(f"too many words {word_count}")
                 return False
             return True
         except Exception as e:
