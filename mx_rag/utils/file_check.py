@@ -27,21 +27,12 @@ class SecFileCheck:
         self.max_size = max_size
 
     def check(self):
+        FileCheck.check_path_is_exist_and_valid(self.file_path)
+
         if not os.path.isfile(self.file_path):
             raise PathNotFileException(f"PathNotFileException: {self.file_path} is not file")
-        self._check_size()
-        return None
 
-    def _check_size(self):
-        file_size = os.path.getsize(self.file_path)
-        if file_size > self.max_size:
-            raise SizeOverLimitException(
-                f"SizeOverLimitException: {self.file_path} size over Limit: {self.max_size}")
-
-
-def excel_file_check(file_path, size):
-    file_check = SecFileCheck(file_path, size)
-    return file_check.check()
+        FileCheck.check_file_size(self.file_path, self.max_size)
 
 
 class FileCheck:

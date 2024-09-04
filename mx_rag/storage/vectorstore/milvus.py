@@ -1,14 +1,15 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from __future__ import annotations
+import operator
 
-from typing import List, Union
+from typing import List
 
 import numpy as np
 from pymilvus import MilvusClient, DataType
 
-from mx_rag.storage.vectorstore.vectorstore import VectorStore
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MILVUS_INDEX_TYPES, MILVUS_METRIC_TYPES, MAX_TOP_K
+from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K
 
 
 class MilvusError(Exception):
@@ -19,12 +20,23 @@ class MilvusDB(VectorStore):
     MAX_COLLECTION_NAME_LENGTH = 1024
     MAX_URL_LENGTH = 1024
 
+    SIMILARITY_STRATEGY_MAP = {
+        SimilarityStrategy.FLAT_IP:
+            {"index": "FLAT", "metric": "IP", "compare": operator.ge},
+        SimilarityStrategy.FLAT_L2:
+            {"index": "FLAT", "metric": "L2", "compare": operator.le},
+        SimilarityStrategy.FLAT_COS:
+            {"index": "FLAT", "metric": "COSINE", "compare": operator.ge}
+    }
+
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < MilvusDB.MAX_URL_LENGTH),
-        collection=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH),
+        collection_name=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH),
         use_http=dict(validator=lambda x: isinstance(x, bool))
     )
     def __init__(self, url: str, collection_name: str = "mxRag", use_http: bool = False, **kwargs):
+        super().__init__()
         if url.startswith("http:") and not use_http:
             raise MilvusError("http protocol is not support")
         self.client = MilvusClient(url, **kwargs)
@@ -33,31 +45,27 @@ class MilvusDB(VectorStore):
     @staticmethod
     def create(**kwargs):
         x_dim_name = "x_dim"
-        index_type_name = "index_type"
-        metric_type_name = "metric_type"
         url_name = "url"
+        similarity_strategy_name = "similarity_strategy"
         param = "param"
 
         if x_dim_name not in kwargs or not isinstance(kwargs.get(x_dim_name), int):
             raise KeyError("x_dim param error. ")
 
-        if index_type_name not in kwargs or not isinstance(kwargs.get(index_type_name), str):
-            raise KeyError("index_type param error. ")
-
-        if metric_type_name not in kwargs or not isinstance(kwargs.get(metric_type_name), str):
-            raise KeyError("metric_type param error. ")
+        if similarity_strategy_name not in kwargs or \
+                not isinstance(kwargs.get(similarity_strategy_name), SimilarityStrategy):
+            raise KeyError("similarity_strategy param error. ")
 
         if url_name not in kwargs or not isinstance(kwargs.get(url_name), str):
             raise KeyError("url param error. ")
 
         url = kwargs.pop(url_name)
         vector_dims = kwargs.pop(x_dim_name)
-        index_type = kwargs.pop(index_type_name)
-        metric_type = kwargs.pop(metric_type_name)
         param = kwargs.pop(param)
+        similarity_strategy = kwargs.pop(similarity_strategy_name)
 
         milvus_db = MilvusDB(url, **kwargs)
-        milvus_db.create_collection(x_dim=vector_dims, index_type=index_type, metric_type=metric_type, param=param)
+        milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, param=param)
         return milvus_db
 
     @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH))
@@ -66,19 +74,24 @@ class MilvusDB(VectorStore):
 
     @validate_params(
         x_dim=dict(validator=lambda x: 0 < x <= MAX_VEC_DIM),
-        index_type=dict(validator=lambda x: x in MILVUS_INDEX_TYPES),
-        metric_type=dict(validator=lambda x: x in MILVUS_METRIC_TYPES)
+        similarity_strategy=dict(validator=lambda x: x in MilvusDB.SIMILARITY_STRATEGY_MAP)
     )
-    def create_collection(self, x_dim: int, index_type: str, metric_type: str, param=None):
+    def create_collection(self, x_dim: int, similarity_strategy: SimilarityStrategy, param=None):
         schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
         schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=x_dim)
 
+        similarity = self.SIMILARITY_STRATEGY_MAP.get(similarity_strategy, None)
+        if similarity is None:
+            raise KeyError(f"index type {similarity_strategy} not support")
+
+        self.score_comparator = similarity.get("compare")
+
         index_params = self.client.prepare_index_params()
         index_params.add_index(
             field_name="vector",
-            index_type=index_type,
-            metric_type=metric_type,
+            index_type=similarity.get("index"),
+            metric_type=similarity.get("metric"),
             param=param
         )
         self.client.create_collection(

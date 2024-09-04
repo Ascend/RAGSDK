@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import operator
 from typing import List
 
 import ascendfaiss
@@ -11,7 +12,7 @@ import numpy as np
 from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck
-from mx_rag.storage.vectorstore.vectorstore import VectorStore
+from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K
 
 
@@ -20,23 +21,31 @@ class MindFAISSError(Exception):
 
 
 class MindFAISS(VectorStore):
-    INDEX_MAP = {
-        "FLAT:L2": ascendfaiss.AscendIndexFlatL2,
+    SIMILARITY_STRATEGY_MAP = {
+        SimilarityStrategy.FLAT_IP:
+            {"index": ascendfaiss.AscendIndexFlat, "metric": faiss.METRIC_INNER_PRODUCT, "compare": operator.ge},
+        SimilarityStrategy.FLAT_L2:
+            {"index": ascendfaiss.AscendIndexFlat, "metric": faiss.METRIC_L2, "compare": operator.le},
+        # 归一化之后的COS距离 等于IP距离, 所以参数一致
+        SimilarityStrategy.FLAT_COS:
+            {"index": ascendfaiss.AscendIndexFlat, "metric": faiss.METRIC_INNER_PRODUCT, "compare": operator.ge}
     }
 
     @validate_params(
         x_dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
-        index_type=dict(validator=lambda x: isinstance(x, str) and x in MindFAISS.INDEX_MAP),
+        similarity_strategy=dict(
+            validator=lambda x: isinstance(x, SimilarityStrategy) and x in MindFAISS.SIMILARITY_STRATEGY_MAP),
         auto_save=dict(validator=lambda x: isinstance(x, bool))
     )
     def __init__(
             self,
             x_dim: int,
-            index_type: str,
+            similarity_strategy: SimilarityStrategy,
             devs: List[int],
             load_local_index: str,
             auto_save: bool = False
     ):
+        super().__init__()
         self.device = ascendfaiss.IntVector()
         if not isinstance(devs, list) or not devs:
             raise MindFAISSError("param devs need list type")
@@ -56,10 +65,14 @@ class MindFAISS(VectorStore):
             return
         try:
             config = ascendfaiss.AscendIndexFlatConfig(self.device)
-            ascend_index = self.INDEX_MAP.get(index_type, None)
-            if ascend_index is None:
-                raise MindFAISSError(f"index type {ascend_index} not support")
-            self.index = ascend_index(x_dim, config)
+            similarity = self.SIMILARITY_STRATEGY_MAP.get(similarity_strategy, None)
+            if similarity is None:
+                raise MindFAISSError(f"index type {similarity_strategy} not support")
+
+            ascend_index_creator = similarity.get("index")
+            ascend_index_metrics = similarity.get("metric")
+            self.index = ascend_index_creator(x_dim, ascend_index_metrics, config)
+            self.score_comparator = similarity.get("compare")
         except Exception as err:
             raise MindFAISSError(f"init index failed, {err}") from err
 
@@ -68,8 +81,8 @@ class MindFAISS(VectorStore):
         if "x_dim" not in kwargs or not isinstance(kwargs.get("x_dim"), int):
             raise KeyError("x_dim param error. ")
 
-        if "index_type" not in kwargs or not isinstance(kwargs.get("index_type"), str):
-            raise KeyError("index_type param error. ")
+        if "similarity_strategy" not in kwargs or not isinstance(kwargs.get("similarity_strategy"), SimilarityStrategy):
+            raise KeyError("similarity_strategy param error. ")
 
         if "devs" not in kwargs or not isinstance(kwargs.get("devs"), List):
             raise KeyError("devs param error. ")

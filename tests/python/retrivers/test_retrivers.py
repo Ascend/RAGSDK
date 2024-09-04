@@ -23,7 +23,7 @@ from loguru import logger
 
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.retrievers import Retriever
-from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+from mx_rag.storage.vectorstore.faiss_npu import MindFAISS, SimilarityStrategy
 from mx_rag.storage.document_store import SQLiteDocstore
 
 EMBEDDING_TEXT = """The unshare command creates new namespaces and then executes the specified program."""
@@ -46,7 +46,8 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        index = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                          load_local_index="./faiss.index")
         knowledge_db = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         knowledge_db.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_documents)
         logger.info("create MindFAISS done")
@@ -97,7 +98,7 @@ class MyTestCase(unittest.TestCase):
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
-        vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        vector_store = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2, load_local_index="./faiss.index")
 
         r = Retriever(vector_store=vector_store, document_store=db, score_threshold=0.5, embed_func=embed_func)
 

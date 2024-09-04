@@ -15,7 +15,7 @@ from mx_rag.knowledge import KnowledgeDB
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever, MultiQueryRetriever
-from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+from mx_rag.storage.vectorstore.faiss_npu import MindFAISS, SimilarityStrategy
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.chain import SingleText2TextChain
 from mx_rag.llm.llm_parameter import LLMParameterConfig
@@ -41,7 +41,8 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        index = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                          load_local_index="./faiss.index")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("mxVision.docx",
                               [d.page_content for d in res],
