@@ -8,6 +8,7 @@ from enum import Enum
 from typing import List
 
 from OpenSSL import crypto
+from loguru import logger
 
 INT_32_MAX = 2 ** 31 - 1
 MAX_DEVICE_ID = 63
@@ -93,12 +94,8 @@ def validate_params(**validators):
                 value = _get_value_from_param(arg_name, func, *args, **kwargs)
                 # 运行验证函数
                 if not validator['validator'](value):
-                    expression = inspect.getsource(validator['validator']).strip().split("validator=")[1][:-1]
-                    if len(re.findall(r"\(", expression)) - len(re.findall(r"\)", expression)) < 0:
-                        expression = expression[:-1]
-                    raise ValueError(f"The parameter '{arg_name}' of function {func.__name__} is invalid, "
-                                     f"check rule: {expression.strip()}")
-
+                    raise ValueError(f"The parameter '{arg_name}' of function '{func.__name__}' "
+                                     f"is invalid, please see the document.")
             # 如果所有参数都通过验证，则调用原始函数
             return func(*args, **kwargs)
 
@@ -137,7 +134,11 @@ class ParseCertInfo:
         for i in range(self.cert_info.get_extension_count()):
             ext = self.cert_info.get_extension(i)
             ext_name = ext.get_short_name().decode()
-            self.extensions[ext_name] = str(ext)
+            try:
+                self.extensions[ext_name] = str(ext)
+            except Exception as e:
+                logger.warning(f"format {ext_name} str info in certificate failed")
+                continue
 
     @property
     def subject(self) -> str:
@@ -180,5 +181,3 @@ def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List
         if not min_str_limit <= len(text) <= max_str_limit:
             return False
     return True
-
-
