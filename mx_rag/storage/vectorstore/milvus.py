@@ -22,11 +22,23 @@ class MilvusDB(VectorStore):
 
     SIMILARITY_STRATEGY_MAP = {
         SimilarityStrategy.FLAT_IP:
-            {"index": "FLAT", "metric": "IP", "compare": operator.ge},
+            {
+                "index": "FLAT",
+                "metric": "IP",
+                "scale": lambda x: x if x <= 1.0 else 1.0
+            },
         SimilarityStrategy.FLAT_L2:
-            {"index": "FLAT", "metric": "L2", "compare": operator.le},
+            {
+                "index": "FLAT",
+                "metric": "L2",
+                "scale": lambda x: (1.0 - x / 2.0) if x <= 2.0 else 0.0
+            },
         SimilarityStrategy.FLAT_COS:
-            {"index": "FLAT", "metric": "COSINE", "compare": operator.ge}
+            {
+                "index": "FLAT",
+                "metric": "COSINE",
+                "scale": lambda x: x if x <= 1.0 else 1.0
+            }
     }
 
     @validate_params(
@@ -85,7 +97,7 @@ class MilvusDB(VectorStore):
         if similarity is None:
             raise KeyError(f"index type {similarity_strategy} not support")
 
-        self.score_comparator = similarity.get("compare")
+        self.score_scale = similarity.get("scale", None)
 
         index_params = self.client.prepare_index_params()
         index_params.add_index(
@@ -134,7 +146,7 @@ class MilvusDB(VectorStore):
                 k_id.append(entity["id"])
             scores.append(k_score)
             ids.append(k_id)
-        return scores, ids
+        return self._score_scale(scores), ids
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x))

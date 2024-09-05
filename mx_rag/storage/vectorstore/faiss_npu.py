@@ -23,12 +23,24 @@ class MindFAISSError(Exception):
 class MindFAISS(VectorStore):
     SIMILARITY_STRATEGY_MAP = {
         SimilarityStrategy.FLAT_IP:
-            {"index": ascendfaiss.AscendIndexFlat, "metric": faiss.METRIC_INNER_PRODUCT, "compare": operator.ge},
+            {
+                "index": ascendfaiss.AscendIndexFlat,
+                "metric": faiss.METRIC_INNER_PRODUCT,
+                "scale": lambda x: x if x <= 1.0 else 1.0
+            },
         SimilarityStrategy.FLAT_L2:
-            {"index": ascendfaiss.AscendIndexFlat, "metric": faiss.METRIC_L2, "compare": operator.le},
+            {
+                "index": ascendfaiss.AscendIndexFlat,
+                "metric": faiss.METRIC_L2,
+                "scale": lambda x: (1.0 - x / 2.0) if x <= 2.0 else 0.0
+            },
         # 归一化之后的COS距离 等于IP距离, 所以参数一致
         SimilarityStrategy.FLAT_COS:
-            {"index": ascendfaiss.AscendIndexFlat, "metric": faiss.METRIC_INNER_PRODUCT, "compare": operator.ge}
+            {
+                "index": ascendfaiss.AscendIndexFlat,
+                "metric": faiss.METRIC_INNER_PRODUCT,
+                "scale": lambda x: x if x <= 1.0 else 1.0
+            }
     }
 
     @validate_params(
@@ -72,7 +84,7 @@ class MindFAISS(VectorStore):
             ascend_index_creator = similarity.get("index")
             ascend_index_metrics = similarity.get("metric")
             self.index = ascend_index_creator(x_dim, ascend_index_metrics, config)
-            self.score_comparator = similarity.get("compare")
+            self.score_scale = similarity.get("scale", None)
         except Exception as err:
             raise MindFAISSError(f"init index failed, {err}") from err
 
@@ -118,7 +130,7 @@ class MindFAISS(VectorStore):
     @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K))
     def search(self, embeddings: np.ndarray, k: int = 3):
         scores, indices = self.index.search(embeddings, k)
-        return scores.tolist(), indices.tolist()
+        return self._score_scale(scores.tolist()), indices.tolist()
 
     @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x)))
     def add(self, embeddings: np.ndarray, ids: List[int]):
