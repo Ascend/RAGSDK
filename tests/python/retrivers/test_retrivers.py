@@ -103,7 +103,7 @@ class MyTestCase(unittest.TestCase):
         r = Retriever(vector_store=vector_store, document_store=db, score_threshold=0.5, embed_func=embed_func)
 
         def mock_vector_store_search(embeddings: np.ndarray, k: int = 3):
-            return [[0.1]], [[0]]
+            return [[0.6]], [[0]]
 
         @patch("mx_rag.storage.vectorstore.faiss_npu.MindFAISS.search", side_effect=mock_vector_store_search)
         # @patch("mx_rag.storage.document_store.SQLiteDocstore.search")
