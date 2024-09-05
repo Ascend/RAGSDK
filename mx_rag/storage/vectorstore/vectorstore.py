@@ -31,6 +31,10 @@ class VectorStore(ABC):
     def add(self, embeddings, ids):
         pass
 
+    @abstractmethod
+    def get_all_ids(self):
+        pass
+
     def search_with_threshold(self, embeddings: np.ndarray, k: int = 3, threshold: float = 0.1):
         """
         根据阈值进行查找 过滤调不满足的分数

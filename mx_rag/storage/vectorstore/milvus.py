@@ -163,3 +163,8 @@ class MilvusDB(VectorStore):
             data.append({"vector": e, "id": i})
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
+
+    def get_all_ids(self) -> List[int]:
+        all_id = self.client.query(self._collection_name, filter="id == 0 or id != 0", output_fields=["id"])
+        ids = [idx['id'] for idx in all_id]
+        return ids
