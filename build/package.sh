@@ -50,22 +50,11 @@ function package()
     cd "${OUTPUT_DIR}"
     cp *.whl "${CI_PACKAGE_DIR}"
 
-    if [ ! -d "${CI_PACKAGE_DIR}/ops" ]; then
-      mkdir -p "${CI_PACKAGE_DIR}/ops"
-    fi
-
-    OPP_RUN_NAME=$(basename "${ROOT_PATH}"/ops/BertSelfAttention/build_out/custom_opp_*.run)
     if [[ "$OPP_RUN_NAME" == *"aarch64"* ]]; then
       OPP_RUN_NAME=$( echo "${OPP_RUN_NAME}" | awk -F'_' '{print $1 "_" $2 "_" $4 }')
     else
       OPP_RUN_NAME=$( echo "${OPP_RUN_NAME}" | awk -F'_' '{print $1 "_" $2 "_" $4 ".run"}')
     fi
-
-    cp "${ROOT_PATH}"/ops/BertSelfAttention/build_out/custom_opp_*.run "${CI_PACKAGE_DIR}"/ops/"${OPP_RUN_NAME}"
-    cp "${ROOT_PATH}"/ops/run_op_plugin.sh "${CI_PACKAGE_DIR}"/ops
-    cp -r "${ROOT_PATH}"/ops/op_plugin_patch "${CI_PACKAGE_DIR}"/ops
-    chmod -R 550 "${CI_PACKAGE_DIR}"/ops/"${OPP_RUN_NAME}"
-    chmod -R 550 "${CI_PACKAGE_DIR}"/ops/run_op_plugin.sh
 
     mv "${ROOT_PATH}"/version.info "${CI_PACKAGE_DIR}"
     cp "${ROOT_PATH}"/requirements.txt "${CI_PACKAGE_DIR}"

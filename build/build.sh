@@ -42,13 +42,6 @@ function build_wheel_package()
     echo "prepare resource"
 }
 
-function build_ops_package()
-{
-  cd "${ROOT_PATH}/ops"
-  bash build.sh
-  cd "${ROOT_PATH}"
-}
-
 function package()
 {
   bash  "${CUR_PATH}"/package.sh
@@ -59,7 +52,6 @@ function main()
     clean
     build_so_package
     build_wheel_package
-    build_ops_package
     package
 }
 
