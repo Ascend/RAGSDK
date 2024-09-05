@@ -2,7 +2,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 from typing import List
-from typing import Optional
 
 import numpy as np
 import torch
@@ -59,6 +58,7 @@ class TextEmbedding(Embeddings):
         return TextEmbedding(**kwargs)
 
     @validate_params(
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX])),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX),
         max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
     )
@@ -84,6 +84,7 @@ class TextEmbedding(Embeddings):
         return embeddings[0]
 
     @validate_params(
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX])),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX),
         max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
     )
@@ -93,9 +94,6 @@ class TextEmbedding(Embeddings):
                                                max_length: int = 512):
         return self._encode(texts, batch_size, max_length, True)
 
-    @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]))
-    )
     def _encode(self,
                 texts: List[str],
                 batch_size: int = 32,

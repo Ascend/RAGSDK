@@ -177,15 +177,15 @@ class TestValidateParams(unittest.TestCase):
         try:
             non_class_funciton2("1", 1, [{1: "a", 2: "b", 3: "c"}, {4: "a", 5: "b", 6: "c"}])
         except Exception as e:
-            self.assertTrue(str(e).endswith("lambda x: isinstance(x, int)"))
+            self.assertTrue(str(e).find("'param1' of function 'non_class_funciton2' is invalid") > -1)
         try:
             non_class_funciton2(1, -1, [{1: "a", 2: "b", 3: "c"}, {4: "a", 5: "b", 6: "c"}])
         except Exception as e:
-            self.assertTrue(str(e).endswith("lambda x: x > 0"))
+            self.assertTrue(str(e).find("'param2' of function 'non_class_funciton2' is invalid") > -1)
         try:
             non_class_funciton2(1, 1, [{1: "a"}, {4: "a"}])
         except Exception as e:
-            self.assertTrue(str(e).endswith("lambda x: all(len(item) > 1 for item in x)"))
+            self.assertTrue(str(e).find("'param3' of function 'non_class_funciton2' is invalid") > -1)
 
     def test_validata_list_str(self):
         non_class_funciton3(["hello!", "world!", "beautiful"])
