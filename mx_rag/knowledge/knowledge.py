@@ -150,6 +150,10 @@ class KnowledgeDB(KnowledgeBase):
 
     def check_document_exist(self, doc_name: str) -> bool:
         return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
+    
+    def check_store_accordance(self) -> None:
+        if set(self._document_store.get_all_index_id()) != set(self._vector_store.get_all_ids()):
+            raise KnowledgeError("VectorStore is not accordance to Docstore !")
 
 
 class KnowledgeTreeDB(KnowledgeBase):

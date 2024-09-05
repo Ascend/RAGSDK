@@ -23,3 +23,6 @@ class MockerVecStorage(VectorStore):
 
     def get_ntotal(self) -> int:
         return 10
+
+    def get_all_ids(self) -> List[int]:
+        return [0]

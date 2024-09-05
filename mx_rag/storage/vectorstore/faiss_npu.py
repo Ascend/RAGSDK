@@ -58,6 +58,7 @@ class MindFAISS(VectorStore):
             auto_save: bool = False
     ):
         super().__init__()
+        self.devs = devs
         self.device = ascendfaiss.IntVector()
         if not isinstance(devs, list) or not devs:
             raise MindFAISSError("param devs need list type")
@@ -143,3 +144,11 @@ class MindFAISS(VectorStore):
 
     def get_ntotal(self) -> int:
         return self.index.ntotal
+
+    def get_all_ids(self) -> List[int]:
+        ids = []
+        for dev in self.devs:
+            dev_ids = ascendfaiss.FaissIdxVector()
+            self.index.getIdxMap(dev, dev_ids)
+            ids.extend([dev_ids.at(i) for i in range(dev_ids.size())])
+        return ids

@@ -104,3 +104,10 @@ class SQLiteDocstore(Docstore):
                     document_name=chunk.document_name
                 )
             return chunk
+    
+    def get_all_index_id(self) -> List[int]:
+        with self.session() as session:
+            chunks = session.query(ChunkModel)
+            ids = [chunk.index_id for chunk in chunks.all()]
+            return ids
+
