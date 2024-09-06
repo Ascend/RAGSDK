@@ -3,6 +3,7 @@
 import operator
 from enum import Enum
 from abc import ABC, abstractmethod
+from typing import List
 
 import numpy as np
 from loguru import logger
@@ -16,7 +17,7 @@ class SimilarityStrategy(Enum):
 
 class VectorStore(ABC):
     def __init__(self):
-        self.score_comparator = operator.le
+        self.score_scale = None
 
     @abstractmethod
     def delete(self, ids):
@@ -28,6 +29,10 @@ class VectorStore(ABC):
 
     @abstractmethod
     def add(self, embeddings, ids):
+        pass
+
+    @abstractmethod
+    def get_all_ids(self):
         pass
 
     def search_with_threshold(self, embeddings: np.ndarray, k: int = 3, threshold: float = 0.1):
@@ -43,17 +48,16 @@ class VectorStore(ABC):
         """
         scores, indices = self.search(embeddings, k)
 
-        if self.score_comparator == operator.le:
-            logger.info(f"Filter is [<={threshold}]")
-        else:
-            logger.info(f"Filter is [>={threshold}]")
+        logger.info(f"Filter is [>={threshold}]")
 
+        filter_score = []
+        filter_indices = []
         for i, score in enumerate(scores[0]):
-            if not self.score_comparator(score, threshold):
-                scores[0].pop(i)
-                indices[0].pop(i)
+            if score >= threshold:
+                filter_score.append(scores[0][i])
+                filter_indices.append(indices[0][i])
 
-        return scores, indices
+        return [filter_score], [filter_indices]
 
     def as_retriever(self, **kwargs):
         """
@@ -76,3 +80,16 @@ class VectorStore(ABC):
 
     def get_ntotal(self) -> int:
         return 0
+
+    def _score_scale(self, scores: List[List[float]]) -> List[List[float]]:
+        """
+        分数量化
+        Args:
+            scores: 词嵌入得得分
+
+        Returns: 量化之后的分数
+
+        """
+        if self.score_scale is not None:
+            scores = [[self.score_scale(x) for x in scores[0]]]
+        return scores

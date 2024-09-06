@@ -23,7 +23,7 @@ class SingleText2TextChain(Chain):
 
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
-        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever)),
+        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever) or x is None),
         reranker=dict(validator=lambda x: isinstance(x, Reranker) or x is None),
         prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 512 * 1024),
         source=dict(validator=lambda x: isinstance(x, bool))

@@ -45,14 +45,15 @@ class DocxLoaderTestCase(unittest.TestCase):
         res = loader.load_and_split(RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=100))
         self.assertEqual(1, len(res))
 
-    def test_page_number(self):
+    def test_word_number(self):
         document = Document()
         document.add_heading('Document Title', 0)
 
-        idx = 0
-        while idx <= 1000:
-            idx += 1
-            document.add_paragraph('A plain paragraph having some ')
+        word_num = 0
+        text = "A plain paragraph having some "
+        while word_num <= 500000:
+            document.add_paragraph(text)
+            word_num += len(text)
 
         test_file = os.path.join(self.data_dir, "page_number_test.docx")
         document.save(test_file)

@@ -48,5 +48,5 @@ class Text2ImgMultiModel:
             logger.error("text to generate image failed")
             return resp
 
-        resp["result"] = base64.b64encode(response.data)
+        resp["result"] = response.data
         return resp

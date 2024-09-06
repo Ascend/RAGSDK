@@ -20,7 +20,7 @@ class Retriever(BaseRetriever):
     document_store: Docstore
     embed_func: Callable[[List[str]], List[List[float]]]
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
-    score_threshold: float = Field(default=None, ge=0.0)
+    score_threshold: float = Field(default=None, ge=0.0, le=1.0)
 
     class Config:
         arbitrary_types_allowed = True
