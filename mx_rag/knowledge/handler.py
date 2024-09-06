@@ -110,9 +110,11 @@ def upload_files_build_tree(knowledge: KnowledgeTreeDB,
     for file in files:
         file_obj = Path(file)
         texts, metadatas = parse_func(file_obj.as_posix(), tokenizer, max_tokens)
-        total_texts.extend(texts)
-        total_metadatas.extend(metadatas)
-        [file_names.append(file_obj.name) for i in range(len(texts))]
+        for text, metadata in zip(texts, metadatas):
+            if len(text) > 0:
+                total_texts.append(text)
+                total_metadatas.append(metadata)
+    [file_names.append(file_obj.name) for i in range(len(total_texts))]
     return knowledge.add_files(file_names, total_texts, embed_func, total_metadatas)
 
 
