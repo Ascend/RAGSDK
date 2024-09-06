@@ -10,7 +10,6 @@ from langchain_core.embeddings import Embeddings
 from langchain.llms.base import LLM
 from loguru import logger
 from datasets import Dataset
-from ragas import evaluate
 from ragas.evaluation import Result
 from ragas.metrics import (
     faithfulness,
@@ -89,24 +88,17 @@ class Evaluate:
         return datasets
 
     @classmethod
-    @validate_params(
-        metrics_name=dict(
-            validator=lambda x: isinstance(x, list) and all(isinstance(i, str) for i in x) and 0 < len(x) <= 14),
-    )
-    def save_data(cls, data: Result, metrics_name: list[str], save_path: str):
+    def save_data(cls, data: Result, save_path: str):
         """
         将ragas 评估结果存放在save_path的目录下
         Args:
             data: ragas的评估结果
-            metrics_name: 包括的测试方法
             save_path: 存放目录
 
         Returns: None
 
         """
         FileCheck.check_path_is_exist_and_valid(save_path)
-
-        cls._check_metric_name(metrics_name)
 
         current_time = datetime.now(tz=timezone.utc)
         formatted_time = current_time.strftime('%Y%m%d%H%M%S')
@@ -129,6 +121,9 @@ class Evaluate:
         for metric_name in metrics_name:
             if metric_name not in cls.RAG_TEST_METRIC:
                 raise KeyError(f"{metric_name} not support in Evaluate")
+
+        if len(set(metrics_name)) != len(metrics_name):
+            raise ValueError(f"duplicate metric {metrics_name}")
 
     @validate_params(
         metrics_name=dict(
@@ -154,6 +149,8 @@ class Evaluate:
 
         Returns:ragas 评估结果 Result
         """
+        from ragas import evaluate as ragas_evaluate
+
         self._check_metric_name(metrics_name)
 
         metrics = [self.RAG_TEST_METRIC.get(metric_name) for metric_name in metrics_name]
@@ -161,11 +158,11 @@ class Evaluate:
         self._metrics_local_adapt(metrics, language, prompt_dir)
 
         datesets = Dataset.from_dict(datasets)
-        data = evaluate(dataset=datesets,
-                        metrics=metrics,
-                        llm=self.eval_llm,
-                        embeddings=self.eval_embedding,
-                        **kwargs)
+        data = ragas_evaluate(dataset=datesets,
+                              metrics=metrics,
+                              llm=self.eval_llm,
+                              embeddings=self.eval_embedding,
+                              **kwargs)
         return data
 
     @validate_params(
