@@ -155,7 +155,7 @@ def upload_dir(params: FilesLoadInfo):
             break
         if file.suffix in support_file_type:
             files.append(file.as_posix())
-        count += 1
+            count += 1
     upload_files(knowledge, files, loader_mng, embed_func, force)
 
 
