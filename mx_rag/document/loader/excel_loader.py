@@ -168,7 +168,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         ：返回：逐行读取表,返回 string list
         """
         try:
-            file_check.SecFileCheck(self.file_path, self.MAX_SIZE)
+            file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
         except Exception as e:
             logger.error(e)
             return iter([])

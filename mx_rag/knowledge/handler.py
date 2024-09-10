@@ -189,6 +189,7 @@ def save_tree(tree: Tree, file_path: str):
     """
     if tree is None:
         raise ValueError("There is no tree to save.")
+    FileCheck.check_input_path_valid(file_path)
     flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
     modes = stat.S_IWUSR | stat.S_IRUSR
     with os.fdopen(os.open(file_path, flags, modes), "w") as ff:
