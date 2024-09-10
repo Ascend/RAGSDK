@@ -27,13 +27,13 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
         try:
             self._check_file_valid()
         except Exception as err:
-            logger.error(f"check {self.file_path} failed, {err}")
+            logger.error(f"check '{self.file_path}' failed, {err}")
             return iter([])
 
         try:
             return self._load_ppt()
         except Exception as err:
-            logger.error(f"load {self.file_path} failed, {err}")
+            logger.error(f"load '{self.file_path}' failed, {err}")
             return iter([])
 
     def _check_file_valid(self):
@@ -41,7 +41,7 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
         if not self.file_path.endswith(self.EXTENSION):
             raise ValueError("file type not correct")
         if self._is_zip_bomb():
-            raise ValueError(f"{self.file_path} is a risk of zip bombs")
+            raise ValueError(f"'{self.file_path}' is a risk of zip bombs")
 
     def _load_merged_cell(self, data, cell, row, col):
         span_height = cell.span_height

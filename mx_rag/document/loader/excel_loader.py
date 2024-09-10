@@ -183,7 +183,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         elif self.file_path.endswith(CSV_EXTENSION):
             return self._load_csv()
         else:
-            logger.error(f"{self.file_path} file type is not one of (csv, xlsx, xls).")
+            logger.error(f"'{self.file_path}' file type is not one of (csv, xlsx, xls).")
             return iter([])
 
     def _get_xlsx_title(self, ws, first_row, first_col):
@@ -279,31 +279,31 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
     def _load_xls(self):
         wb = xlrd.open_workbook(self.file_path, formatting_info=True)
         if wb.nsheets > self.MAX_PAGE_NUM:
-            logger.error(f"file {self.file_path} sheets number more than limit")
+            logger.error(f"file '{self.file_path}' sheets number more than limit")
             return
         for i in range(wb.nsheets):
             ws = wb.sheet_by_index(i)
             content = self._load_xls_one_sheet(ws)
             if not content:
-                logger.info(f"In file [{self.file_path}] sheet [{ws.name}] is empty")
+                logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
                 continue
             yield Document(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
 
-        logger.info(f"file {self.file_path} Loading completed")
+        logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_xlsx(self):
         wb = load_workbook(self.file_path, data_only=True)
         if len(wb.sheetnames) > self.MAX_PAGE_NUM:
-            logger.error(f"file {self.file_path} sheets number more than limit")
+            logger.error(f"file '{self.file_path}' sheets number more than limit")
             return
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
             content = self._load_xlsx_one_sheet(ws)
             if not content:
-                logger.info(f"In file [{self.file_path}] sheet [{sheet_name}] is empty")
+                logger.info(f"In file ['{self.file_path}'] sheet ['{sheet_name}'] is empty")
                 continue
             yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
-        logger.info(f"file {self.file_path} Loading completed")
+        logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_csv_lines(self, reader, headers):
         content = ""
@@ -328,5 +328,5 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         if content:
             yield Document(page_content=content, metadata={"source": self.file_path})
         else:
-            logger.info(f"file {self.file_path} is empty")
+            logger.info(f"file '{self.file_path}' is empty")
 

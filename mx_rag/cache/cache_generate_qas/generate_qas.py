@@ -96,7 +96,7 @@ class QAGenerate:
     @staticmethod
     def _generate_qa_from_html(config: QAGenerationConfig, title: str, content: str,
                                system_prompt: str, llm_config: LLMParameterConfig) -> List[str]:
-        logger.info(f"LLM generating QA, source title {title}")
+        logger.info(f"LLM generating QA, source title '{title}'")
         title = title.split("-")[0] if len(title.split("-")) > 1 else title
         sys_messages = [{"role": "system", "content": system_prompt}]
         prompt = USER_PROMPT.format(title_area=title, content_area=content)
@@ -150,7 +150,7 @@ class QAGenerate:
         for final_qa in final_qas:
             split_txts = re.split(r"参考段落[:：]", final_qa)
             if len(split_txts) != 2:
-                logger.info(f"Can't split {final_qa}, skip")
+                logger.info(f"Can't split '{final_qa}', skip")
                 continue
             qa_pair[split_txts[0]] = split_txts[1]
         return qa_pair

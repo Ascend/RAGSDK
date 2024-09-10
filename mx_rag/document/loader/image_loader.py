@@ -24,7 +24,7 @@ class ImageLoader(BaseLoader, mxBaseLoader):
         """
         SecFileCheck(self.file_path, self.MAX_SIZE).check()
         if Path(self.file_path).suffix not in IMAGE_TYPE:
-            raise TypeError(f"type {Path(self.file_path).suffix} is not support")
+            raise TypeError(f"type '{Path(self.file_path).suffix}' is not support")
 
         with open(self.file_path, "rb") as fi:
             encode_content = str(base64.b64encode(fi.read()).decode())

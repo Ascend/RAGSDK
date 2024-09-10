@@ -190,4 +190,4 @@ class MxRAGCache:
             None
         """
         if self.verbose:
-            logger.info(f"{self.cache_name}: " + log_str)
+            logger.info(f"'{self.cache_name}': " + log_str)

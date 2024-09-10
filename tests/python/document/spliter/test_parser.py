@@ -29,7 +29,7 @@ class TestTokenParseDocumentFile(unittest.TestCase):
         file = Path(filepath)
         loader, splitter = DOC_PARSER_MAP.get(file.suffix, (None, None))
         if loader is None:
-            raise ValueError(f"{file.suffix} is not support")
+            raise ValueError(f"'{file.suffix}' is not support")
         metadatas = []
         texts = []
         for doc in loader(file.as_posix()).load():

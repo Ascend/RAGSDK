@@ -37,9 +37,9 @@ def _get_data_save_file(data_save_folder: str, cache_name: str, memory_only: boo
 
     if not os.path.exists(data_save_folder):
         os.makedirs(data_save_folder)
-        logger.info(f"creat cache data save folder {data_save_folder}")
+        logger.info(f"creat cache data save folder '{data_save_folder}'")
     else:
-        logger.info(f"find cache data save folder {data_save_folder}")
+        logger.info(f"find cache data save folder '{data_save_folder}'")
 
     file_prefix = cache_name
 
@@ -48,13 +48,13 @@ def _get_data_save_file(data_save_folder: str, cache_name: str, memory_only: boo
     data_save_file = ""
     if not memory_only:
         vector_save_file = os.path.join(data_save_folder, f"{file_prefix}_vector_cache_file.index")
-        logger.info(f"vector cache data save file : {vector_save_file}")
+        logger.info(f"vector cache data save file : '{vector_save_file}'")
 
         sql_save_file = os.path.join(data_save_folder, f"{file_prefix}_sql_cache_file.db")
-        logger.info(f"sql cache data save file : {sql_save_file}")
+        logger.info(f"sql cache data save file : '{sql_save_file}'")
     else:
         data_save_file = os.path.join(data_save_folder, f"{file_prefix}_data_map.txt")
-        logger.info(f"data map save file : {data_save_file}")
+        logger.info(f"data map save file : '{data_save_file}'")
 
     return vector_save_file, sql_save_file, data_save_file
 

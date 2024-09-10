@@ -57,7 +57,7 @@ class TreeText2TextChain(SingleText2TextChain):
                           f"前面的参考信息可能有用，也可能没用，你需要从我给出的参考信息中选出与我的问题最相关的那些，来为你的回答提供依据。"
                           f"回答一定要忠于原文，简洁但不丢信息，不要胡乱编造。我的问题或指令是什么语种，你就用什么语种回复, 你的回复: ")
         self._query_str = final_question
-        logger.info(f"the fianl question to llm : {final_question}")
+        logger.info(f"the fianl question to llm : '{final_question}'")
         if not llm_config.stream:
             return self._do_query(final_question, llm_config)
         return self._do_stream_query(final_question, llm_config)

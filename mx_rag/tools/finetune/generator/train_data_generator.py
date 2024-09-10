@@ -144,7 +144,7 @@ class TrainDataGenerator(BaseGenerator):
         FileCheck.dir_check(self.dataset_path)
         train_data_path = os.path.join(self.dataset_path, "train_data.jsonl")
         if os.path.exists(train_data_path):
-            raise Exception(f"{train_data_path} exist, old data will be removed")
+            raise Exception(f"'{train_data_path}' exist, old data will be removed")
 
         qd_pairs = []
         for query, doc in zip(preferred_query_list, preferred_doc_list):

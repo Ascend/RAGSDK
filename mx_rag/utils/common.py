@@ -137,7 +137,7 @@ class ParseCertInfo:
             try:
                 self.extensions[ext_name] = str(ext)
             except Exception as e:
-                logger.warning(f"format {ext_name} str info in certificate failed")
+                logger.warning(f"format '{ext_name}' str info in certificate failed")
                 continue
 
     @property

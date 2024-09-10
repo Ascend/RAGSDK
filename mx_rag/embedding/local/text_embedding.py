@@ -165,4 +165,4 @@ class TextEmbedding(Embeddings):
             d = attention_mask.sum(dim=1, keepdim=True).float()
             return s / d
         else:
-            raise NotImplementedError(f'Pooling method {self.pooling_method} not implemented!')
+            raise NotImplementedError(f'Pooling method "{self.pooling_method}" not implemented!')
