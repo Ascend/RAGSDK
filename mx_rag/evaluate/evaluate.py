@@ -63,7 +63,7 @@ class Evaluate:
         self.eval_llm = llm
 
     @staticmethod
-    def load_data(file_path: str) -> Optional[Dict[str, Any]]:
+    def load_data(file_path: str, **kwargs) -> Optional[Dict[str, Any]]:
         """
         加载本地用户数据集 要求是csv 格式
         Args:
@@ -76,7 +76,7 @@ class Evaluate:
         FileCheck.check_file_size(file_path, 100 * 1024 * 1024)
 
         try:
-            data = pd.read_csv(file_path)
+            data = pd.read_csv(file_path, **kwargs)
         except Exception as e:
             logger.error(f"load_data error {e}")
             return None
@@ -88,7 +88,7 @@ class Evaluate:
         return datasets
 
     @classmethod
-    def save_data(cls, data: Result, save_path: str):
+    def save_data(cls, data: Result, save_path: str, **kwargs):
         """
         将ragas 评估结果存放在save_path的目录下
         Args:
@@ -105,7 +105,7 @@ class Evaluate:
         filename = f'rag_evaluate_{formatted_time}.csv'
         filepath = os.path.join(save_path, filename)
 
-        data.to_pandas().to_csv(filepath, index=False)
+        data.to_pandas().to_csv(filepath, **kwargs)
         logger.info(f"evaluate save data to {filepath}")
 
     @classmethod
@@ -137,7 +137,7 @@ class Evaluate:
                  datasets: Dict[str, Any],
                  language: str = None,
                  prompt_dir: str = None,
-                 **kwargs) -> Result:
+                 **kwargs) -> Optional[Result]:
         """
         根据metrics_name列表 计算得分
         Args:
@@ -158,11 +158,16 @@ class Evaluate:
         self._metrics_local_adapt(metrics, language, prompt_dir)
 
         datesets = Dataset.from_dict(datasets)
-        data = ragas_evaluate(dataset=datesets,
-                              metrics=metrics,
-                              llm=self.eval_llm,
-                              embeddings=self.eval_embedding,
-                              **kwargs)
+        try:
+            data = ragas_evaluate(dataset=datesets,
+                                  metrics=metrics,
+                                  llm=self.eval_llm,
+                                  embeddings=self.eval_embedding,
+                                  **kwargs)
+        except ValueError as e:
+            logger.error(f"evaluate unexpect: {e}")
+            return None
+
         return data
 
     @validate_params(

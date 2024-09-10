@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
+import multiprocessing
+import threading
 from typing import List
 
 import numpy as np
@@ -25,18 +27,22 @@ class TextEmbedding(Embeddings):
         model_path=dict(validator=lambda x: isinstance(x, str)),
         dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID),
         use_fp16=dict(validator=lambda x: isinstance(x, bool)),
-        pooling_method=dict(validator=lambda x: x in ["cls", "mean"])
+        pooling_method=dict(validator=lambda x: x in ["cls", "mean"]),
+        lock=dict(
+            validator=lambda x: x is None or isinstance(x, (type(multiprocessing.Lock()), type(threading.Lock()))))
     )
     def __init__(self,
                  model_path: str,
                  dev_id: int = 0,
                  use_fp16: bool = True,
-                 pooling_method: str = 'cls'):
+                 pooling_method: str = 'cls',
+                 lock=None):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
         self.pooling_method = pooling_method
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModel.from_pretrained(model_path, local_files_only=True)
+        self.model_lock = lock
 
         if use_fp16:
             self.model = self.model.half()
@@ -109,8 +115,7 @@ class TextEmbedding(Embeddings):
                 self.model.device)
 
             attention_mask = encode_texts.attention_mask
-            with torch.no_grad():
-                model_output = self.model(encode_texts.input_ids, attention_mask, return_dict=True)
+            model_output = self._safe_call_model(encode_texts, attention_mask)
             last_hidden_state = model_output.last_hidden_state
             embeddings = self._pooling(last_hidden_state, attention_mask)
             embeddings = torch.nn.functional.normalize(embeddings, dim=-1).cpu().numpy()
@@ -137,6 +142,18 @@ class TextEmbedding(Embeddings):
 
         last_hidden_states = np.concatenate(last_hidden_states, axis=0) if with_last_hidden_state else np.array([])
         return np.concatenate(result, axis=0), last_hidden_states
+
+    def _safe_call_model(self, encode_texts, attention_mask):
+        def _call_model():
+            with torch.no_grad():
+                model_output = self.model(encode_texts.input_ids, attention_mask, return_dict=True)
+            return model_output
+
+        if self.model_lock is not None:
+            with self.model_lock:
+                return _call_model()
+        else:
+            return _call_model()
 
     def _pooling(self,
                  last_hidden_state: torch.Tensor,
