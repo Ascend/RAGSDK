@@ -26,6 +26,12 @@ class FileHandlerError(Exception):
     pass
 
 
+@validate_params(
+        knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB)),
+        loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng)),
+        embed_func=dict(validator=lambda x: isinstance(x, Callable)),
+        force=dict(validator=lambda x: isinstance(x, bool))
+    )
 def upload_files(
         knowledge: KnowledgeDB,
         files: List[str],
