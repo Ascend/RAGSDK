@@ -69,7 +69,12 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
 
     def _load_image_text(self, image_bytes):
         result = self.ocr.ocr(image_bytes, cls=True)
-        return [line[1][0] for line in result[0]]
+        try:
+            res = [line[1][0] for line in result[0]]
+            return res
+        except TypeError as err:
+            logger.info(f"can not load text from image, {err}")
+            return None
 
     def _load_slide(self, slide):
         slide_text = []
@@ -78,7 +83,8 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
             if hasattr(shape, "image"):
                 image_data = shape.image.blob
                 img_text = self._load_image_text(image_data)
-                slide_text.extend(img_text)
+                if img_text is not None:
+                    slide_text.extend(img_text)
 
             # 检查形状是否为表格
             if shape.has_table:
