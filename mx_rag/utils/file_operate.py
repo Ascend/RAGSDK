@@ -24,7 +24,7 @@ def write_jsonl_to_file(datas: list[dict], file: str, line_limit: int = 10000, l
     file_basename = os.path.basename(file)
     FileCheck.dir_check(file_path)
     if not re.match(r".*.jsonl", file_basename):
-        raise Exception(f"file {file} is not a jsonl file name")
+        raise Exception(f"file '{file}' is not a jsonl file name")
 
     try:
         _write_jsonl_file(datas, file, length_limit)
@@ -34,7 +34,7 @@ def write_jsonl_to_file(datas: list[dict], file: str, line_limit: int = 10000, l
     except Exception as e:
         logger.error(f"write data to file failed, find Exception: {e}")
         raise Exception(f"write jsonl to file failed") from e
-    logger.info(f"write data to file {file_basename} success")
+    logger.info(f"write data to file '{file_basename}' success")
 
 
 def _write_jsonl_file(datas, file, length_limit):

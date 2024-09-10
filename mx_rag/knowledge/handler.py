@@ -68,7 +68,7 @@ def upload_files(
                 knowledge.delete_file(file_obj.name)
             except Exception as e:
                 logger.warning(f"exception encountered while rollback, {e}")
-            logger.error(f"add {file_obj.name} failed, {err}")
+            logger.error(f"add '{file_obj.name}' failed, {err}")
             continue
 
 
@@ -79,12 +79,12 @@ def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
     FileCheck.check_path_is_exist_and_valid(file)
     file_obj = Path(file)
     if not _is_in_white_paths(file_obj, knowledge.white_paths):
-        raise FileHandlerError(f"{file_obj.as_posix()} is not in whitelist path")
+        raise FileHandlerError(f"'{file_obj.as_posix()}' is not in whitelist path")
     if not file_obj.is_file():
-        raise FileHandlerError(f"{file} is not a normal file")
+        raise FileHandlerError(f"'{file}' is not a normal file")
     if knowledge.check_document_exist(file_obj.name):
         if not force:
-            raise FileHandlerError(f"file path {file_obj.name} is already exist")
+            raise FileHandlerError(f"file path '{file_obj.name}' is already exist")
         else:
             knowledge.delete_file(file_obj.name)
 
@@ -147,7 +147,7 @@ def upload_dir(params: FilesLoadInfo):
     """
     dir_path_obj = Path(dir_path)
     if not dir_path_obj.is_dir():
-        raise FileHandlerError(f"dir path {dir_path} is invalid")
+        raise FileHandlerError(f"dir path '{dir_path}' is invalid")
 
     support_file_type = SUPPORT_DOC_TYPE
     if load_image:
@@ -179,7 +179,7 @@ def delete_files(
     count = 0
     for filename in file_names:
         if not isinstance(filename, str):
-            raise FileHandlerError(f"file path {filename} is invalid")
+            raise FileHandlerError(f"file path '{filename}' is invalid")
         if count >= knowledge.max_loop_limit:
             logger.warning("the number of files reaches the maximum limit")
             break
@@ -218,7 +218,7 @@ def load_tree(file_path: str, white_paths: List[str], float_type: Union[np.float
     real_path = os.path.realpath(file_path)
     file_obj = Path(real_path)
     if not _is_in_white_paths(file_obj, white_paths):
-        raise FileHandlerError(f"{file_obj.as_posix()} is not in whitelist path")
+        raise FileHandlerError(f"'{file_obj.as_posix()}' is not in whitelist path")
     file_check = SecFileCheck(file_path, 1024 * 1024 * 1024)
     file_check.check()
     with open(file_path, "r") as f:

@@ -106,7 +106,7 @@ class Evaluate:
         filepath = os.path.join(save_path, filename)
 
         data.to_pandas().to_csv(filepath, **kwargs)
-        logger.info(f"evaluate save data to {filepath}")
+        logger.info(f"evaluate save data to '{filepath}'")
 
     @classmethod
     def _check_metric_name(cls, metrics_name: list[str]):
@@ -120,7 +120,7 @@ class Evaluate:
         """
         for metric_name in metrics_name:
             if metric_name not in cls.RAG_TEST_METRIC:
-                raise KeyError(f"{metric_name} not support in Evaluate")
+                raise KeyError(f"'{metric_name}' not support in Evaluate")
 
         if len(set(metrics_name)) != len(metrics_name):
             raise ValueError(f"duplicate metric {metrics_name}")
@@ -220,7 +220,7 @@ class Evaluate:
             logger.warning(f"because local param is None will not adapt local")
             return
 
-        logger.info(f"local param language:{language} cache_dir:{cache_dir}")
+        logger.info(f"local param language:'{language}' cache_dir:'{cache_dir}'")
 
         _exclude_adapt_metric: list[str] = [
             "context_entity_recall",

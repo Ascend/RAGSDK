@@ -29,7 +29,7 @@ class BaseLoader(ABC):
             with zipfile.ZipFile(self.file_path, "r") as zip_ref:
                 total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
                 if total_uncompressed_size > self.MAX_SIZE * self.multi_size:
-                    logger.error(f"{self.file_path} is ZIP bomb: file is too large after decompression.")
+                    logger.error(f"'{self.file_path}' is ZIP bomb: file is too large after decompression.")
                     return True
                 else:
                     return False
