@@ -11,7 +11,7 @@ import faiss
 import numpy as np
 from loguru import logger
 
-from mx_rag.utils.file_check import FileCheck
+from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K
 
@@ -73,17 +73,22 @@ class MindFAISS(VectorStore):
                 FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
                 cpu_index = faiss.read_index(self.load_local_index)
                 self.index = ascendfaiss.index_cpu_to_ascend(self.device, cpu_index)
+            except FileCheckError as fc_error:
+                logger.error(f"Invalid local index file: {fc_error}")
+                raise MindFAISSError(f"Failed to load index: {fc_error}") from fc_error
             except Exception as err:
-                raise MindFAISSError(f"load index failed, {err}") from err
-            return
+                logger.error(f"Unexpected error during index loading: {err}")
+                raise MindFAISSError(f"Failed to load index: {err}") from err
+            return  # 成功加载本地索引
         try:
-            config = ascendfaiss.AscendIndexFlatConfig(self.device)
             similarity = self.SIMILARITY_STRATEGY_MAP.get(similarity_strategy, None)
             if similarity is None:
-                raise MindFAISSError(f"index type {similarity_strategy} not support")
+                raise MindFAISSError(f"Unsupported similarity strategy: {similarity_strategy}")
 
             ascend_index_creator = similarity.get("index")
             ascend_index_metrics = similarity.get("metric")
+            config = ascendfaiss.AscendIndexFlatConfig(self.device)
+            # 根据提供的策略创建索引
             self.index = ascend_index_creator(x_dim, ascend_index_metrics, config)
             self.score_scale = similarity.get("scale", None)
         except Exception as err:
@@ -115,8 +120,12 @@ class MindFAISS(VectorStore):
             cpu_index = ascendfaiss.index_ascend_to_cpu(self.index)
             faiss.write_index(cpu_index, self.load_local_index)
             os.chmod(self.load_local_index, 0o600)
+        except OSError as os_error:
+            logger.error(f"File system error during saving index to '{self.load_local_index}': {os_error}")
+            raise MindFAISSError(f"File system error: {os_error}") from os_error
         except Exception as err:
-            raise MindFAISSError(f"save index failed {err}") from err
+            logger.error(f"Unexpected error during index saving: {err}")
+            raise MindFAISSError(f"Failed to save index due to an unexpected error: {err}") from err
 
     def get_save_file(self):
         return self.load_local_index
@@ -137,8 +146,12 @@ class MindFAISS(VectorStore):
     def add(self, embeddings: np.ndarray, ids: List[int]):
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
+        except (AttributeError, AssertionError) as e:
+            logger.error(f"Failed to add index due to an attribute or assertion error: {e}")
+            raise MindFAISSError(f"Failed to add index: {e}") from e
         except Exception as err:
-            raise MindFAISSError(f"add index failed, {err}") from err
+            logger.error(f"Unexpected error while adding index: {err}")
+            raise MindFAISSError(f"Failed to add index: {err}") from err
         if self.auto_save:
             self.save_local()
 

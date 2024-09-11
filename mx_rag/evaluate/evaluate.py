@@ -77,15 +77,23 @@ class Evaluate:
 
         try:
             data = pd.read_csv(file_path, **kwargs)
-        except Exception as e:
-            logger.error(f"load_data error {e}")
+            context_key_words = 'contexts'
+            if context_key_words in data:
+                data[context_key_words] = data[context_key_words].apply(ast.literal_eval)
+            datasets = data.to_dict(orient='list')
+            return datasets
+        except pd.errors.EmptyDataError:
+            logger.error(f"CSV file is empty: '{file_path}'")
             return None
-
-        context_key_words = 'contexts'
-        if context_key_words in data:
-            data[context_key_words] = data[context_key_words].apply(ast.literal_eval)
-        datasets = data.to_dict(orient='list')
-        return datasets
+        except FileNotFoundError:
+            logger.error(f"File not found: '{file_path}'")
+            return None
+        except pd.errors.ParserError as e:
+            logger.error(f"Error parsing the CSV file '{file_path}': {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while loading '{file_path}': {e}")
+            return None
 
     @classmethod
     def save_data(cls, data: Result, save_path: str, **kwargs):

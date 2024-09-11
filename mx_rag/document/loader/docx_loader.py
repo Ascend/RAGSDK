@@ -17,6 +17,7 @@ from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.common import validate_params
 
 
@@ -48,8 +49,11 @@ class DocxLoader(BaseLoader, mxBaseLoader):
         if block.style.name.startswith("Heading"):
             try:
                 title_level = int(block.style.name.split()[-1])
+            except ValueError as ex:
+                logger.warning(f"_handle_paragraph_heading: failed to extract heading level: {str(ex)}")
+                return False
             except Exception as ex:
-                logger.warning(f"_handle_paragraph_heading {str(ex)}")
+                logger.warning(f"_handle_paragraph_heading: {str(ex)}")
                 return False
             while stack and stack[-1][0] >= title_level:
                 stack.pop()
@@ -117,6 +121,9 @@ class DocxLoader(BaseLoader, mxBaseLoader):
                 logger.error(f"too many words {word_count}")
                 return False
             return True
+        except (PathNotFileException, FileCheckError) as e:
+            logger.error(f"Invalid file: {str(e)}")
+            return False
         except Exception as e:
             logger.error(f"check file failed, {str(e)}")
             return False

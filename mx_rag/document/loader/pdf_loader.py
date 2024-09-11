@@ -16,7 +16,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
-from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.file_check import SecFileCheck, FileCheckError, PathNotFileException
 from mx_rag.utils.common import validate_params
 
 
@@ -91,9 +91,13 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         if self.ocr_engine is None:
             try:
                 self.ocr_engine = PPStructure(table=True, ocr=True, lang=self.lang.value, layout=True)
-            except Exception as e:
+            except AssertionError as e:
+                logger.error(f"Assertion error: {e}")
                 self.ocr_engine = None
-                logger.error(f"paddleOcr init failed, {str(e)}")
+                return self._text_merger([""])
+            except Exception as e:
+                logger.error(f"paddleOcr init failed, {e}")
+                self.ocr_engine = None
                 return self._text_merger([""])
 
         with fitz.open(self.file_path) as pdf_document:
@@ -128,6 +132,9 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                 logger.error(f"too many pages {_pdf_page_count}")
                 return False
             return True
+        except (FileCheckError, PathNotFileException) as e:
+            logger.error(f"Invalid input file: {e}")
+            return False
         except Exception as e:
             logger.error(f"check file failed, {str(e)}")
             return False

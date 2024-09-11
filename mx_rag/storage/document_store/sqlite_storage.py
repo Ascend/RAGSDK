@@ -5,6 +5,8 @@ from typing import List, Optional
 
 from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.exc import SQLAlchemyError
+from loguru import logger
 
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument, StorageError
 from mx_rag.utils.file_check import FileCheck
@@ -76,6 +78,10 @@ class SQLiteDocstore(Docstore):
                 session.bulk_save_objects(chunks)
                 session.commit()
                 return idxs
+            except SQLAlchemyError as sql_err:
+                session.rollback()
+                logger.error(f"Database error while adding chunks: {sql_err}")
+                raise StorageError(f"Failed to add chunks due to database error: {sql_err}") from sql_err
             except Exception as err:
                 session.rollback()
                 raise StorageError(f"add chunk failed, {err}") from err
@@ -89,6 +95,10 @@ class SQLiteDocstore(Docstore):
                 chunks.delete(synchronize_session=False)
                 session.commit()
                 return idxs
+            except SQLAlchemyError as sql_err:
+                session.rollback()
+                logger.error(f"Database error while deleting doc: {sql_err}")
+                raise StorageError(f"Failed to add chunks due to database error: {sql_err}") from sql_err
             except Exception as err:
                 session.rollback()
                 raise StorageError(f"delete chunk failed, {err}") from err
