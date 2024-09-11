@@ -4,8 +4,8 @@ import os
 import shutil
 import unittest
 
-from mx_rag.cache.cache_core import MxRAGCache
-from mx_rag.cache.cache_config import CacheConfig
+from mx_rag.cache import MxRAGCache
+from mx_rag.cache import CacheConfig
 
 
 class TestCacheCore(unittest.TestCase):

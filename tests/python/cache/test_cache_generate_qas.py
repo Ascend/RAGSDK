@@ -4,7 +4,7 @@ import os
 import unittest
 from unittest.mock import Mock, patch
 
-from mx_rag.cache.cache_generate_qas import QAGenerate, QAGenerationConfig, MarkDownParser, HTMLParser
+from mx_rag.cache import QAGenerate, QAGenerationConfig, MarkDownParser, HTMLParser
 
 
 class TestQAGenerate(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestQAGenerate(unittest.TestCase):
         with self.assertRaises(ValueError):
             qa_generate.generate_qa()
 
-    @patch("mx_rag.cache.cache_generate_qas.generate_qas.QAGenerate.generate_qa")
+    @patch("mx_rag.cache.QAGenerate.generate_qa")
     def test_generate_qas_no_qas(self, mock_generate_qas):
         config = QAGenerationConfig(['title1', 'title2'], ['content1'], Mock(), Mock())
         qa_generate = QAGenerate(config)
@@ -23,8 +23,8 @@ class TestQAGenerate(unittest.TestCase):
         result = qa_generate.generate_qa()
         self.assertEqual(result, [])
 
-    @patch("mx_rag.cache.cache_generate_qas.generate_qas.QAGenerate._split_html_text")
-    @patch("mx_rag.cache.cache_generate_qas.generate_qas.QAGenerate._generate_qa_from_html")
+    @patch("mx_rag.cache.QAGenerate._split_html_text")
+    @patch("mx_rag.cache.QAGenerate._generate_qa_from_html")
     def test_generate_qas_with_qas(self, generate_mock, split_mock):
         config = QAGenerationConfig(['title1', 'title2'], ['content1', 'content2'], Mock(), Mock())
         qa_generate = QAGenerate(config)
@@ -44,7 +44,7 @@ class TestQAGenerate(unittest.TestCase):
         self.assertEqual(titles, ['test.md'])
         self.assertEqual(contents, ['# Test Tile\n\nthis is a test'])
 
-    @patch("mx_rag.cache.cache_generate_qas.HTMLParser.parse")
+    @patch("mx_rag.cache.HTMLParser.parse")
     def test_html_parse(self, parse_mock):
         html_parser = HTMLParser(["https://127.0.0.1"])
         parse_mock.return_value = [], []

@@ -4,7 +4,7 @@ from typing import Any, Union, Dict, Iterator, Callable
 import json
 
 from mx_rag.chain import Chain
-from mx_rag.cache.cache_core import MxRAGCache
+from mx_rag.cache import MxRAGCache
 from mx_rag.utils.common import validate_params, MAX_QUERY_LENGTH
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 

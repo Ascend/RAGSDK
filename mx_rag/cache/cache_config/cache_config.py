@@ -17,7 +17,7 @@ from gptcache.similarity_evaluation import SimilarityEvaluation
 
 from mx_rag.utils.file_operate import check_disk_free_space
 from mx_rag.utils.common import validate_params, MB, GB
-
+from mx_rag.utils.file_check import FileCheck
 
 
 class EvictPolicy(Enum):
@@ -79,6 +79,10 @@ class CacheConfig(Config):
         similarity_threshold = kwargs.get("similarity_threshold", 0.8)
         if not (1 >= similarity_threshold >= 0):
             raise ValueError("similarity_threshold must 0 ~ 1 range")
+
+        FileCheck.check_input_path_valid(data_save_folder)
+        if not os.path.exists(data_save_folder):
+            os.makedirs(data_save_folder, 0o660)
 
         if check_disk_free_space(os.path.dirname(self.data_save_folder), self.min_free_space):
             raise Exception("Insufficient remaining space, please clear disk space")
