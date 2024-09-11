@@ -29,7 +29,6 @@ class TEIReranker(Reranker):
         self.url = url
         self.client = RequestUtils(use_http=use_http)
 
-
     @staticmethod
     def create(**kwargs):
         if "url" not in kwargs or not isinstance(kwargs.get("url"), str):
@@ -75,19 +74,27 @@ class TEIReranker(Reranker):
             texts_batch = texts[start_index: start_index + batch_size]
 
             request_body = {'query': query, 'texts': texts_batch, 'truncate': True}
-
-            resp = self.client.post(self.url, json.dumps(request_body), headers=TEIReranker.HEADERS)
-
+            try:
+                resp = self.client.post(self.url, json.dumps(request_body), headers=TEIReranker.HEADERS)
+            except Exception as e:
+                logger.error(f"API request failed with exception: {e}")
+                return np.array([])
             if resp.success:
                 try:
                     scores_json = json.loads(resp.data)
                     scores = self._process_data(scores_json, len(texts_batch))
                     result.extend(scores)
+                except json.JSONDecodeError as json_err:
+                    logger.error(f"Failed to decode JSON response from API: {json_err}")
+                    return np.array([])
+                except (TypeError, IndexError, ValueError) as e:
+                    logger.error(f"Data processing error: {e}")
+                    return np.array([])
                 except Exception as e:
-                    logger.error(f'unable to process tei response content, find exception {e}')
+                    logger.error(f"Unable to process TEI response content, exception: {e}")
                     return np.array([])
             else:
-                logger.error('tei request failed')
+                logger.error(f"TEI request failed.")
                 return np.array([])
 
         return np.array(result)

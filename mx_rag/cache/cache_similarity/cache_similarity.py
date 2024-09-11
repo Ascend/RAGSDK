@@ -80,6 +80,9 @@ class CacheSimilarity(SimilarityEvaluation):
 
             scores = self._similarity_impl.rerank(src_question, [cache_question], batch_size=1)
             return self._final_result(scores[0])
+        except KeyError as e:
+            logger.error(f"Key error: {e}")
+            return self._final_result(self._score_min)
         except Exception as e:
             logger.error(f"CacheSimilarity evaluation fatal error. {e}")
             return self._final_result(self._score_min)

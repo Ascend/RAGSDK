@@ -136,8 +136,11 @@ class ParseCertInfo:
             ext_name = ext.get_short_name().decode()
             try:
                 self.extensions[ext_name] = str(ext)
+            except (TypeError, ValueError) as e:
+                logger.warning(f"Type error or value error, format {ext_name}: {e}")
+                continue
             except Exception as e:
-                logger.warning(f"format '{ext_name}' str info in certificate failed")
+                logger.warning(f"format '{ext_name}' str info in certificate failed: {e}")
                 continue
 
     @property

@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
-
+import os.path
 import ssl
 from typing import Union
 
@@ -51,12 +51,24 @@ class TlsConfig(object):
         context.maximum_version = ssl.TLSVersion.TLSv1_3
         context.set_ciphers(':'.join(SAFE_CIPHER_SUITES))
         try:
+            # 如果提供CA文件，则加载
             if cafile is not None:
+                if not os.path.exists(cafile):
+                    raise FileNotFoundError(f"CA file '{cafile}' not found")
                 context.load_verify_locations(cafile)
+            # 加载certificate和key文件
+            if not os.path.exists(certfile):
+                raise FileNotFoundError(f"Certificate file '{certfile}' not found.")
+            if not os.path.exists(keyfile):
+                raise FileNotFoundError(f"Key file '{keyfile}' not found.")
             context.load_cert_chain(certfile, keyfile, password=TlsConfig.get_pwd_callback(pwd))
             return True, context
-        except Exception as error_info:
-            return False, f"get ssl context failed: {error_info}"
+        except FileNotFoundError as fnf_error:
+            return False, f"File error: {fnf_error}"
+        except ssl.SSLError as ssl_error:
+            return False, f"SSL error: {ssl_error}"
+        except Exception as e:
+            return False, f"Unexpected error while setting up SSL context: {e}"
 
     @staticmethod
     def get_init_context():
@@ -83,8 +95,12 @@ class TlsConfig(object):
                 cls.enable_crl_check(context)
 
             return True, context
+        except ssl.SSLError as ssl_error:
+            return False, f"SSL error occurred: {ssl_error}"
+        except TypeError as type_error:
+            return False, f"Invalid type for CA or CRL data: {type_error}"
         except Exception as error_info:
-            return False, f"get client ssl context failed: {error_info}"
+            return False, f"An unexpected error occurred while setting up the SSL context: {error_info}"
 
     @classmethod
     def get_client_ssl_context(cls, ca_file: str, crl_file: str = None):
@@ -102,5 +118,14 @@ class TlsConfig(object):
                 cls.enable_crl_check(context)
 
             return True, context
+        except FileNotFoundError as fnf_error:
+            # 处理CA或CRL文件找不到的情况
+            return False, f"File not found: {fnf_error}"
+        except PermissionError as perm_error:
+            # 处理CA或CRL文件权限相关的问题
+            return False, f"Permission denied: {perm_error}"
+        except ssl.SSLError as ssl_error:
+            # 处理SSL相关的错误 (比如, 无效的证书格式, SSL设置失败)
+            return False, f"SSL error occurred: {ssl_error}"
         except Exception as error_info:
-            return False, f"get client ssl context failed: {error_info}"
+            return False, f"An unexpected error occurred while setting up the SSL context: {error_info}"

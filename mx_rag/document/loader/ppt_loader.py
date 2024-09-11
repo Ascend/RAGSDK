@@ -9,7 +9,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
-from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.file_check import SecFileCheck, FileCheckError, PathNotFileException
 
 
 class PowerPointLoader(BaseLoader, mxBaseLoader):
@@ -26,12 +26,18 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     def lazy_load(self):
         try:
             self._check_file_valid()
+        except (ValueError, FileCheckError, PathNotFileException) as err:
+            logger.error(f"Failed to check file '{self.file_path}': {err}")
+            return iter([])
         except Exception as err:
             logger.error(f"check '{self.file_path}' failed, {err}")
             return iter([])
 
         try:
             return self._load_ppt()
+        except ValueError as ve:
+            logger.error(f"Value error: {ve}")
+            return iter([])
         except Exception as err:
             logger.error(f"load '{self.file_path}' failed, {err}")
             return iter([])

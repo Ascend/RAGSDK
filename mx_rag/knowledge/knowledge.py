@@ -6,6 +6,7 @@ from typing import List, Callable, Optional, NoReturn
 import numpy as np
 from loguru import logger
 from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
@@ -54,11 +55,19 @@ class KnowledgeStore:
 
     def add(self, knowledge_name: str, doc_name: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
+            logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
         with self.session() as session:
             try:
                 session.add(KnowledgeModel(knowledge_name=knowledge_name, document_name=doc_name))
                 session.commit()
+            except SQLAlchemyError as db_err:
+                session.rollback()
+                logger.error(
+                    f"Database error while adding knowledge: '{knowledge_name}', document: '{doc_name}': {db_err}")
+                raise KnowledgeError(
+                    f"Failed to add knowledge: '{knowledge_name}', document: '{doc_name}' "
+                    "due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
                 raise KnowledgeError(f"add chunk failed, {err}") from err
@@ -69,6 +78,13 @@ class KnowledgeStore:
                 session.query(KnowledgeModel).filter_by(
                     knowledge_name=knowledge_name, document_name=doc_name).delete()
                 session.commit()
+            except SQLAlchemyError as db_err:
+                session.rollback()
+                logger.error(
+                    f"Database error while deleting knowledge: '{knowledge_name}', document: '{doc_name}': {db_err}")
+                raise KnowledgeError(
+                    f"Failed to delete knowledge: '{knowledge_name}', document: '{doc_name}' "
+                    "due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
                 raise KnowledgeError(f"delete chunk failed, {err}") from err
@@ -239,6 +255,11 @@ class KnowledgeMgrStore:
             try:
                 session.add(KnowledgeMgrModel(knowledge_name=knowledge_name))
                 session.commit()
+            except SQLAlchemyError as db_err:
+                session.rollback()
+                logger.error(f"Database error while adding knowledge: '{knowledge_name}': {db_err}")
+                raise KnowledgeError(
+                    f"Failed to add knowledge: '{knowledge_name}' due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
                 raise KnowledgeError(f"add knowledge failed, {err}") from err
@@ -248,6 +269,11 @@ class KnowledgeMgrStore:
             try:
                 session.query(KnowledgeMgrModel).filter_by(knowledge_name=knowledge_name).delete()
                 session.commit()
+            except SQLAlchemyError as db_err:
+                session.rollback()
+                logger.error(f"Database error while deleting knowledge: '{knowledge_name}': {db_err}")
+                raise KnowledgeError(
+                    f"Failed to delete knowledge: '{knowledge_name}' due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
                 raise KnowledgeError(f"delete chunk failed, {err}") from err
