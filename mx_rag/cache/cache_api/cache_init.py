@@ -5,17 +5,17 @@ MXRAGCache 提供的对外API，用于初始化MXRAGCache的参数，在MXRAGCac
 import os
 from typing import Dict
 
+import re
 import cachetools
 from gptcache import Cache
 from gptcache.manager.scalar_data import CacheBase
 from gptcache.similarity_evaluation import ExactMatchEvaluation
 from loguru import logger
 
-from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig, EvictPolicy
+from mx_rag.cache import CacheConfig, SimilarityCacheConfig, EvictPolicy
 from mx_rag.cache.cache_similarity.cache_similarity import CacheSimilarity
 from mx_rag.cache.cache_storage.cache_vec_storage import CacheVecStorage
 from mx_rag.cache.cache_emb.cache_emb import CacheEmb
-from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.common import validate_params
 
 
@@ -33,14 +33,6 @@ def _get_data_save_file(data_save_folder: str, cache_name: str, memory_only: boo
         sql_save_file:str similarity cache缓存数据缓存文件
         data_save_file:str memory cache的缓存文件
     """
-    FileCheck.check_input_path_valid(data_save_folder)
-
-    if not os.path.exists(data_save_folder):
-        os.makedirs(data_save_folder)
-        logger.info(f"creat cache data save folder {data_save_folder}")
-    else:
-        logger.info(f"find cache data save folder {data_save_folder}")
-
     file_prefix = cache_name
 
     vector_save_file = ""
@@ -48,13 +40,13 @@ def _get_data_save_file(data_save_folder: str, cache_name: str, memory_only: boo
     data_save_file = ""
     if not memory_only:
         vector_save_file = os.path.join(data_save_folder, f"{file_prefix}_vector_cache_file.index")
-        logger.info(f"vector cache data save file : {vector_save_file}")
+        logger.info(f"vector cache data save file : '{vector_save_file}'")
 
         sql_save_file = os.path.join(data_save_folder, f"{file_prefix}_sql_cache_file.db")
-        logger.info(f"sql cache data save file : {sql_save_file}")
+        logger.info(f"sql cache data save file : '{sql_save_file}'")
     else:
         data_save_file = os.path.join(data_save_folder, f"{file_prefix}_data_map.txt")
-        logger.info(f"data map save file : {data_save_file}")
+        logger.info(f"data map save file : '{data_save_file}'")
 
     return vector_save_file, sql_save_file, data_save_file
 
@@ -148,7 +140,8 @@ def _init_mxrag_memory_cache(cache_obj: Cache, cache_name: str, config: CacheCon
 
 
 @validate_params(
-    cache_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 64),
+    cache_name=dict(
+        validator=lambda x: isinstance(x, str) and 0 < len(x) < 64 and bool(re.fullmatch(r'[0-9a-zA-Z_]+', x))),
 )
 def init_mxrag_cache(cache_obj: Cache, cache_name: str, config):
     """

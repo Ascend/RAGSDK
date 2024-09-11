@@ -109,7 +109,7 @@ class MindFAISS(VectorStore):
         FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
         try:
             if os.path.exists(self.load_local_index):
-                logger.warning(f"the index path {self.load_local_index} has already exist, will be overwritten")
+                logger.warning(f"the index path '{self.load_local_index}' has already exist, will be overwritten")
                 os.remove(self.load_local_index)
 
             cpu_index = ascendfaiss.index_ascend_to_cpu(self.index)

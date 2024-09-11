@@ -16,9 +16,8 @@ from gptcache.processor.pre import get_prompt
 from gptcache.similarity_evaluation import SimilarityEvaluation
 
 from mx_rag.utils.file_operate import check_disk_free_space
-from mx_rag.utils.common import validate_params
-
-FREE_SPACE_LIMIT = 1024 * 1024 * 1024
+from mx_rag.utils.common import validate_params, MB, GB
+from mx_rag.utils.file_check import FileCheck
 
 
 class EvictPolicy(Enum):
@@ -57,17 +56,17 @@ class CacheConfig(Config):
     """
 
     @validate_params(
-        cache_size=dict(validator=lambda x: isinstance(x, int) and 0 < x < 100000),
+        cache_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100000),
         eviction_policy=dict(validator=lambda x: isinstance(x, EvictPolicy)),
         data_save_folder=dict(validator=lambda x: isinstance(x, str)),
-        min_free_space=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 20 * 1024 * 1024 * 1024)
+        min_free_space=dict(validator=lambda x: isinstance(x, int) and 20 * MB <= x <= 20 * GB)
     )
     def __init__(self,
                  cache_size: int,
                  eviction_policy: EvictPolicy = EvictPolicy.LRU,
                  pre_emb_func=get_prompt,
                  data_save_folder: str = _get_default_save_folder(),
-                 min_free_space: int = FREE_SPACE_LIMIT,
+                 min_free_space: int = 1 * GB,
                  **kwargs):
         super().__init__(**kwargs)
         self.config_type = "memory_cache_config"
@@ -80,6 +79,10 @@ class CacheConfig(Config):
         similarity_threshold = kwargs.get("similarity_threshold", 0.8)
         if not (1 >= similarity_threshold >= 0):
             raise ValueError("similarity_threshold must 0 ~ 1 range")
+
+        FileCheck.check_input_path_valid(data_save_folder)
+        if not os.path.exists(data_save_folder):
+            os.makedirs(data_save_folder, 0o660)
 
         if check_disk_free_space(os.path.dirname(self.data_save_folder), self.min_free_space):
             raise Exception("Insufficient remaining space, please clear disk space")
@@ -106,7 +109,7 @@ class SimilarityCacheConfig(CacheConfig):
     """
 
     @validate_params(
-        retrieval_top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x < 1000),
+        retrieval_top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1000),
         clean_size=dict(validator=lambda x: isinstance(x, int) and x > 0),
         cache_config=dict(validator=lambda x: isinstance(x, str) and x == "sqlite")
     )

@@ -27,13 +27,13 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
         try:
             self._check_file_valid()
         except Exception as err:
-            logger.error(f"check {self.file_path} failed, {err}")
+            logger.error(f"check '{self.file_path}' failed, {err}")
             return iter([])
 
         try:
             return self._load_ppt()
         except Exception as err:
-            logger.error(f"load {self.file_path} failed, {err}")
+            logger.error(f"load '{self.file_path}' failed, {err}")
             return iter([])
 
     def _check_file_valid(self):
@@ -41,7 +41,7 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
         if not self.file_path.endswith(self.EXTENSION):
             raise ValueError("file type not correct")
         if self._is_zip_bomb():
-            raise ValueError(f"{self.file_path} is a risk of zip bombs")
+            raise ValueError(f"'{self.file_path}' is a risk of zip bombs")
 
     def _load_merged_cell(self, data, cell, row, col):
         span_height = cell.span_height
@@ -69,7 +69,12 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
 
     def _load_image_text(self, image_bytes):
         result = self.ocr.ocr(image_bytes, cls=True)
-        return [line[1][0] for line in result[0]]
+        try:
+            res = [line[1][0] for line in result[0]]
+            return res
+        except TypeError as err:
+            logger.info(f"can not load text from image, {err}")
+            return None
 
     def _load_slide(self, slide):
         slide_text = []
@@ -78,7 +83,8 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
             if hasattr(shape, "image"):
                 image_data = shape.image.blob
                 img_text = self._load_image_text(image_data)
-                slide_text.extend(img_text)
+                if img_text is not None:
+                    slide_text.extend(img_text)
 
             # 检查形状是否为表格
             if shape.has_table:

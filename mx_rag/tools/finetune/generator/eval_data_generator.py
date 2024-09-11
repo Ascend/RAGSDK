@@ -44,7 +44,7 @@ class EvalDataGenerator(BaseGenerator):
 
         eval_data_path = os.path.join(self.dataset_path, "eval_data.jsonl")
         if os.path.exists(eval_data_path):
-            raise Exception(f"{eval_data_path} exist, old data will be removed")
+            raise Exception(f"'{eval_data_path}' exist, old data will be removed")
 
         corpus_list_from_file = read_jsonl_from_file(corpus_data_path)
         corpus_list = []

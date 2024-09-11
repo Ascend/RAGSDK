@@ -72,7 +72,7 @@ class HTMLParser(GenerateQaParser):
             title = html_doc.title()
             content = html_text.extract_text(html_doc.summary(html_partial=True))
             if not title or not content:
-                logger.warning(f"Failed to get title or content of {url}, skip")
+                logger.warning(f"Failed to get title or content of '{url}', skip")
             return title, content
 
         titles = []

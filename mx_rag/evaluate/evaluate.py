@@ -10,7 +10,6 @@ from langchain_core.embeddings import Embeddings
 from langchain.llms.base import LLM
 from loguru import logger
 from datasets import Dataset
-from ragas import evaluate
 from ragas.evaluation import Result
 from ragas.metrics import (
     faithfulness,
@@ -64,7 +63,7 @@ class Evaluate:
         self.eval_llm = llm
 
     @staticmethod
-    def load_data(file_path: str) -> Optional[Dict[str, Any]]:
+    def load_data(file_path: str, **kwargs) -> Optional[Dict[str, Any]]:
         """
         加载本地用户数据集 要求是csv 格式
         Args:
@@ -77,7 +76,7 @@ class Evaluate:
         FileCheck.check_file_size(file_path, 100 * 1024 * 1024)
 
         try:
-            data = pd.read_csv(file_path)
+            data = pd.read_csv(file_path, **kwargs)
         except Exception as e:
             logger.error(f"load_data error {e}")
             return None
@@ -89,16 +88,11 @@ class Evaluate:
         return datasets
 
     @classmethod
-    @validate_params(
-        metrics_name=dict(
-            validator=lambda x: isinstance(x, list) and all(isinstance(i, str) for i in x) and 0 < len(x) <= 14),
-    )
-    def save_data(cls, data: Result, metrics_name: list[str], save_path: str):
+    def save_data(cls, data: Result, save_path: str, **kwargs):
         """
         将ragas 评估结果存放在save_path的目录下
         Args:
             data: ragas的评估结果
-            metrics_name: 包括的测试方法
             save_path: 存放目录
 
         Returns: None
@@ -106,15 +100,13 @@ class Evaluate:
         """
         FileCheck.check_path_is_exist_and_valid(save_path)
 
-        cls._check_metric_name(metrics_name)
-
         current_time = datetime.now(tz=timezone.utc)
         formatted_time = current_time.strftime('%Y%m%d%H%M%S')
         filename = f'rag_evaluate_{formatted_time}.csv'
         filepath = os.path.join(save_path, filename)
 
-        data.to_pandas().to_csv(filepath, index=False)
-        logger.info(f"evaluate save data to {filepath}")
+        data.to_pandas().to_csv(filepath, **kwargs)
+        logger.info(f"evaluate save data to '{filepath}'")
 
     @classmethod
     def _check_metric_name(cls, metrics_name: list[str]):
@@ -128,7 +120,10 @@ class Evaluate:
         """
         for metric_name in metrics_name:
             if metric_name not in cls.RAG_TEST_METRIC:
-                raise KeyError(f"{metric_name} not support in Evaluate")
+                raise KeyError(f"'{metric_name}' not support in Evaluate")
+
+        if len(set(metrics_name)) != len(metrics_name):
+            raise ValueError(f"duplicate metric {metrics_name}")
 
     @validate_params(
         metrics_name=dict(
@@ -142,7 +137,7 @@ class Evaluate:
                  datasets: Dict[str, Any],
                  language: str = None,
                  prompt_dir: str = None,
-                 **kwargs) -> Result:
+                 **kwargs) -> Optional[Result]:
         """
         根据metrics_name列表 计算得分
         Args:
@@ -154,6 +149,8 @@ class Evaluate:
 
         Returns:ragas 评估结果 Result
         """
+        from ragas import evaluate as ragas_evaluate
+
         self._check_metric_name(metrics_name)
 
         metrics = [self.RAG_TEST_METRIC.get(metric_name) for metric_name in metrics_name]
@@ -161,11 +158,16 @@ class Evaluate:
         self._metrics_local_adapt(metrics, language, prompt_dir)
 
         datesets = Dataset.from_dict(datasets)
-        data = evaluate(dataset=datesets,
-                        metrics=metrics,
-                        llm=self.eval_llm,
-                        embeddings=self.eval_embedding,
-                        **kwargs)
+        try:
+            data = ragas_evaluate(dataset=datesets,
+                                  metrics=metrics,
+                                  llm=self.eval_llm,
+                                  embeddings=self.eval_embedding,
+                                  **kwargs)
+        except ValueError as e:
+            logger.error(f"evaluate unexpect: {e}")
+            return None
+
         return data
 
     @validate_params(
@@ -218,7 +220,7 @@ class Evaluate:
             logger.warning(f"because local param is None will not adapt local")
             return
 
-        logger.info(f"local param language:{language} cache_dir:{cache_dir}")
+        logger.info(f"local param language:'{language}' cache_dir:'{cache_dir}'")
 
         _exclude_adapt_metric: list[str] = [
             "context_entity_recall",

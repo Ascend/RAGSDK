@@ -55,21 +55,21 @@ class MyTestCase(unittest.TestCase):
 
         def test_result(self):
             query = "what is unshare command?"
-            logger.info(f"get_relevant_documents [{query}]")
+            logger.info(f"get_relevant_documents ['{query}']")
             docs = r.invoke(query)
             logger.info(f"relevant doc {docs}")
             self.assertEqual(EMBEDDING_TEXT, docs[0].page_content)
 
         def test_result_with_prompt(self):
             query = "what is unshare command?"
-            logger.info(f"get_relevant_documents [{query}]")
+            logger.info(f"get_relevant_documents ['{query}']")
             docs = r.invoke(query)
             logger.info(f"relevant doc {docs}")
             self.assertEqual(EMBEDDING_TEXT, docs[0].page_content)
 
         def test_no_result(self):
             query = "xxxx xxx xx xxx xxx x"
-            logger.info(f"get_relevant_documents [{query}]")
+            logger.info(f"get_relevant_documents ['{query}']")
             docs = r.invoke(query)
             logger.info(f"relevant doc {docs}")
             self.assertEqual(query, docs[0].page_content)
@@ -77,7 +77,7 @@ class MyTestCase(unittest.TestCase):
         def test_no_result_with_prompt(self):
             prompt = "haha"
             query = "xxxx xxx xx xxx xxx x"
-            logger.info(f"get_relevant_documents [{query}]")
+            logger.info(f"get_relevant_documents ['{query}']")
             docs = r.invoke(query)
             logger.info(f"relevant doc {docs}")
             self.assertEqual(query, docs[0].page_content)
@@ -112,7 +112,7 @@ class MyTestCase(unittest.TestCase):
                 return_value=MxDocument(page_content="this is test", metadata={},
                                         document_name="mindie.docx"))
             query = "what is unshare command?"
-            logger.info(f"get_relevant_documents [{query}]")
+            logger.info(f"get_relevant_documents ['{query}']")
             docs = r.invoke(query)
             self.assertEqual("this is test", docs[0].page_content)
 
@@ -121,7 +121,7 @@ class MyTestCase(unittest.TestCase):
             get_relevant_documents_mock.return_value = [Document(page_content=EMBEDDING_TEXT, metadata={})]
             prompt = "haha"
             query = "what is unshare command?"
-            logger.info(f"get_relevant_documents [{query}]")
+            logger.info(f"get_relevant_documents ['{query}']")
             docs = r.invoke(query)
             logger.info(f"relevant doc {docs}")
             self.assertEqual(EMBEDDING_TEXT, docs[0].page_content)
@@ -130,7 +130,7 @@ class MyTestCase(unittest.TestCase):
         def test_no_result(self, get_relevant_documents_mock):
             get_relevant_documents_mock.return_value = [Document(page_content=EMBEDDING_TEXT, metadata={})]
             query = "xxxx xxx xx xxx xxx x"
-            logger.info(f"get_relevant_documents [{query}]")
+            logger.info(f"get_relevant_documents ['{query}']")
             docs = r.invoke(query)
             logger.info(f"relevant doc {docs}")
             self.assertEqual(EMBEDDING_TEXT, docs[0].page_content)
@@ -140,7 +140,7 @@ class MyTestCase(unittest.TestCase):
             get_relevant_documents_mock.return_value = [Document(page_content=EMBEDDING_TEXT, metadata={})]
             prompt = "haha"
             query = "xxxx xxx xx xxx xxx x"
-            logger.info(f"get_relevant_documents [{query}]")
+            logger.info(f"get_relevant_documents ['{query}']")
             docs = r.invoke(query)
 
             logger.info(f"relevant doc {docs}")

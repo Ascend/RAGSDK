@@ -64,7 +64,7 @@ class RequestUtils:
 
             ret = CertContentsChecker("cert").check_dict({"cert": ca_data})
             if not ret:
-                logger.error(f"invalid mef ca cert content: {ret.reason}")
+                logger.error(f"invalid mef ca cert content: '{ret.reason}'")
                 raise UrlUtilException('invalid cert content')
 
             if crl_file:
@@ -105,7 +105,7 @@ class RequestUtils:
                                          headers=headers,
                                          preload_content=False)
         except Exception as e:
-            logger.error(f"request {url} failed, find exception: {e}")
+            logger.error(f"request '{url}' failed, find exception: {e}")
             return Result(False, "")
 
         try:
@@ -138,7 +138,7 @@ class RequestUtils:
         try:
             response = self.pool.request(method='POST', url=url, body=body, headers=headers, preload_content=False)
         except Exception as e:
-            logger.error(f"request {url} failed, find exception: {e}")
+            logger.error(f"request '{url}' failed, find exception: {e}")
             yield Result(False, "")
             return
 
@@ -163,7 +163,7 @@ class RequestUtils:
 
     def get(self, url: str, headers: Dict):
         if not _is_url_valid(url, self.use_http):
-            logger.error(f"url check failed, url: {url}, use_http: {self.use_http}")
+            logger.error(f"url check failed, url: '{url}', use_http: {self.use_http}")
             return ""
 
         try:
@@ -172,10 +172,10 @@ class RequestUtils:
                                          headers=headers,
                                          preload_content=False)
         except Exception as e:
-            logger.error(f"request {url} failed, find exception: {e}")
+            logger.error(f"request '{url}' failed, find exception: {e}")
             return ""
         if response.headers.get('Content-Type').find("text/html") == -1:
-            logger.warning(f"The Content-Type in the response headers is not text/html, skip url: {url}.")
+            logger.warning(f"The Content-Type in the response headers is not text/html, skip url: '{url}'.")
             return ""
         if response.status == HTTP_SUCCESS:
             try:

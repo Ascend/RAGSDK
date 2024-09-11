@@ -8,7 +8,7 @@ from unittest.mock import patch
 from gptcache import Cache
 
 from mx_rag.cache.cache_api.cache_init import init_mxrag_cache
-from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig
+from mx_rag.cache import CacheConfig, SimilarityCacheConfig
 from mx_rag.storage.vectorstore import SimilarityStrategy
 
 
