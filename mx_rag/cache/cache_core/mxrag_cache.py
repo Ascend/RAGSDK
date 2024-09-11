@@ -12,7 +12,7 @@ from typing import Any
 from gptcache.core import Cache
 from loguru import logger
 
-from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig
+from mx_rag.cache import CacheConfig, SimilarityCacheConfig
 from mx_rag.cache.cache_api.cache_init import init_mxrag_cache
 from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_QUERY_LENGTH
 
