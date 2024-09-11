@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from typing import Any, Union, Dict, Iterator
+from typing import Any, Union, Dict, Iterator, Callable
 import json
 
 from mx_rag.chain import Chain
@@ -26,7 +26,9 @@ class CacheChainChat(Chain):
 
     @validate_params(
         cache=dict(validator=lambda x: isinstance(x, MxRAGCache)),
-        chain=dict(validator=lambda x: isinstance(x, Chain))
+        chain=dict(validator=lambda x: isinstance(x, Chain)),
+        convert_data_to_cache=dict(validator=lambda x: isinstance(x, Callable)),
+        convert_data_to_user=dict(validator=lambda x: isinstance(x, Callable))
     )
     def __init__(self,
                  cache: MxRAGCache,
