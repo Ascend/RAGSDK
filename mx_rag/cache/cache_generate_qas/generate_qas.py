@@ -7,7 +7,7 @@ from loguru import logger
 from transformers import PreTrainedTokenizerBase
 
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, validata_list_str
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 DEFAULT_LLM_TIMEOUT = 10 * 60
@@ -69,6 +69,10 @@ class QAGenerationConfig:
     """
 
     @validate_params(
+        titles=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 100])),
+        contents=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 10000])),
+        tokenizer=dict(validator=lambda x: isinstance(x, PreTrainedTokenizerBase)),
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
         max_tokens=dict(validator=lambda x: 500 <= x <= 10000),
         qas_num=dict(validator=lambda x: 1 <= x <= 10)
     )
@@ -90,6 +94,9 @@ class QAGenerate:
         config: QAGenerationConfig对象
     """
 
+    @validate_params(
+        config=dict(validator=lambda x: isinstance(x, QAGenerationConfig))
+    )
     def __init__(self, config: QAGenerationConfig):
         self.config = config
 
@@ -130,6 +137,9 @@ class QAGenerate:
             return QAGenerate._split_html_text("\n".join(text_lines), tokenizer, max_tokens)
         return "\n".join(text_lines)
 
+    @validate_params(
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig))
+    )
     def generate_qa(self, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)) -> Dict:
         if len(self.config.titles) != len(self.config.contents):
             raise ValueError("The length of titles and contents must be equal.")
