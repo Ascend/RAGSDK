@@ -14,7 +14,7 @@ from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
 from mx_rag.retrievers.tree_retriever import Tree
 
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
-from mx_rag.utils.common import validate_params, INT_32_MAX
+from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX
 
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
@@ -116,7 +116,7 @@ class KnowledgeDB(KnowledgeBase):
         vector_store=dict(validator=lambda x: isinstance(x, VectorStore)),
         knowledge_name=dict(validator=lambda x: isinstance(x, str)),
         white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x)),
-        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= INT_32_MAX)
+        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX)
     )
     def __init__(
             self,

@@ -10,7 +10,6 @@ from langchain_community.document_loaders.base import BaseLoader
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
 
-
 IMAGE_TYPE = (".jpg", ".png")
 
 
@@ -28,6 +27,5 @@ class ImageLoader(BaseLoader, mxBaseLoader):
 
         with open(self.file_path, "rb") as fi:
             encode_content = str(base64.b64encode(fi.read()).decode())
-        
 
         yield Document(page_content=encode_content, metadata={"source": os.path.basename(self.file_path)})

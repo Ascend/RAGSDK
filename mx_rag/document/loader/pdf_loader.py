@@ -12,6 +12,7 @@ from loguru import logger
 from paddleocr import PPStructure
 from paddleocr.ppstructure.recovery.recovery_to_doc import sorted_layout_boxes
 from PIL import Image
+
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
