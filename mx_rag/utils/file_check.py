@@ -64,8 +64,8 @@ class FileCheck:
         if ".." in path:
             raise FileCheckError(f"there are illegal characters in path '{path}'")
 
-        if check_real_path and os.path.islink(path):
-            raise FileCheckError(f"Input path '{path}' is symbol link")
+        if check_real_path and Path(path).resolve() != Path(path).absolute():
+            raise FileCheckError(f"Input path '{path}' is not valid")
         path_obj = Path(path)
         if check_blacklist:
             for black_path in FileCheck.BLACKLIST_PATH:
