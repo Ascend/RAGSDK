@@ -10,6 +10,7 @@ from typing import List
 from OpenSSL import crypto
 from loguru import logger
 
+FILE_COUNT_MAX = 8000
 INT_32_MAX = 2 ** 31 - 1
 MAX_DEVICE_ID = 63
 MAX_TOP_K = 10000

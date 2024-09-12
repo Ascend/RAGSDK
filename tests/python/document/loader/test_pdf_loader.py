@@ -4,7 +4,7 @@
 
 import os
 import unittest
-
+from unittest import mock
 from mx_rag.document.loader.pdf_loader import PdfLoader
 
 
@@ -36,7 +36,7 @@ class TestPdfLoader(unittest.TestCase):
             mock_path_getsize.return_value = 101 * 1024 * 1024  # 101 MByte
             loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
             pdf_doc = loader.load()
-            self.assertEqual(pdf_doc, [])
+            self.assertEqual(len(pdf_doc), 0)
 
     # 打桩测试超过了pdf文件页数超过1000页场景
     def test_load_page_num_over_limit(self):
