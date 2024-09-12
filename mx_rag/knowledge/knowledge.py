@@ -134,7 +134,6 @@ class KnowledgeDB(KnowledgeBase):
         """获取当前已上传的所有文档"""
         return self._knowledge_store.get_all(self.knowledge_name)
 
-
     @validate_params(
         texts=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX),
         metadatas=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX)
