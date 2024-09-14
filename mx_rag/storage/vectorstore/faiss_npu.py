@@ -55,7 +55,7 @@ class MindFAISS(VectorStore):
             similarity_strategy: SimilarityStrategy,
             devs: List[int],
             load_local_index: str,
-            auto_save: bool = False
+            auto_save: bool = True
     ):
         super().__init__()
         self.devs = devs
