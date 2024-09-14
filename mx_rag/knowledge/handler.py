@@ -18,7 +18,7 @@ from mx_rag.retrievers.tree_retriever import Tree
 from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
-from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP
 from mx_rag.document.loader import BaseLoader
 
 
@@ -29,7 +29,7 @@ class FileHandlerError(Exception):
 @validate_params(
     knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
     loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
-    embed_func=dict(validator=lambda x: isinstance(x, Callable), message="param must be callable function"),
+    embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
     force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
 )
 def upload_files(
@@ -97,6 +97,13 @@ def _is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
     return False
 
 
+@validate_params(
+    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeTreeDB),
+                   message="param must be instance of KnowledgeTreeDB"),
+    parse_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
+    embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
+    force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+)
 def upload_files_build_tree(knowledge: KnowledgeTreeDB,
                             files: List[str],
                             parse_func: Callable[[str, PreTrainedTokenizerBase, int], Tuple],
@@ -122,15 +129,30 @@ def upload_files_build_tree(knowledge: KnowledgeTreeDB,
     return knowledge.add_files(file_names, total_texts, embed_func, total_metadatas)
 
 
-@dataclass
 class FilesLoadInfo:
-    knowledge: KnowledgeDB
-    dir_path: str
-    loader_mng: LoaderMng
-    embed_func: Callable[[List[str]], List[List[float]]]
-    force: bool = False
+    @validate_params(
+        knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
+        loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
+        embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
+        force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+    )
+    def __init__(self,
+                 knowledge: KnowledgeDB,
+                 dir_path: str,
+                 loader_mng: LoaderMng,
+                 embed_func: Callable[[List[str]], List[List[float]]],
+                 force: bool = False):
+        self.knowledge = knowledge
+        self.dir_path = dir_path
+        self.loader_mng = loader_mng
+        self.embed_func = embed_func
+        self.force = force
 
 
+@validate_params(
+    params=dict(validator=lambda x: isinstance(x, FilesLoadInfo),
+                message="param must be instance of FilesLoadInfo")
+)
 def upload_dir(params: FilesLoadInfo):
     knowledge = params.knowledge
     dir_path = params.dir_path
@@ -165,6 +187,7 @@ def upload_dir(params: FilesLoadInfo):
 
 
 @validate_params(
+    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
     file_names=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 1000,
                     message="param must meets: Type is List[str], list length range [1, 1000]")
 )
@@ -189,6 +212,9 @@ def delete_files(
         count += 1
 
 
+@validate_params(
+    tree=dict(validator=lambda x: isinstance(x, Tree), message="param must be instance of Tree")
+)
 def save_tree(tree: Tree, file_path: str):
     """
     序列化Tree并保存
