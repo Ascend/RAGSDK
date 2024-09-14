@@ -5,9 +5,14 @@ import json
 from typing import List
 
 from langchain_core.embeddings import Embeddings
+from loguru import logger
 
 from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str
 from mx_rag.utils.url import RequestUtils
+
+
+class TEIEmbeddingError(Exception):
+    pass
 
 
 class TEIEmbedding(Embeddings):
@@ -49,7 +54,7 @@ class TEIEmbedding(Embeddings):
             resp = self.client.post(self.url, json.dumps(request_body), headers=self.HEADERS)
 
             if not resp.success:
-                raise Exception("tei get response failed")
+                raise TEIEmbeddingError("tei get response failed")
 
             try:
                 data = json.loads(resp.data)
@@ -59,8 +64,18 @@ class TEIEmbedding(Embeddings):
                     raise ValueError('tei response return data with different size')
 
                 result.extend(data)
+            except json.JSONDecodeError as json_err:
+                logger.error(f"Failed to parse JSON response for batch starting at {start_index}: {json_err}")
+                raise TEIEmbeddingError(f"Unable to parse TEI response content: {json_err}") from json_err
+
+            except (TypeError, ValueError) as data_err:
+                logger.error(f"Error in TEI response data for batch starting at {start_index}: {data_err}")
+                raise TEIEmbeddingError(f"TEI response data error: {data_err}") from data_err
+
             except Exception as e:
-                raise Exception('unable to process tei response content') from e
+                logger.error(f"Unexpected error while processing batch starting at {start_index}: {e}")
+                raise TEIEmbeddingError(
+                    f"Failed to process TEI response for batch starting at {start_index}: {e}") from e
 
         return result
 

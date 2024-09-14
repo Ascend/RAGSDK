@@ -33,6 +33,9 @@ class BaseLoader(ABC):
                     return True
                 else:
                     return False
+        except zipfile.BadZipfile as e:
+            logger.error(f"The provided path '{self.file_path}' is not a valid ZIP file or is corrupted: {e}")
+            return True
         except Exception as e:
-            logger.error(f"Error checking ZIP bomb: {e}")
+            logger.error(f"Unexpected error occurred while checking ZIP bomb: {e}")
             return True

@@ -1,12 +1,11 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import os
 from typing import Dict, Any, List, Tuple, Type, Optional
 from dataclasses import dataclass
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import Language, TextSplitter
 
-from mx_rag.document.loader.image_loader import IMAGE_TYPE
 from mx_rag.utils.common import validate_params
 
 
@@ -25,6 +24,7 @@ class SplitterInfo:
 class LoaderMng:
     MAX_REGISTER_LOADER_NUM = 1000
     MAX_REGISTER_SPLITTER_NUM = 1000
+    IMAGE_TYPE = (".jpg", ".png")
 
     def __init__(self):
         self.loaders: Dict[Type, Tuple[List[str], LoaderInfo]] = {}
@@ -46,8 +46,8 @@ class LoaderMng:
                           splitter_params: Optional[Dict[str, Any]] = None):
         if len(self.splitters) >= self.MAX_REGISTER_SPLITTER_NUM:
             raise ValueError(f"More than {self.MAX_REGISTER_SPLITTER_NUM} splitters are registered")
-        if bool(set(IMAGE_TYPE) & set(file_types)):
-            raise KeyError(f"Unsupported registered splitter for file type '{set(IMAGE_TYPE) & set(file_types)}'")
+        if bool(set(self.IMAGE_TYPE) & set(file_types)):
+            raise KeyError(f"Unsupported register splitter for file type {set(self.IMAGE_TYPE) & set(file_types)}")
         self.splitters[splitter_class] = (file_types, SplitterInfo(splitter_class, splitter_params or {}))
 
     def get_loader(self, file_suffix: str) -> LoaderInfo:
@@ -60,7 +60,7 @@ class LoaderMng:
         for file_types, splitter_info in self.splitters.values():
             if file_suffix in file_types:
                 return splitter_info
-            elif file_suffix in IMAGE_TYPE:
+            elif file_suffix in self.IMAGE_TYPE:
                 return None
         raise KeyError(f"No splitter registered for file type '{file_suffix}'")
 

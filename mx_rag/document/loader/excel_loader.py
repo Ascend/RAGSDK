@@ -12,6 +12,7 @@ from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
+from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.common import validate_params
 
 OPENPYXL_EXTENSION = (".xlsx",)
@@ -169,8 +170,11 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         """
         try:
             file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
+        except (FileCheckError, PathNotFileException) as e:
+            logger.error(f"Invalid input file '{self.file_path}': {e}")
+            return iter([])
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Unexpected error: {e}")
             return iter([])
         # 判断文件种类：支持 xlsx 与 xls 格式
         if self.file_path.endswith(XLRD_EXTENSION):
@@ -322,8 +326,17 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                 reader = csv.reader(file)
                 headers = next(reader)  # 读取第一行标题
                 content = self._load_csv_lines(reader, headers)
+        except FileNotFoundError as e:
+            logger.error(f"File not found: {e}")
+            return
+        except IOError as e:
+            logger.error(f"I/O error occurred: {e}")
+            return
+        except csv.Error as e:
+            logger.error(f"CSV error occurred: {e}")
+            return
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Unexpected error: {e}")
             return
         if content:
             yield Document(page_content=content, metadata={"source": self.file_path})

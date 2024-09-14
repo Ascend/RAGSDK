@@ -55,6 +55,13 @@ class BMRetriever(BaseRetriever):
             raise ValueError(f'prompt.template length must be between 1 and {MAX_PROMPT_LENGTH}.')
         return prompt
 
+    @classmethod
+    @validator('preprocess_func', allow_reuse=True)
+    def validate_preprocess_func(cls, preprocess_func):
+        if not isinstance(preprocess_func, Callable):
+            raise ValueError("preprocess_func must be an Callable.")
+        return preprocess_func
+
     def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:

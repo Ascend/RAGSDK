@@ -18,8 +18,11 @@ try:
     import torch_npu
 
     torch.npu.set_compile_mode(jit_compile=False)
+    logger.info("torch_npu successfully imported, running on NPU")
+except ImportError as e:
+    logger.warning(f"Failed to import torch_npu: {e}. ImageEmbedding will run on cpu.")
 except Exception as e:
-    logger.warning(f"import torch_npu failed:{e}, img_embedding will running on cpu")
+    logger.error(f"Unexpected error while importing torch_npu: {e}. ImageEmbedding will run on cpu.")
 
 
 class ImageEmbedding(Embeddings):

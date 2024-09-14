@@ -6,6 +6,7 @@ from typing import List, Callable, Optional, NoReturn
 import numpy as np
 from loguru import logger
 from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
@@ -13,7 +14,7 @@ from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
 from mx_rag.retrievers.tree_retriever import Tree
 
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
-from mx_rag.utils.common import validate_params, INT_32_MAX
+from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX
 
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
@@ -54,11 +55,19 @@ class KnowledgeStore:
 
     def add(self, knowledge_name: str, doc_name: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
+            logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
         with self.session() as session:
             try:
                 session.add(KnowledgeModel(knowledge_name=knowledge_name, document_name=doc_name))
                 session.commit()
+            except SQLAlchemyError as db_err:
+                session.rollback()
+                logger.error(
+                    f"Database error while adding knowledge: '{knowledge_name}', document: '{doc_name}': {db_err}")
+                raise KnowledgeError(
+                    f"Failed to add knowledge: '{knowledge_name}', document: '{doc_name}' "
+                    "due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
                 raise KnowledgeError(f"add chunk failed, {err}") from err
@@ -66,9 +75,20 @@ class KnowledgeStore:
     def delete(self, knowledge_name: str, doc_name: str):
         with self.session() as session:
             try:
-                session.query(KnowledgeModel).filter_by(
-                    knowledge_name=knowledge_name, document_name=doc_name).delete()
-                session.commit()
+                doc_to_delete = session.query(KnowledgeModel).filter_by(
+                    knowledge_name=knowledge_name, document_name=doc_name).first()
+                if not doc_to_delete:
+                    logger.info(f"{doc_name} does not exist in {knowledge_name}, no need delete.")
+                else:
+                    session.delete(doc_to_delete)
+                    session.commit()
+            except SQLAlchemyError as db_err:
+                session.rollback()
+                logger.error(
+                    f"Database error while deleting knowledge: '{knowledge_name}', document: '{doc_name}': {db_err}")
+                raise KnowledgeError(
+                    f"Failed to delete knowledge: '{knowledge_name}', document: '{doc_name}' "
+                    "due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
                 raise KnowledgeError(f"delete chunk failed, {err}") from err
@@ -96,7 +116,7 @@ class KnowledgeDB(KnowledgeBase):
         vector_store=dict(validator=lambda x: isinstance(x, VectorStore)),
         knowledge_name=dict(validator=lambda x: isinstance(x, str)),
         white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x)),
-        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= INT_32_MAX)
+        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX)
     )
     def __init__(
             self,
@@ -117,7 +137,6 @@ class KnowledgeDB(KnowledgeBase):
     def get_all_documents(self):
         """获取当前已上传的所有文档"""
         return self._knowledge_store.get_all(self.knowledge_name)
-
 
     @validate_params(
         texts=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX),
@@ -239,6 +258,11 @@ class KnowledgeMgrStore:
             try:
                 session.add(KnowledgeMgrModel(knowledge_name=knowledge_name))
                 session.commit()
+            except SQLAlchemyError as db_err:
+                session.rollback()
+                logger.error(f"Database error while adding knowledge: '{knowledge_name}': {db_err}")
+                raise KnowledgeError(
+                    f"Failed to add knowledge: '{knowledge_name}' due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
                 raise KnowledgeError(f"add knowledge failed, {err}") from err
@@ -246,8 +270,18 @@ class KnowledgeMgrStore:
     def delete(self, knowledge_name: str):
         with self.session() as session:
             try:
-                session.query(KnowledgeMgrModel).filter_by(knowledge_name=knowledge_name).delete()
-                session.commit()
+                knowledge_to_delete = session.query(KnowledgeMgrModel
+                                                    ).filter_by(knowledge_name=knowledge_name).first()
+                if not knowledge_to_delete:
+                    logger.info(f"{knowledge_name} does not exist in db, no need delete.")
+                else:
+                    session.delete(knowledge_to_delete)
+                    session.commit()
+            except SQLAlchemyError as db_err:
+                session.rollback()
+                logger.error(f"Database error while deleting knowledge: '{knowledge_name}': {db_err}")
+                raise KnowledgeError(
+                    f"Failed to delete knowledge: '{knowledge_name}' due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
                 raise KnowledgeError(f"delete chunk failed, {err}") from err

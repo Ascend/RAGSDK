@@ -11,6 +11,7 @@ from typing import List, Any, Tuple, Dict
 from langchain_community.document_loaders import TextLoader
 from loguru import logger
 
+from mx_rag.utils.common import validate_params, validata_list_str
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.url import RequestUtils
 
@@ -48,14 +49,17 @@ class HTMLParser(GenerateQaParser):
         ssl_context: SSL上下文对象，默认为None
         max_url_num: 最大解析url数量
     """
-
+    @validate_params(
+        urls=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 1000])),
+        headers=dict(validator=lambda x: x is None or isinstance(x, dict)),
+        timeout=dict(validator=lambda x: isinstance(x, int) and 0 < x < 1000),
+        use_http=dict(validator=lambda x: isinstance(x, bool)),
+        ssl_context=dict(validator=lambda x: x is None or isinstance(x, SSLContext))
+    )
     def __init__(self, urls: List[str], headers: Dict = None, timeout: int = 10, cert_file: str = "",
-                 crl_file: str = "", use_http: bool = False, proxy_url: str = "", ssl_context: SSLContext = None,
-                 max_url_num: int = MAX_FILE_NUM):
+                 crl_file: str = "", use_http: bool = False, proxy_url: str = "", ssl_context: SSLContext = None):
         if headers is None:
             headers = {'Content-Type': 'application/json'}
-        if len(urls) > max_url_num:
-            raise ValueError(f"The length of urls cannot exceed {max_url_num}.")
         self.urls = urls
         self.headers = headers
         self._client = RequestUtils(timeout=timeout, cert_file=cert_file, crl_file=crl_file,
@@ -116,7 +120,9 @@ class MarkDownParser(GenerateQaParser):
         file_path: 需要解析的markdown所在文件夹
         max_file_num: 解析的最大文件数
     """
-
+    @validate_params(
+        max_file_num=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= 10000)
+    )
     def __init__(self, file_path: str, max_file_num: int = MAX_FILE_NUM):
         FileCheck.dir_check(file_path)
         FileCheck.check_files_num_in_directory(file_path, ".md", max_file_num)

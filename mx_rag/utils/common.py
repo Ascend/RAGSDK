@@ -10,6 +10,7 @@ from typing import List
 from OpenSSL import crypto
 from loguru import logger
 
+FILE_COUNT_MAX = 8000
 INT_32_MAX = 2 ** 31 - 1
 MAX_DEVICE_ID = 63
 MAX_TOP_K = 10000
@@ -136,8 +137,11 @@ class ParseCertInfo:
             ext_name = ext.get_short_name().decode()
             try:
                 self.extensions[ext_name] = str(ext)
+            except (TypeError, ValueError) as e:
+                logger.warning(f"Type error or value error, format {ext_name}: {e}")
+                continue
             except Exception as e:
-                logger.warning(f"format '{ext_name}' str info in certificate failed")
+                logger.warning(f"format '{ext_name}' str info in certificate failed: {e}")
                 continue
 
     @property
@@ -174,10 +178,13 @@ def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List
     min_str_limit = str_limit[0]
     max_str_limit = str_limit[1]
     if not min_length_limit <= len(texts) <= max_length_limit:
+        logger.error(f"The List[str] length not in [{min_length_limit}, {max_length_limit}]")
         return False
     for text in texts:
         if not isinstance(text, str):
+            logger.error("The element in the list is not a string.")
             return False
         if not min_str_limit <= len(text) <= max_str_limit:
+            logger.error(f"The element in List[str] length not in [{min_str_limit}, {max_str_limit}]")
             return False
     return True

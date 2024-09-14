@@ -11,7 +11,6 @@ import numpy as np
 from loguru import logger
 from transformers import PreTrainedTokenizerBase
 
-from mx_rag.document import SUPPORT_DOC_TYPE, SUPPORT_IMAGE_TYPE
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.doc_loader_mng import LoaderMng
 from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeDB
@@ -20,6 +19,7 @@ from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.common import validate_params
+from mx_rag.document.loader import BaseLoader
 
 
 class FileHandlerError(Exception):
@@ -27,11 +27,11 @@ class FileHandlerError(Exception):
 
 
 @validate_params(
-        knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB)),
-        loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng)),
-        embed_func=dict(validator=lambda x: isinstance(x, Callable)),
-        force=dict(validator=lambda x: isinstance(x, bool))
-    )
+    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB)),
+    loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng)),
+    embed_func=dict(validator=lambda x: isinstance(x, Callable)),
+    force=dict(validator=lambda x: isinstance(x, bool))
+)
 def upload_files(
         knowledge: KnowledgeDB,
         files: List[str],
@@ -39,7 +39,6 @@ def upload_files(
         embed_func: Callable[[List[str]], List[List[float]]],
         force: bool = False
 ):
-
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
     if len(files) > knowledge.max_loop_limit:
         raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, upload files failed')
@@ -76,7 +75,7 @@ def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
     """
     检查文件路径
     """
-    FileCheck.check_path_is_exist_and_valid(file)
+    SecFileCheck(file, BaseLoader.MAX_SIZE).check()
     file_obj = Path(file)
     if not _is_in_white_paths(file_obj, knowledge.white_paths):
         raise FileHandlerError(f"'{file_obj.as_posix()}' is not in whitelist path")
@@ -131,7 +130,6 @@ class FilesLoadInfo:
     loader_mng: LoaderMng
     embed_func: Callable[[List[str]], List[List[float]]]
     force: bool = False
-    load_image: bool = False
 
 
 def upload_dir(params: FilesLoadInfo):
@@ -140,7 +138,6 @@ def upload_dir(params: FilesLoadInfo):
     loader_mng = params.loader_mng
     embed_func = params.embed_func
     force = params.force
-    load_image = params.load_image
     """
     只遍历当前目录下的文件，不递归查找子目录文件，目录中不支持的文件类型会跳过，如果文档重复，可选择强制覆盖，超过最大文件数量则退出
     load_image为True时导入支持的类型图片, False时支持导入支持的文档
@@ -148,10 +145,13 @@ def upload_dir(params: FilesLoadInfo):
     dir_path_obj = Path(dir_path)
     if not dir_path_obj.is_dir():
         raise FileHandlerError(f"dir path '{dir_path}' is invalid")
-
-    support_file_type = SUPPORT_DOC_TYPE
-    if load_image:
-        support_file_type = SUPPORT_IMAGE_TYPE
+    loader_types = []
+    for file_types, _ in loader_mng.loaders.values():
+        loader_types.extend(file_types)
+    spliter_types = []
+    for file_types, _ in loader_mng.splitters.values():
+        spliter_types.extend(file_types)
+    support_file_type = list(set(loader_types) & set(spliter_types))
 
     count = 0
     files = []
