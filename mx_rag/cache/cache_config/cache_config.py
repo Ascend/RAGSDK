@@ -56,10 +56,14 @@ class CacheConfig(Config):
     """
 
     @validate_params(
-        cache_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100000),
-        eviction_policy=dict(validator=lambda x: isinstance(x, EvictPolicy)),
-        data_save_folder=dict(validator=lambda x: isinstance(x, str)),
-        min_free_space=dict(validator=lambda x: isinstance(x, int) and 20 * MB <= x <= 20 * GB)
+        cache_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100000,
+                        message="param must meets: Type is int, length range (0, 100000]"),
+        eviction_policy=dict(validator=lambda x: isinstance(x, EvictPolicy),
+                             message="param must be instance of EvictPolicy"),
+        data_save_folder=dict(validator=lambda x: isinstance(x, str),
+                              message="param must be instance of str"),
+        min_free_space=dict(validator=lambda x: isinstance(x, int) and 20 * MB <= x <= 20 * GB,
+                            message="param must meets: Type is int, value range [20 * MB, 20 * GB]")
     )
     def __init__(self,
                  cache_size: int,
@@ -109,9 +113,12 @@ class SimilarityCacheConfig(CacheConfig):
     """
 
     @validate_params(
-        retrieval_top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1000),
-        clean_size=dict(validator=lambda x: isinstance(x, int) and x > 0),
-        cache_config=dict(validator=lambda x: isinstance(x, str) and x == "sqlite")
+        retrieval_top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1000,
+                             message="param must meets: Type is int, value range (0, 1000]"),
+        clean_size=dict(validator=lambda x: isinstance(x, int) and x > 0,
+                        message="param must meets: Type is int, value greater than 0"),
+        cache_config=dict(validator=lambda x: isinstance(x, str) and x == "sqlite",
+                          message="param must be 'sqlite' now")
     )
     def __init__(self,
                  retrieval_top_k: int = 1,

@@ -69,12 +69,18 @@ class QAGenerationConfig:
     """
 
     @validate_params(
-        titles=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 100])),
-        contents=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 10000])),
-        tokenizer=dict(validator=lambda x: isinstance(x, PreTrainedTokenizerBase)),
-        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
-        max_tokens=dict(validator=lambda x: 500 <= x <= 10000),
-        qas_num=dict(validator=lambda x: 1 <= x <= 10)
+        titles=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 100]),
+                    message="param must meets: Type is List[str], "
+                            "list length range [1, 10000], str length range [1, 100]"),
+        contents=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 10000]),
+                      message="param must meets: Type is List[str], "
+                              "list length range [1, 10000], str length range [1, 10000]"),
+        tokenizer=dict(validator=lambda x: isinstance(x, PreTrainedTokenizerBase),
+                       message="param must be instance of PreTrainedTokenizerBase"),
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM),
+                 message="param must be instance of Text2TextLLM"),
+        max_tokens=dict(validator=lambda x: 500 <= x <= 10000, message="param value range [500, 10000]"),
+        qas_num=dict(validator=lambda x: 1 <= x <= 10, message="param value range [1, 10]")
     )
     def __init__(self, titles: List[str], contents: List[str], tokenizer: PreTrainedTokenizerBase, llm: Text2TextLLM,
                  max_tokens: int = 1000, qas_num: int = 5):
@@ -95,7 +101,8 @@ class QAGenerate:
     """
 
     @validate_params(
-        config=dict(validator=lambda x: isinstance(x, QAGenerationConfig))
+        config=dict(validator=lambda x: isinstance(x, QAGenerationConfig),
+                    message="param must be instance of QAGenerationConfig")
     )
     def __init__(self, config: QAGenerationConfig):
         self.config = config
@@ -138,8 +145,8 @@ class QAGenerate:
         return "\n".join(text_lines)
 
     @validate_params(
-        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig))
-    )
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                        message="param must be instance of LLMParameterConfig"))
     def generate_qa(self, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)) -> Dict:
         if len(self.config.titles) != len(self.config.contents):
             raise ValueError("The length of titles and contents must be equal.")

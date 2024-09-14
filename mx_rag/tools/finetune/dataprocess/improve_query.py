@@ -11,7 +11,8 @@ IMPROVE_QUERY_MAX_LEN = 10000
 
 
 @validate_params(
-    old_query_list=dict(validator=lambda x: 0 < len(x) <= IMPROVE_QUERY_MAX_LEN),
+    old_query_list=dict(validator=lambda x: 0 < len(x) <= IMPROVE_QUERY_MAX_LEN,
+                        message="param length range (0, 10000]"),
 )
 def improve_query(llm: Text2TextLLM, old_query_list: list[str]):
     """问题重写"""

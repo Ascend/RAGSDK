@@ -11,14 +11,14 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, INT_32_MAX, TEXT_MAX_LEN, validata_list_str
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, INT_32_MAX, TEXT_MAX_LEN, validata_list_str, \
+    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import FileCheck
 
 try:
     import torch_npu
 
     torch.npu.set_compile_mode(jit_compile=False)
-    logger.info("torch_npu successfully imported, running on NPU")
 except ImportError as e:
     logger.warning(f"Failed to import torch_npu: {e}. TextEmbedding will run on cpu.")
 except Exception as e:
@@ -27,12 +27,14 @@ except Exception as e:
 
 class TextEmbedding(Embeddings):
     @validate_params(
-        model_path=dict(validator=lambda x: isinstance(x, str)),
-        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID),
-        use_fp16=dict(validator=lambda x: isinstance(x, bool)),
-        pooling_method=dict(validator=lambda x: x in ["cls", "mean"]),
+        model_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
+                    message="param must be int and value range [0, 63]"),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        pooling_method=dict(validator=lambda x: x in ["cls", "mean"], message="param must be 'cls' or 'mean'"),
         lock=dict(
-            validator=lambda x: x is None or isinstance(x, (type(multiprocessing.Lock()), type(threading.Lock()))))
+            validator=lambda x: x is None or isinstance(x, (type(multiprocessing.Lock()), type(threading.Lock()))),
+            message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
     )
     def __init__(self,
                  model_path: str,
@@ -67,9 +69,11 @@ class TextEmbedding(Embeddings):
         return TextEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX])),
-        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX),
-        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]),
+                   message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
+                           "str length range [1, 2 ** 31 - 1]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def embed_documents(self,
                         texts: List[str],
@@ -82,8 +86,8 @@ class TextEmbedding(Embeddings):
         return result.tolist()
 
     @validate_params(
-        text=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX),
-        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+        text=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def embed_query(self, text: str, max_length: int = 512) -> List[float]:
         embeddings = self.embed_documents([text], max_length=max_length)
@@ -93,9 +97,11 @@ class TextEmbedding(Embeddings):
         return embeddings[0]
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX])),
-        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX),
-        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]),
+                   message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
+                           "str length range [1, 2 ** 31 - 1]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def embed_documents_with_last_hidden_state(self,
                                                texts: List[str],

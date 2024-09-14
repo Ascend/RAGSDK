@@ -10,8 +10,10 @@ MAX_LISTS_LEN = 10000
 
 
 @validate_params(
-    rank_lists=dict(validator=lambda x: 0 < len(x) <= MAX_FUSION_LISTS and all(0 < len(d) <= MAX_LISTS_LEN for d in x)),
-    k=dict(validator=lambda x: x > 0)
+    rank_lists=dict(validator=lambda x: 0 < len(x) <= MAX_FUSION_LISTS and all(0 < len(d) <= MAX_LISTS_LEN for d in x),
+                    message="param type list[list[str]], outside list length not exceed 10, "
+                            "inside list length not exceed 10000"),
+    k=dict(validator=lambda x: x > 0, message="param value must greater than 0")
 )
 def reciprocal_rank_fusion(rank_lists: list[list[str]], k: float = 60):
 

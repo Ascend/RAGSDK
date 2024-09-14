@@ -9,7 +9,7 @@ from loguru import logger
 
 from langchain_core.retrievers import BaseRetriever
 
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import Chain
 from mx_rag.llm import Text2TextLLM
@@ -22,11 +22,14 @@ class SingleText2TextChain(Chain):
     document_separator: str = "\n\n"
 
     @validate_params(
-        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
-        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever) or x is None),
-        reranker=dict(validator=lambda x: isinstance(x, Reranker) or x is None),
-        prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 512 * 1024),
-        source=dict(validator=lambda x: isinstance(x, bool))
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
+        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever) or x is None,
+                       message="param must be None or instance of BaseRetriever"),
+        reranker=dict(validator=lambda x: isinstance(x, Reranker) or x is None,
+                      message="param must be None or instance of Reranker"),
+        prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= 512 * 1024,
+                    message="param must be str and length range [1, 512 * 1024]"),
+        source=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, llm: Text2TextLLM,
                  retriever: BaseRetriever,

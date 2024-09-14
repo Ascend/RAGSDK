@@ -8,14 +8,14 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_torch_npu_available
 
 from mx_rag.reranker.reranker import Reranker
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, MAX_TOP_K, INT_32_MAX, TEXT_MAX_LEN, validata_list_str
+from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, INT_32_MAX, TEXT_MAX_LEN,
+                                 validata_list_str, BOOL_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP)
 from mx_rag.utils.file_check import FileCheck
 
 try:
     import torch_npu
 
     torch.npu.set_compile_mode(jit_compile=False)
-    logger.info("torch_npu successfully imported, running on NPU")
 except ImportError as e:
     logger.warning(f"Failed to import torch_npu: {e}. LocalReranker will run on CPU.")
 except Exception as e:
@@ -25,10 +25,12 @@ except Exception as e:
 class LocalReranker(Reranker):
 
     @validate_params(
-        model_path=dict(validator=lambda x: isinstance(x, str)),
-        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID),
-        k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K),
-        use_fp16=dict(validator=lambda x: isinstance(x, bool))
+        model_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
+                    message="param must be int and value range [0, 63]"),
+        k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K,
+               message="param must be int and value range [1, 10000]"),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self,
                  model_path: str,
@@ -62,9 +64,11 @@ class LocalReranker(Reranker):
         return LocalReranker(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX])),
-        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX),
-        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]),
+                   message="param must meets: Type is List[str], "
+                           "list length range [1, 1000 * 1000], str length range [1, 2 ** 31 - 1]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def rerank(self,
                query: str,

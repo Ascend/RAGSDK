@@ -10,9 +10,11 @@ RERANKER_FEATURED_MAX_LEN = 10000
 
 
 @validate_params(
-    query_list=dict(validator=lambda x: 0 < len(x) <= RERANKER_FEATURED_MAX_LEN),
-    doc_list=dict(validator=lambda x: 0 < len(x) <= RERANKER_FEATURED_MAX_LEN),
-    dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID)
+    query_list=dict(validator=lambda x: 0 < len(x) <= RERANKER_FEATURED_MAX_LEN,
+                    message="param length range (0, 10000]"),
+    doc_list=dict(validator=lambda x: 0 < len(x) <= RERANKER_FEATURED_MAX_LEN,
+                  message="param length range (0, 10000]"),
+    dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID, message="param value range [0, 63]")
 )
 def reranker_featured(model_path: str, query_list: list[str], doc_list: list[str], dev_id: int = 0):
     """重排模型打分"""

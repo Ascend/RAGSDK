@@ -31,7 +31,8 @@ class LoaderMng:
         self.splitters: Dict[Type, Tuple[List[str], SplitterInfo]] = {}
 
     @validate_params(
-        file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 32)
+        file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 32,
+                        message="param must meets: Type is List[str], list length range [1, 32]")
     )
     def register_loader(self, loader_class: BaseLoader, file_types: List[str],
                         loader_params: Optional[Dict[str, Any]] = None):
@@ -40,7 +41,8 @@ class LoaderMng:
         self.loaders[loader_class] = (file_types, LoaderInfo(loader_class, loader_params or {}))
 
     @validate_params(
-        file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 0 <= len(x) <= 32)
+        file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 32,
+                        message="param must meets: Type is List[str], list length range [1, 32]")
     )
     def register_splitter(self, splitter_class: TextSplitter, file_types: List[str],
                           splitter_params: Optional[Dict[str, Any]] = None):

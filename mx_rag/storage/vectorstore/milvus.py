@@ -9,7 +9,7 @@ import numpy as np
 from pymilvus import MilvusClient, DataType
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
 
 
 class MilvusError(Exception):
@@ -42,10 +42,12 @@ class MilvusDB(VectorStore):
     }
 
     @validate_params(
-        url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < MilvusDB.MAX_URL_LENGTH),
+        url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_URL_LENGTH,
+                 message="param must be str and length range (0, 1024]"),
         collection_name=dict(
-            validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH),
-        use_http=dict(validator=lambda x: isinstance(x, bool))
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
+            message="param must be str and length range (0, 1024]"),
+        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, url: str, collection_name: str = "mxRag", use_http: bool = False, **kwargs):
         super().__init__()
@@ -80,13 +82,15 @@ class MilvusDB(VectorStore):
         milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, param=param)
         return milvus_db
 
-    @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH))
+    @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
+                                          message="param length range (0, 1024]"))
     def set_collection_name(self, collection_name: str):
         self._collection_name = collection_name
 
     @validate_params(
-        x_dim=dict(validator=lambda x: 0 < x <= MAX_VEC_DIM),
-        similarity_strategy=dict(validator=lambda x: x in MilvusDB.SIMILARITY_STRATEGY_MAP)
+        x_dim=dict(validator=lambda x: 0 < x <= MAX_VEC_DIM, message="param value range (0, 1024 * 1024]"),
+        similarity_strategy=dict(validator=lambda x: x in MilvusDB.SIMILARITY_STRATEGY_MAP,
+                                 message="param must be enum of SimilarityStrategy")
     )
     def create_collection(self, x_dim: int, similarity_strategy: SimilarityStrategy, param=None):
         schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
@@ -117,7 +121,8 @@ class MilvusDB(VectorStore):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         self.client.drop_collection(self._collection_name)
 
-    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x)))
+    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
+                              message="param must be List[int]"))
     def delete(self, ids: List[int]):
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
@@ -125,7 +130,7 @@ class MilvusDB(VectorStore):
         self.client.refresh_load(self._collection_name)
         return res
 
-    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K))
+    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param length range (0, 10000]"))
     def search(self, embeddings: np.ndarray, k: int = 3):
         embeddings = embeddings.astype(np.float32)
         if not self.client.has_collection(self._collection_name):
@@ -149,7 +154,7 @@ class MilvusDB(VectorStore):
         return self._score_scale(scores), ids
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x))
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
     )
     def add(self, embeddings: np.ndarray, ids: List[int]):
         if embeddings.shape[0] != len(ids):

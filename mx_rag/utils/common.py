@@ -2,7 +2,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import functools
 import inspect
-import re
 from datetime import datetime
 from enum import Enum
 from typing import List
@@ -36,6 +35,9 @@ MAX_MODEL_NAME_LENGTH = 128
 KB = 1024
 MB = 1048576  # 1024 * 1024
 GB = 1073741824  # 1024 * 1024 * 1024
+STR_TYPE_CHECK_TIP = "param must be str"
+BOOL_TYPE_CHECK_TIP = "param must be bool"
+INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 
 
 class UrlUtilException(Exception):
@@ -96,7 +98,7 @@ def validate_params(**validators):
                 # 运行验证函数
                 if not validator['validator'](value):
                     raise ValueError(f"The parameter '{arg_name}' of function '{func.__name__}' "
-                                     f"is invalid, please see the document.")
+                                     f"is invalid, message: {validator.get('message')}")
             # 如果所有参数都通过验证，则调用原始函数
             return func(*args, **kwargs)
 

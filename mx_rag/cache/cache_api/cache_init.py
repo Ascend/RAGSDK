@@ -141,7 +141,8 @@ def _init_mxrag_memory_cache(cache_obj: Cache, cache_name: str, config: CacheCon
 
 @validate_params(
     cache_name=dict(
-        validator=lambda x: isinstance(x, str) and 0 < len(x) < 64 and bool(re.fullmatch(r'[0-9a-zA-Z_]+', x))),
+        validator=lambda x: isinstance(x, str) and 0 < len(x) < 64 and bool(re.fullmatch(r'[0-9a-zA-Z_]+', x)),
+        message="param must meets: Type is str, length range (0, 64), match '[0-9a-zA-Z_]+'"),
 )
 def init_mxrag_cache(cache_obj: Cache, cache_name: str, config):
     """

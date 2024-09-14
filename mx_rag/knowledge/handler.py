@@ -18,7 +18,7 @@ from mx_rag.retrievers.tree_retriever import Tree
 from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
 from mx_rag.document.loader import BaseLoader
 
 
@@ -27,10 +27,10 @@ class FileHandlerError(Exception):
 
 
 @validate_params(
-    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB)),
-    loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng)),
-    embed_func=dict(validator=lambda x: isinstance(x, Callable)),
-    force=dict(validator=lambda x: isinstance(x, bool))
+    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
+    loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
+    embed_func=dict(validator=lambda x: isinstance(x, Callable), message="param must be callable function"),
+    force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
 )
 def upload_files(
         knowledge: KnowledgeDB,
@@ -165,7 +165,8 @@ def upload_dir(params: FilesLoadInfo):
 
 
 @validate_params(
-    file_names=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 1000)
+    file_names=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 1000,
+                    message="param must meets: Type is List[str], list length range [1, 1000]")
 )
 def delete_files(
         knowledge: KnowledgeDB,
@@ -202,8 +203,9 @@ def save_tree(tree: Tree, file_path: str):
 
 
 @validate_params(
-    white_paths=dict(validator=lambda x: len(x) > 0),
-    float_type=dict(validator=lambda x: x in [np.float16, np.float32])
+    white_paths=dict(validator=lambda x: len(x) > 0, message="param length must greater than 0"),
+    float_type=dict(validator=lambda x: x in [np.float16, np.float32],
+                    message="param must be one of np.float16 and np.float32")
 )
 def load_tree(file_path: str, white_paths: List[str], float_type: Union[np.float16, np.float32] = np.float16):
     """

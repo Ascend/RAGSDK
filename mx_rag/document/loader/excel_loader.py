@@ -13,7 +13,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
@@ -22,7 +22,7 @@ CSV_EXTENSION = (".csv",)
 
 class ExcelLoader(BaseLoader, mxBaseLoader):
     @validate_params(
-        line_sep=dict(validator=lambda x: isinstance(x, str))
+        line_sep=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP)
     )
     def __init__(self, file_path: str, line_sep: str = "**;"):
         super().__init__(file_path)

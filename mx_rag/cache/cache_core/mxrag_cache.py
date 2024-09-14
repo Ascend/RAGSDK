@@ -14,7 +14,7 @@ from loguru import logger
 
 from mx_rag.cache import CacheConfig, SimilarityCacheConfig
 from mx_rag.cache.cache_api.cache_init import init_mxrag_cache
-from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_QUERY_LENGTH
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_QUERY_LENGTH, STR_TYPE_CHECK_TIP
 
 
 def _default_dump(data: Any) -> str:
@@ -30,8 +30,9 @@ class MxRAGCache:
     verbose: bool = False
 
     @validate_params(
-        cache_name=dict(validator=lambda x: isinstance(x, str)),
-        config=dict(validator=lambda x: isinstance(x, CacheConfig) or isinstance(x, SimilarityCacheConfig))
+        cache_name=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        config=dict(validator=lambda x: isinstance(x, CacheConfig) or isinstance(x, SimilarityCacheConfig),
+                    message="param must be instance of CacheConfig or SimilarityCacheConfig")
     )
     def __init__(self,
                  cache_name: str,
@@ -56,7 +57,7 @@ class MxRAGCache:
 
     @classmethod
     @validate_params(
-        cache_limit=dict(validator=lambda x: 0 < x <= TEXT_MAX_LEN),
+        cache_limit=dict(validator=lambda x: 0 < x <= TEXT_MAX_LEN, message="param value range (0, 1000 * 1000]")
     )
     def set_cache_limit(cls, cache_limit: int):
         cls.cache_limit = cache_limit

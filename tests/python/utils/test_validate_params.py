@@ -95,14 +95,18 @@ def non_class_funciton1(param1, param2: int, param3: int = 50):
 @validate_params(
     param1=dict(validator=lambda x: isinstance(x, int)),
     param2=dict(validator=lambda x: x > 0),
-    param3=dict(validator=lambda x: all(len(item) > 1 for item in x))
+    param3=dict(validator=
+                lambda x: all(len(item) > 1 for item in x),
+                message="check rule: lambda x: all(len(item) > 1 for item in x)")
 )
 def non_class_funciton2(param1: int, param2: int, param3: List[dict]):
     pass
 
 
 @validate_params(
-    param1=dict(validator=lambda x: validata_list_str(x, [1, 3], [5, 10]))
+    param1={"validator": lambda x: validata_list_str(x, [1, 3], [5, 10]),
+            "message": "param type is not List[str] or length of list not in [1, 3] "
+                       "or length of str in list not in [5, 10]"}
 )
 def non_class_funciton3(param1: List[str]):
     pass
@@ -185,7 +189,7 @@ class TestValidateParams(unittest.TestCase):
         try:
             non_class_funciton2(1, 1, [{1: "a"}, {4: "a"}])
         except Exception as e:
-            self.assertTrue(str(e).find("'param3' of function 'non_class_funciton2' is invalid") > -1)
+            self.assertTrue(str(e).find("lambda x: all(len(item) > 1 for item in x)") > -1)
 
     def test_validata_list_str(self):
         non_class_funciton3(["hello!", "world!", "beautiful"])

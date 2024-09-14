@@ -24,8 +24,9 @@ class CacheVecStorage(VectorBase):
     """
 
     @validate_params(
-        vec_store=dict(validator=lambda x: isinstance(x, VectorStore)),
-        top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1000)
+        vec_store=dict(validator=lambda x: isinstance(x, VectorStore), message="param must be instance of VectorStore"),
+        top_k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= 1000,
+                   message="param must be int and value range [1, 1000]")
     )
     def __init__(self, vec_store: VectorStore, top_k: int = 1):
         self._vec_impl = vec_store

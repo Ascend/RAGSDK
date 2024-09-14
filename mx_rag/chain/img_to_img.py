@@ -16,8 +16,10 @@ class Img2ImgChain(Chain):
     """ 检索出输入文本最相关的图片与prompt合并发送给大模型，生成相应图片 """
 
     @validate_params(
-        multi_model=dict(validator=lambda x: isinstance(x, Img2ImgMultiModel)),
-        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever))
+        multi_model=dict(validator=lambda x: isinstance(x, Img2ImgMultiModel),
+                         message="param must be instance of Img2ImgMultiModel"),
+        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever),
+                       message="param must be instance of BaseRetriever")
     )
     def __init__(self, multi_model, retriever):
         self._multi_model = multi_model
