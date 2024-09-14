@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class TreeText2TextChain(SingleText2TextChain):
 
     @validate_params(
-        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
     )
     def __init__(self, llm, retriever: TreeRetriever = None):
         super().__init__(llm, retriever)

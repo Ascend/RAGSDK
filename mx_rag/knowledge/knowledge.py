@@ -14,7 +14,7 @@ from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
 from mx_rag.retrievers.tree_retriever import Tree
 
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
-from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX
+from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, STR_TYPE_CHECK_TIP
 
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
@@ -43,7 +43,7 @@ class KnowledgeStore:
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
     @validate_params(
-        db_path=dict(validator=lambda x: isinstance(x, str))
+        db_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP)
     )
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
@@ -111,12 +111,17 @@ class KnowledgeStore:
 
 class KnowledgeDB(KnowledgeBase):
     @validate_params(
-        knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore)),
-        chunk_store=dict(validator=lambda x: isinstance(x, Docstore)),
-        vector_store=dict(validator=lambda x: isinstance(x, VectorStore)),
-        knowledge_name=dict(validator=lambda x: isinstance(x, str)),
-        white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x)),
-        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX)
+        knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore),
+                             message="param must be instance of KnowledgeStore"),
+        chunk_store=dict(validator=lambda x: isinstance(x, Docstore),
+                         message="param must be instance of Docstore"),
+        vector_store=dict(validator=lambda x: isinstance(x, VectorStore),
+                          message="param must be instance of VectorStore"),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x),
+                         message="param type must be List[str]"),
+        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX,
+                            message=f"param value range must be [1, {FILE_COUNT_MAX}]")
     )
     def __init__(
             self,
@@ -140,8 +145,8 @@ class KnowledgeDB(KnowledgeBase):
         return self._knowledge_store.get_all(self.knowledge_name)
 
     @validate_params(
-        texts=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX),
-        metadatas=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX)
+        texts=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]"),
+        metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
     )
     def add_file(
             self,
@@ -183,11 +188,15 @@ class KnowledgeDB(KnowledgeBase):
 
 class KnowledgeTreeDB(KnowledgeBase):
     @validate_params(
-        knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore)),
-        chunk_store=dict(validator=lambda x: isinstance(x, Docstore)),
-        knowledge_name=dict(validator=lambda x: isinstance(x, str)),
-        white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x)),
-        tree_builder_config=dict(validator=lambda x: isinstance(x, TreeBuilderConfig))
+        knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore),
+                             message="param must be instance of KnowledgeStore"),
+        chunk_store=dict(validator=lambda x: isinstance(x, Docstore),
+                         message="param must be instance of Docstore"),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x),
+                         message="param type must be List[str]"),
+        tree_builder_config=dict(validator=lambda x: isinstance(x, TreeBuilderConfig),
+                                 message="param must be instance of TreeBuilderConfig")
     )
     def __init__(
             self,
@@ -209,9 +218,9 @@ class KnowledgeTreeDB(KnowledgeBase):
         return self._knowledge_store.get_all(self.knowledge_name)
 
     @validate_params(
-        file_names=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX),
-        texts=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX),
-        metadatas=dict(validator=lambda x: 0 <= len(x) <= INT_32_MAX)
+        file_names=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]"),
+        texts=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]"),
+        metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
     )
     def add_files(self,
                   file_names: List[str],
@@ -247,7 +256,7 @@ class KnowledgeMgrStore:
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
     @validate_params(
-        db_path=dict(validator=lambda x: isinstance(x, str))
+        db_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP)
     )
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
@@ -302,7 +311,8 @@ class KnowledgeMgrStore:
 
 class KnowledgeMgr:
     @validate_params(
-        mgr_store=dict(validator=lambda x: isinstance(x, KnowledgeMgrStore))
+        mgr_store=dict(validator=lambda x: isinstance(x, KnowledgeMgrStore),
+                       message="param must be instance of KnowledgeMgrStore")
     )
     def __init__(self, mgr_store: KnowledgeMgrStore):
         self.mgr_store = mgr_store

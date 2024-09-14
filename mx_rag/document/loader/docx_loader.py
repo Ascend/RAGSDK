@@ -18,7 +18,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
 
 
 @dataclass
@@ -32,7 +32,7 @@ class DocxLoader(BaseLoader, mxBaseLoader):
     EXTENSION = (".docx",)
 
     @validate_params(
-        image_inline=dict(validator=lambda x: isinstance(x, bool))
+        image_inline=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, file_path: str, image_inline: bool = False):
         """Initialize with filepath and options."""

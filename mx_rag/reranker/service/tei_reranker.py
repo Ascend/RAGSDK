@@ -9,7 +9,7 @@ import numpy as np
 
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import validate_params, MAX_TOP_K, INT_32_MAX, MAX_QUERY_LENGTH, TEXT_MAX_LEN, \
-    validata_list_str
+    validata_list_str, STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.url import RequestUtils
 
 
@@ -20,9 +20,10 @@ class TEIReranker(Reranker):
     TEXT_MAX_LEN = 1000 * 1000
 
     @validate_params(
-        url=dict(validator=lambda x: isinstance(x, str)),
-        use_http=dict(validator=lambda x: isinstance(x, bool)),
-        k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K)
+        url=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K,
+               message="param must be int and value range [1, 10000]")
     )
     def __init__(self, url: str, use_http: bool = False, k: int = 1):
         super(TEIReranker, self).__init__(k)
@@ -60,9 +61,12 @@ class TEIReranker(Reranker):
         return scores
 
     @validate_params(
-        query=dict(validator=lambda x: 1 <= len(x) <= MAX_QUERY_LENGTH),
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX])),
-        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+        query=dict(validator=lambda x: 1 <= len(x) <= MAX_QUERY_LENGTH,
+                   message="param length range [1, 128 * 1024 * 1024]"),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]),
+                   message="param must meets: Type is List[str], "
+                           "list length range [1, 1000 * 1000], str length range [1, 2 ** 31 - 1]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def rerank(self,
                query: str,

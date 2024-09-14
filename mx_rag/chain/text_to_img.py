@@ -14,7 +14,8 @@ class Text2ImgChain(Chain):
     """ 大模型输入prompt，生成prompt相关的图片 """
 
     @validate_params(
-        multi_model=dict(validator=lambda x: isinstance(x, Text2ImgMultiModel))
+        multi_model=dict(validator=lambda x: isinstance(x, Text2ImgMultiModel),
+                         message="param must be instance of Text2ImgMultiModel")
     )
     def __init__(self, multi_model):
         self._multi_model = multi_model

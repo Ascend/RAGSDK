@@ -31,7 +31,7 @@ from ragas.metrics.critique import (
 )
 
 from mx_rag.utils.file_check import FileCheck
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, validata_list_str
 
 
 class Evaluate:
@@ -53,8 +53,8 @@ class Evaluate:
     }
 
     @validate_params(
-        llm=dict(validator=lambda x: isinstance(x, LLM)),
-        embedding=dict(validator=lambda x: isinstance(x, Embeddings))
+        llm=dict(validator=lambda x: isinstance(x, LLM), message="param must be instance of LLM"),
+        embedding=dict(validator=lambda x: isinstance(x, Embeddings), message="param must be instance of Embeddings")
     )
     def __init__(self,
                  llm: LLM,
@@ -134,11 +134,14 @@ class Evaluate:
             raise ValueError(f"duplicate metric {metrics_name}")
 
     @validate_params(
-        metrics_name=dict(
-            validator=lambda x: isinstance(x, list) and all(isinstance(i, str) for i in x) and 0 < len(x) <= 14),
+        metrics_name=dict(validator=lambda x: validata_list_str(x, [1, 14], [1, 50]),
+                          message="param must meets: Type is List[str], list length range [1, 14], "
+                                  "str length range [1, 50]"),
         datasets=dict(
-            validator=lambda x: isinstance(x, Dict) and all(isinstance(key, str) for key in x) and 0 < len(x) <= 4096),
-        language=dict(validator=lambda x: x is None or (isinstance(x, str) and 0 < len(x) <= 64))
+            validator=lambda x: isinstance(x, Dict) and all(isinstance(key, str) for key in x) and 1 <= len(x) <= 4096,
+            message="param must meets: type is dict, dict key is str, and length range [1, 4096]"),
+        language=dict(validator=lambda x: x is None or (isinstance(x, str) and 1 <= len(x) <= 64),
+                      message="param must be None or str, and str length range [1, 64]")
     )
     def evaluate(self,
                  metrics_name: list[str],
@@ -180,10 +183,14 @@ class Evaluate:
 
     @validate_params(
         metrics_name=dict(
-            validator=lambda x: isinstance(x, list) and all(isinstance(i, str) for i in x) and 0 < len(x) <= 14),
+            validator=lambda x: validata_list_str(x, [1, 14], [1, 50]),
+            message="param must meets: Type is List[str], list length range [1, 14], str length range [1, 50]"
+        ),
         datasets=dict(
-            validator=lambda x: isinstance(x, Dict) and all(isinstance(key, str) for key in x) and 0 < len(x) <= 4096),
-        language=dict(validator=lambda x: x is None or (isinstance(x, str) and 0 < len(x) <= 64))
+            validator=lambda x: isinstance(x, Dict) and all(isinstance(key, str) for key in x) and 1 <= len(x) <= 4096,
+            message="param must meets: type is dict, dict key is str, and length range [1, 4096]"),
+        language=dict(validator=lambda x: x is None or (isinstance(x, str) and 1 <= len(x) <= 64),
+                      message="param must be None or str, and str length range [1, 64]")
     )
     def evaluate_scores(self,
                         metrics_name: list[str],

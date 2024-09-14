@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 from typing import Optional
 
-from mx_rag.utils.common import validate_params, INT_32_MAX
+from mx_rag.utils.common import validate_params, INT_32_MAX, BOOL_TYPE_CHECK_TIP
 
 
 class LLMParameterConfig:
@@ -21,13 +21,19 @@ class LLMParameterConfig:
         score 比较分数
     """
     @validate_params(
-        max_tokens=dict(validator=lambda x: isinstance(x, int) and 1 < x < INT_32_MAX),
-        presence_penalty=dict(validator=lambda x: isinstance(x, float) and -2.0 <= x <= 2.0),
-        frequency_penalty=dict(validator=lambda x: isinstance(x, float) and -2.0 <= x <= 2.0),
-        temperature=dict(validator=lambda x: isinstance(x, float) and 0.0 < x <= 2.0),
-        top_p=dict(validator=lambda x: isinstance(x, float) and 0.0 < x <= 1.0),
-        seed=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= INT_32_MAX)),
-        stream=dict(validator=lambda x: isinstance(x, bool))
+        max_tokens=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= INT_32_MAX,
+                        message="param must be int and value range [1, 2 ** 31 - 1]"),
+        presence_penalty=dict(validator=lambda x: isinstance(x, float) and -2.0 <= x <= 2.0,
+                              message="param must be float and value range [-2.0, 2.0]"),
+        frequency_penalty=dict(validator=lambda x: isinstance(x, float) and -2.0 <= x <= 2.0,
+                               message="param must be float and value range [-2.0, 2.0]"),
+        temperature=dict(validator=lambda x: isinstance(x, float) and 0.0 < x <= 2.0,
+                         message="param must be float and value range (0.0, 2.0]"),
+        top_p=dict(validator=lambda x: isinstance(x, float) and 0.0 < x <= 1.0,
+                   message="param must be float and value range (0.0, 1.0]"),
+        seed=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= INT_32_MAX),
+                  message="param must be None or int, and int value range (0, 2 ** 31 - 1]"),
+        stream=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, max_tokens: int = 512, presence_penalty: float = 0.0,
                  frequency_penalty: float = 0.0, temperature: float = 1.0,

@@ -27,8 +27,8 @@ GENERATE_QA_PROMPT = """阅读文章，生成一个相关的问题，例如：
 
 
 @validate_params(
-    doc_list=dict(validator=lambda x: 0 < len(x) <= GENERATE_QA_MAX_LEN),
-    question_number=dict(validator=lambda x: 0 < x < INT_32_MAX),
+    doc_list=dict(validator=lambda x: 0 < len(x) <= GENERATE_QA_MAX_LEN, message="param length range (0, 10000]"),
+    question_number=dict(validator=lambda x: 0 < x <= INT_32_MAX, message="param length range (0, 2 ** 31 - 1]"),
 )
 def generate_qa_embedding_pairs(llm: Text2TextLLM, doc_list: list[str], question_number: int = 1):
     """使用大模型生成问题对"""

@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 import zipfile
 from loguru import logger
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 
 
 class BaseLoader(ABC):
@@ -14,7 +14,7 @@ class BaseLoader(ABC):
     MAX_WORD_NUM = 500000
 
     @validate_params(
-        file_path=dict(validator=lambda x: isinstance(x, str)),
+        file_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
     )
     def __init__(self, file_path):
         self.file_path = file_path
