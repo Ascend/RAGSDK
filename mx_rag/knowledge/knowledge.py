@@ -133,6 +133,7 @@ class KnowledgeDB(KnowledgeBase):
         self._document_store = chunk_store
         self.max_loop_limit = max_loop_limit
         self.knowledge_name = knowledge_name
+        self._check_store_accordance()
 
     def get_all_documents(self):
         """获取当前已上传的所有文档"""
@@ -170,8 +171,13 @@ class KnowledgeDB(KnowledgeBase):
     def check_document_exist(self, doc_name: str) -> bool:
         return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
     
-    def check_store_accordance(self) -> None:
-        if set(self._document_store.get_all_index_id()) != set(self._vector_store.get_all_ids()):
+    def _check_store_accordance(self) -> None:
+        doc_chunks = self._document_store.get_all_index_id()
+        vec_ids = self._vector_store.get_all_ids()
+        if set(doc_chunks) != set(vec_ids):
+            logger.error(f"the Docstore has {len(doc_chunks)} chunks in {self._document_store.db_path},"
+                         f"but the VectorStore has {len(vec_ids)} vectors, that will cause some error,"
+                          "please ensure that the data of this two databases is consistent")
             raise KnowledgeError("VectorStore is not accordance to Docstore !")
 
 

@@ -42,7 +42,6 @@ def upload_files(
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
     if len(files) > knowledge.max_loop_limit:
         raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, upload files failed')
-    knowledge.check_store_accordance()
 
     for file in files:
         _check_file(file, force, knowledge)
