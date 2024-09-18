@@ -6,6 +6,7 @@ from typing import (List, Iterator)
 from openpyxl import load_workbook, Workbook
 from openpyxl.cell import MergedCell
 import xlrd
+from pathlib import Path
 from loguru import logger
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
@@ -168,27 +169,19 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         """
         ：返回：逐行读取表,返回 string list
         """
-        try:
-            file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
-        except (FileCheckError, PathNotFileException) as e:
-            logger.error(f"Invalid input file '{self.file_path}': {e}")
-            return iter([])
-        except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            return iter([])
+        file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
         # 判断文件种类：支持 xlsx 与 xls 格式
         if self.file_path.endswith(XLRD_EXTENSION):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
             if self._is_zip_bomb():
-                return iter([])
+                raise TypeError(f"file too large")
             else:
                 return self._load_xlsx()
         elif self.file_path.endswith(CSV_EXTENSION):
             return self._load_csv()
         else:
-            logger.error(f"'{self.file_path}' file type is not one of (csv, xlsx, xls).")
-            return iter([])
+            raise TypeError(f"'{self.file_path}' file type is not one of (csv, xlsx, xls).")
 
     def _get_xlsx_title(self, ws, first_row, first_col):
         title = []

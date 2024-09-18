@@ -126,16 +126,8 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         return pdf_page_count
 
     def _check(self):
-        try:
-            SecFileCheck(self.file_path, self.MAX_SIZE).check()
-            _pdf_page_count = self._get_pdf_page_count()
-            if _pdf_page_count > self.MAX_PAGE_NUM:
-                logger.error(f"too many pages {_pdf_page_count}")
-                return False
-            return True
-        except (FileCheckError, PathNotFileException) as e:
-            logger.error(f"Invalid input file: {e}")
-            return False
-        except Exception as e:
-            logger.error(f"check file failed, {str(e)}")
-            return False
+        SecFileCheck(self.file_path, self.MAX_SIZE).check()
+        _pdf_page_count = self._get_pdf_page_count()
+        if _pdf_page_count > self.MAX_PAGE_NUM:
+            raise ValueError(f"too many pages {_pdf_page_count}")
+        return True

@@ -28,7 +28,9 @@ class LoaderMng:
 
     def __init__(self):
         self.loaders: Dict[Type, Tuple[List[str], LoaderInfo]] = {}
+        self.loader_types: list = []
         self.splitters: Dict[Type, Tuple[List[str], SplitterInfo]] = {}
+        self.splitter_types: list = []
 
     @validate_params(
         file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 32,
@@ -38,6 +40,10 @@ class LoaderMng:
                         loader_params: Optional[Dict[str, Any]] = None):
         if len(self.loaders) >= self.MAX_REGISTER_LOADER_NUM:
             raise ValueError(f"More than {self.MAX_REGISTER_LOADER_NUM} loaders are registered")
+        repeat_type = list(set(self.loader_types) & set(file_types))
+        if len(repeat_type) > 0:
+            raise ValueError(f"loaders type {repeat_type} has been registered")
+        self.loader_types.extend(file_types)
         self.loaders[loader_class] = (file_types, LoaderInfo(loader_class, loader_params or {}))
 
     @validate_params(
@@ -50,6 +56,10 @@ class LoaderMng:
             raise ValueError(f"More than {self.MAX_REGISTER_SPLITTER_NUM} splitters are registered")
         if bool(set(self.IMAGE_TYPE) & set(file_types)):
             raise KeyError(f"Unsupported register splitter for file type {set(self.IMAGE_TYPE) & set(file_types)}")
+        repeat_type = list(set(self.splitter_types) & set(file_types))
+        if len(repeat_type) > 0:
+            raise ValueError(f"splitters type {repeat_type} has been registered")
+        self.splitter_types.extend(file_types)
         self.splitters[splitter_class] = (file_types, SplitterInfo(splitter_class, splitter_params or {}))
 
     def get_loader(self, file_suffix: str) -> LoaderInfo:

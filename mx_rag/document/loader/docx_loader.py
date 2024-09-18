@@ -7,10 +7,8 @@ from dataclasses import dataclass
 from typing import List, Tuple, Any, Iterator
 
 import docx
-from docx.oxml.table import CT_Tbl
-from docx.oxml.text.paragraph import CT_P
-from docx.table import Table
 from docx.text.paragraph import Paragraph
+from pathlib import Path
 from loguru import logger
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
@@ -71,7 +69,7 @@ class DocxLoader(BaseLoader, mxBaseLoader):
     def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
         if not self._is_document_valid():
-            return
+            return iter([])
 
         all_text = []
         doc = docx.Document(self.file_path)
@@ -104,26 +102,16 @@ class DocxLoader(BaseLoader, mxBaseLoader):
         return res + "。"
 
     def _is_document_valid(self):
-        try:
-            SecFileCheck(self.file_path, self.MAX_SIZE).check()
-            if not self.file_path.endswith(DocxLoader.EXTENSION):
-                logger.error(f"file type not correct")
-                return False
-            if self._is_zip_bomb():
-                logger.error(f"file too large")
-                return False
+        SecFileCheck(self.file_path, self.MAX_SIZE).check()
+        if not self.file_path.endswith(DocxLoader.EXTENSION):
+            raise TypeError(f"type '{Path(self.file_path).suffix}' is not support")
+        if self._is_zip_bomb():
+            raise TypeError(f"file too large")
+        doc = docx.Document(self.file_path)
+        word_count = 0
+        for paragraph in doc.paragraphs:
+            word_count += len(paragraph.text)
+        if word_count > self.MAX_WORD_NUM:
+            raise ValueError(f"too many words {word_count}")
+        return True
 
-            doc = docx.Document(self.file_path)
-            word_count = 0
-            for paragraph in doc.paragraphs:
-                word_count += len(paragraph.text)
-            if word_count > self.MAX_WORD_NUM:
-                logger.error(f"too many words {word_count}")
-                return False
-            return True
-        except (PathNotFileException, FileCheckError) as e:
-            logger.error(f"Invalid file: {str(e)}")
-            return False
-        except Exception as e:
-            logger.error(f"check file failed, {str(e)}")
-            return False
