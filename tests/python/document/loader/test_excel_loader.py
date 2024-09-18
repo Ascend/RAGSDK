@@ -76,7 +76,7 @@ class TestExcelLoader(unittest.TestCase):
         self.assertEqual(len(docs[0].metadata), 1)
 
     def test_lazy_load(self):
-        loader = ExcelLoader(os.path.join(self.data_dir, "est.xlsx"))
+        loader = ExcelLoader(os.path.join(self.data_dir, "test.xlsx"))
         d = loader.lazy_load()
         self.assertTrue(hasattr(d, '__iter__'), "lazy_load 应返回一个迭代器")
         self.assertTrue(hasattr(d, '__next__'), "lazy_load 应返回一个迭代器")
