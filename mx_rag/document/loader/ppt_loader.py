@@ -24,15 +24,7 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
             raise ValueError(f"init ocr failed, {err}") from err
 
     def lazy_load(self):
-        try:
-            self._check_file_valid()
-        except (ValueError, FileCheckError, PathNotFileException) as err:
-            logger.error(f"Failed to check file '{self.file_path}': {err}")
-            return iter([])
-        except Exception as err:
-            logger.error(f"check '{self.file_path}' failed, {err}")
-            return iter([])
-
+        self._check_file_valid()
         try:
             return self._load_ppt()
         except ValueError as ve:
@@ -45,7 +37,7 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     def _check_file_valid(self):
         SecFileCheck(self.file_path, self.MAX_SIZE).check()
         if not self.file_path.endswith(self.EXTENSION):
-            raise ValueError("file type not correct")
+            raise TypeError("file type not correct")
         if self._is_zip_bomb():
             raise ValueError(f"'{self.file_path}' is a risk of zip bombs")
 

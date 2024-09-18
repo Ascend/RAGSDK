@@ -57,9 +57,9 @@ class DocxLoaderTestCase(unittest.TestCase):
 
         test_file = os.path.join(self.data_dir, "page_number_test.docx")
         document.save(test_file)
-        loader = DocxLoader(test_file)
-        res = loader.load_and_split(RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=100))
-        self.assertEqual(0, len(res))
+        with self.assertRaises(ValueError):
+            loader = DocxLoader(test_file)
+            loader.load_and_split(RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=100))
 
 
 if __name__ == '__main__':
