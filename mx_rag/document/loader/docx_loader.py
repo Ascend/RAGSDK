@@ -111,5 +111,4 @@ class DocxLoader(BaseLoader, mxBaseLoader):
             word_count += len(paragraph.text)
         if word_count > self.MAX_WORD_NUM:
             raise ValueError(f"too many words {word_count}")
-        return True
 

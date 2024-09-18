@@ -173,7 +173,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
             if self._is_zip_bomb():
-                raise TypeError(f"file too large")
+                raise ValueError(f"file is a risk of zip bombs")
             else:
                 return self._load_xlsx()
         elif self.file_path.endswith(CSV_EXTENSION):

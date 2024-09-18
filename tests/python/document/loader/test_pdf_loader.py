@@ -11,7 +11,6 @@ from mx_rag.document.loader.pdf_loader import PdfLoader
 from mx_rag.utils.file_check import FileCheckError
 
 
-
 class TestPdfLoader(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     data_dir = os.path.realpath(os.path.join(current_dir, "../../../data"))

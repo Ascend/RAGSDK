@@ -29,6 +29,7 @@ class PdfLang(Enum):
 
 class PdfLoader(BaseLoader, mxBaseLoader):
     EXTENSION = (".pdf",)
+    
     @validate_params(
         lang=dict(validator=lambda x: isinstance(x, PdfLang), message="param must be instance of PdfLang"),
         layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
