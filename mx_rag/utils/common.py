@@ -41,6 +41,9 @@ INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
 
 
+NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
+
+
 class UrlUtilException(Exception):
     pass
 
