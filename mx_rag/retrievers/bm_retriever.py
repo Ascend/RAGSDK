@@ -45,7 +45,7 @@ class BMRetriever(BaseRetriever):
 
     @classmethod
     @validator('prompt')
-    def validate_prompt(cls, prompt):
+    def _validate_prompt(cls, prompt):
         if not isinstance(prompt, PromptTemplate):
             raise ValueError("prompt must be an instance of PromptTemplate.")
         if set(prompt.input_variables) != {"question"}:
@@ -56,7 +56,7 @@ class BMRetriever(BaseRetriever):
 
     @classmethod
     @validator('preprocess_func', allow_reuse=True)
-    def validate_preprocess_func(cls, preprocess_func):
+    def _validate_preprocess_func(cls, preprocess_func):
         if not isinstance(preprocess_func, Callable):
             raise ValueError("preprocess_func must be an Callable.")
         return preprocess_func
