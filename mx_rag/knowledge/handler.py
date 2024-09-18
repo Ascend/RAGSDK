@@ -5,7 +5,6 @@ import os
 import stat
 from pathlib import Path
 from typing import Callable, List, Tuple, Dict, Union
-from dataclasses import dataclass
 
 import numpy as np
 from loguru import logger
@@ -18,7 +17,7 @@ from mx_rag.retrievers.tree_retriever import Tree
 from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
-from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP, NO_SPLIT_FILE_TYPE
 from mx_rag.document.loader import BaseLoader
 
 
@@ -48,14 +47,16 @@ def upload_files(
         file_obj = Path(file)
 
         loader_info = loader_mng.get_loader(file_obj.suffix)
-        splitter_info = loader_mng.get_splitter(file_obj.suffix)
 
         loader = loader_info.loader_class(file_path=file_obj.as_posix(), **loader_info.loader_params)
-        if splitter_info and splitter_info.splitter_class is not None:
+        # 不需要切分的文件直接load
+        if file_obj.suffix in NO_SPLIT_FILE_TYPE:
+            docs = loader.load()
+        else:
+            splitter_info = loader_mng.get_splitter(file_obj.suffix)
             splitter = splitter_info.splitter_class(**splitter_info.splitter_params)
             docs = loader.load_and_split(splitter)
-        else:
-            docs = loader.load()
+
         texts = [doc.page_content for doc in docs if doc.page_content]
         meta_data = [doc.metadata for doc in docs if doc.page_content]
         try:
