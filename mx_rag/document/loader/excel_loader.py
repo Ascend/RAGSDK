@@ -6,14 +6,12 @@ from typing import (List, Iterator)
 from openpyxl import load_workbook, Workbook
 from openpyxl.cell import MergedCell
 import xlrd
-from pathlib import Path
 from loguru import logger
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
-from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 
 OPENPYXL_EXTENSION = (".xlsx",)

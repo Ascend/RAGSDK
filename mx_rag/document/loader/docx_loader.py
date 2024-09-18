@@ -6,9 +6,9 @@ import re
 from dataclasses import dataclass
 from typing import List, Tuple, Any, Iterator
 
+from pathlib import Path
 import docx
 from docx.text.paragraph import Paragraph
-from pathlib import Path
 from loguru import logger
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
@@ -68,9 +68,7 @@ class DocxLoader(BaseLoader, mxBaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
-        if not self._is_document_valid():
-            return iter([])
-
+        self._is_document_valid()
         all_text = []
         doc = docx.Document(self.file_path)
         for element in doc.element.body:
@@ -106,7 +104,7 @@ class DocxLoader(BaseLoader, mxBaseLoader):
         if not self.file_path.endswith(DocxLoader.EXTENSION):
             raise TypeError(f"type '{Path(self.file_path).suffix}' is not support")
         if self._is_zip_bomb():
-            raise TypeError(f"file too large")
+            raise ValueError(f"file is a risk of zip bombs")
         doc = docx.Document(self.file_path)
         word_count = 0
         for paragraph in doc.paragraphs:

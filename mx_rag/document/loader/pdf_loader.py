@@ -4,6 +4,7 @@
 from typing import List, Iterator
 from enum import Enum
 
+from pathlib import Path
 import fitz
 import cv2
 import numpy as np
@@ -27,6 +28,7 @@ class PdfLang(Enum):
 
 
 class PdfLoader(BaseLoader, mxBaseLoader):
+    EXTENSION = (".pdf",)
     @validate_params(
         lang=dict(validator=lambda x: isinstance(x, PdfLang), message="param must be instance of PdfLang"),
         layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
@@ -54,9 +56,7 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         pdf_content.append("\n")
 
     def lazy_load(self) -> Iterator[Document]:
-        if not self._check():
-            return []
-
+        self._check()
         return self._parser() if self.layout_recognize else self._plain_parser()
 
     def _text_merger(self, pdf_content):
@@ -127,7 +127,8 @@ class PdfLoader(BaseLoader, mxBaseLoader):
 
     def _check(self):
         SecFileCheck(self.file_path, self.MAX_SIZE).check()
+        if not self.file_path.endswith(PdfLoader.EXTENSION):
+            raise TypeError(f"type '{Path(self.file_path).suffix}' is not support")
         _pdf_page_count = self._get_pdf_page_count()
         if _pdf_page_count > self.MAX_PAGE_NUM:
             raise ValueError(f"too many pages {_pdf_page_count}")
-        return True

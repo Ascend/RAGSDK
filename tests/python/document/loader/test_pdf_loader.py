@@ -5,7 +5,11 @@
 import os
 import unittest
 from unittest import mock
+import fitz
+from fitz.fitz import EmptyFileError
 from mx_rag.document.loader.pdf_loader import PdfLoader
+from mx_rag.utils.file_check import FileCheckError
+
 
 
 class TestPdfLoader(unittest.TestCase):
@@ -17,35 +21,33 @@ class TestPdfLoader(unittest.TestCase):
         self.assertIsInstance(loader, PdfLoader)
 
     def test_class_init_failed(self):
-        loader = PdfLoader(os.path.join(self.data_dir, "link.docx"))
-        self.assertIsInstance(loader, PdfLoader)
-
-        pdf_doc = loader.load()
-        self.assertEqual(pdf_doc, [])
+        with self.assertRaises(TypeError):
+            loader = PdfLoader(os.path.join(self.data_dir, "link.docx"))
+            loader.load()
 
     def test_load_size_zero_byte(self):
         with unittest.mock.patch('os.path.getsize') as mock_path_getsize:
             mock_path_getsize.return_value = 0  # 0 MByte
-            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
-            pdf_doc = loader.load()
-            self.assertEqual(pdf_doc, [])
+            with self.assertRaises(EmptyFileError):
+                loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
+                loader.load()
 
     # 打桩测试超过了pdf文件超过100M字节场景
     def test_load_size_over_limit(self):
         with unittest.mock.patch('os.path.getsize') as mock_path_getsize:
             mock_path_getsize.return_value = 101 * 1024 * 1024  # 101 MByte
-            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
-            pdf_doc = loader.load()
-            self.assertEqual(len(pdf_doc), 0)
+            with self.assertRaises(FileCheckError):
+                loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
+                loader.load()
 
     # 打桩测试超过了pdf文件页数超过1000页场景
     def test_load_page_num_over_limit(self):
         with unittest.mock.patch('mx_rag.document.loader.pdf_loader.PdfLoader._get_pdf_page_count') \
                 as mock_get_pdf_page_count:
             mock_get_pdf_page_count.return_value = 1001  # 1001页
-            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
-            pdf_doc = loader.load()
-            self.assertEqual(pdf_doc, [])
+            with self.assertRaises(ValueError):
+                loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
+                loader.load()
 
     def test_load(self):
         loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))

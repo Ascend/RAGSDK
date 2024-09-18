@@ -37,7 +37,7 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     def _check_file_valid(self):
         SecFileCheck(self.file_path, self.MAX_SIZE).check()
         if not self.file_path.endswith(self.EXTENSION):
-            raise ValueError("file type not correct")
+            raise TypeError("file type not correct")
         if self._is_zip_bomb():
             raise ValueError(f"'{self.file_path}' is a risk of zip bombs")
 
