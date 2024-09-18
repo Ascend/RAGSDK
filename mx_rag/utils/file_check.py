@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
-import re
 from pathlib import Path
 
 
@@ -33,6 +32,7 @@ class SecFileCheck:
             raise PathNotFileException(f"PathNotFileException: '{self.file_path}' is not file")
 
         FileCheck.check_file_size(self.file_path, self.max_size)
+        FileCheck.check_file_owner(self.file_path)
 
 
 class FileCheck:
@@ -95,3 +95,27 @@ class FileCheck:
         filtered_files = [file for file in files if file.endswith(suffix)]
         if len(filtered_files) > limit:
             raise FileCheckError(f"The number of '{suffix}' files in '{directory_path}' exceed {limit}")
+
+    @staticmethod
+    def check_file_owner(file_path: str):
+        current_user_uid = os.getuid()
+
+        def check_owner(path: str, path_type: str):
+            """辅助函数，用于检查一个文件或目录的属主。"""
+            try:
+                stat_info = os.stat(path)
+                owner_uid = stat_info.st_uid
+                if owner_uid != current_user_uid:
+                    raise FileCheckError(f"The owner of the {path_type} '{path}' is different from the current user")
+            except FileNotFoundError as fnf_error:
+                raise FileCheckError(f"The {path_type} '{path}' does not exist") from fnf_error
+            except PermissionError as pe_error:
+                raise FileCheckError(f"Permission denied when accessing the {path_type} '{path}'") from pe_error
+
+        # 检查文件的属主
+        check_owner(file_path, "file")
+
+        # 获取文件所在的目录
+        dir_path = os.path.dirname(os.path.abspath(file_path))
+        # 检查目录的属主
+        check_owner(dir_path, "directory")
