@@ -13,7 +13,7 @@ from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
 
 
 class MindFAISSError(Exception):
@@ -44,10 +44,12 @@ class MindFAISS(VectorStore):
     }
 
     @validate_params(
-        x_dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
+        x_dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_VEC_DIM,
+                   message="param must be int and value range [0, 1024 * 1024]"),
         similarity_strategy=dict(
-            validator=lambda x: isinstance(x, SimilarityStrategy) and x in MindFAISS.SIMILARITY_STRATEGY_MAP),
-        auto_save=dict(validator=lambda x: isinstance(x, bool))
+            validator=lambda x: isinstance(x, SimilarityStrategy) and x in MindFAISS.SIMILARITY_STRATEGY_MAP,
+            message="param must be enum of SimilarityStrategy"),
+        auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(
             self,
@@ -55,7 +57,7 @@ class MindFAISS(VectorStore):
             similarity_strategy: SimilarityStrategy,
             devs: List[int],
             load_local_index: str,
-            auto_save: bool = False
+            auto_save: bool = True
     ):
         super().__init__()
         self.devs = devs
@@ -131,19 +133,21 @@ class MindFAISS(VectorStore):
     def get_save_file(self):
         return self.load_local_index
 
-    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x)))
+    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
+                              message="param must be List[int]"))
     def delete(self, ids: List[int]):
         res = self.index.remove_ids(np.array(ids))
         if self.auto_save:
             self.save_local()
         return res
 
-    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K))
+    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param value range (0, 10000]"))
     def search(self, embeddings: np.ndarray, k: int = 3):
         scores, indices = self.index.search(embeddings, k)
         return self._score_scale(scores.tolist()), indices.tolist()
 
-    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x)))
+    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
+                              message="param must be List[int]"))
     def add(self, embeddings: np.ndarray, ids: List[int]):
         try:
             self.index.add_with_ids(embeddings, np.array(ids))

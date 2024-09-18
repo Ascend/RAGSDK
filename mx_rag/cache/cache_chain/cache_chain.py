@@ -25,10 +25,12 @@ class CacheChainChat(Chain):
     """
 
     @validate_params(
-        cache=dict(validator=lambda x: isinstance(x, MxRAGCache)),
-        chain=dict(validator=lambda x: isinstance(x, Chain)),
-        convert_data_to_cache=dict(validator=lambda x: isinstance(x, Callable)),
-        convert_data_to_user=dict(validator=lambda x: isinstance(x, Callable))
+        cache=dict(validator=lambda x: isinstance(x, MxRAGCache), message="param must be instance of MxRAGCache"),
+        chain=dict(validator=lambda x: isinstance(x, Chain), message="param must be instance of Chain"),
+        convert_data_to_cache=dict(validator=lambda x: isinstance(x, Callable),
+                                   message="param must be callable function"),
+        convert_data_to_user=dict(validator=lambda x: isinstance(x, Callable),
+                                  message="param must be callable function")
     )
     def __init__(self,
                  cache: MxRAGCache,
@@ -43,7 +45,7 @@ class CacheChainChat(Chain):
         self._convert_data_to_user = convert_data_to_user
 
     @validate_params(
-        text=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH),
+        text=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH, message="param length range (0, 128*1024*1024]")
     )
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) \
             -> Union[Dict, Iterator[Dict]]:

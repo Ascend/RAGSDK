@@ -10,7 +10,7 @@ from loguru import logger
 
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.reranker.reranker_factory import RerankerFactory
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
 
 
 class CacheSimilarity(SimilarityEvaluation):
@@ -26,10 +26,12 @@ class CacheSimilarity(SimilarityEvaluation):
     """
 
     @validate_params(
-        similarity=dict(validator=lambda x: isinstance(x, Reranker)),
-        score_min=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0),
-        score_max=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0),
-        reverse=dict(validator=lambda x: isinstance(x, bool))
+        similarity=dict(validator=lambda x: isinstance(x, Reranker), message="param must be instance of Reranker"),
+        score_min=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0,
+                       message="param must be float and value range [0.0, 100.0]"),
+        score_max=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0,
+                       message="param must be float and value range [0.0, 100.0]"),
+        reverse=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, similarity: Reranker, score_min: float = 0.0, score_max: float = 1.0,
                  reverse: bool = False):

@@ -7,7 +7,8 @@ from typing import List
 from langchain_core.embeddings import Embeddings
 from loguru import logger
 
-from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str
+from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str, \
+    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.url import RequestUtils
 
 
@@ -21,8 +22,8 @@ class TEIEmbedding(Embeddings):
     }
 
     @validate_params(
-        url=dict(validator=lambda x: isinstance(x, str)),
-        use_http=dict(validator=lambda x: isinstance(x, bool))
+        url=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, url: str, use_http: bool = False):
         self.url = url
@@ -37,8 +38,10 @@ class TEIEmbedding(Embeddings):
         return TEIEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, INT_32_MAX])),
-        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX)
+        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, INT_32_MAX]),
+                   message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
+                           "str length range [1, 2 ** 31 - 1]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def embed_documents(self,
                         texts: List[str],
@@ -80,7 +83,7 @@ class TEIEmbedding(Embeddings):
         return result
 
     @validate_params(
-        text=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX)
+        text=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
     )
     def embed_query(self, text: str) -> List[float]:
         embeddings = self.embed_documents([text])

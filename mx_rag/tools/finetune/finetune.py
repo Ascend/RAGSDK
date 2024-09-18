@@ -9,26 +9,33 @@ from mx_rag.llm import Text2TextLLM
 from mx_rag.tools.finetune.generator import TrainDataGenerator, EvalDataGenerator
 from mx_rag.tools.finetune.train import train_embedding, train_reranker
 from mx_rag.utils.file_check import FileCheck
-from mx_rag.utils.common import validate_params, INT_32_MAX
+from mx_rag.utils.common import validate_params, INT_32_MAX, STR_TYPE_CHECK_TIP, INT_RANGE_CHECK_TIP
 
 DEFAULT_LLM_TIMEOUT = 10 * 60
 
 
 class Finetune:
     @validate_params(
-        origin_document_path=dict(validator=lambda x: isinstance(x, str)),
-        generate_dataset_path=dict(validator=lambda x: isinstance(x, str)),
-        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM)),
-        embed_model_path=dict(validator=lambda x: isinstance(x, str)),
-        reranker_model_path=dict(validator=lambda x: isinstance(x, str)),
-        finetune_output_path=dict(validator=lambda x: isinstance(x, str)),
-        featured_percentage=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1),
-        llm_threshold_score=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1),
-        train_question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX),
-        query_rewrite_number=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX),
-        negative_number=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX),
-        eval_samples=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX),
-        eval_question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX),
+        origin_document_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        generate_dataset_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be Text2TextLLM"),
+        embed_model_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        reranker_model_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        finetune_output_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        featured_percentage=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1,
+                                 message="param must be float and value range [0, 1]"),
+        llm_threshold_score=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1,
+                                 message="param must be float and value range [0, 1]"),
+        train_question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX,
+                                   message=INT_RANGE_CHECK_TIP),
+        query_rewrite_number=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX,
+                                  message=INT_RANGE_CHECK_TIP),
+        negative_number=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX,
+                             message=INT_RANGE_CHECK_TIP),
+        eval_samples=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX,
+                          message=INT_RANGE_CHECK_TIP),
+        eval_question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x < INT_32_MAX,
+                                  message=INT_RANGE_CHECK_TIP),
     )
     def __init__(self,
                  origin_document_path: str,

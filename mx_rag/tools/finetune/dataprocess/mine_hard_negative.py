@@ -8,7 +8,7 @@ from loguru import logger
 from tqdm import tqdm
 
 from mx_rag.embedding.local import TextEmbedding
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, STR_TYPE_CHECK_TIP
 
 QUERY = "query"
 POS = "pos"
@@ -17,8 +17,9 @@ NEG = "neg"
 
 class MineHardNegative:
     @validate_params(
-        model=dict(validator=lambda x: isinstance(x, str)),
-        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID)
+        model=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
+                    message="param must be int and value range [0, 63]")
     )
     def __init__(self, model: str, dev_id: int = 0):
         self.model = TextEmbedding(model, dev_id=dev_id)
@@ -43,8 +44,8 @@ class MineHardNegative:
         return all_scores, all_inxs
 
     @validate_params(
-        sample_range=dict(validator=lambda x: len(x) == 2),
-        negative_number=dict(validator=lambda x: 1 <= x <= 10)
+        sample_range=dict(validator=lambda x: len(x) == 2, message="param length must be 2"),
+        negative_number=dict(validator=lambda x: 1 <= x <= 10, message="param value range [1, 10]")
     )
     def find_knn_neg(self,
                      train_data: list[dict],

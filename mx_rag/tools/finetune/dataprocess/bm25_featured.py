@@ -11,8 +11,8 @@ BM25_FEATURED_MAX_LEN = 10000
 
 
 @validate_params(
-    query_list=dict(validator=lambda x: 0 < len(x) <= BM25_FEATURED_MAX_LEN),
-    doc_list=dict(validator=lambda x: 0 < len(x) <= BM25_FEATURED_MAX_LEN)
+    query_list=dict(validator=lambda x: 0 < len(x) <= BM25_FEATURED_MAX_LEN, message="param length range (0, 10000]"),
+    doc_list=dict(validator=lambda x: 0 < len(x) <= BM25_FEATURED_MAX_LEN, message="param length range (0, 10000]")
 )
 def bm25_featured(query_list: list[str], doc_list: list[str]):
     """bm25对文档对打分"""

@@ -39,7 +39,6 @@ class BMRetriever(BaseRetriever):
     llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)
     preprocess_func: Callable[[str], List[str]] = None
     prompt: PromptTemplate = _KEY_WORD_TEMPLATE_ZH
-    preprocess_func: Callable[[str], List[str]]= _default_preprocessing_func
 
     class Config:
         arbitrary_types_allowed = True

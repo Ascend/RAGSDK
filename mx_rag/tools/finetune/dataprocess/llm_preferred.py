@@ -34,8 +34,8 @@ SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关
 
 
 @validate_params(
-    query_list=dict(validator=lambda x: 0 < len(x) <= LLM_PREFERRED_MAX_LEN),
-    doc_list=dict(validator=lambda x: 0 < len(x) <= LLM_PREFERRED_MAX_LEN)
+    query_list=dict(validator=lambda x: 0 < len(x) <= LLM_PREFERRED_MAX_LEN, message="param length range (0, 10000]"),
+    doc_list=dict(validator=lambda x: 0 < len(x) <= LLM_PREFERRED_MAX_LEN, message="param length range (0, 10000]")
 )
 def llm_preferred(llm: Text2TextLLM, query_list: list[str], doc_list: list[str]):
     """大模型打分"""

@@ -11,14 +11,13 @@ from loguru import logger
 from transformers import AutoProcessor, AutoModel, is_torch_npu_available
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBBEDDING_TEXT_COUNT, \
-    IMG_EMBBEDDING_TEXT_LEN, validata_list_str, MB, EMBBEDDING_IMG_COUNT
+    IMG_EMBBEDDING_TEXT_LEN, validata_list_str, MB, EMBBEDDING_IMG_COUNT, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import FileCheck
 
 try:
     import torch_npu
 
     torch.npu.set_compile_mode(jit_compile=False)
-    logger.info("torch_npu successfully imported, running on NPU")
 except ImportError as e:
     logger.warning(f"Failed to import torch_npu: {e}. ImageEmbedding will run on cpu.")
 except Exception as e:
@@ -29,8 +28,8 @@ class ImageEmbedding(Embeddings):
     SUPPORT_IMG_TYPE = (".jpg", ".png")
 
     @validate_params(
-        dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID),
-        use_fp16=dict(validator=lambda x: isinstance(x, bool))
+        dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID, message="param value range [0, 63]"),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, model_path: str, dev_id: int = 0, use_fp16: bool = True):
         self.model_path = model_path
@@ -58,8 +57,9 @@ class ImageEmbedding(Embeddings):
         return ImageEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, IMG_EMBBEDDING_TEXT_LEN]))
-    )
+        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, IMG_EMBBEDDING_TEXT_LEN]),
+                   message="param must meets: Type is List[str], "
+                           "list length range [1, 1000 * 1000], str length range [1, 256]"))
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         inputs = self.processor(text=texts, padding=True, return_tensors="pt", max_length=512).to(self.model.device)
         with torch.no_grad():
@@ -77,8 +77,8 @@ class ImageEmbedding(Embeddings):
 
     @validate_params(
         images=dict(
-            validator=lambda x: 1 <= len(x) <= EMBBEDDING_IMG_COUNT and all(1 < len(item) <= 100*MB for item in x))
-    )
+            validator=lambda x: validata_list_str(x, [1, EMBBEDDING_IMG_COUNT], [1, 100*MB]),
+            message="param must meets: Type is List[str], list length range [0, 1000], str length range [1, 100*MB]"))
     def embed_images(self, images: List[str]) -> List[List[float]]:
         image_features = []
 
