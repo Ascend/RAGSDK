@@ -10,8 +10,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
-from mx_rag.retrievers import TreeBuilderConfig, TreeBuilder
-from mx_rag.retrievers.tree_retriever import Tree
 
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, STR_TYPE_CHECK_TIP
@@ -39,7 +37,6 @@ class KnowledgeModel(Base):
 
 
 class KnowledgeStore:
-
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
     @validate_params(
@@ -175,84 +172,18 @@ class KnowledgeDB(KnowledgeBase):
 
     def check_document_exist(self, doc_name: str) -> bool:
         return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
-    
+
     def _check_store_accordance(self) -> None:
         doc_chunks = self._document_store.get_all_index_id()
         vec_ids = self._vector_store.get_all_ids()
         if set(doc_chunks) != set(vec_ids):
             logger.error(f"the Docstore has {len(doc_chunks)} chunks in {self._document_store.db_path},"
                          f"but the VectorStore has {len(vec_ids)} vectors, that will cause some error,"
-                          "please ensure that the data of this two databases is consistent")
+                         "please ensure that the data of this two databases is consistent")
             raise KnowledgeError("VectorStore is not accordance to Docstore !")
 
 
-class KnowledgeTreeDB(KnowledgeBase):
-    @validate_params(
-        knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore),
-                             message="param must be instance of KnowledgeStore"),
-        chunk_store=dict(validator=lambda x: isinstance(x, Docstore),
-                         message="param must be instance of Docstore"),
-        knowledge_name=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
-        white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x),
-                         message="param type must be List[str]"),
-        tree_builder_config=dict(validator=lambda x: isinstance(x, TreeBuilderConfig),
-                                 message="param must be instance of TreeBuilderConfig")
-    )
-    def __init__(
-            self,
-            knowledge_store: KnowledgeStore,
-            chunk_store: Docstore,
-            knowledge_name: str,
-            white_paths: List[str],
-            tree_builder_config: TreeBuilderConfig
-    ):
-        super().__init__(white_paths)
-        self._knowledge_store = knowledge_store
-        self._document_store = chunk_store
-        self.knowledge_name = knowledge_name
-        self.tree_builder_config = tree_builder_config
-        self.tree_builder = TreeBuilder(tree_builder_config)
-
-    def get_all_documents(self):
-        """获取当前已上传的所有文档"""
-        return self._knowledge_store.get_all(self.knowledge_name)
-
-    @validate_params(
-        file_names=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]"),
-        texts=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]"),
-        metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
-    )
-    def add_files(self,
-                  file_names: List[str],
-                  texts: List[str],
-                  embed_func: Callable[[List[str]], List[List[float]]],
-                  metadatas: List[dict]) -> Tree:
-        if not len(texts) == len(metadatas) == len(file_names):
-            raise KnowledgeError("chunks, metadatas, file_names expected to be equal length")
-        # 需要将索引tree返回
-        tree = self.tree_builder.build_from_text(embed_func, chunks=texts)
-        documents = []
-        for text, metadata, file_name in zip(texts, metadatas, file_names):
-            documents.append(MxDocument(page_content=text, metadata=metadata, document_name=file_name))
-        for file_name in list(set(file_names)):
-            self.add_file(file_name, [], None, [])
-        self._document_store.add(documents)
-        return tree
-
-    def add_file(self, doc_name: str, texts: Optional[List[str]],
-                 embed_func: Callable[[List[str]], List[List[float]]], metadatas: Optional[List[dict]]):
-        self._knowledge_store.add(self.knowledge_name, doc_name)
-
-    def delete_file(self, doc_name: str):
-        self._knowledge_store.delete(self.knowledge_name, doc_name)
-        self._document_store.delete(doc_name)
-
-    def check_document_exist(self, doc_name: str) -> bool:
-        return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
-
-
 class KnowledgeMgrStore:
-
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
     @validate_params(

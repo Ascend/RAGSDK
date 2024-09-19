@@ -4,14 +4,9 @@
 __all__ = [
     "BMRetriever",
     "Retriever",
-    "MultiQueryRetriever",
-    "TreeRetriever",
-    "TreeRetrieverConfig",
-    "TreeBuilder",
-    "TreeBuilderConfig"
+    "MultiQueryRetriever"
 ]
 
 from mx_rag.retrievers.multi_query_retriever import MultiQueryRetriever
 from mx_rag.retrievers.bm_retriever import BMRetriever
 from mx_rag.retrievers.retriever import Retriever
-from mx_rag.retrievers.tree_retriever import TreeRetriever, TreeRetrieverConfig, TreeBuilder, TreeBuilderConfig

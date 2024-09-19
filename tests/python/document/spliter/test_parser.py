@@ -2,13 +2,10 @@ import os
 import unittest
 from pathlib import Path
 from typing import List, Tuple, Dict
-from unittest.mock import MagicMock, Mock
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from mx_rag.document.loader import DocxLoader, ExcelLoader, PdfLoader
-from mx_rag.retrievers.tree_retriever import split_text
-from mx_rag.retrievers.tree_retriever.utils import _cal_chunks_when_exceed_max_tokens, _distances_from_embeddings
 
 DOC_PARSER_MAP = {
     ".docx": (DocxLoader, RecursiveCharacterTextSplitter),
@@ -52,26 +49,3 @@ class TestTokenParseDocumentFile(unittest.TestCase):
         texts, metadatas = TestTokenParseDocumentFile.token_parse_document_file(self.file_path, tokenizer, 100,
                                                                                 DOC_PARSER_MAP)
         self.assertEqual(metadatas, [{'source': 'demo.docx'}])
-
-    def test_split_text(self):
-        tokenizer = Mock()
-        tokenizer.encode = MagicMock(return_value=[1, 2])
-        result = split_text("this is a test txt", tokenizer, 5)
-        self.assertEqual(['this is a test txt'], result)
-
-    def test_split_text_split(self):
-        tokenizer = Mock()
-        tokenizer.encode = MagicMock(return_value=[1, 2])
-        result = split_text("this is a？ test txt, split？ chunks", tokenizer, 3)
-        self.assertEqual(['this is a', ' test txt, split', ' chunks'], result)
-
-    def test_cal_chunks_when_exceed_max_tokens(self):
-        tokenizer = Mock()
-        tokenizer.encode = MagicMock(return_value=[1, 2, 3])
-        chunks = ["this is a test chunk"]
-        _cal_chunks_when_exceed_max_tokens(chunks, 3, 0, "test sentence", tokenizer)
-        self.assertEqual(['this is a test chunk', 'test sentence'], chunks)
-
-    def test_distances_from_embeddings_not_in_metrics(self):
-        with self.assertRaises(ValueError):
-            _distances_from_embeddings([2.2], [[1.1]], "sine")

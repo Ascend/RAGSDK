@@ -1,24 +1,16 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import json
-import os
-import stat
 from pathlib import Path
-from typing import Callable, List, Tuple, Dict, Union
+from typing import Callable, List
 
-import numpy as np
 from loguru import logger
-from transformers import PreTrainedTokenizerBase
 
+from mx_rag.document.loader import BaseLoader
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.doc_loader_mng import LoaderMng
-from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeDB
-from mx_rag.retrievers.tree_retriever import Tree
-from mx_rag.retrievers.tree_retriever.tree_structures import _tree2dict, Node
-
-from mx_rag.utils.file_check import FileCheck, SecFileCheck
+from mx_rag.knowledge.knowledge import KnowledgeDB
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP, NO_SPLIT_FILE_TYPE
-from mx_rag.document.loader import BaseLoader
+from mx_rag.utils.file_check import SecFileCheck
 
 
 class FileHandlerError(Exception):
@@ -96,38 +88,6 @@ def _is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
         if file_obj.resolve().is_relative_to(p):
             return True
     return False
-
-
-@validate_params(
-    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeTreeDB),
-                   message="param must be instance of KnowledgeTreeDB"),
-    parse_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
-    embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
-    force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
-)
-def upload_files_build_tree(knowledge: KnowledgeTreeDB,
-                            files: List[str],
-                            parse_func: Callable[[str, PreTrainedTokenizerBase, int], Tuple],
-                            embed_func: Callable[[List[str]], List[List[float]]],
-                            force: bool = False) -> Tree:
-    if len(files) > 1:
-        raise FileHandlerError(f"Currently not supported for uploading multiple files simultaneously!")
-    for file in files:
-        _check_file(file, force, knowledge)
-    tokenizer = knowledge.tree_builder_config.tokenizer
-    max_tokens = knowledge.tree_builder_config.max_tokens
-    total_texts = []
-    total_metadatas = []
-    file_names = []
-    for file in files:
-        file_obj = Path(file)
-        texts, metadatas = parse_func(file_obj.as_posix(), tokenizer, max_tokens)
-        for text, metadata in zip(texts, metadatas):
-            if len(text) > 0:
-                total_texts.append(text)
-                total_metadatas.append(metadata)
-    [file_names.append(file_obj.name) for i in range(len(total_texts))]
-    return knowledge.add_files(file_names, total_texts, embed_func, total_metadatas)
 
 
 class FilesLoadInfo:
@@ -211,79 +171,3 @@ def delete_files(
             continue
         knowledge.delete_file(filename)
         count += 1
-
-
-@validate_params(
-    tree=dict(validator=lambda x: isinstance(x, Tree), message="param must be instance of Tree")
-)
-def save_tree(tree: Tree, file_path: str):
-    """
-    序列化Tree并保存
-    """
-    if tree is None:
-        raise ValueError("There is no tree to save.")
-    FileCheck.check_input_path_valid(file_path)
-    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-    modes = stat.S_IWUSR | stat.S_IRUSR
-    with os.fdopen(os.open(file_path, flags, modes), "w") as ff:
-        ff.write(json.dumps(tree, default=_tree2dict))
-
-
-@validate_params(
-    white_paths=dict(validator=lambda x: len(x) > 0, message="param length must greater than 0"),
-    float_type=dict(validator=lambda x: x in [np.float16, np.float32],
-                    message="param must be one of np.float16 and np.float32")
-)
-def load_tree(file_path: str, white_paths: List[str], float_type: Union[np.float16, np.float32] = np.float16):
-    """
-    从文件加载Tree，反序列化
-    """
-    # 检查file_path
-    FileCheck.check_path_is_exist_and_valid(file_path)
-    # 检查white_paths
-    for p in white_paths:
-        FileCheck.check_path_is_exist_and_valid(p)
-    real_path = os.path.realpath(file_path)
-    file_obj = Path(real_path)
-    if not _is_in_white_paths(file_obj, white_paths):
-        raise FileHandlerError(f"'{file_obj.as_posix()}' is not in whitelist path")
-    file_check = SecFileCheck(file_path, 1024 * 1024 * 1024)
-    file_check.check()
-    with open(file_path, "r") as f:
-        tree_dict = json.load(f)
-    all_nodes = _json2node(tree_dict.get("all_nodes"), float_type)
-    root_nodes = _json2node(tree_dict.get("root_nodes"), float_type)
-    leaf_nodes = _json2node(tree_dict.get("leaf_nodes"), float_type)
-    layer_to_nodes = _josn2node_list(tree_dict.get("layer_to_nodes"), float_type)
-    num_layers = tree_dict.get("num_layers")
-    return Tree(all_nodes, root_nodes, leaf_nodes, num_layers, layer_to_nodes)
-
-
-def _json2node(dict_nodes: List[Dict[str, Dict]], float_type) -> {}:
-    """
-    反序列化Node对象
-    """
-    result = {}
-    for item in dict_nodes:
-        for k, v in item.items():
-            children = set(v.get("children", []))
-            embeddings = np.array(v.get("embeddings", []), dtype=float_type)
-            index = int(v.get("index", 0))
-            text = v.get("text", "")
-            result[int(k)] = Node(text, index, children, embeddings)
-    return result
-
-
-def _josn2node_list(dict_node_list: List[Dict[str, List[Dict[str, str]]]], float_type):
-    result = {}
-    for item in dict_node_list:
-        for k, v in item.items():
-            node_list = []
-            for node in v:
-                children = set([int(child) for child in node.get("children", [])])
-                embeddings = np.array(node.get("embeddings", []), dtype=float_type)
-                index = int(node.get("index", 0))
-                text = node.get("text", "")
-                node_list.append(Node(text, index, children, embeddings))
-            result[int(k)] = node_list
-    return result

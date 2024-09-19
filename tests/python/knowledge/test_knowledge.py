@@ -1,18 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
-import shutil
 import unittest
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch, MagicMock
 
 import numpy as np
-from transformers import PreTrainedTokenizerBase
-
-from mx_rag.chain.tree_text_to_text import TreeText2TextChain
-from mx_rag.knowledge.knowledge import KnowledgeTreeDB, KnowledgeStore
-from mx_rag.retrievers import TreeBuilderConfig
-
-from mx_rag.storage.document_store import SQLiteDocstore
 
 SQL_PATH = "./sql.db"
 
@@ -75,22 +67,3 @@ class TestKnowledge(unittest.TestCase):
                     knowledge_mgr.register(knowledge)
                 except Exception as err:
                     print(err)
-
-    @patch("mx_rag.retrievers.tree_retriever.tree_builder.TreeBuilder.build_from_text")
-    def test_knowledge_treeDB(self, mock_build_from_text):
-        mock_build_from_text.return_value = None
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        top_path = os.path.dirname(os.path.dirname(current_dir))
-        tree_builder_config = TreeBuilderConfig(tokenizer=Mock(spec=PreTrainedTokenizerBase), summarization_model=Mock(spec=TreeText2TextChain))
-        shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
-        knwoledge_tree_db = KnowledgeTreeDB(KnowledgeStore(SQL_PATH), chunk_store=SQLiteDocstore(SQL_PATH),
-                                            knowledge_name="test_knowledge",
-                                            white_paths=[top_path], tree_builder_config=tree_builder_config)
-        knwoledge_tree_db.add_files(["filename.txt", "filename1.txt"], ["this is a test", "this is a test1"], None,
-                                    [{"filepath": "xxx.file"}, {"filepath": "xxx.file"}])
-        documents = knwoledge_tree_db.get_all_documents()
-        self.assertEqual(['filename.txt', 'filename1.txt'], documents)
-        knwoledge_tree_db.delete_file("filename.txt")
-        self.assertTrue(knwoledge_tree_db.check_document_exist("filename1.txt"))
-        knwoledge_tree_db.add_file("testName.txt", "", None, "")
-        knwoledge_tree_db.check_document_exist("testName.txt")
