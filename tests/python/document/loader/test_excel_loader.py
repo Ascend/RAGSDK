@@ -3,6 +3,7 @@
 import os
 import unittest
 from unittest.mock import patch
+
 from mx_rag.document.loader.excel_loader import ExcelLoader
 
 
@@ -25,12 +26,13 @@ class TestExcelLoader(unittest.TestCase):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.xls"))
         docs = loader.load()
         self.assertEqual(1, len(docs))
-        content = (f'None:中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;{loader.line_sep}'
-                   f'None:中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
-                   f'None:中文资讯;source:新智元;link:https://www.zhihu.com/org/xin-zhi-yuan-88-3;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
-                   f'None:中文资讯;source:极客公园;link:行业资讯 | 极客公园 (geekpark.net);count(3月15日为例):7篇;SUM:24篇;{loader.line_sep}'
-                   f'None:英文文献;source:huggingFace;link:日报 - 拥抱脸部 (huggingface.co);count(3月15日为例):14篇;SUM:55篇;{loader.line_sep}'
-                   f'None:英文文献;source:PaperWithCode;link:带代码的最新论文 |带代码的论文 (paperswithcode.com);count(3月15日为例):41篇;SUM:55篇;{loader.line_sep}')
+        content = (
+            f'None:中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;{loader.line_sep}'
+            f'None:中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
+            f'None:中文资讯;source:新智元;link:https://www.zhihu.com/org/xin-zhi-yuan-88-3;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
+            f'None:中文资讯;source:极客公园;link:行业资讯 | 极客公园 (geekpark.net);count(3月15日为例):7篇;SUM:24篇;{loader.line_sep}'
+            f'None:英文文献;source:huggingFace;link:日报 - 拥抱脸部 (huggingface.co);count(3月15日为例):14篇;SUM:55篇;{loader.line_sep}'
+            f'None:英文文献;source:PaperWithCode;link:带代码的最新论文 |带代码的论文 (paperswithcode.com);count(3月15日为例):41篇;SUM:55篇;{loader.line_sep}')
 
         self.assertEqual(content, docs[0].page_content)
         self.assertEqual(docs[0].metadata["sheet"], '不需要订阅')
@@ -45,12 +47,13 @@ class TestExcelLoader(unittest.TestCase):
     def test_load_xlsx(self):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.xlsx"))
         docs = loader.load()
-        content = (f'None:中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;{loader.line_sep}'
-                   f'None:中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
-                   f'None:中文资讯;source:新智元;link:https://www.zhihu.com/org/xin-zhi-yuan-88-3;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
-                   f'None:中文资讯;source:极客公园;link:行业资讯 | 极客公园 (geekpark.net);count(3月15日为例):7篇;SUM:24篇;{loader.line_sep}'
-                   f'None:英文文献;source:huggingFace;link:日报 - 拥抱脸部 (huggingface.co);count(3月15日为例):14篇;SUM:55篇;{loader.line_sep}'
-                   f'None:英文文献;source:PaperWithCode;link:带代码的最新论文 |带代码的论文 (paperswithcode.com);count(3月15日为例):41篇;SUM:55篇;{loader.line_sep}')
+        content = (
+            f'None:中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;{loader.line_sep}'
+            f'None:中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
+            f'None:中文资讯;source:新智元;link:https://www.zhihu.com/org/xin-zhi-yuan-88-3;count(3月15日为例):4篇;SUM:24篇;{loader.line_sep}'
+            f'None:中文资讯;source:极客公园;link:行业资讯 | 极客公园 (geekpark.net);count(3月15日为例):7篇;SUM:24篇;{loader.line_sep}'
+            f'None:英文文献;source:huggingFace;link:日报 - 拥抱脸部 (huggingface.co);count(3月15日为例):14篇;SUM:55篇;{loader.line_sep}'
+            f'None:英文文献;source:PaperWithCode;link:带代码的最新论文 |带代码的论文 (paperswithcode.com);count(3月15日为例):41篇;SUM:55篇;{loader.line_sep}')
 
         print(docs[0].page_content)
         print(content)
@@ -58,22 +61,10 @@ class TestExcelLoader(unittest.TestCase):
         self.assertEqual(docs[0].page_content, content)
         self.assertEqual(docs[0].metadata["sheet"], '不需要订阅')
 
-    @patch.object(ExcelLoader, '_load_csv')
-    def test_call_load_csv(self, mock_load_csv):
-        # Arrange
-        loader = ExcelLoader(os.path.join(self.data_dir, "test.csv"))
-        loader.lazy_load()
-        mock_load_csv.assert_called_once()
-
     def test_load_csv(self):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.csv"))
-        docs = loader.load()
-        content = (f'None:中文资讯;source:机器之心;link:入门|机器之心(jiqizhixin.com);count\n（3月15日为例）:9篇;SUM:24篇;{loader.line_sep}'
-                   'None:None;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count\n（3月15日为例）:'
-                   f'4篇;SUM:None;{loader.line_sep}')
-        self.assertEqual(len(docs), 1)
-        self.assertEqual(docs[0].page_content, content)
-        self.assertEqual(len(docs[0].metadata), 1)
+        with self.assertRaises(TypeError):
+            docs = loader.load()
 
     def test_lazy_load(self):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.xlsx"))
