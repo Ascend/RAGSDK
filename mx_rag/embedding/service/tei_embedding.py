@@ -8,7 +8,7 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 
 from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str, \
-    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP
+    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP, MAX_API_KEY_LEN
 from mx_rag.utils.url import RequestUtils
 
 
@@ -23,12 +23,17 @@ class TEIEmbedding(Embeddings):
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
-        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        api_key=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_API_KEY_LEN,
+                     message="param must be str and str length range [0, 128]")
     )
-    def __init__(self, url: str, use_http: bool = False):
+    def __init__(self, url: str, use_http: bool = False, api_key: str = ""):
         self.url = url
         self.client = RequestUtils(use_http=use_http)
         self.use_http = use_http
+
+        if api_key != "":
+            self.HEADERS['Authorization'] = "Bearer {}".format(api_key)
 
     @staticmethod
     def create(**kwargs):
