@@ -38,7 +38,7 @@ class EvictPolicy(Enum):
 
 
 def _get_default_save_folder():
-    return "/usr/local/Ascend/mxRag/cache_save_folder"
+    return "/home/HwHiAiUser/Ascend/mxRag/cache_save_folder"
 
 
 class CacheConfig(Config):
@@ -86,7 +86,7 @@ class CacheConfig(Config):
 
         FileCheck.check_input_path_valid(data_save_folder)
         if not os.path.exists(data_save_folder):
-            os.makedirs(data_save_folder, 0o660)
+            os.makedirs(data_save_folder, 0o750)
 
         if check_disk_free_space(os.path.dirname(self.data_save_folder), self.min_free_space):
             raise Exception("Insufficient remaining space, please clear disk space")
