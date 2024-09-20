@@ -5,8 +5,8 @@ import re
 
 from loguru import logger
 
-from mx_rag.utils.common import validate_params, INT_32_MAX, MAX_URL_LENGTH, \
-    MAX_MODEL_NAME_LENGTH, MB, MAX_PROMPT_LENGTH, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils import ClientParam
+from mx_rag.utils.common import validate_params, MAX_URL_LENGTH, MAX_MODEL_NAME_LENGTH, MB, MAX_PROMPT_LENGTH
 from mx_rag.utils.url import RequestUtils
 
 
@@ -21,17 +21,13 @@ class Img2ImgMultiModel:
                  message="param must be str and length range (0, 128]"),
         model_name=dict(validator=lambda x: x is None or isinstance(x, str) and 0 < len(x) <= MAX_MODEL_NAME_LENGTH,
                         message="param must be None or str, and str length range (0, 128]"),
-        timeout=dict(validator=lambda x: isinstance(x, int) and 0 < x <= INT_32_MAX,
-                     message="param must be int and value range (0, 2 ** 31 - 1]"),
-        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
-        response_limit_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 10 * MB,
-                                 message="param must be int and value range (0, 10*MB]"),
+        client_param=dict(validator=lambda x: isinstance(x, ClientParam),
+                          message="param must be instance of ClientParam"),
     )
-    def __init__(self, url: str, model_name=None, timeout: int = 10, use_http: bool = False,
-                 response_limit_size=1 * MB):
+    def __init__(self, url: str, model_name=None, client_param=ClientParam()):
         self._url = url
         self._model_name = model_name
-        self._client = RequestUtils(timeout=timeout, use_http=use_http, response_limit_size=response_limit_size)
+        self._client = RequestUtils(client_param=client_param)
 
     @validate_params(
         prompt=dict(validator=lambda x: 0 < len(x) <= MAX_PROMPT_LENGTH,

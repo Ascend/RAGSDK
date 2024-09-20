@@ -47,10 +47,10 @@ function package()
     cp -rf "${ROOT_PATH}"/requirements.txt "${ci_package_dir}"
 
     cd "${ci_package_dir}"
-    #将所有目录设置为550，特殊目录单独处理
-    find ./ -type d -exec chmod 550 {} \;
-    #将所有文件设置为440，特殊文件单独处理
-    find ./ -type f -exec chmod 440 {} \;
+    #将所有目录设置为750，特殊目录单独处理
+    find ./ -type d -exec chmod 750 {} \;
+    #将所有文件设置640，特殊文件单独处理
+    find ./ -type f -exec chmod 640 {} \;
 
     find ./  \( -name "*.sh" -o -name "*.run" \)  -exec  chmod 550 {} \;
 

@@ -2,7 +2,8 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import unittest
 
-from mx_rag.utils.url import _is_url_valid, UrlError
+from mx_rag.utils import ClientParam
+from mx_rag.utils.url import UrlError, _is_url_valid, RequestUtils
 
 
 class TestURL(unittest.TestCase):

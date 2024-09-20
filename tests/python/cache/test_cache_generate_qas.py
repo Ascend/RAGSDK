@@ -8,6 +8,7 @@ from transformers import PreTrainedTokenizerBase
 
 from mx_rag.cache import QAGenerate, QAGenerationConfig, MarkDownParser, HTMLParser
 from mx_rag.llm import Text2TextLLM
+from mx_rag.utils import ClientParam
 
 
 class TestQAGenerate(unittest.TestCase):
@@ -52,7 +53,7 @@ class TestQAGenerate(unittest.TestCase):
 
     @patch("mx_rag.cache.HTMLParser.parse")
     def test_html_parse(self, parse_mock):
-        html_parser = HTMLParser(["https://127.0.0.1"])
+        html_parser = HTMLParser(["https://127.0.0.1"], client_param=ClientParam(use_http=True))
         parse_mock.return_value = [], []
         titles, contents = html_parser.parse()
         self.assertEqual(titles, [])
