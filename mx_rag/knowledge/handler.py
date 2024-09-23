@@ -153,6 +153,7 @@ def upload_dir(params: FilesLoadInfo):
             count += 1
     upload_files(knowledge, files, loader_mng, embed_func, force)
 
+
 @validate_params(
     knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
     file_names=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 1000,
