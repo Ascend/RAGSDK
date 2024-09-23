@@ -21,12 +21,9 @@ MAX_FILE_SIZE = 100 * 1024 * 1024
 TEXT_MAX_LEN = 1000 * 1000
 MAX_VEC_DIM = 1024 * 1024
 NODE_MAX_TEXT_LENGTH = 128 * 1024 * 1024
-# tree中最大节点数
-TREE_MAX_NODES = 2 ** 31 - 1
-# tree中最大层数
-TREE_MAX_LAYERS = 2 ** 31 - 1
 MILVUS_INDEX_TYPES = ["FLAT"]
 MILVUS_METRIC_TYPES = ["L2", "IP", "COSINE"]
+MAX_API_KEY_LEN = 128
 
 MAX_PROMPT_LENGTH = 1 * 1024 * 1024
 MAX_URL_LENGTH = 128
@@ -39,6 +36,9 @@ STR_TYPE_CHECK_TIP = "param must be str"
 BOOL_TYPE_CHECK_TIP = "param must be bool"
 INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
+
+
+NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
 
 
 class UrlUtilException(Exception):

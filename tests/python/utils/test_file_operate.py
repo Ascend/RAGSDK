@@ -2,9 +2,9 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
-from mx_rag.utils.file_check import FileCheckError
+from mx_rag.utils.file_check import FileCheckError, FileCheck
 from mx_rag.utils.file_operate import write_jsonl_to_file, read_jsonl_from_file
 
 
@@ -31,3 +31,99 @@ class TestFileOperate(unittest.TestCase):
         write_jsonl_to_file(self.datas, path)
         datas = read_jsonl_from_file(path)
         self.assertEqual(self.datas, datas)
+
+
+class TestCheckFileOwner(unittest.TestCase):
+    def setUp(self):
+        self.current_uid = 1000
+        self.other_uid = 2000
+        self.file_path = '/path/to/your/file'
+        self.dir_path = '/path/to/your'
+
+        # Patch os.stat 和 os.getuid
+        patcher_getuid = patch('os.getuid', return_value=self.current_uid)
+        patcher_stat = patch('os.stat')
+        self.addCleanup(patcher_getuid.stop)
+        self.addCleanup(patcher_stat.stop)
+        self.mock_getuid = patcher_getuid.start()
+        self.mock_stat = patcher_stat.start()
+
+    def configure_stat_mock(self, file_owner_uid=None, dir_owner_uid=None, file_exists=True, dir_exists=True):
+        file_stat = MagicMock()
+        dir_stat = MagicMock()
+
+        if file_owner_uid is not None:
+            file_stat.st_uid = file_owner_uid
+        else:
+            file_stat.st_uid = self.current_uid  # 默认为当前用户
+
+        if dir_owner_uid is not None:
+            dir_stat.st_uid = dir_owner_uid
+        else:
+            dir_stat.st_uid = self.current_uid  # 默认为当前用户
+
+        def side_effect(path):
+            if path == self.file_path:
+                if file_exists:
+                    return file_stat
+                else:
+                    raise FileNotFoundError
+            elif path == self.dir_path:
+                if dir_exists:
+                    return dir_stat
+                else:
+                    raise FileNotFoundError
+            else:
+                raise FileNotFoundError
+
+        self.mock_stat.side_effect = side_effect
+
+    def test_file_and_dir_owned_by_current_user(self):
+        # 文件以及所在目录的属主均为当前用户
+        self.configure_stat_mock()
+
+        try:
+            FileCheck.check_file_owner(self.file_path)
+            print("Test passed: File and directory owned by current user.")
+        except FileCheckError:
+            self.fail("check_file_owner raised FileCheckError unexpectedly!")
+
+    def test_file_owned_by_other_user(self):
+        # 文件的属主是另一个用户
+        self.configure_stat_mock(file_owner_uid=self.other_uid)
+
+        # 调用函数，预期返回一个异常
+        with self.assertRaises(FileCheckError):
+            FileCheck.check_file_owner(self.file_path)
+        print("Test passed: Detected file owned by another user.")
+
+    def test_directory_owned_by_other_user(self):
+        # 文件所在目录的属主为另一个用户
+        self.configure_stat_mock(dir_owner_uid=self.other_uid)
+
+        # 调用函数，预期返回一个异常
+        with self.assertRaises(FileCheckError):
+            FileCheck.check_file_owner(self.file_path)
+        print("Test passed: Detected directory owned by another user.")
+
+    def test_file_not_found(self):
+        # 文件不存在
+        self.configure_stat_mock(file_exists=False)
+
+        # Run the function and expect an exception
+        with self.assertRaises(FileCheckError):
+            FileCheck.check_file_owner(self.file_path)
+        print("Test passed: Detected file not found.")
+
+    def test_directory_not_found(self):
+        # 文件所在目录不存在
+        self.configure_stat_mock(dir_exists=False)
+
+        # Run the function and expect an exception
+        with self.assertRaises(FileCheckError):
+            FileCheck.check_file_owner(self.file_path)
+        print("Test passed: Detected directory not found.")
+
+
+if __name__ == '__main__':
+    unittest.main()

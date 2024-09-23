@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import csv
 from datetime import datetime, timedelta
-from typing import (List, Iterator)
+from typing import Iterator
+
+import xlrd
+from langchain_community.document_loaders.base import BaseLoader
+from langchain_core.documents import Document
+from loguru import logger
 from openpyxl import load_workbook, Workbook
 from openpyxl.cell import MergedCell
-import xlrd
-from loguru import logger
-from langchain_core.documents import Document
-from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
-from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
-CSV_EXTENSION = (".csv",)
 
 
 class ExcelLoader(BaseLoader, mxBaseLoader):
@@ -27,7 +25,6 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
     def __init__(self, file_path: str, line_sep: str = "**;"):
         super().__init__(file_path)
         self.line_sep = str(line_sep)
-
 
     @staticmethod
     def _exceltime_to_datetime(exceltime):
@@ -153,42 +150,21 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
 
         return first_row, first_col
 
-    @staticmethod
-    def _load_csv_line(row, headers):
-        text_line = ""
-        for ind, ti in enumerate(headers):
-            if not str(ti):
-                ti = "None"
-            if not str(row[ind]):
-                row[ind] = "None"
-            text_line += str(ti) + ":" + str(row[ind]) + ";"
-        return text_line
-
     def lazy_load(self) -> Iterator[Document]:
         """
         ：返回：逐行读取表,返回 string list
         """
-        try:
-            file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
-        except (FileCheckError, PathNotFileException) as e:
-            logger.error(f"Invalid input file '{self.file_path}': {e}")
-            return iter([])
-        except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            return iter([])
+        file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
         # 判断文件种类：支持 xlsx 与 xls 格式
         if self.file_path.endswith(XLRD_EXTENSION):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
             if self._is_zip_bomb():
-                return iter([])
+                raise ValueError(f"file is a risk of zip bombs")
             else:
                 return self._load_xlsx()
-        elif self.file_path.endswith(CSV_EXTENSION):
-            return self._load_csv()
         else:
-            logger.error(f"'{self.file_path}' file type is not one of (csv, xlsx, xls).")
-            return iter([])
+            raise TypeError(f"'{self.file_path}' file type is not one of (xlsx, xls).")
 
     def _get_xlsx_title(self, ws, first_row, first_col):
         title = []
@@ -308,38 +284,3 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                 continue
             yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
         logger.info(f"file '{self.file_path}' Loading completed")
-
-    def _load_csv_lines(self, reader, headers):
-        content = ""
-        for row in reader:
-            if len(row) > 0:
-                text_line = self._load_csv_line(row, headers)
-                content += text_line + self.line_sep
-            else:
-                break
-        return content
-
-    def _load_csv(self):
-        content = ""
-        try:
-            with open(self.file_path, mode="r", encoding="utf-8-sig") as file:
-                reader = csv.reader(file)
-                headers = next(reader)  # 读取第一行标题
-                content = self._load_csv_lines(reader, headers)
-        except FileNotFoundError as e:
-            logger.error(f"File not found: {e}")
-            return
-        except IOError as e:
-            logger.error(f"I/O error occurred: {e}")
-            return
-        except csv.Error as e:
-            logger.error(f"CSV error occurred: {e}")
-            return
-        except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            return
-        if content:
-            yield Document(page_content=content, metadata={"source": self.file_path})
-        else:
-            logger.info(f"file '{self.file_path}' is empty")
-

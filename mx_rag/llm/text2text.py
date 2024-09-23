@@ -10,7 +10,8 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.outputs import GenerationChunk
 from loguru import logger
 
-from mx_rag.utils.common import safe_get, MB, INT_32_MAX, validate_params, MAX_URL_LENGTH, MAX_MODEL_NAME_LENGTH
+from mx_rag.utils import ClientParam
+from mx_rag.utils.common import safe_get, MB, validate_params, MAX_URL_LENGTH, MAX_MODEL_NAME_LENGTH
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.utils.url import RequestUtils
 
@@ -38,19 +39,15 @@ def _check_sys_messages(sys_messages: List[dict] = None) -> bool:
 class Text2TextLLM(LLM):
     base_url: str = Field(min_length=1, max_length=MAX_URL_LENGTH)
     model_name: str = Field(min_length=1, max_length=MAX_MODEL_NAME_LENGTH)
-    timeout: int = Field(ge=1, le=INT_32_MAX, default=10)
-    cert_file: str = Field(min_length=0, max_length=128, default="")
-    crl_file: str = Field(min_length=0, max_length=128, default="")
-    use_http: bool = Field(default=False)
     llm_config: LLMParameterConfig = LLMParameterConfig()
+    client_param: ClientParam = ClientParam()
 
     class Config:
         arbitrary_types_allowed = True
 
     @property
     def _client(self):
-        return RequestUtils(timeout=self.timeout, cert_file=self.cert_file, crl_file=self.crl_file,
-                            use_http=self.use_http)
+        return RequestUtils(client_param=self.client_param)
 
     @validate_params(
         query=dict(validator=lambda x: 0 < len(x) <= 4 * MB,

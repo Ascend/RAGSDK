@@ -8,8 +8,9 @@ from loguru import logger
 import numpy as np
 
 from mx_rag.reranker.reranker import Reranker
+from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, MAX_TOP_K, INT_32_MAX, MAX_QUERY_LENGTH, TEXT_MAX_LEN, \
-    validata_list_str, STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP
+    validata_list_str, STR_TYPE_CHECK_TIP, MAX_API_KEY_LEN
 from mx_rag.utils.url import RequestUtils
 
 
@@ -21,14 +22,20 @@ class TEIReranker(Reranker):
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
-        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K,
-               message="param must be int and value range [1, 10000]")
+               message="param must be int and value range [1, 10000]"),
+        api_key=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_API_KEY_LEN,
+                     message="param must be str and str length range [0, 128]"),
+        client_param=dict(validator=lambda x: isinstance(x, ClientParam),
+                          message="param must be instance of ClientParam")
     )
-    def __init__(self, url: str, use_http: bool = False, k: int = 1):
+    def __init__(self, url: str, k: int = 1, api_key: str = "", client_param=ClientParam()):
         super(TEIReranker, self).__init__(k)
         self.url = url
-        self.client = RequestUtils(use_http=use_http)
+        self.client = RequestUtils(client_param=client_param)
+
+        if api_key != "":
+            self.HEADERS['Authorization'] = "Bearer {}".format(api_key)
 
     @staticmethod
     def create(**kwargs):

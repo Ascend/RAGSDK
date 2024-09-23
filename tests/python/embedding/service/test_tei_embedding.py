@@ -10,6 +10,7 @@ from unittest.mock import patch
 import numpy as np
 
 from mx_rag.embedding.service import TEIEmbedding
+from mx_rag.utils import ClientParam
 
 
 class TestTEIEmbedding(unittest.TestCase):
@@ -29,7 +30,7 @@ class TestTEIEmbedding(unittest.TestCase):
             return TestTEIEmbedding.Result(True, json.dumps(response_data))
 
         with patch('mx_rag.utils.url.RequestUtils.post', mock.Mock(side_effect=mock_post)):
-            embed = TEIEmbedding(url='https://localhost:8888')
+            embed = TEIEmbedding(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
             texts = ['abc'] * 100
             try:
@@ -45,7 +46,7 @@ class TestTEIEmbedding(unittest.TestCase):
                 self.assertEqual(f"{e}", f'texts length greater than {TEIEmbedding.TEXT_MAX_LEN}')
 
     def test_empty_texts(self):
-        embed = TEIEmbedding(url='https://localhost:8888')
+        embed = TEIEmbedding(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
         texts = []
         with self.assertRaises(ValueError):
@@ -57,7 +58,7 @@ class TestTEIEmbedding(unittest.TestCase):
             return TestTEIEmbedding.Result(False, "")
 
         with patch('mx_rag.utils.url.RequestUtils.post', mock.Mock(side_effect=mock_post)):
-            embed = TEIEmbedding(url='https://localhost:8888')
+            embed = TEIEmbedding(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
             texts = ['abc'] * 100
             try:

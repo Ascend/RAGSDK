@@ -137,6 +137,7 @@ class MindFAISS(VectorStore):
                               message="param must be List[int]"))
     def delete(self, ids: List[int]):
         res = self.index.remove_ids(np.array(ids))
+        logger.debug(f"success remove ids {ids} in MindFAISS.")
         if self.auto_save:
             self.save_local()
         return res
@@ -151,6 +152,7 @@ class MindFAISS(VectorStore):
     def add(self, embeddings: np.ndarray, ids: List[int]):
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
+            logger.debug(f"success add ids {ids} in MindFAISS.")
         except (AttributeError, AssertionError) as e:
             logger.error(f"Failed to add index due to an attribute or assertion error: {e}")
             raise MindFAISSError(f"Failed to add index: {e}") from e
