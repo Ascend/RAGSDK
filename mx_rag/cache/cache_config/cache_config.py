@@ -8,6 +8,8 @@ SimilarityCacheConfig 继承CacheConfig提供 语义相似cache
 import os
 from enum import Enum
 from typing import Dict, Any, Union
+import multiprocessing
+import threading
 
 from gptcache.config import Config
 from gptcache.embedding.base import BaseEmbedding
@@ -63,7 +65,10 @@ class CacheConfig(Config):
         data_save_folder=dict(validator=lambda x: isinstance(x, str),
                               message="param must be instance of str"),
         min_free_space=dict(validator=lambda x: isinstance(x, int) and 20 * MB <= x <= 20 * GB,
-                            message="param must meets: Type is int, value range [20 * MB, 20 * GB]")
+                            message="param must meets: Type is int, value range [20 * MB, 20 * GB]"),
+        lock=dict(
+            validator=lambda x: x is None or isinstance(x, (type(multiprocessing.Lock()), type(threading.Lock()))),
+            message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
     )
     def __init__(self,
                  cache_size: int,
@@ -71,6 +76,7 @@ class CacheConfig(Config):
                  pre_emb_func=get_prompt,
                  data_save_folder: str = _get_default_save_folder(),
                  min_free_space: int = 1 * GB,
+                 lock=None,
                  **kwargs):
         super().__init__(**kwargs)
         self.config_type = "memory_cache_config"
@@ -79,14 +85,20 @@ class CacheConfig(Config):
         self.pre_emb_func = pre_emb_func
         self.data_save_folder = data_save_folder
         self.min_free_space = min_free_space
+        self.lock = lock
 
         similarity_threshold = kwargs.get("similarity_threshold", 0.8)
         if not (1 >= similarity_threshold >= 0):
             raise ValueError("similarity_threshold must 0 ~ 1 range")
 
         FileCheck.check_input_path_valid(data_save_folder)
-        if not os.path.exists(data_save_folder):
-            os.makedirs(data_save_folder, 0o750)
+        if self.lock:
+            with self.lock:
+                if not os.path.exists(data_save_folder):
+                    os.makedirs(data_save_folder, 0o750)
+        else:
+            if not os.path.exists(data_save_folder):
+                os.makedirs(data_save_folder, 0o750)
 
         if check_disk_free_space(os.path.dirname(self.data_save_folder), self.min_free_space):
             raise Exception("Insufficient remaining space, please clear disk space")
