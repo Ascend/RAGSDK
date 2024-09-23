@@ -95,19 +95,22 @@ class FilesLoadInfo:
         knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
         loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
         embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
-        force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+        force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        load_image=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self,
                  knowledge: KnowledgeDB,
                  dir_path: str,
                  loader_mng: LoaderMng,
                  embed_func: Callable[[List[str]], List[List[float]]],
-                 force: bool = False):
+                 force: bool = False,
+                 load_image: bool = False):
         self.knowledge = knowledge
         self.dir_path = dir_path
         self.loader_mng = loader_mng
         self.embed_func = embed_func
         self.force = force
+        self.load_image = load_image
 
 
 @validate_params(
@@ -120,9 +123,11 @@ def upload_dir(params: FilesLoadInfo):
     loader_mng = params.loader_mng
     embed_func = params.embed_func
     force = params.force
+    load_image = params.load_image
     """
-    只遍历当前目录下的文件，不递归查找子目录文件，目录中不支持的文件类型会跳过，如果文档重复，可选择强制覆盖，超过最大文件数量则退出
-    load_image为True时导入支持的类型图片, False时支持导入支持的文档
+    只遍历当前目录下的文件，不递归查找子目录文件;目录中不支持的文件类型会跳过,但是因注册错误的类型，导致解析过程中错误会中断;如果文档重复，可选择强制覆盖;
+    超过最大文件数量则退出;load_image为True时只支持图片类型, False时只支持文档类型;支持图片类型时,无需注册spliter;支持文档类型时必须注册spliter;
+    embedding模型需要与支持的文件类型一致,否则会出现embedding错误.
     """
     dir_path_obj = Path(dir_path)
     if not dir_path_obj.is_dir():
@@ -133,8 +138,10 @@ def upload_dir(params: FilesLoadInfo):
     spliter_types = []
     for file_types, _ in loader_mng.splitters.values():
         spliter_types.extend(file_types)
-    support_file_type = list(set(loader_types) & set(spliter_types))
-
+    if not load_image:
+        support_file_type = list(set(loader_types) & set(spliter_types))
+    else:
+        support_file_type = list(set(loader_types) & set(NO_SPLIT_FILE_TYPE))
     count = 0
     files = []
     for file in Path(dir_path).glob("*"):
@@ -145,7 +152,6 @@ def upload_dir(params: FilesLoadInfo):
             files.append(file.as_posix())
             count += 1
     upload_files(knowledge, files, loader_mng, embed_func, force)
-
 
 @validate_params(
     knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
