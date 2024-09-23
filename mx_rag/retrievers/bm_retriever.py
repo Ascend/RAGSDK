@@ -8,10 +8,11 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH, validate_params
+from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 from mx_rag.llm import Text2TextLLM
+
 
 _KEY_WORD_TEMPLATE_ZH = PromptTemplate(
     input_variables=["question"],
@@ -43,23 +44,14 @@ class BMRetriever(BaseRetriever):
     class Config:
         arbitrary_types_allowed = True
 
-    @classmethod
     @validator('prompt')
+    @classmethod
     def _validate_prompt(cls, prompt):
-        if not isinstance(prompt, PromptTemplate):
-            raise ValueError("prompt must be an instance of PromptTemplate.")
         if set(prompt.input_variables) != {"question"}:
             raise ValueError('prompt.input_variables must include exactly "question".')
         if not (0 < len(prompt.template) <= MAX_PROMPT_LENGTH):
             raise ValueError(f'prompt.template length must be between 1 and {MAX_PROMPT_LENGTH}.')
         return prompt
-
-    @classmethod
-    @validator('preprocess_func', allow_reuse=True)
-    def _validate_preprocess_func(cls, preprocess_func):
-        if not isinstance(preprocess_func, Callable):
-            raise ValueError("preprocess_func must be an Callable.")
-        return preprocess_func
 
     def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
