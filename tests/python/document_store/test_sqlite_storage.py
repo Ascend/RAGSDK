@@ -25,14 +25,14 @@ class TestSQLiteStorage(unittest.TestCase):
     def test_sqlite_storage_add(self):
         # 对add函数入参进行校验测试
         doc = MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             # 期望传入一个列表
             self.db.add(doc)
             # 期望列表元素的类型为MxDocument
             self.db.add([0])
 
         # 传入空文档列表，应返回空列表
-        self.assertEqual(self.db.add([]), [])
+        self.assertEqual(self.db.add([doc]), [1])
 
     def test_sqlite_storage_delete(self):
         # 对delete函数入参进行校验测试

@@ -58,6 +58,8 @@ class KnowledgeStore:
             try:
                 session.add(KnowledgeModel(knowledge_name=knowledge_name, document_name=doc_name))
                 session.commit()
+                logger.debug(f"success add (knowledge_name={knowledge_name}, "
+                            f"doc_name={doc_name}) in knowledge_table.")
             except SQLAlchemyError as db_err:
                 session.rollback()
                 logger.error(
@@ -75,10 +77,12 @@ class KnowledgeStore:
                 doc_to_delete = session.query(KnowledgeModel).filter_by(
                     knowledge_name=knowledge_name, document_name=doc_name).first()
                 if not doc_to_delete:
-                    logger.info(f"{doc_name} does not exist in {knowledge_name}, no need delete.")
+                    logger.debug(f"{doc_name} does not exist in {knowledge_name}, no need delete.")
                 else:
                     session.delete(doc_to_delete)
                     session.commit()
+                    logger.debug(f"success delete (knowledge_name={knowledge_name}, "
+                                f"doc_name={doc_name}) in knowledge_table.")
             except SQLAlchemyError as db_err:
                 session.rollback()
                 logger.error(
@@ -204,6 +208,7 @@ class KnowledgeMgrStore:
             try:
                 session.add(KnowledgeMgrModel(knowledge_name=knowledge_name))
                 session.commit()
+                logger.debug(f"success add {knowledge_name} in knowledgeMgr_table.")
             except SQLAlchemyError as db_err:
                 session.rollback()
                 logger.error(f"Database error while adding knowledge: '{knowledge_name}': {db_err}")
@@ -219,10 +224,11 @@ class KnowledgeMgrStore:
                 knowledge_to_delete = session.query(KnowledgeMgrModel
                                                     ).filter_by(knowledge_name=knowledge_name).first()
                 if not knowledge_to_delete:
-                    logger.info(f"{knowledge_name} does not exist in db, no need delete.")
+                    logger.debug(f"{knowledge_name} does not exist in db, no need delete.")
                 else:
                     session.delete(knowledge_to_delete)
                     session.commit()
+                    logger.debug(f"success delete {knowledge_name} in knowledgeMgr_table.")
             except SQLAlchemyError as db_err:
                 session.rollback()
                 logger.error(f"Database error while deleting knowledge: '{knowledge_name}': {db_err}")
