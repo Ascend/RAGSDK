@@ -137,7 +137,7 @@ class RequestUtils:
                                          headers=headers,
                                          preload_content=False)
         except urllib3.exceptions.HTTPError as e:
-            logger.error(f"Request to '{url}' failed due to HTTP error: {e}")
+            logger.error(f"Request failed due to HTTP error: {e}")
             return Result(False, "")
         except Exception as e:
             logger.error(f"request failed, find exception: {e}")
@@ -146,7 +146,7 @@ class RequestUtils:
         try:
             content_length = int(response.headers.get("Content-Length"))
         except ValueError as e:
-            logger.error(f"Invalid Content-Length header in response from '{url}': {e}")
+            logger.error(f"Invalid Content-Length header in response: {e}")
             return Result(False, "")
         except Exception as e:
             logger.error(f"get content length failed, find exception: {e}")
@@ -160,7 +160,7 @@ class RequestUtils:
             try:
                 response_data = response.read(amt=self.response_limit_size)
             except Exception as e:
-                logger.error(f"Failed to read response from '{url}': {e}")
+                logger.error(f"Failed to read response: {e}")
                 return Result(False, "")
 
             return Result(True, response_data)
@@ -176,7 +176,7 @@ class RequestUtils:
         try:
             response = self.pool.request(method='POST', url=url, body=body, headers=headers, preload_content=False)
         except urllib3.exceptions.HTTPError as e:
-            logger.error(f"Request to '{url}' failed due to HTTP error: {e}")
+            logger.error(f"Request failed due to HTTP error: {e}")
             yield Result(False, "")
             return
         except Exception as e:
@@ -225,22 +225,22 @@ class RequestUtils:
                                          headers=headers,
                                          preload_content=False)
         except urllib3.exceptions.HTTPError as e:
-            logger.error(f"HTTP request to '{url}' failed with error: {e}")
+            logger.error(f"HTTP request failed with error: {e}")
             return ""
         except Exception as e:
             logger.error(f"request failed, find exception: {e}")
             return ""
         content_type = response.headers.get('Content-Type')
         if content_type is None:
-            logger.warning(f"No 'Content-Type' found in the response headers from '{url}'")
+            logger.warning(f"No 'Content-Type' found in the response headers")
             return ""
 
         if "text/html" not in content_type:
-            logger.warning(f"Content-Type is not 'text/html' in response from '{url}'. Skipping.")
+            logger.warning(f"Content-Type is not 'text/html' in response")
             return ""
         if response.status == HTTP_SUCCESS:
             try:
-                return response.data
+                return response.read(amt=self.response_limit_size)
             except Exception as e:
                 logger.error(f"read response failed, find exception: {e}")
                 return ""

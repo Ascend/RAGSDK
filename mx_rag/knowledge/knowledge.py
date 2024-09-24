@@ -59,7 +59,7 @@ class KnowledgeStore:
                 session.add(KnowledgeModel(knowledge_name=knowledge_name, document_name=doc_name))
                 session.commit()
                 logger.debug(f"success add (knowledge_name={knowledge_name}, "
-                            f"doc_name={doc_name}) in knowledge_table.")
+                             f"doc_name={doc_name}) in knowledge_table.")
             except SQLAlchemyError as db_err:
                 session.rollback()
                 logger.error(
@@ -82,7 +82,7 @@ class KnowledgeStore:
                     session.delete(doc_to_delete)
                     session.commit()
                     logger.debug(f"success delete (knowledge_name={knowledge_name}, "
-                                f"doc_name={doc_name}) in knowledge_table.")
+                                 f"doc_name={doc_name}) in knowledge_table.")
             except SQLAlchemyError as db_err:
                 session.rollback()
                 logger.error(
