@@ -55,8 +55,8 @@ class SQLiteDocstore(Docstore):
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    @validate_params(documents=dict(validator=lambda x: all(isinstance(it, MxDocument) for it in x),
-                                    message="param must be List[MxDocument]"))
+    @validate_params(documents=dict(validator=lambda x: len(x) > 0 and all(isinstance(it, MxDocument) for it in x),
+                                    message="param must be List[MxDocument] and length greater than 0"))
     def add(self, documents: List[MxDocument]) -> List[int]:
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise StorageError("Insufficient remaining space, please clear disk space")
@@ -78,6 +78,7 @@ class SQLiteDocstore(Docstore):
                 chunk_idx.chunk_nums += len(chunks)
                 session.bulk_save_objects(chunks)
                 session.commit()
+                logger.debug(f"success add {chunks[0].document_name} in chunks_table.")
                 return idxs
             except SQLAlchemyError as sql_err:
                 session.rollback()
@@ -96,6 +97,7 @@ class SQLiteDocstore(Docstore):
                 idxs = [c.index_id for c in chunks]
                 chunks.delete(synchronize_session=False)
                 session.commit()
+                logger.debug(f"success delete {doc_name} in chunks_table.")
                 return idxs
             except SQLAlchemyError as sql_err:
                 session.rollback()

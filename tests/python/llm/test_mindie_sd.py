@@ -10,6 +10,7 @@ from unittest.mock import patch
 from PIL import Image, ImageChops
 
 from mx_rag.llm import Text2ImgMultiModel
+from mx_rag.utils import ClientParam
 
 MOCK_IMAGE = Image.new("RGB", (200, 200), color=(73, 109, 137))
 
@@ -48,17 +49,16 @@ class TestMindieVision(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 200))):
-            sd_model = Text2ImgMultiModel(model_name="sd", url="https://test:8888")
+            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888", client_param=ClientParam(use_http=True))
             res = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
             self.assertNotEqual(res["result"], "")
-
 
     def test_img_interrupt(self):
         with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse({
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 404))):
-            sd_model = Text2ImgMultiModel(model_name="sd", url="https://test:8888")
+            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888", client_param=ClientParam(use_http=True))
             res = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
             self.assertEqual(res["result"], "")
 

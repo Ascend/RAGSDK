@@ -5,13 +5,13 @@ import re
 from abc import abstractmethod, ABC
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from ssl import SSLContext
 from typing import List, Any, Tuple, Dict
 
 from langchain_community.document_loaders import TextLoader
 from loguru import logger
 
-from mx_rag.utils.common import validate_params, validata_list_str, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils import ClientParam
+from mx_rag.utils.common import validate_params, validata_list_str
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.url import RequestUtils
 
@@ -41,34 +41,24 @@ class HTMLParser(GenerateQaParser):
     Attributes:
         urls: 需要解析的HTML页面的URL列表
         headers: HTTP请求的头部信息
-        timeout: HTTP请求的超时时间，默认为10秒
-        cert_file: SSL证书文件的路径，默认为空
-        crl_file: SSL证书撤销列表文件的路径，默认为空
-        use_http: 是否使用HTTP协议，默认为False
-        proxy_url: 代理服务器的URL，默认为空
-        ssl_context: SSL上下文对象，默认为None
-        max_url_num: 最大解析url数量
+        client_param: HTTPS配置参数ClientParam
     """
+
     @validate_params(
         urls=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 1000]),
                   message="param must meets: Type is List[str], list length range [1, 10000], "
                           "str length range [1, 1000]"),
         headers=dict(validator=lambda x: x is None or isinstance(x, dict),
                      message="param must be None or instance of dict"),
-        timeout=dict(validator=lambda x: isinstance(x, int) and 1 <= x < 1000,
-                     message="param must be int and value range [1, 1000)"),
-        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
-        ssl_context=dict(validator=lambda x: x is None or isinstance(x, SSLContext),
-                         message="param must be None or instance of SSLContext")
+        client_param=dict(validator=lambda x: isinstance(x, ClientParam),
+                          message="param must be instance of ClientParam"),
     )
-    def __init__(self, urls: List[str], headers: Dict = None, timeout: int = 10, cert_file: str = "",
-                 crl_file: str = "", use_http: bool = False, proxy_url: str = "", ssl_context: SSLContext = None):
+    def __init__(self, urls: List[str], headers: Dict = None, client_param=ClientParam()):
         if headers is None:
             headers = {'Content-Type': 'application/json'}
         self.urls = urls
         self.headers = headers
-        self._client = RequestUtils(timeout=timeout, cert_file=cert_file, crl_file=crl_file,
-                                    use_http=use_http, proxy_url=proxy_url, ssl_context=ssl_context)
+        self._client = RequestUtils(client_param=client_param)
 
     def parse(self) -> Tuple[List[str], List[str]]:
         def _request(client: RequestUtils, url: str):
@@ -125,6 +115,7 @@ class MarkDownParser(GenerateQaParser):
         file_path: 需要解析的markdown所在文件夹
         max_file_num: 解析的最大文件数
     """
+
     @validate_params(
         max_file_num=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= 10000,
                           message="param must be int and value range [1, 10000]")

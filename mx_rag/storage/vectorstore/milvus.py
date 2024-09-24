@@ -1,11 +1,11 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from __future__ import annotations
-import operator
 
 from typing import List
 
 import numpy as np
+from loguru import logger
 from pymilvus import MilvusClient, DataType
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
@@ -128,6 +128,7 @@ class MilvusDB(VectorStore):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
         self.client.refresh_load(self._collection_name)
+        logger.debug(f"success delete ids {ids} in MilvusDB.")
         return res
 
     @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param length range (0, 10000]"))
@@ -168,6 +169,7 @@ class MilvusDB(VectorStore):
             data.append({"vector": e, "id": i})
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
+        logger.debug(f"success add ids {ids} in MilvusDB.")
 
     def get_all_ids(self) -> List[int]:
         all_id = self.client.query(self._collection_name, filter="id == 0 or id != 0", output_fields=["id"])
