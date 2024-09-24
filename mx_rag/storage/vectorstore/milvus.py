@@ -10,6 +10,8 @@ from pymilvus import MilvusClient, DataType
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.cert_check import MAX_CERT_LIMIT
 
 
 class MilvusError(Exception):
@@ -53,6 +55,13 @@ class MilvusDB(VectorStore):
         super().__init__()
         if url.startswith("http:") and not use_http:
             raise MilvusError("http protocol is not support")
+
+        client_pem_path = kwargs.get("client_pem_path", None)
+        client_key_path = kwargs.get("client_key_path", None)
+        ca_pem_path = kwargs.get("ca_pem_path", None)
+
+        self._check_auth_file(client_pem_path, client_key_path, ca_pem_path)
+
         self.client = MilvusClient(url, **kwargs)
         self._collection_name = collection_name
 
@@ -81,6 +90,17 @@ class MilvusDB(VectorStore):
         milvus_db = MilvusDB(url, **kwargs)
         milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, param=param)
         return milvus_db
+
+    @staticmethod
+    def _check_auth_file(client_pem_path: str, client_key_path: str, ca_pem_path: str):
+        if client_pem_path:
+            SecFileCheck(client_pem_path, MAX_CERT_LIMIT).check()
+
+        if client_key_path:
+            SecFileCheck(client_key_path, MAX_CERT_LIMIT).check()
+
+        if ca_pem_path:
+            SecFileCheck(ca_pem_path, MAX_CERT_LIMIT).check()
 
     @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))
