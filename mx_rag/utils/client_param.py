@@ -15,8 +15,6 @@ class ClientParam:
         pwd=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
         timeout=dict(validator=lambda x: isinstance(x, int) and 0 < x <= INT_32_MAX,
                      message=f"param must be int and value range (0, {INT_32_MAX}]"),
-        proxy_url=dict(validator=lambda x: isinstance(x, str) and len(x) <= MAX_URL_LENGTH,
-                       message=f"param must be str and length in [0, {MAX_URL_LENGTH}]"),
         response_limit_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 10 * MB,
                                  message="param must be int and value range (0, 10MB]"),
         ssl_context=dict(validator=lambda x: x is None or isinstance(x, ssl.SSLContext),
@@ -29,7 +27,6 @@ class ClientParam:
                  key_file: str = "",
                  crl_file: str = "",
                  pwd: str = "",
-                 proxy_url: str = "",
                  timeout: int = 60,
                  response_limit_size: int = MB,
                  ssl_context: ssl.SSLContext = None):
@@ -39,7 +36,6 @@ class ClientParam:
         self.key_file = key_file
         self.crl_file = crl_file
         self.pwd = pwd
-        self.proxy_url = proxy_url
         self.timeout: int = timeout
         self.response_limit_size: int = response_limit_size
         self.ssl_context = ssl_context
