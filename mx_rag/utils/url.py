@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import urllib.request
+import urllib.parse
 from typing import Dict, Iterator
 
 import urllib3
@@ -64,20 +66,13 @@ class RequestUtils:
                 ssl_ctx = get_one_way_auth_ssl_context(client_param)
         else:
             ssl_ctx = get_default_context()
-
-        if client_param.proxy_url:
-            self.pool = urllib3.ProxyManager(proxy_url=client_param.proxy_url,
-                                             ssl_context=ssl_ctx,
-                                             retries=retries,
-                                             timeout=client_param.timeout,
-                                             num_pools=num_pools,
-                                             maxsize=maxsize)
-        else:
-            self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
-                                            retries=retries,
-                                            timeout=client_param.timeout,
-                                            num_pools=num_pools,
-                                            maxsize=maxsize)
+        self.ssl_ctx = ssl_ctx
+        self.client_param = client_param
+        self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
+                                        retries=retries,
+                                        timeout=client_param.timeout,
+                                        num_pools=num_pools,
+                                        maxsize=maxsize)
 
     @staticmethod
     def _check_ca_content(ca_file: str):
@@ -220,10 +215,8 @@ class RequestUtils:
             return ""
 
         try:
-            response = self.pool.request(method='GET',
-                                         url=url,
-                                         headers=headers,
-                                         preload_content=False)
+            req = urllib.request.Request(url, headers=headers, method="GET")
+            response = urllib.request.urlopen(req, timeout=self.client_param.timeout, context=self.ssl_ctx)
         except urllib3.exceptions.HTTPError as e:
             logger.error(f"HTTP request failed with error: {e}")
             return ""
