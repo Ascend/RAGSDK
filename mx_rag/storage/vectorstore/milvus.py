@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 from loguru import logger
@@ -60,7 +60,8 @@ class MilvusDB(VectorStore):
         client_key_path = kwargs.get("client_key_path", None)
         ca_pem_path = kwargs.get("ca_pem_path", None)
 
-        self._check_auth_file(client_pem_path, client_key_path, ca_pem_path)
+        if not use_http:
+            self._check_auth_file(client_pem_path, client_key_path, ca_pem_path)
 
         self.client = MilvusClient(url, **kwargs)
         self._collection_name = collection_name
@@ -92,7 +93,7 @@ class MilvusDB(VectorStore):
         return milvus_db
 
     @staticmethod
-    def _check_auth_file(client_pem_path: str, client_key_path: str, ca_pem_path: str):
+    def _check_auth_file(client_pem_path: Optional[str], client_key_path: Optional[str], ca_pem_path: Optional[str]):
         if client_pem_path:
             SecFileCheck(client_pem_path, MAX_CERT_LIMIT).check()
 

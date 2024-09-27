@@ -20,7 +20,7 @@ class Text2ImgChain(Chain):
     def __init__(self, multi_model):
         self._multi_model = multi_model
 
-    def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
+    def query(self, text: str = "", llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
         return self._multi_model.text2img(prompt=kwargs.get("prompt"),
                                           output_format=kwargs.get("output_format", "png"),
                                           size=kwargs.get("size", "512*512"))

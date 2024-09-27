@@ -6,7 +6,7 @@ from loguru import logger
 
 from langchain_core.retrievers import BaseRetriever
 
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain.base import Chain
 from mx_rag.llm import Img2ImgMultiModel
@@ -25,6 +25,10 @@ class Img2ImgChain(Chain):
         self._multi_model = multi_model
         self._retriever = retriever
 
+    @validate_params(text=dict(
+        validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+        message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"
+    ))
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
         image_content = self._retrieve_img(text)
         if not image_content:
