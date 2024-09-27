@@ -4,7 +4,7 @@ import os
 from typing import Dict, Any, List, Tuple, Type, Optional
 from dataclasses import dataclass
 from langchain_community.document_loaders.base import BaseLoader
-from langchain_text_splitters.base import Language, TextSplitter
+from langchain_text_splitters.base import TextSplitter
 
 from mx_rag.utils.common import validate_params, NO_SPLIT_FILE_TYPE
 

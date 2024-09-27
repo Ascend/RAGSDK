@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import urllib.request
+import urllib.parse
 from typing import Dict, Iterator
 
 import urllib3
@@ -64,20 +66,13 @@ class RequestUtils:
                 ssl_ctx = get_one_way_auth_ssl_context(client_param)
         else:
             ssl_ctx = get_default_context()
-
-        if client_param.proxy_url:
-            self.pool = urllib3.ProxyManager(proxy_url=client_param.proxy_url,
-                                             ssl_context=ssl_ctx,
-                                             retries=retries,
-                                             timeout=client_param.timeout,
-                                             num_pools=num_pools,
-                                             maxsize=maxsize)
-        else:
-            self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
-                                            retries=retries,
-                                            timeout=client_param.timeout,
-                                            num_pools=num_pools,
-                                            maxsize=maxsize)
+        self.ssl_ctx = ssl_ctx
+        self.client_param = client_param
+        self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
+                                        retries=retries,
+                                        timeout=client_param.timeout,
+                                        num_pools=num_pools,
+                                        maxsize=maxsize)
 
     @staticmethod
     def _check_ca_content(ca_file: str):
@@ -137,7 +132,7 @@ class RequestUtils:
                                          headers=headers,
                                          preload_content=False)
         except urllib3.exceptions.HTTPError as e:
-            logger.error(f"Request to '{url}' failed due to HTTP error: {e}")
+            logger.error(f"Request failed due to HTTP error: {e}")
             return Result(False, "")
         except Exception as e:
             logger.error(f"request failed, find exception: {e}")
@@ -146,7 +141,7 @@ class RequestUtils:
         try:
             content_length = int(response.headers.get("Content-Length"))
         except ValueError as e:
-            logger.error(f"Invalid Content-Length header in response from '{url}': {e}")
+            logger.error(f"Invalid Content-Length header in response: {e}")
             return Result(False, "")
         except Exception as e:
             logger.error(f"get content length failed, find exception: {e}")
@@ -160,7 +155,7 @@ class RequestUtils:
             try:
                 response_data = response.read(amt=self.response_limit_size)
             except Exception as e:
-                logger.error(f"Failed to read response from '{url}': {e}")
+                logger.error(f"Failed to read response: {e}")
                 return Result(False, "")
 
             return Result(True, response_data)
@@ -176,7 +171,7 @@ class RequestUtils:
         try:
             response = self.pool.request(method='POST', url=url, body=body, headers=headers, preload_content=False)
         except urllib3.exceptions.HTTPError as e:
-            logger.error(f"Request to '{url}' failed due to HTTP error: {e}")
+            logger.error(f"Request failed due to HTTP error: {e}")
             yield Result(False, "")
             return
         except Exception as e:
@@ -220,27 +215,25 @@ class RequestUtils:
             return ""
 
         try:
-            response = self.pool.request(method='GET',
-                                         url=url,
-                                         headers=headers,
-                                         preload_content=False)
+            req = urllib.request.Request(url, headers=headers, method="GET")
+            response = urllib.request.urlopen(req, timeout=self.client_param.timeout, context=self.ssl_ctx)
         except urllib3.exceptions.HTTPError as e:
-            logger.error(f"HTTP request to '{url}' failed with error: {e}")
+            logger.error(f"HTTP request failed with error: {e}")
             return ""
         except Exception as e:
             logger.error(f"request failed, find exception: {e}")
             return ""
         content_type = response.headers.get('Content-Type')
         if content_type is None:
-            logger.warning(f"No 'Content-Type' found in the response headers from '{url}'")
+            logger.warning(f"No 'Content-Type' found in the response headers")
             return ""
 
         if "text/html" not in content_type:
-            logger.warning(f"Content-Type is not 'text/html' in response from '{url}'. Skipping.")
+            logger.warning(f"Content-Type is not 'text/html' in response")
             return ""
         if response.status == HTTP_SUCCESS:
             try:
-                return response.data
+                return response.read(amt=self.response_limit_size)
             except Exception as e:
                 logger.error(f"read response failed, find exception: {e}")
                 return ""

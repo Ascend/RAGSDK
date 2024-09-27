@@ -9,7 +9,7 @@ from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 class ParallelText2TextChain(SingleText2TextChain):
     FIRST_RAG_PROMPT = (
-        "根据已知信息，简洁和专业的来回答用户的问题。如果无法从中已知信息中得到答案，请根据自身经验做出的的回答 用户问题:"
+        "根据上述已知信息，简洁和专业地回答用户的问题。如果无法从已知信息中得到答案，请根据自身经验做出回答"
     )
 
     NEXT_RAG_PROMPT = (

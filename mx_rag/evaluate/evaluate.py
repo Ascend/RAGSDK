@@ -218,7 +218,7 @@ class Evaluate:
             final_scores[metric_name] = [score[metric_name] for score in scores]
         return final_scores
 
-    def _metrics_local_adapt(self, metrics, language: str, cache_dir: str):
+    def _metrics_local_adapt(self, metrics, language: Optional[str], cache_dir: Optional[str]):
         """
         ragas metrics 本地化适配
         Args:
