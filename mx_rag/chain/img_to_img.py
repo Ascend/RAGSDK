@@ -26,9 +26,9 @@ class Img2ImgChain(Chain):
         self._retriever = retriever
 
     @validate_params(text=dict(
-        validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN),
+        validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
         message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"
-    )
+    ))
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
         image_content = self._retrieve_img(text)
         if not image_content:
