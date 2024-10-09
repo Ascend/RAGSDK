@@ -55,7 +55,9 @@ class Text2TextLLM(LLM):
         sys_messages=dict(validator=lambda x: _check_sys_messages(x),
                           message="param must be None or List[dict], and length of dict <= 16, "
                                   "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),
-        role=dict(validator=lambda x: 1 < len(x) <= 16, message="param length range [1, 16]"),
+        role=dict(validator=lambda x: 1 <= len(x) <= 16, message="param length range [1, 16]"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                        message="param must be LLMParameterConfig")
     )
     def chat(self, query: str,
              sys_messages: List[dict] = None,
@@ -90,7 +92,9 @@ class Text2TextLLM(LLM):
         sys_messages=dict(validator=lambda x: _check_sys_messages(x),
                           message="param must be None or List[dict], and length of dict <= 16, "
                                   "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),
-        role=dict(validator=lambda x: 0 < len(x) <= 16, message="param length range (0, 16]")
+        role=dict(validator=lambda x: 0 < len(x) <= 16, message="param length range (0, 16]"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                        message="param must be LLMParameterConfig")
     )
     def chat_streamly(self, query: str,
                       sys_messages: List[dict] = None,
