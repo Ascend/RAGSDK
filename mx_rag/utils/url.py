@@ -20,19 +20,15 @@ MIN_PASSWORD_LENGTH = 8
 PASSWORD_REQUIREMENT = 2
 
 
-class UrlError(Exception):
-    pass
-
-
 class Result:
     def __init__(self, success: bool, data):
         self.success = success
         self.data = data
 
 
-def _is_url_valid(url, use_http) -> bool:
+def is_url_valid(url, use_http) -> bool:
     if url.startswith("http:") and not use_http:
-        raise UrlError("http protocol is not support")
+        return False
     check_key = "url"
     if use_http and HttpUrlChecker(check_key).check({check_key: url}):
         return True
@@ -80,13 +76,13 @@ class RequestUtils:
             with open(ca_file, "r") as f:
                 ca_data = f.read()
         except FileNotFoundError as e:
-            logger.warning(f"Certificate file '{ca_file}' not found.")
+            logger.error(f"Certificate file '{ca_file}' not found.")
             raise ValueError(f"Certificate file '{ca_file}' not found.") from e
         except PermissionError as e:
-            logger.warning(f"Permission denied when reading certificate file: '{ca_file}'")
+            logger.error(f"Permission denied when reading certificate file: '{ca_file}'")
             raise ValueError(f"Permission denied for certificate file: {ca_file}") from e
         except Exception as e:
-            logger.warning(f"read cert file failed, find exception: {e}")
+            logger.error(f"read cert file failed, find exception: {e}")
             raise ValueError('read cert file failed') from e
 
         ret = CertContentsChecker("cert").check_dict({"cert": ca_data})
@@ -121,7 +117,7 @@ class RequestUtils:
                            " and the password must contain at least %d characters. ", MIN_PASSWORD_LENGTH)
 
     def post(self, url: str, body: str, headers: Dict):
-        if not _is_url_valid(url, self.use_http):
+        if not is_url_valid(url, self.use_http):
             logger.error("url check failed")
             return Result(False, "")
 
@@ -164,7 +160,7 @@ class RequestUtils:
             return Result(False, "")
 
     def post_streamly(self, url: str, body: str, headers: Dict, chunk_size: int = 1024):
-        if not _is_url_valid(url, self.use_http):
+        if not is_url_valid(url, self.use_http):
             logger.error("url check failed")
             yield Result(False, "")
 
@@ -210,7 +206,7 @@ class RequestUtils:
             yield Result(False, "")
 
     def get(self, url: str, headers: Dict):
-        if not _is_url_valid(url, self.use_http):
+        if not is_url_valid(url, self.use_http):
             logger.error(f"url check failed")
             return ""
 
