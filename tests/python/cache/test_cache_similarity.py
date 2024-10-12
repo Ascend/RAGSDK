@@ -5,6 +5,7 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
+from mx_rag.reranker import RerankerFactory
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.cache.cache_similarity.cache_similarity import CacheSimilarity
 from cache_mocker import MockerReranker
@@ -16,17 +17,20 @@ def mock_create_similarity(*args, **kwargs):
 
 class TestCacheSimilarity(unittest.TestCase):
     def test_cache_similarity_init_exception(self):
-        self.assertRaises(ValueError, CacheSimilarity.create, **{
+        reranker = RerankerFactory.create_reranker(**{
             "similarity_type": 1234  # type error
         })
+        self.assertEqual(reranker, None)
 
-        self.assertRaises(KeyError, CacheSimilarity.create, **{
-            "similarity_type": "xxxx"  # type error
+        reranker = RerankerFactory.create_reranker(**{
+            "similarity_type": "xxxx"  # value error
         })
+        self.assertEqual(reranker, None)
 
-        self.assertRaises(KeyError, CacheSimilarity.create, **{
+        reranker = RerankerFactory.create_reranker(**{
             "xxxx": "xxxx"  # type error
         })
+        self.assertEqual(reranker, None)
 
     def test_cache_similarity(self):
         with patch('mx_rag.reranker.reranker_factory.RerankerFactory.create_reranker',

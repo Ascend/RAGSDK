@@ -5,26 +5,30 @@ from unittest import mock
 from unittest.mock import patch
 
 from mx_rag.cache.cache_emb.cache_emb import CacheEmb
+from mx_rag.embedding import EmbeddingFactory
 
 
 class TestCacheEmb(unittest.TestCase):
     def test_cache_emb_init_type_exception(self):
-        self.assertRaises(KeyError, CacheEmb.create, **{
+        emb = EmbeddingFactory.create_embedding(**{
             "x_dim": 1024,
             "skip_emb": False,
             "embedding_type": "xxxx"  # error happen,
         })
+        self.assertEqual(emb, None)
 
-        self.assertRaises(KeyError, CacheEmb.create, **{
+        emb = EmbeddingFactory.create_embedding(**{
             "x_dim": 1024,
             "skip_emb": False,  # no embedding_type error
         })
+        self.assertEqual(emb, None)
 
-        self.assertRaises(ValueError, CacheEmb.create, **{
+        emb = EmbeddingFactory.create_embedding(**{
             "x_dim": 1024,
             "skip_emb": False,
             "embedding_type": 1234  # type error
         })
+        self.assertEqual(emb, None)
 
     def test_cache_emb(self):
         def mock_create_embedding(*args, **kwargs):
