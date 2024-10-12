@@ -40,7 +40,7 @@ class TEIReranker(Reranker):
             logger.error(f"tei client file param check failed:{e}")
         except PathNotFileException as e:
             logger.error(f"tei client crt is not a file:{e}")
-        except Exception as e:
+        except Exception:
             logger.error(f"init tei client failed")
 
         if api_key != "" and not client_param.use_http:
@@ -49,7 +49,8 @@ class TEIReranker(Reranker):
     @staticmethod
     def create(**kwargs):
         if "url" not in kwargs or not isinstance(kwargs.get("url"), str):
-            raise KeyError("url param error. ")
+            logger.error("url param error. ")
+            return None
 
         return TEIReranker(**kwargs)
 

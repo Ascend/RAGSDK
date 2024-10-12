@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 from loguru import logger
@@ -100,27 +100,30 @@ class MilvusDB(VectorStore):
         param = "param"
 
         if x_dim_name not in kwargs or not isinstance(kwargs.get(x_dim_name), int):
-            raise KeyError("x_dim param error. ")
+            logger.error("x_dim param error. ")
+            return None
 
         if similarity_strategy_name not in kwargs or \
                 not isinstance(kwargs.get(similarity_strategy_name), SimilarityStrategy):
-            raise KeyError("similarity_strategy param error. ")
+            logger.error("similarity_strategy param error. ")
+            return None
 
         if url_name not in kwargs or not isinstance(kwargs.get(url_name), str):
-            raise KeyError("url param error. ")
+            logger.error("url param error. ")
+            return None
 
         url = kwargs.pop(url_name)
         vector_dims = kwargs.pop(x_dim_name)
-        param = kwargs.pop(param)
+        param = kwargs.pop(param, None)
         similarity_strategy = kwargs.pop(similarity_strategy_name)
 
         milvus_db = MilvusDB(url, **kwargs)
 
         try:
             milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, param=param)
-        except KeyError as e:
+        except KeyError:
             logger.error("milvus create collection meet key error")
-        except Exception as e:
+        except Exception:
             logger.error("milvus create collection failed")
 
         return milvus_db

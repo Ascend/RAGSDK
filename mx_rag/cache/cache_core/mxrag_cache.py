@@ -40,7 +40,12 @@ class MxRAGCache:
         self.cache_name = cache_name
         self.cache_obj = Cache()
 
-        init_mxrag_cache(self.cache_obj, self.cache_name, config)
+        try:
+            init_mxrag_cache(self.cache_obj, self.cache_name, config)
+        except KeyError:
+            logger.error("init rag cache failed because key error")
+        except Exception:
+            logger.error("init rag cache failed")
 
     @staticmethod
     def _update(
