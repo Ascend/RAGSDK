@@ -5,6 +5,7 @@ reranker的工厂类，用于生产mxrag的reranker
 """
 from abc import ABC
 from typing import Dict, Any, Callable
+from loguru import logger
 
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.reranker.local import LocalReranker
@@ -39,16 +40,28 @@ class RerankerFactory(ABC):
             ValueError: 数据类型不匹配
         """
         if "similarity_type" not in kwargs:
-            raise KeyError("need similarity_config param. ")
+            logger.error("need similarity_config param. ")
+            return None
 
         similarity_type = kwargs.pop("similarity_type")
 
         if not isinstance(similarity_type, str):
-            raise ValueError("similarity_type should be str type. ")
+            logger.error("similarity_type should be str type. ")
+            return None
 
         if similarity_type not in cls.NPU_SUPPORT_RERANKER:
-            raise KeyError(f"similarity_type is not support. {similarity_type}")
+            logger.error(f"similarity_type is not support. {similarity_type}")
+            return None
 
         creator = cls.NPU_SUPPORT_RERANKER.get(similarity_type)
-        similarity = creator(**kwargs)
+
+        try:
+            similarity = creator(**kwargs)
+        except KeyError:
+            logger.error(f"create reranker key error")
+            return None
+        except Exception:
+            logger.error(f"exception occurred while constructing reranker")
+            return None
+
         return similarity

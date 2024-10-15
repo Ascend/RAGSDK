@@ -2,16 +2,17 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 from loguru import logger
-from pymilvus import MilvusClient, DataType
+from pymilvus import MilvusClient, DataType, MilvusException
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
-from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.file_check import SecFileCheck, FileCheckError
 from mx_rag.utils.cert_check import MAX_CERT_LIMIT
+from mx_rag.utils.url import is_url_valid
 
 
 class MilvusError(Exception):
@@ -53,17 +54,42 @@ class MilvusDB(VectorStore):
     )
     def __init__(self, url: str, collection_name: str = "mxRag", use_http: bool = False, **kwargs):
         super().__init__()
-        if url.startswith("http:") and not use_http:
-            raise MilvusError("http protocol is not support")
 
-        client_pem_path = kwargs.get("client_pem_path", None)
-        client_key_path = kwargs.get("client_key_path", None)
-        ca_pem_path = kwargs.get("ca_pem_path", None)
+        self.client = None
+
+        if not is_url_valid(url, use_http):
+            logger.error("check milvus url failed")
+            return
+
+        server_pem_path = kwargs.get("server_pem_path", None)
+
+        # 只有安全通道时才支持传输敏感信息
+        if use_http:
+            kwargs.pop("password", None)
+            kwargs.pop("token", None)
+
+        # 由于milvus 不支持读取加密的私钥文件，直接丢弃
+        kwargs.pop("client_key_path", None)
 
         if not use_http:
-            self._check_auth_file(client_pem_path, client_key_path, ca_pem_path)
+            try:
+                SecFileCheck(server_pem_path, MAX_CERT_LIMIT).check()
+            except FileCheckError as e:
+                logger.error(f"check milvus sever pem file failed: {e}")
+                return
+            except Exception as e:
+                logger.error(f"check milvus server pem failed")
+                return
 
-        self.client = MilvusClient(url, **kwargs)
+        try:
+            self.client = MilvusClient(url, **kwargs)
+        except MilvusException as e:
+            logger.error(f"init milvus client meet exception")
+        except Exception as e:
+            logger.error(f"init milvus client failed")
+            self.client = None
+            return
+
         self._collection_name = collection_name
 
     @staticmethod
@@ -74,34 +100,33 @@ class MilvusDB(VectorStore):
         param = "param"
 
         if x_dim_name not in kwargs or not isinstance(kwargs.get(x_dim_name), int):
-            raise KeyError("x_dim param error. ")
+            logger.error("x_dim param error. ")
+            return None
 
         if similarity_strategy_name not in kwargs or \
                 not isinstance(kwargs.get(similarity_strategy_name), SimilarityStrategy):
-            raise KeyError("similarity_strategy param error. ")
+            logger.error("similarity_strategy param error. ")
+            return None
 
         if url_name not in kwargs or not isinstance(kwargs.get(url_name), str):
-            raise KeyError("url param error. ")
+            logger.error("url param error. ")
+            return None
 
         url = kwargs.pop(url_name)
         vector_dims = kwargs.pop(x_dim_name)
-        param = kwargs.pop(param)
+        param = kwargs.pop(param, None)
         similarity_strategy = kwargs.pop(similarity_strategy_name)
 
         milvus_db = MilvusDB(url, **kwargs)
-        milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, param=param)
+
+        try:
+            milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, param=param)
+        except KeyError:
+            logger.error("milvus create collection meet key error")
+        except Exception:
+            logger.error("milvus create collection failed")
+
         return milvus_db
-
-    @staticmethod
-    def _check_auth_file(client_pem_path: Optional[str], client_key_path: Optional[str], ca_pem_path: Optional[str]):
-        if client_pem_path:
-            SecFileCheck(client_pem_path, MAX_CERT_LIMIT).check()
-
-        if client_key_path:
-            SecFileCheck(client_key_path, MAX_CERT_LIMIT).check()
-
-        if ca_pem_path:
-            SecFileCheck(ca_pem_path, MAX_CERT_LIMIT).check()
 
     @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))

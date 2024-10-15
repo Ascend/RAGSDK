@@ -5,7 +5,7 @@ embedding的工厂类，用于生产mxrag的embedding
 """
 from abc import ABC
 from typing import Dict, Any, Callable
-
+from loguru import logger
 from langchain_core.embeddings import Embeddings
 
 from mx_rag.embedding.local import TextEmbedding, ImageEmbedding
@@ -27,7 +27,7 @@ class EmbeddingFactory(ABC):
     }
 
     @classmethod
-    def create_embedding(cls, **kwargs) -> Embeddings :
+    def create_embedding(cls, **kwargs) -> Embeddings:
         """
         功能描述:
             构造embedding
@@ -41,16 +41,28 @@ class EmbeddingFactory(ABC):
             ValueError: 数据类型不匹配
         """
         if "embedding_type" not in kwargs:
-            raise KeyError("need embedding_type param. ")
+            logger.error("need embedding_type param. ")
+            return None
 
         embedding_type = kwargs.pop("embedding_type")
 
         if not isinstance(embedding_type, str):
-            raise ValueError("embedding_type should be str type. ")
+            logger.error("embedding_type should be str type. ")
+            return None
 
         if embedding_type not in cls.NPU_SUPPORT_EMB:
-            raise KeyError(f"embedding_type is not support. {embedding_type}")
+            logger.error(f"embedding_type is not support. {embedding_type}")
+            return None
 
         creator = cls.NPU_SUPPORT_EMB.get(embedding_type)
-        embedding = creator(**kwargs)
+
+        try:
+            embedding = creator(**kwargs)
+        except KeyError:
+            logger.error(f"create embedding key error")
+            return None
+        except Exception:
+            logger.error(f"exception occurred while constructing embedding")
+            return None
+
         return embedding

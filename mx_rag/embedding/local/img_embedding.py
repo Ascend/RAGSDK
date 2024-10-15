@@ -52,7 +52,8 @@ class ImageEmbedding(Embeddings):
     @staticmethod
     def create(**kwargs):
         if "model_path" not in kwargs or not isinstance(kwargs.get("model_path"), str):
-            raise KeyError("model_path param error. ")
+            logger.error("model_path param error. ")
+            return None
 
         return ImageEmbedding(**kwargs)
 

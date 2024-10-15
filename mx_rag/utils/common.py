@@ -191,3 +191,40 @@ def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List
             logger.error(f"The element in List[str] length not in [{min_str_limit}, {max_str_limit}]")
             return False
     return True
+
+
+def validata_list_list_str(texts: List[List[str]],
+                           length_limit: List[int],
+                           inner_length_limit: List[int],
+                           str_limit: List[int]):
+    """
+    用于List[List[str]]类型的数据校验
+    Args:
+        texts: 输入数据字符串列表
+        length_limit: 列表长度范围
+        inner_length_limit: 内部列表长度范围
+        str_limit: 字符串长度范围
+
+    Returns:
+
+    """
+    if len(length_limit) != 2:
+        logger.error("the length limit length must equal two")
+        return False
+
+    min_length_limit = length_limit[0]
+    max_length_limit = length_limit[1]
+    if not min_length_limit <= len(texts) <= max_length_limit:
+        logger.error(f"The List[List[str]] length not in [{min_length_limit}, {max_length_limit}]")
+        return False
+
+    for text in texts:
+        if not isinstance(text, List):
+            logger.error("the element in the list is not a list")
+            return False
+
+        res = validata_list_str(text, inner_length_limit, str_limit)
+        if not res:
+            return False
+
+    return True

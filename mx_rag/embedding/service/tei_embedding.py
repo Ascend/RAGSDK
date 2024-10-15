@@ -10,6 +10,7 @@ from loguru import logger
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str, \
     STR_TYPE_CHECK_TIP, MAX_API_KEY_LEN
+from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
 
@@ -31,15 +32,25 @@ class TEIEmbedding(Embeddings):
     )
     def __init__(self, url: str, api_key: str = "", client_param=ClientParam()):
         self.url = url
-        self.client = RequestUtils(client_param=client_param)
 
-        if api_key != "":
+        self.client = None
+        try:
+            self.client = RequestUtils(client_param=client_param)
+        except FileCheckError as e:
+            logger.error(f"tei client file param check failed:{e}")
+        except PathNotFileException as e:
+            logger.error(f"tei client crt is not a file:{e}")
+        except Exception:
+            logger.error(f"init tei client failed")
+
+        if api_key != "" and not client_param.use_http:
             self.HEADERS['Authorization'] = "Bearer {}".format(api_key)
 
     @staticmethod
     def create(**kwargs):
         if "url" not in kwargs or not isinstance(kwargs.get("url"), str):
-            raise KeyError("url param error. ")
+            logger.error("url param error. ")
+            return None
 
         return TEIEmbedding(**kwargs)
 

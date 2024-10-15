@@ -163,4 +163,4 @@ def init_mxrag_cache(cache_obj: Cache, cache_name: str, config):
     elif config.config_type == "memory_cache_config":
         _init_mxrag_memory_cache(cache_obj, cache_name, config)
     else:
-        raise ValueError("config type not support. ")
+        logger.error("config type not support. ")
