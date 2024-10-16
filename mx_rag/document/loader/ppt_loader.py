@@ -51,6 +51,8 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
                 data[span_row][span_col] = cell.text
 
     def _load_table(self, table):
+        if (len(table.rows) > self.MAX_TABLE_ROW) or (len(table.columns) > self.MAX_TABLE_COL):
+            logger.warning(f"can not load table over {self.MAX_TABLE_ROW} rows or {self.MAX_TABLE_COL} cols")
         rows = min(len(table.rows), self.MAX_TABLE_ROW)
         cols = min(len(table.columns), self.MAX_TABLE_COL)
         # 初始化一个二维列表来存储表格数据
