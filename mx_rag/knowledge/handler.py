@@ -59,8 +59,7 @@ def upload_files(
                 knowledge.delete_file(file_obj.name)
             except Exception as e:
                 logger.warning(f"exception encountered while rollback, {e}")
-            logger.error(f"add '{file_obj.name}' failed, {err}")
-            continue
+            raise FileHandlerError(f"add {file_obj.name} failed, {err}") from err
 
 
 def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
