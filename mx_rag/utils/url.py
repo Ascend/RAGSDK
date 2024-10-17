@@ -87,7 +87,7 @@ class RequestUtils:
 
         ret = CertContentsChecker("cert").check_dict({"cert": ca_data})
         if not ret:
-            logger.error(f"invalid mef ca cert content: '{ret.reason}'")
+            logger.error(f"invalid ca cert content: '{ret.reason}'")
             raise ValueError('invalid cert content')
 
     @staticmethod
