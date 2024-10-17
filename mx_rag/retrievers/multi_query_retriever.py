@@ -13,6 +13,7 @@ from loguru import logger
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers.retriever import Retriever
 from mx_rag.llm.llm_parameter import LLMParameterConfig
+from mx_rag.utils.common import TEXT_MAX_LEN, validate_params
 
 DEFAULT_QUERY_PROMPT_EN = PromptTemplate(
     input_variables=["question"],
@@ -55,6 +56,10 @@ class MultiQueryRetriever(Retriever):
     class Config:
         arbitrary_types_allowed = True  # 允许自定义类型
 
+    @validate_params(
+        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                   message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]")
+    )
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
         docs = []

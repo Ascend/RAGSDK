@@ -8,7 +8,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH
+from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH, TEXT_MAX_LEN, validate_params
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 from mx_rag.llm import Text2TextLLM
@@ -53,6 +53,10 @@ class BMRetriever(BaseRetriever):
             raise ValueError(f'prompt.template length must be between 1 and {MAX_PROMPT_LENGTH}.')
         return prompt
 
+    @validate_params(
+        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                   message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]")
+    )
     def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
