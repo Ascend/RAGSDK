@@ -9,6 +9,7 @@ from langchain_core.embeddings import Embeddings
 from gptcache.embedding.base import BaseEmbedding
 
 from mx_rag.embedding import EmbeddingFactory
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, BOOL_TYPE_CHECK_TIP
 
 
 class CacheEmb(BaseEmbedding):
@@ -22,6 +23,13 @@ class CacheEmb(BaseEmbedding):
         skip_emb: (bool) 是否需要跳过embedding 对于memory_cache 不需要做embedding
     """
 
+    @validate_params(
+        emb_obj=dict(validator=lambda x: isinstance(x, Embeddings) or x is None,
+                     message="param must be instance of Embeddings or None"),
+        x_dim=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_VEC_DIM,
+                    message="param must be int and value range [0, 1024 * 1024]"),
+        skip_emb=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+    )
     def __init__(self, emb_obj: Embeddings = None, x_dim: int = 0, skip_emb: bool = False):
         self.emb_obj = emb_obj
         self.x_dim = x_dim
