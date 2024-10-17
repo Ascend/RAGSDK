@@ -25,7 +25,14 @@ def _default_load(data: str) -> Any:
 
 
 class MxRAGCache:
+    # 每条缓存的最大缓存字符数
     cache_limit: int = TEXT_MAX_LEN
+
+    # 最大级联个数
+    cache_join_size_limit : int = 6
+
+    # 当前级联个数
+    current_join_size : int = 0
     verbose: bool = False
 
     @validate_params(
@@ -182,10 +189,30 @@ class MxRAGCache:
         if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
 
-        if next_cache.get_obj() == self.__cache_obj:
-            raise ValueError("forbidden join self cache")
+        self._join_check(next_cache)
 
         self.__cache_obj.next_cache = next_cache.get_obj()
+        MxRAGCache.current_join_size = MxRAGCache.current_join_size + 1
+
+    def _join_check(self, next_cache):
+        logger.debug(f"cache deepth:{MxRAGCache.current_join_size} cache_limit:{MxRAGCache.cache_join_size_limit}")
+
+        if MxRAGCache.current_join_size >= MxRAGCache.cache_join_size_limit:
+            raise OverflowError(
+                f"the number of cache join deepth cannot be greater than {MxRAGCache.cache_join_size_limit}")
+
+        loop_cnt : int = 0
+        next_cache_obj = next_cache.get_obj()
+        while next_cache_obj is not None:
+            if loop_cnt >= MxRAGCache.cache_join_size_limit:
+                raise OverflowError(
+                    f"the number of cache join deepth cannot be greater than {MxRAGCache.cache_join_size_limit}"
+                )
+
+            if next_cache_obj == self.__cache_obj:
+                raise ValueError("forbidden loop join")
+            next_cache_obj = next_cache_obj.next_cache
+            loop_cnt = loop_cnt + 1
 
     def _check_limit(self, input_text: str):
         return True if (len(input_text) < self.cache_limit) else False
