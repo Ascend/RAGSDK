@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import operator
-from typing import List, Callable, Any
 
-from langchain_core.pydantic_v1 import validator, Field
+from typing import List, Callable
+
+from langchain_core.pydantic_v1 import Field
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from loguru import logger
@@ -12,7 +12,7 @@ import numpy as np
 from langchain_core.retrievers import BaseRetriever
 from mx_rag.storage.document_store import Docstore
 from mx_rag.storage.vectorstore import VectorStore
-from mx_rag.utils.common import MAX_TOP_K
+from mx_rag.utils.common import MAX_TOP_K, TEXT_MAX_LEN, validate_params
 
 
 class Retriever(BaseRetriever):
@@ -25,6 +25,10 @@ class Retriever(BaseRetriever):
     class Config:
         arbitrary_types_allowed = True
 
+    @validate_params(
+        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                   message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]")
+    )
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
         embedding = self.embed_func([query])
