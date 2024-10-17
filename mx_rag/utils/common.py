@@ -2,6 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import functools
 import inspect
+import os
 from datetime import datetime
 from enum import Enum
 from typing import List
@@ -36,9 +37,11 @@ STR_TYPE_CHECK_TIP = "param must be str"
 BOOL_TYPE_CHECK_TIP = "param must be bool"
 INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
-
+STR_LENGTH_CHECK_1024 = "param length must be less than 1024"
 
 NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
+DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
+MAX_CHUNKS_NUM = 1000 * 1000
 
 
 class UrlUtilException(Exception):
@@ -228,3 +231,16 @@ def validata_list_list_str(texts: List[List[str]],
             return False
 
     return True
+
+
+def check_db_file_limit(db_path: str, limit: int = DB_FILE_LIMIT):
+    """
+    检查db文件大小不超过限制limit
+    Args:
+        db_path: db文件路径
+        limit: 大小限制
+    """
+    if not os.path.exists(db_path):
+        return
+    if os.path.getsize(db_path) > limit:
+        raise Exception(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")
