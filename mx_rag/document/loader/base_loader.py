@@ -20,9 +20,6 @@ class BaseLoader(ABC):
         self.file_path = file_path
         self.multi_size = 5
 
-    @abstractmethod
-    def load(self):
-        pass
 
     def _is_zip_bomb(self):
         try:
