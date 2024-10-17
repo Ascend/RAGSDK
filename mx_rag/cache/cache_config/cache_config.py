@@ -5,21 +5,12 @@ MXRAGCache 配置功能类
 提供对外的配置参数，CacheConfig继承子gptCache的Config类，默认为memory_cache
 SimilarityCacheConfig 继承CacheConfig提供 语义相似cache
 """
-import os
 from enum import Enum
-from typing import Dict, Any, Union
+from typing import Dict, Any
 import multiprocessing
 import threading
 
-from gptcache.config import Config
-from gptcache.embedding.base import BaseEmbedding
-from gptcache.manager import CacheBase, VectorBase
-from gptcache.processor.pre import get_prompt
-from gptcache.similarity_evaluation import SimilarityEvaluation
-
-from mx_rag.utils.file_operate import check_disk_free_space
-from mx_rag.utils.common import validate_params, MB, GB
-from mx_rag.utils.file_check import FileCheck
+from mx_rag.utils.common import validate_params, MB, GB, BOOL_TYPE_CHECK_TIP, DICT_TYPE_CHECK_TIP
 
 
 class EvictPolicy(Enum):
@@ -43,7 +34,7 @@ def _get_default_save_folder():
     return "/home/HwHiAiUser/Ascend/mxRag/cache_save_folder"
 
 
-class CacheConfig(Config):
+class CacheConfig:
     """
     功能描述:
         CacheConfig 继承子gptcache的Config，扩展了gptcache的参数
@@ -52,9 +43,12 @@ class CacheConfig(Config):
         config_type: (str) 表明缓存类型，默认为memory_cache_config
         cache_size: (int) 缓存大小，单位是条
         eviction_policy: (EvictPolicy) 替换策略，包含(LRU, LFU, FIFO, RR)
-        pre_emb_func: (Callable[[data: Dict[str, Any], **_: Dict[str, Any]], Any]) embedding前的适配函数
+        min_free_space: (int) 落盘路径 最大剩余磁盘空间大小
+        auto_flush: (int) 添加多少次进行自动落盘, 刷新频率
+        similarity_threshold: (float) 相似度计算阈值
+        disable_report: (bool) 是否开启缓存汇报功能
+        lock: (lockable) 多进程或者多线程安全锁
         data_save_folder: (str) 缓存数据存储路径
-        **kwargs: 配置基类的参数
     """
 
     @validate_params(
@@ -62,10 +56,15 @@ class CacheConfig(Config):
                         message="param must meets: Type is int, length range (0, 100000]"),
         eviction_policy=dict(validator=lambda x: isinstance(x, EvictPolicy),
                              message="param must be instance of EvictPolicy"),
-        data_save_folder=dict(validator=lambda x: isinstance(x, str),
-                              message="param must be instance of str"),
-        min_free_space=dict(validator=lambda x: isinstance(x, int) and 20 * MB <= x <= 20 * GB,
-                            message="param must meets: Type is int, value range [20 * MB, 20 * GB]"),
+        data_save_folder=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                              message="param must be instance of str and path length range (0, 1024]"),
+        min_free_space=dict(validator=lambda x: isinstance(x, int) and 20 * MB <= x <= 100 * GB,
+                            message="param must meets: Type is int, value range [20 * MB, 100 * GB]"),
+        auto_flush=dict(validator=lambda x: isinstance(x, int) and x > 0,
+                        message="param must meets: Type is int, and must greater than zero"),
+        similarity_threshold=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 1.0,
+                        message="param must meets: Type is float, value range [0.0, 1.0]"),
+        disable_report=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         lock=dict(
             validator=lambda x: x is None or isinstance(x, (type(multiprocessing.Lock()), type(threading.Lock()))),
             message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
@@ -73,35 +72,25 @@ class CacheConfig(Config):
     def __init__(self,
                  cache_size: int,
                  eviction_policy: EvictPolicy = EvictPolicy.LRU,
-                 pre_emb_func=get_prompt,
                  data_save_folder: str = _get_default_save_folder(),
                  min_free_space: int = 1 * GB,
-                 lock=None,
-                 **kwargs):
-        super().__init__(**kwargs)
+                 auto_flush : int = 20,
+                 similarity_threshold: float = 0.8,
+                 disable_report: bool = False,
+                 lock=None):
+
+        if auto_flush > cache_size:
+            raise ValueError("auto flush value range is (0, cache_size]")
+
         self.config_type = "memory_cache_config"
         self.cache_size = cache_size
         self.eviction_policy = eviction_policy
-        self.pre_emb_func = pre_emb_func
         self.data_save_folder = data_save_folder
         self.min_free_space = min_free_space
+        self.auto_flush = auto_flush
+        self.similarity_threshold = similarity_threshold
+        self.disable_report = disable_report
         self.lock = lock
-
-        similarity_threshold = kwargs.get("similarity_threshold", 0.8)
-        if not (1 >= similarity_threshold >= 0):
-            raise ValueError("similarity_threshold must 0 ~ 1 range")
-
-        FileCheck.check_input_path_valid(data_save_folder)
-        if self.lock:
-            with self.lock:
-                if not os.path.exists(data_save_folder):
-                    os.makedirs(data_save_folder, 0o750)
-        else:
-            if not os.path.exists(data_save_folder):
-                os.makedirs(data_save_folder, 0o750)
-
-        if check_disk_free_space(os.path.dirname(self.data_save_folder), self.min_free_space):
-            raise Exception("Insufficient remaining space, please clear disk space")
 
 
 class SimilarityCacheConfig(CacheConfig):
@@ -111,14 +100,10 @@ class SimilarityCacheConfig(CacheConfig):
 
     Attributes:
         config_type: (str) 表明缓存类型，similarity_cache_config
-        vector_config: Union[VectorBase, Dict[str, Any]] 向量数据库配置参数，当为VectorBase类型时，则需要由用户构建
-                        当为Dict类型时由内部构建
-        cache_config: Union[CacheBase, str] 缓存数据库配置参数，当为CacheBase类型时，则需要由用户构建
-                        当为str类型时由内部构建
-        emb_config: Union[BaseEmbedding, Dict[str, Any]] embedding 配置参数，当为BaseEmbedding，则需要由用户构建
-                        当为Dict类型时 由内部构建
-        similarity_config: Union[SimilarityEvaluation, Dict[str, Any]] 相似度 配置参数，当为SimilarityEvaluation
-                        则需要用户构建，当为Dict时则内部构建
+        vector_config: Union[VectorBase, Dict[str, Any]] 向量数据库配置参数
+        cache_config: Union[CacheBase, str] 缓存数据库配置参数
+        emb_config: Union[BaseEmbedding, Dict[str, Any]] embedding 配置参数
+        similarity_config: Union[SimilarityEvaluation, Dict[str, Any]] 相似度 配置参数
         retrieval_top_k: int 检索时的TOPK参数
         clean_size: int 每次添加满的时候删除的元素个数 1 表示每次删除一个
         **kwargs: 配置基类的参数
@@ -130,17 +115,27 @@ class SimilarityCacheConfig(CacheConfig):
         clean_size=dict(validator=lambda x: isinstance(x, int) and x > 0,
                         message="param must meets: Type is int, value greater than 0"),
         cache_config=dict(validator=lambda x: isinstance(x, str) and x == "sqlite",
-                          message="param must be 'sqlite' now")
+                          message="param must be 'sqlite' now"),
+        vector_config=dict(validator=lambda x: isinstance(x, Dict),
+                           message=DICT_TYPE_CHECK_TIP),
+        emb_config=dict(validator=lambda x: isinstance(x, Dict),
+                           message=DICT_TYPE_CHECK_TIP),
+        similarity_config=dict(validator=lambda x: isinstance(x, Dict),
+                           message=DICT_TYPE_CHECK_TIP),
     )
     def __init__(self,
                  retrieval_top_k: int = 1,
                  clean_size: int = 1,
-                 vector_config: Union[VectorBase, Dict[str, Any]] = None,
-                 cache_config: Union[CacheBase, str] = None,
-                 emb_config: Union[BaseEmbedding, Dict[str, Any]] = None,
-                 similarity_config: Union[SimilarityEvaluation, Dict[str, Any]] = None,
+                 vector_config: Dict[str, Any] = None,
+                 cache_config: str = None,
+                 emb_config: Dict[str, Any] = None,
+                 similarity_config: Dict[str, Any] = None,
                  **kwargs):
         super().__init__(**kwargs)
+
+        if clean_size > self.cache_size:
+            raise ValueError("clean size value range is (0, cache_size]")
+
         self.config_type = "similarity_cache_config"
         self.vector_config = vector_config
         self.cache_config = cache_config
@@ -148,6 +143,3 @@ class SimilarityCacheConfig(CacheConfig):
         self.similarity_config = similarity_config
         self.retrieval_top_k = retrieval_top_k
         self.clean_size = clean_size
-
-        if self.clean_size > self.cache_size:
-            raise ValueError("clean size value range is (0, cache_size]")
