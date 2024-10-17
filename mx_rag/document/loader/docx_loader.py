@@ -38,34 +38,6 @@ class DocxLoader(BaseLoader, mxBaseLoader):
         self.do_ocr = image_inline
         self.table_index = 0
 
-    @classmethod
-    def _handle_paragraph_heading(cls, all_content: List[ContentsHeading], block: Paragraph,
-                                  stack: List[Tuple[Any, Any]]) -> bool:
-        """
-        处理Heading级别元素，并将上级标题拼接到本级标题中
-        """
-        if block.style.name.startswith("Heading"):
-            try:
-                title_level = int(block.style.name.split()[-1])
-            except ValueError as ex:
-                logger.warning(f"_handle_paragraph_heading: failed to extract heading level: {str(ex)}")
-                return False
-            except Exception as ex:
-                logger.warning(f"_handle_paragraph_heading: {str(ex)}")
-                return False
-            while stack and stack[-1][0] >= title_level:
-                stack.pop()
-            if stack:
-                parent_title = "".join(stack[-1][1])
-                current_title = block.text
-                block.text = parent_title + "-" + block.text
-            else:
-                current_title = block.text
-            stack.append((title_level, current_title.strip()))
-            all_content.append(ContentsHeading(block.text, ""))
-            return True
-        return False
-
     def lazy_load(self) -> Iterator[Document]:
         """Load documents."""
         self._is_document_valid()
