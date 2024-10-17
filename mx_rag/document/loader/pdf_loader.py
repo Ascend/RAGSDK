@@ -84,9 +84,6 @@ class PdfLoader(BaseLoader, mxBaseLoader):
 
             pm = page.get_pixmap(matrix=mat, alpha=False)
 
-            if pm.width > 2000 or pm.height > 2000:
-                pm = page.get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
-
             img = Image.frombytes("RGB", [pm.width, pm.height], pm.samples)
             img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
             imgs.append(img)
