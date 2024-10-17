@@ -10,13 +10,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
-
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
-from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, STR_TYPE_CHECK_TIP
-
+from mx_rag.storage.vectorstore import VectorStore
+from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, STR_TYPE_CHECK_TIP, DB_FILE_LIMIT, \
+    STR_LENGTH_CHECK_1024, check_db_file_limit
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
-from mx_rag.storage.vectorstore import VectorStore
 
 Base = declarative_base()
 
@@ -50,10 +49,15 @@ class KnowledgeStore:
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024),
+        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+    )
     def add(self, knowledge_name: str, doc_name: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
+        check_db_file_limit(self.db_path)
         with self.session() as session:
             try:
                 session.add(KnowledgeModel(knowledge_name=knowledge_name, document_name=doc_name))
@@ -71,6 +75,10 @@ class KnowledgeStore:
                 session.rollback()
                 raise KnowledgeError(f"add chunk failed, {err}") from err
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024),
+        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+    )
     def delete(self, knowledge_name: str, doc_name: str):
         with self.session() as session:
             try:
@@ -94,6 +102,9 @@ class KnowledgeStore:
                 session.rollback()
                 raise KnowledgeError(f"delete chunk failed, {err}") from err
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+    )
     def get_all(self, knowledge_name: str):
         with self.session() as session:
             ret = []
@@ -103,6 +114,10 @@ class KnowledgeStore:
                 ret.append(doc[0])
             return ret
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024),
+        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+    )
     def check_document_exist(self, knowledge_name: str, doc_name: str) -> bool:
         with self.session() as session:
             chunk = session.query(KnowledgeModel).filter_by(
@@ -167,6 +182,9 @@ class KnowledgeDB(KnowledgeBase):
         ids = self._document_store.add(documents)
         self._vector_store.add(np.array(embeddings), ids)
 
+    @validate_params(
+        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+    )
     def delete_file(self, doc_name: str):
         self._knowledge_store.delete(self.knowledge_name, doc_name)
         ids = self._document_store.delete(doc_name)
@@ -174,6 +192,9 @@ class KnowledgeDB(KnowledgeBase):
         if len(ids) != num_removed:
             logger.warning("the number of documents does not match the number of vectors")
 
+    @validate_params(
+        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+    )
     def check_document_exist(self, doc_name: str) -> bool:
         return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
 
@@ -201,9 +222,13 @@ class KnowledgeMgrStore:
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+    )
     def add(self, knowledge_name: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
+        check_db_file_limit(self.db_path)
         with self.session() as session:
             try:
                 session.add(KnowledgeMgrModel(knowledge_name=knowledge_name))
@@ -218,6 +243,9 @@ class KnowledgeMgrStore:
                 session.rollback()
                 raise KnowledgeError(f"add knowledge failed, {err}") from err
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+    )
     def delete(self, knowledge_name: str):
         with self.session() as session:
             try:
@@ -254,11 +282,17 @@ class KnowledgeMgr:
     def __init__(self, mgr_store: KnowledgeMgrStore):
         self.mgr_store = mgr_store
 
+    @validate_params(
+        knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be type KnowledgeDB")
+    )
     def register(self, knowledge: KnowledgeDB):
         if knowledge.knowledge_name in self.mgr_store.get_all():
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} has been registered")
         self.mgr_store.add(knowledge.knowledge_name)
 
+    @validate_params(
+        knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be type KnowledgeDB")
+    )
     def delete(self, knowledge: KnowledgeDB):
         if knowledge.knowledge_name not in self.mgr_store.get_all():
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} is not be registered")
