@@ -62,7 +62,8 @@ def upload_files(
                 logger.warning(f"exception encountered while rollback, {e}")
             logger.error(f"add '{file}' failed, {err}")
             continue
-    logger.error(f"These files '{fail_files}' add failed")
+    if len(fail_files) > 0:
+        logger.error(f"These files '{fail_files}' add failed")
     return fail_files
 
 
@@ -158,8 +159,8 @@ def upload_dir(params: FilesLoadInfo):
         else:
             fail_dir_files.append(file.as_posix())
     fail_files = upload_files(knowledge, files, loader_mng, embed_func, force)
-    logger.error(f"These files '{fail_dir_files+fail_files}' are not of supported types "
-                 f"because no loader or splitter has been registered.")
+    if len(fail_dir_files+fail_files) > 0:
+        logger.error(f"These files '{fail_dir_files+fail_files}' add failed")
     return fail_dir_files+fail_files
 
 
