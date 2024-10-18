@@ -2,11 +2,12 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 from abc import ABC, abstractmethod
+import zipfile
 import psutil
 
-import zipfile
 from loguru import logger
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
+
 
 class BaseLoader(ABC):
     MAX_SIZE = 100 * 1024 * 1024
