@@ -148,7 +148,7 @@ def upload_dir(params: FilesLoadInfo):
         support_file_type = list(set(loader_types) & set(NO_SPLIT_FILE_TYPE))
     count = 0
     files = []
-    fail_dir_files = []
+    unsupported_files = []
     for file in Path(dir_path).glob("*"):
         if count >= knowledge.max_loop_limit:
             raise FileHandlerError(f'The number of files in the {dir_path} must less than'
@@ -157,13 +157,13 @@ def upload_dir(params: FilesLoadInfo):
             files.append(file.as_posix())
             count += 1
         else:
-            fail_dir_files.append(file)
-    if len(fail_dir_files) > 0:
-        logger.error(f"These files '{fail_dir_files}' are not of supported types "
+            unsupported_files.append(file)
+    if len(unsupported_files) > 0:
+        logger.error(f"These files '{unsupported_files}' are not of supported types "
                      f"because no loader or splitter has been registered.")
     fail_files = upload_files(knowledge, files, loader_mng, embed_func, force)
 
-    return fail_dir_files+fail_files
+    return unsupported_files+fail_files
 
 
 @validate_params(
