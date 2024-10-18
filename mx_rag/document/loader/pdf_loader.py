@@ -78,9 +78,9 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             estimated_width = int(rect.width * 2)  # 放大两倍后的宽度
             estimated_height = int(rect.height * 2)  # 放大两倍后的高度
             # 判断放大两倍后是否超出2000像素
-            if estimated_width > 2000 or estimated_height > 2000:
-                raise ValueError(f"Page {page_num} exceeds size limit: estimated width={estimated_width},"
-                                 f" estimated height={estimated_height}")
+            if estimated_width > 4096 or estimated_height > 4096:
+                raise ValueError(f"Page {page_num} 2*size exceed limit 4096 : width={rect.width},"
+                                 f" height={rect.height}")
 
             pm = page.get_pixmap(matrix=mat, alpha=False)
 
