@@ -74,12 +74,12 @@ class TestTextEmbedding(unittest.TestCase):
                               pooling_method='mean')
 
         texts = ['test_txt'] * 100
-        ret = embed.embed_texts(texts=texts)
-        self.assertEqual(ret.shape, (len(texts), 1024))
+        ret = embed.embed_documents(texts=texts)
+        self.assertEqual((len(ret), len(ret[0])), (len(texts), 1024))
 
         texts = ['test_txt'] * 1000
-        ret = embed.embed_texts(texts=texts)
-        self.assertEqual(ret.shape, (len(texts), 1024))
+        ret = embed.embed_documents(texts=texts)
+        self.assertEqual((len(ret), len(ret[0])), (len(texts), 1024))
 
     @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
@@ -98,12 +98,12 @@ class TestTextEmbedding(unittest.TestCase):
                               use_fp16=False)
 
         texts = ['test_txt'] * 100
-        ret = embed.embed_texts(texts=texts)
-        self.assertEqual(ret.shape, (len(texts), 512))
+        ret = embed.embed_documents(texts=texts)
+        self.assertEqual((len(ret), len(ret[0])), (len(texts), 512))
 
         texts = ['test_txt'] * 1000
-        ret = embed.embed_texts(texts=texts)
-        self.assertEqual(ret.shape, (len(texts), 512))
+        ret = embed.embed_documents(texts=texts)
+        self.assertEqual((len(ret), len(ret[0])), (len(texts), 512))
 
     @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
@@ -122,12 +122,12 @@ class TestTextEmbedding(unittest.TestCase):
                               pooling_method='mean')
 
         texts = ['test_txt'] * 100
-        ret, lhs = embed.embed_texts_with_last_hidden_state(texts=texts)
+        ret, lhs = embed.embed_documents_with_last_hidden_state(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 1024))
         self.assertEqual(lhs.shape, (len(texts), 1024))
 
         texts = ['test_txt'] * 1000
-        ret, lhs = embed.embed_texts_with_last_hidden_state(texts=texts)
+        ret, lhs = embed.embed_documents_with_last_hidden_state(texts=texts)
         self.assertEqual(ret.shape, (len(texts), 1024))
         self.assertEqual(lhs.shape, (len(texts), 1024))
 
@@ -143,12 +143,12 @@ class TestTextEmbedding(unittest.TestCase):
         model_pre_mock.return_value = self.Model(1024)
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
-
-        embed = TextEmbedding(model_path='/model/embedding',
-                              pooling_method='no valid')
-
+        with self.assertRaises(ValueError):
+            embed = TextEmbedding(model_path='/model/embedding',
+                                  pooling_method='no valid')
+        embed = TextEmbedding(model_path='/model/embedding')
         texts = ['test_txt'] * 100
-        self.assertRaises(NotImplementedError, embed.embed_texts, texts=texts)
+        embed.embed_documents(texts)
 
 
 if __name__ == '__main__':

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-import os
-from typing import List
+from typing import List, Iterator
 from enum import Enum
 
+from pathlib import Path
 import fitz
 import cv2
 import numpy as np
@@ -14,9 +14,12 @@ from paddleocr import PPStructure
 from paddleocr.ppstructure.recovery.recovery_to_doc import sorted_layout_boxes
 from PIL import Image
 
-from mx_rag.document.loader.base_loader import BaseLoader
-from mx_rag.document.doc import Doc
-from mx_rag.utils.file_check import SecFileCheck
+from langchain_core.documents import Document
+from langchain_community.document_loaders.base import BaseLoader
+
+from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
+from mx_rag.utils.file_check import SecFileCheck, FileCheckError, PathNotFileException
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
 
 
 class PdfLang(Enum):
@@ -24,7 +27,13 @@ class PdfLang(Enum):
     CH: str = 'ch'
 
 
-class PdfLoader(BaseLoader):
+class PdfLoader(BaseLoader, mxBaseLoader):
+    EXTENSION = (".pdf",)
+    
+    @validate_params(
+        lang=dict(validator=lambda x: isinstance(x, PdfLang), message="param must be instance of PdfLang"),
+        layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+    )
     def __init__(self, file_path: str, lang: PdfLang = PdfLang.EN, layout_recognize: bool = False):
         super().__init__(file_path)
         self.layout_recognize = layout_recognize
@@ -47,22 +56,19 @@ class PdfLoader(BaseLoader):
                 pdf_content.append(res['text'])
         pdf_content.append("\n")
 
-    def load(self) -> List[Doc]:
-        if not self._check():
-            return []
-
+    def lazy_load(self) -> Iterator[Document]:
+        self._check()
         return self._parser() if self.layout_recognize else self._plain_parser()
 
     def _text_merger(self, pdf_content):
-        docs: List[Doc] = list()
-        one_text = " ".join([t for t in pdf_content])
-        docs.append(Doc(page_content=one_text, metadata={"source": self.file_path,
-                                                         "page_count": self._get_pdf_page_count()}))
-        return docs
+        one_text = " ".join(pdf_content)
+        yield Document(page_content=one_text, metadata={"source": self.file_path,
+                                                        "page_count": self._get_pdf_page_count()})
 
     def _layout_recognize(self, pdf_document):
         layout_res = []
         imgs = []
+
         for page_num in range(pdf_document.page_count):
             page = pdf_document.load_page(page_num)
             mat = fitz.Matrix(2, 2)
@@ -87,9 +93,13 @@ class PdfLoader(BaseLoader):
         if self.ocr_engine is None:
             try:
                 self.ocr_engine = PPStructure(table=True, ocr=True, lang=self.lang.value, layout=True)
-            except Exception as e:
+            except AssertionError as e:
+                logger.error(f"Assertion error: {e}")
                 self.ocr_engine = None
-                logger.error(f"paddleOcr init failed, {str(e)}")
+                return self._text_merger([""])
+            except Exception as e:
+                logger.error(f"paddleOcr init failed, {e}")
+                self.ocr_engine = None
                 return self._text_merger([""])
 
         with fitz.open(self.file_path) as pdf_document:
@@ -117,13 +127,9 @@ class PdfLoader(BaseLoader):
         return pdf_page_count
 
     def _check(self):
-        try:
-            SecFileCheck(self.file_path, self.MAX_SIZE).check()
-            _pdf_page_count = self._get_pdf_page_count()
-            if _pdf_page_count > self.MAX_PAGE_NUM:
-                logger.error(f"too many pages {_pdf_page_count}")
-                return False
-            return True
-        except Exception as e:
-            logger.error(f"check file failed, {str(e)}")
-            return False
+        SecFileCheck(self.file_path, self.MAX_SIZE).check()
+        if not self.file_path.endswith(PdfLoader.EXTENSION):
+            raise TypeError(f"type '{Path(self.file_path).suffix}' is not support")
+        _pdf_page_count = self._get_pdf_page_count()
+        if _pdf_page_count > self.MAX_PAGE_NUM:
+            raise ValueError(f"too many pages {_pdf_page_count}")

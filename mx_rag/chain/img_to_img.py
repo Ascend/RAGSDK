@@ -4,27 +4,43 @@ from typing import Dict
 
 from loguru import logger
 
+from langchain_core.retrievers import BaseRetriever
+
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain.base import Chain
+from mx_rag.llm import Img2ImgMultiModel
 
 
 class Img2ImgChain(Chain):
     """ 检索出输入文本最相关的图片与prompt合并发送给大模型，生成相应图片 """
 
+    @validate_params(
+        multi_model=dict(validator=lambda x: isinstance(x, Img2ImgMultiModel),
+                         message="param must be instance of Img2ImgMultiModel"),
+        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever),
+                       message="param must be instance of BaseRetriever")
+    )
     def __init__(self, multi_model, retriever):
         self._multi_model = multi_model
         self._retriever = retriever
 
-    def query(self, text : str, *args, **kwargs) -> Dict:
-        if "prompt" not in kwargs:
-            logger.error("input param must contain prompt and question")
+    @validate_params(text=dict(
+        validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+        message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"
+    ))
+    def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
+        image_content = self._retrieve_img(text)
+        if not image_content:
+            logger.error("retrieve similarity image failed")
             return {}
 
-        img_path = self._retrieve_img(text)
-        return self._multi_model.img2img(kwargs["prompt"], img_path=img_path)
+        return self._multi_model.img2img(prompt=kwargs.get("prompt"), image_content=image_content,
+                                         size=kwargs.get("size", "512*512"))
 
-    def _retrieve_img(self, text : str) -> str:
+    def _retrieve_img(self, text: str) -> str:
         """ 从向量数据库中检视text最相近的图片 """
-        docs = self._retriever.get_relevant_documents(text)
+        docs = self._retriever.invoke(text)
         if not isinstance(docs, list) or len(docs) == 0:
             logger.error("retrieve similarity image failed")
             return ""

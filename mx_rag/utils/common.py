@@ -1,9 +1,49 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import functools
+import inspect
+import os
 from datetime import datetime
 from enum import Enum
+from typing import List
 
 from OpenSSL import crypto
+from loguru import logger
+
+FILE_COUNT_MAX = 8000
+INT_32_MAX = 2 ** 31 - 1
+MAX_DEVICE_ID = 63
+MAX_TOP_K = 10000
+MAX_QUERY_LENGTH = 128 * 1024 * 1024
+EMBBEDDING_TEXT_COUNT = 1000 * 1000
+EMBBEDDING_IMG_COUNT = 1000
+IMG_EMBBEDDING_TEXT_LEN = 256
+MAX_FILE_SIZE = 100 * 1024 * 1024
+TEXT_MAX_LEN = 1000 * 1000
+STR_MAX_LEN = 128 * 1024 * 1024
+MAX_VEC_DIM = 1024 * 1024
+NODE_MAX_TEXT_LENGTH = 128 * 1024 * 1024
+MILVUS_INDEX_TYPES = ["FLAT"]
+MILVUS_METRIC_TYPES = ["L2", "IP", "COSINE"]
+MAX_API_KEY_LEN = 128
+
+MAX_PROMPT_LENGTH = 1 * 1024 * 1024
+MAX_URL_LENGTH = 128
+MAX_MODEL_NAME_LENGTH = 128
+
+KB = 1024
+MB = 1048576  # 1024 * 1024
+GB = 1073741824  # 1024 * 1024 * 1024
+STR_TYPE_CHECK_TIP = "param must be str"
+BOOL_TYPE_CHECK_TIP = "param must be bool"
+DICT_TYPE_CHECK_TIP = "param must be dict"
+INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
+CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
+STR_LENGTH_CHECK_1024 = "param length must be less than 1024"
+
+NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
+DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
+MAX_CHUNKS_NUM = 1000 * 1000
 
 
 class UrlUtilException(Exception):
@@ -27,6 +67,50 @@ def safe_get(data, keys, default=None):
         else:
             return default
     return data
+
+
+def _get_value_from_param(arg_name, func, *args, **kwargs):
+    sig = inspect.signature(func)
+    # 从传入参数中获取要校验的value
+    for param_name, param in sig.bind(*args, **kwargs).arguments.items():
+        if arg_name == param_name:
+            return param
+    # 传入参数中没有则从方法定义中取默认值
+    for name, param in sig.parameters.items():
+        if arg_name == name:
+            return param.default
+    # 都没有抛出异常
+    raise ValueError(f"Required parameter '{arg_name}' of function {func.__name__} is missing.")
+
+
+def validate_params(**validators):
+    """
+    定义一个装饰器，用于验证函数的多个参数。在方法上使用注释
+    @validate_params(
+        name=dict(validator=lambda x: isinstance(x, str)),
+        age=dict(validator=lambda x: 10 <= x <= 30)
+    )
+    :param validators: 一个包含验证函数的字典，每个函数用于验证一个特定的参数。
+    :return: 装饰器函数
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # 对每个参数应用验证函数
+            for arg_name, validator in validators.items():
+                # 检查是否通过位置或关键字传递了参数
+                value = _get_value_from_param(arg_name, func, *args, **kwargs)
+                # 运行验证函数
+                if not validator['validator'](value):
+                    raise ValueError(f"The parameter '{arg_name}' of function '{func.__name__}' "
+                                     f"is invalid, message: {validator.get('message')}")
+            # 如果所有参数都通过验证，则调用原始函数
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 class PubkeyType(Enum):
@@ -59,7 +143,14 @@ class ParseCertInfo:
         for i in range(self.cert_info.get_extension_count()):
             ext = self.cert_info.get_extension(i)
             ext_name = ext.get_short_name().decode()
-            self.extensions[ext_name] = str(ext)
+            try:
+                self.extensions[ext_name] = str(ext)
+            except (TypeError, ValueError) as e:
+                logger.warning(f"Type error or value error, format {ext_name}: {e}")
+                continue
+            except Exception as e:
+                logger.warning(f"format '{ext_name}' str info in certificate failed: {e}")
+                continue
 
     @property
     def subject(self) -> str:
@@ -77,3 +168,81 @@ class ParseCertInfo:
             "Fingerprint": self.fingerprint,
             "Date": f"{self.start_time}--{self.end_time}",
         }
+
+
+def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List[int]):
+    """
+    用于List[str]类型的数据校验
+    Args:
+        texts: 输入数据字符串列表
+        length_limit: 列表长度范围
+        str_limit: 字符串长度范围
+
+    Returns:
+
+    """
+    min_length_limit = length_limit[0]
+    max_length_limit = length_limit[1]
+    min_str_limit = str_limit[0]
+    max_str_limit = str_limit[1]
+    if not min_length_limit <= len(texts) <= max_length_limit:
+        logger.error(f"The List[str] length not in [{min_length_limit}, {max_length_limit}]")
+        return False
+    for text in texts:
+        if not isinstance(text, str):
+            logger.error("The element in the list is not a string.")
+            return False
+        if not min_str_limit <= len(text) <= max_str_limit:
+            logger.error(f"The element in List[str] length not in [{min_str_limit}, {max_str_limit}]")
+            return False
+    return True
+
+
+def validata_list_list_str(texts: List[List[str]],
+                           length_limit: List[int],
+                           inner_length_limit: List[int],
+                           str_limit: List[int]):
+    """
+    用于List[List[str]]类型的数据校验
+    Args:
+        texts: 输入数据字符串列表
+        length_limit: 列表长度范围
+        inner_length_limit: 内部列表长度范围
+        str_limit: 字符串长度范围
+
+    Returns:
+
+    """
+    if len(length_limit) != 2:
+        logger.error("the length limit length must equal two")
+        return False
+
+    min_length_limit = length_limit[0]
+    max_length_limit = length_limit[1]
+    if not min_length_limit <= len(texts) <= max_length_limit:
+        logger.error(f"The List[List[str]] length not in [{min_length_limit}, {max_length_limit}]")
+        return False
+
+    for text in texts:
+        if not isinstance(text, List):
+            logger.error("the element in the list is not a list")
+            return False
+
+        res = validata_list_str(text, inner_length_limit, str_limit)
+        if not res:
+            return False
+
+    return True
+
+
+def check_db_file_limit(db_path: str, limit: int = DB_FILE_LIMIT):
+    """
+    检查db文件大小不超过限制limit
+    Args:
+        db_path: db文件路径
+        limit: 大小限制
+    """
+    if not os.path.exists(db_path):
+        return
+    if os.path.getsize(db_path) > limit:
+        raise Exception(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")

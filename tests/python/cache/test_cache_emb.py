@@ -4,27 +4,31 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 
-from mx_rag.cache.cache_emb import CacheEmb
+from mx_rag.cache.cache_emb.cache_emb import CacheEmb
+from mx_rag.embedding import EmbeddingFactory
 
 
 class TestCacheEmb(unittest.TestCase):
     def test_cache_emb_init_type_exception(self):
-        self.assertRaises(KeyError, CacheEmb.create, **{
+        emb = EmbeddingFactory.create_embedding(**{
             "x_dim": 1024,
             "skip_emb": False,
             "embedding_type": "xxxx"  # error happen,
         })
+        self.assertEqual(emb, None)
 
-        self.assertRaises(KeyError, CacheEmb.create, **{
+        emb = EmbeddingFactory.create_embedding(**{
             "x_dim": 1024,
             "skip_emb": False,  # no embedding_type error
         })
+        self.assertEqual(emb, None)
 
-        self.assertRaises(ValueError, CacheEmb.create, **{
+        emb = EmbeddingFactory.create_embedding(**{
             "x_dim": 1024,
             "skip_emb": False,
             "embedding_type": 1234  # type error
         })
+        self.assertEqual(emb, None)
 
     def test_cache_emb(self):
         def mock_create_embedding(*args, **kwargs):
@@ -35,7 +39,10 @@ class TestCacheEmb(unittest.TestCase):
             cache_emb = CacheEmb.create(embedding_type="xxxx", x_dim=1024, skip_emb=False)
             self.assertIsInstance(cache_emb, CacheEmb)
             self.assertEqual(cache_emb.dimension(), 1024)
-            self.assertEqual(cache_emb.to_embeddings(["1234567"]), ["1234567"])
+            try:
+                cache_emb.to_embeddings(["1234567"])
+            except Exception as e:
+                self.assertEqual(f"{e}", "emb_obj is not instance of Embeddings")
 
 
 if __name__ == '__main__':

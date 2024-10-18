@@ -1,22 +1,22 @@
 import os
 import shutil
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+import numpy as np
+from langchain_core.documents import Document
 from loguru import logger
 from transformers import is_torch_npu_available
 
-from mx_rag.knowledge.knowledge import KnowledgeStore
-from mx_rag.document.doc import Doc
+from mx_rag.chain import SingleText2TextChain
 from mx_rag.embedding.local.text_embedding import TextEmbedding
+from mx_rag.knowledge import KnowledgeDB
+from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever, MultiQueryRetriever
-from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.document_store import SQLiteDocstore
-from mx_rag.storage.document_store.base_storage import Document
-import numpy as np
-from mx_rag.knowledge import KnowledgeDB
-from mx_rag.chain import SingleText2TextChain
+from mx_rag.llm.llm_parameter import LLMParameterConfig
+from mx_rag.storage.vectorstore.faiss_npu import MindFAISS, SimilarityStrategy
 
 
 class MyTestCase(unittest.TestCase):
@@ -35,37 +35,39 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        index = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                          load_local_index="./faiss.index")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
-        vector_store.add_file("test_file.txt", ["this is a test"], metadatas=[{"filepath": "xxx.file"}], embed_func=emb.embed_texts)
+        vector_store.add_file("test_file.txt", ["this is a test"], metadatas=[{"filepath": "xxx.file"}],
+                              embed_func=emb.embed_documents)
         logger.info("create MindFAISS done")
-        llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://71.14.88.12:7890")
+        llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://71.14.88.12:7890")
 
         def test_rag_chain_npu(self):
-            r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store=db, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
+            response = rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
             logger.debug(f"response {response}")
 
         def test_rag_chain_npu_stream(self):
-            r = Retriever(vector_store=vector_store, document_store= db, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, document_store=db, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
-                                      stream=True):
+            for response in rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0,
+                                                                          top_p=0.1, stream=True)):
                 logger.debug(f"stream response {response}")
 
         def test_rag_chain_npu_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_texts)
+            r = MultiQueryRetriever(llm=llm, vector_store=vector_store, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
+            response = rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
             logger.debug(f"response {response}")
 
         def test_rag_chain_npu_stream_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, embed_func=emb.embed_texts)
+            r = MultiQueryRetriever(llm=llm, vector_store=vector_store, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
-            for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
-                                      stream=True):
+            for response in rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0,
+                                                                          top_p=0.1, stream=True)):
                 logger.debug(f"stream response {response}")
 
         test_rag_chain_npu(self)
@@ -83,51 +85,56 @@ class MyTestCase(unittest.TestCase):
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
-        vector_store = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        vector_store = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                                 load_local_index="./faiss.index")
         vector_store.similarity_search = MagicMock(
             return_value=[[(Document(page_content="this is a test", document_name="test.txt"), 0.5)]])
-        llm = Text2TextLLM(model_name="chatglm2-6b-quant", url="http://127.0.0.1:7890")
+        llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://127.0.0.1:7890")
 
-        def test_rag_chain_npu(self):
-            r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
+        @patch("mx_rag.llm.Text2TextLLM.chat")
+        def test_rag_chain_npu(self, chat_mock):
+            r = Retriever(vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            llm.chat = MagicMock(return_value="test test test")
-            response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
+            chat_mock.return_value = "test test test"
+            response = rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
             self.assertEqual("test test test", response.get("result"))
 
-        def test_rag_chain_npu_stream(self):
-            r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
+        @patch("mx_rag.llm.Text2TextLLM.chat_streamly")
+        def test_rag_chain_npu_stream(self, chat_mock):
+            r = Retriever(vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            llm.chat_streamly = MagicMock(return_value=(yield "Retriever steam"))
-            for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
-                                      stream=True):
+            chat_mock.return_value = (yield "Retriever steam")
+            for response in rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0,
+                                                                          top_p=0.1, stream=True)):
                 self.assertEqual("Retriever steam", response.get("result"))
 
-        def test_rag_chain_npu_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
+        @patch("mx_rag.llm.Text2TextLLM.chat")
+        def test_rag_chain_npu_multi_query_retriever(self, chat_mock):
+            r = MultiQueryRetriever(llm=llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            llm.chat = MagicMock(return_value=("MultiQueryRetriever"))
-            response = rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1)
+            chat_mock.return_value = ("MultiQueryRetriever")
+            response = rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
             self.assertEqual("MultiQueryRetriever", response.get("result"))
 
-        def test_rag_chain_npu_stream_multi_query_retriever(self):
-            r = MultiQueryRetriever(llm, vector_store=vector_store, document_store= db, embed_func=embed_func)
+        @patch("mx_rag.llm.Text2TextLLM.chat_streamly")
+        def test_rag_chain_npu_stream_multi_query_retriever(self, chat_mock):
+            r = MultiQueryRetriever(llm=llm, vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
-            llm.chat_streamly = MagicMock(return_value=(yield "MultiQueryRetriever steam"))
-            for response in rag.query("who are you??", max_tokens=1024, temperature=1.0, top_p=0.1,
-                                      stream=True):
+            chat_mock.return_value = (yield "MultiQueryRetriever steam")
+            for response in rag.query("who are you??", LLMParameterConfig(max_tokens=1024, temperature=1.0,
+                                                                          top_p=0.1, stream=True)):
                 self.assertEqual("MultiQueryRetriever steam", response.get("result"))
 
         def test_merge_query_prompt(self):
-            r = Retriever(vector_store=vector_store, document_store= db, embed_func=embed_func)
+            r = Retriever(vector_store=vector_store, document_store=db, embed_func=embed_func)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             query = "who are you?"
             prompt = "请根据上面提示输出对应结果"
             res = rag._merge_query_prompt(query, docs=[], prompt=prompt)
             self.assertEqual(res, query)
 
-            docs = [Doc(page_content = "you are a smart assistants", metadata= {})]
+            docs = [Document(page_content="you are a smart assistants", metadata={})]
             res = rag._merge_query_prompt(query, docs=docs, prompt=prompt)
             self.assertEqual(res, "\n\n".join(("you are a smart assistants", prompt, query)))
 
@@ -136,7 +143,6 @@ class MyTestCase(unittest.TestCase):
         test_rag_chain_npu_multi_query_retriever(self)
         test_rag_chain_npu_stream_multi_query_retriever(self)
         test_merge_query_prompt(self)
-
 
 
 if __name__ == '__main__':

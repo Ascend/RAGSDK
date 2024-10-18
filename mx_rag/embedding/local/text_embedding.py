@@ -1,42 +1,53 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
+import multiprocessing
+import threading
 from typing import List
-from typing import Optional
 
 import numpy as np
 import torch
+from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, INT_32_MAX, TEXT_MAX_LEN, validata_list_str, \
+    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheck
-from mx_rag.embedding.embedding import Embedding
 
 try:
     import torch_npu
 
     torch.npu.set_compile_mode(jit_compile=False)
+except ImportError as e:
+    logger.warning(f"Failed to import torch_npu: {e}. TextEmbedding will run on cpu.")
 except Exception as e:
-    logger.warning(f"import torch_npu failed:{e}, text_embedding will running on cpu")
+    logger.error(f"Unexpected error while importing torch_npu: {e}. TextEmbedding will run on cpu.")
 
 
-class TextEmbedding(Embedding):
-    TEXT_MAX_LEN = 1000 * 1000
-
+class TextEmbedding(Embeddings):
+    @validate_params(
+        model_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
+                    message="param must be int and value range [0, 63]"),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        pooling_method=dict(validator=lambda x: x in ["cls", "mean"], message="param must be 'cls' or 'mean'"),
+        lock=dict(
+            validator=lambda x: x is None or isinstance(x, (type(multiprocessing.Lock()), type(threading.Lock()))),
+            message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
+    )
     def __init__(self,
                  model_path: str,
                  dev_id: int = 0,
                  use_fp16: bool = True,
-                 pooling_method: Optional[str] = None):
+                 pooling_method: str = 'cls',
+                 lock=None):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
-
-        self.pooling_method = 'cls'
-        if pooling_method is not None:
-            self.pooling_method = pooling_method
-
+        self.pooling_method = pooling_method
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModel.from_pretrained(model_path, local_files_only=True)
+        self.model_lock = lock
 
         if use_fp16:
             self.model = self.model.half()
@@ -53,22 +64,50 @@ class TextEmbedding(Embedding):
     @staticmethod
     def create(**kwargs):
         if "model_path" not in kwargs or not isinstance(kwargs.get("model_path"), str):
-            raise KeyError("model_path param error. ")
+            logger.error("model_path param error. ")
+            return None
 
         return TextEmbedding(**kwargs)
 
-    def embed_texts(self,
-                    texts: List[str],
-                    batch_size: int = 32,
-                    max_length: int = 512):
-
+    @validate_params(
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+                   message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
+                           "str length range [1, 128 * 1024 * 1024]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
+    )
+    def embed_documents(self,
+                        texts: List[str],
+                        batch_size: int = 32,
+                        max_length: int = 512) -> List[List[float]]:
         result, _ = self._encode(texts, batch_size, max_length, False)
-        return result
+        if result.size == 0:
+            raise ValueError("embedding text error")
 
-    def embed_texts_with_last_hidden_state(self,
-                                           texts: List[str],
-                                           batch_size: int = 32,
-                                           max_length: int = 512):
+        return result.tolist()
+
+    @validate_params(
+        text=dict(validator=lambda x: 1 <= len(x) <= STR_MAX_LEN, message="param value range [1, 128 * 1024 * 1024]"),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
+    )
+    def embed_query(self, text: str, max_length: int = 512) -> List[float]:
+        embeddings = self.embed_documents([text], max_length=max_length)
+        if not embeddings:
+            raise ValueError("embedding text failed")
+
+        return embeddings[0]
+
+    @validate_params(
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+                   message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
+                           "str length range [1, 128 * 1024 * 1024]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
+    )
+    def embed_documents_with_last_hidden_state(self,
+                                               texts: List[str],
+                                               batch_size: int = 32,
+                                               max_length: int = 512):
         return self._encode(texts, batch_size, max_length, True)
 
     def _encode(self,
@@ -76,12 +115,6 @@ class TextEmbedding(Embedding):
                 batch_size: int = 32,
                 max_length: int = 512,
                 with_last_hidden_state: bool = False):
-        if len(texts) == 0:
-            return np.array([]), np.array([])
-        elif len(texts) > self.TEXT_MAX_LEN:
-            logger.error(f'texts list length must less than {self.TEXT_MAX_LEN}')
-            return np.array([]), np.array([])
-
         result = []
         last_hidden_states = []
         for start_index in range(0, len(texts), batch_size):
@@ -92,8 +125,7 @@ class TextEmbedding(Embedding):
                 self.model.device)
 
             attention_mask = encode_texts.attention_mask
-            with torch.no_grad():
-                model_output = self.model(encode_texts.input_ids, attention_mask, return_dict=True)
+            model_output = self._safe_call_model(encode_texts, attention_mask)
             last_hidden_state = model_output.last_hidden_state
             embeddings = self._pooling(last_hidden_state, attention_mask)
             embeddings = torch.nn.functional.normalize(embeddings, dim=-1).cpu().numpy()
@@ -116,11 +148,22 @@ class TextEmbedding(Embedding):
 
                 last_hidden_states.append(last_hidden_state)
             except Exception as le:
-                logger.error(f'process last_hidden_state failed, find exception {le}')
-                return np.array([]), np.array([])
+                raise Exception('process last_hidden_state failed') from le
 
         last_hidden_states = np.concatenate(last_hidden_states, axis=0) if with_last_hidden_state else np.array([])
         return np.concatenate(result, axis=0), last_hidden_states
+
+    def _safe_call_model(self, encode_texts, attention_mask):
+        def _call_model():
+            with torch.no_grad():
+                model_output = self.model(encode_texts.input_ids, attention_mask, return_dict=True)
+            return model_output
+
+        if self.model_lock is not None:
+            with self.model_lock:
+                return _call_model()
+        else:
+            return _call_model()
 
     def _pooling(self,
                  last_hidden_state: torch.Tensor,
@@ -130,6 +173,9 @@ class TextEmbedding(Embedding):
         elif self.pooling_method == 'mean':
             s = torch.sum(last_hidden_state * attention_mask.unsqueeze(-1).float(), dim=1)
             d = attention_mask.sum(dim=1, keepdim=True).float()
+            contains_zero = torch.any(torch.eq(d, 0))
+            if contains_zero:
+                raise ValueError("contains zero, can not be divide")
             return s / d
         else:
-            raise NotImplementedError(f'Pooling method {self.pooling_method} not implemented!')
+            raise NotImplementedError(f'Pooling method "{self.pooling_method}" not implemented!')

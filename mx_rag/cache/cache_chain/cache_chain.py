@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from typing import Any, Union, Dict, Iterator
+from typing import Any, Union, Dict, Iterator, Callable
 import json
 
 from mx_rag.chain import Chain
-from mx_rag.cache.cache_core import MxRAGCache
+from mx_rag.cache import MxRAGCache
+from mx_rag.utils.common import validate_params, MAX_QUERY_LENGTH
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 
 def _default_data_convert(data):
@@ -22,9 +24,17 @@ class CacheChainChat(Chain):
         _chain: 同大模型对话的模块
     """
 
+    @validate_params(
+        cache=dict(validator=lambda x: isinstance(x, MxRAGCache), message="param must be instance of MxRAGCache"),
+        chain=dict(validator=lambda x: isinstance(x, Chain), message="param must be instance of Chain"),
+        convert_data_to_cache=dict(validator=lambda x: isinstance(x, Callable),
+                                   message="param must be callable function"),
+        convert_data_to_user=dict(validator=lambda x: isinstance(x, Callable),
+                                  message="param must be callable function")
+    )
     def __init__(self,
                  cache: MxRAGCache,
-                 chain: Chain = None,
+                 chain: Chain,
                  convert_data_to_cache=_default_data_convert,
                  convert_data_to_user=_default_data_convert,
                  **kwargs: Any):
@@ -34,11 +44,16 @@ class CacheChainChat(Chain):
         self._convert_data_to_cache = convert_data_to_cache
         self._convert_data_to_user = convert_data_to_user
 
-    def query(self, text: str, *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
+    @validate_params(
+        text=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH, message="param length range (0, 128*1024*1024]")
+    )
+    def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) \
+            -> Union[Dict, Iterator[Dict]]:
         """
         MXRAGCache 根据verbose标志 用于表示是否记录日志。
 
         Args:
+            llm_config: 大模型参数
             text: 用户问题
         Return:
             ans: 用户答案
@@ -47,7 +62,7 @@ class CacheChainChat(Chain):
         if cache_ans is not None:
             return self._convert_data_to_user(json.loads(cache_ans))
 
-        ans = self._chain.query(text, *args, **kwargs)
+        ans = self._chain.query(text, llm_config)
 
         result = ans
         # 如果是 stream对象需要通过迭代的方式把内容都读取完才能cache

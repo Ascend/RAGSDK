@@ -10,6 +10,7 @@ from loguru import logger
 
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.reranker.reranker_factory import RerankerFactory
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
 
 
 class CacheSimilarity(SimilarityEvaluation):
@@ -24,11 +25,16 @@ class CacheSimilarity(SimilarityEvaluation):
         _reverse: (bool) 相似度是否取反
     """
 
+    @validate_params(
+        similarity=dict(validator=lambda x: isinstance(x, Reranker), message="param must be instance of Reranker"),
+        score_min=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0,
+                       message="param must be float and value range [0.0, 100.0]"),
+        score_max=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0,
+                       message="param must be float and value range [0.0, 100.0]"),
+        reverse=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+    )
     def __init__(self, similarity: Reranker, score_min: float = 0.0, score_max: float = 1.0,
                  reverse: bool = False):
-        if not isinstance(similarity, Reranker):
-            raise ValueError("similarity type error.")
-
         if score_max < score_min:
             raise ValueError("score max must greater than score min")
 
@@ -55,19 +61,6 @@ class CacheSimilarity(SimilarityEvaluation):
         similarity = CacheSimilarity(similarity, score_min, score_max, reverse)
         return similarity
 
-    def final_result(self, score: float):
-        if score > self._score_max:
-            score = self._score_max
-
-        if score < self._score_min:
-            score = self._score_min
-
-        score = score - self._score_min
-
-        if self._reverse:
-            score = (self._score_max - self._score_min - score)
-        return score
-
     def evaluation(
             self, src_dict: Dict[str, Any], cache_dict: Dict[str, Any], **kwargs
     ) -> float:
@@ -85,13 +78,29 @@ class CacheSimilarity(SimilarityEvaluation):
             cache_question = cache_dict["question"]
 
             if src_question.lower() == cache_question.lower():
-                return self.final_result(self._score_max)
+                return self._final_result(self._score_max)
 
             scores = self._similarity_impl.rerank(src_question, [cache_question], batch_size=1)
-            return self.final_result(scores[0])
+            return self._final_result(scores[0])
+        except KeyError as e:
+            logger.error(f"Key error: {e}")
+            return self._final_result(self._score_min)
         except Exception as e:
             logger.error(f"CacheSimilarity evaluation fatal error. {e}")
-            return self.final_result(self._score_min)
+            return self._final_result(self._score_min)
 
     def range(self) -> Tuple[float, float]:
         return self._score_min, self._score_max
+
+    def _final_result(self, score: float):
+        if score > self._score_max:
+            score = self._score_max
+
+        if score < self._score_min:
+            score = self._score_min
+
+        score = score - self._score_min
+
+        if self._reverse:
+            score = (self._score_max - self._score_min - score)
+        return score

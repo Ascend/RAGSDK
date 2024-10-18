@@ -1,70 +1,69 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import base64
 import json
-from pathlib import Path
+import re
 
 from loguru import logger
 
+from mx_rag.utils import ClientParam
+from mx_rag.utils.common import validate_params, MAX_URL_LENGTH, MAX_MODEL_NAME_LENGTH, MB, MAX_PROMPT_LENGTH
 from mx_rag.utils.url import RequestUtils
-from mx_rag.utils.file_check import FileCheck, SecFileCheck
 
 
 class Img2ImgMultiModel:
-    MAX_IMAGE_SIZE = 100 * 1024 * 1024
-    SUPPORT_IMG_TYPE = (".jpg", ".png")
     HEADER = {
         'Content-Type': 'application/json'
     }
     IMAGE_ITEM = "image"
 
-    def __init__(self, url: str, model_name=None, timeout: int = 10, max_prompt_len=1000, use_http: bool = False):
+    @validate_params(
+        url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_URL_LENGTH,
+                 message="param must be str and length range (0, 128]"),
+        model_name=dict(validator=lambda x: x is None or isinstance(x, str) and 0 < len(x) <= MAX_MODEL_NAME_LENGTH,
+                        message="param must be None or str, and str length range (0, 128]"),
+        client_param=dict(validator=lambda x: isinstance(x, ClientParam),
+                          message="param must be instance of ClientParam"),
+    )
+    def __init__(self, url: str, model_name=None, client_param=ClientParam()):
         self._url = url
         self._model_name = model_name
-        self._client = RequestUtils(timeout=timeout, use_http=use_http)
-        self._max_prompt_len = max_prompt_len
+        self._client = RequestUtils(client_param=client_param)
 
-    def img2img(self, prompt: str, img_path: str) -> dict:
+    @validate_params(
+        prompt=dict(validator=lambda x: 0 < len(x) <= MAX_PROMPT_LENGTH,
+                    message="param length range (0, 1 * 1024 * 1024]"),
+        image_content=dict(validator=lambda x: 0 < len(x) <= 100 * MB,
+                           message="param length range (0, 100 * 1024 * 1024]"),
+        size=dict(validator=lambda x: re.compile(r"^\d{1,5}\*\d{1,5}$").match(x) is not None,
+                  message=r"param must match '^\d{1,5}\*\d{1,5}$'"),
+    )
+    def img2img(self, prompt: str, image_content: str, size: str = "512*512") -> dict:
         resp = {"prompt": prompt, "result": ""}
 
-        if prompt is None:
-            logger.error(f"prompt cannot be None")
+        payload = {
+            "prompt": prompt,
+            self.IMAGE_ITEM: image_content,
+            "size": size,
+            "model_name": self._model_name
+        }
+
+        response = self._client.post(url=self._url, body=json.dumps(payload), headers=self.HEADER)
+        if not response.success:
+            logger.error("request img to generate img failed")
+            return resp
+        try:
+            res = json.loads(response.data)
+        except json.JSONDecodeError as e:
+            logger.error(f"response content cannot convert to json format: {e}")
+            return resp
+        except Exception as e:
+            logger.error(f"json load error: {e}")
             return resp
 
-        if len(prompt) > self._max_prompt_len or len(prompt) == 0:
-            logger.error(f"prompt content len [{len(prompt)}] not in (0, {self._max_prompt_len}]")
+        if self.IMAGE_ITEM not in res:
+            logger.error("request img to generate img failed, the response not contain image")
             return resp
 
-        FileCheck.check_path_is_exist_and_valid(img_path)
-        SecFileCheck(img_path, self.MAX_IMAGE_SIZE).check()
-        if Path(img_path).suffix not in self.SUPPORT_IMG_TYPE:
-            raise TypeError(f"check [{img_path}] failed because the file type not be supported")
+        resp["result"] = res[self.IMAGE_ITEM]
 
-        with open(img_path, "rb") as f:
-            content = f.read()
-            encode_content = base64.b64encode(content)
-            payload = {
-                "prompt": prompt,
-                self.IMAGE_ITEM: encode_content.decode()
-            }
-
-            response = self._client.post(url=self._url, body=json.dumps(payload), headers=self.HEADER)
-            if not response.success:
-                logger.error("request img to generate img failed")
-                return resp
-            try:
-                res = json.loads(response.data)
-            except json.JSONDecodeError as e:
-                logger.error(f"response content cannot convert to json format: {e}")
-                return resp
-            except Exception as e:
-                logger.error(f"json load error: {e}")
-                return resp
-
-            if self.IMAGE_ITEM not in res:
-                logger.error("request img to generate img failed, the response not contain image")
-                return resp
-
-            resp["result"] = res[self.IMAGE_ITEM]
-
-            return resp
+        return resp

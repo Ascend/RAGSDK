@@ -8,7 +8,7 @@ from unittest.mock import patch
 import numpy as np
 from gptcache.manager.vector_data.base import VectorData
 
-from mx_rag.cache.cache_storage import CacheVecStorage
+from mx_rag.cache.cache_storage.cache_vec_storage import CacheVecStorage
 from cache_mocker import MockerVecStorage
 
 
@@ -18,7 +18,7 @@ def mock_create_vector_storage(*args, **kwargs):
 
 class TestCacheVectorStorage(unittest.TestCase):
     def test_cache_vector_storage_init_exception(self):
-        self.assertRaises(KeyError, CacheVecStorage.create, **{
+        self.assertRaises(ValueError, CacheVecStorage.create, **{
             "error key": 69,
         })
 
@@ -26,7 +26,7 @@ class TestCacheVectorStorage(unittest.TestCase):
             "vector_type": 1234,
         })
 
-        self.assertRaises(KeyError, CacheVecStorage.create, **{
+        self.assertRaises(ValueError, CacheVecStorage.create, **{
             "vector_type": "hello world",
         })
 

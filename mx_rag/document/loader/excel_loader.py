@@ -1,27 +1,30 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import csv
 from datetime import datetime, timedelta
-from typing import List
+from typing import Iterator
+
+import xlrd
+from langchain_community.document_loaders.base import BaseLoader
+from langchain_core.documents import Document
 from loguru import logger
 from openpyxl import load_workbook, Workbook
 from openpyxl.cell import MergedCell
-import xlrd
 
-from mx_rag.document.loader.base_loader import BaseLoader
-from mx_rag.document.doc import Doc
+from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
-CSV_EXTENSION = (".csv",)
 
 
-class ExcelLoader(BaseLoader):
-    def __init__(self, file_path, line_sep="**;"):
+class ExcelLoader(BaseLoader, mxBaseLoader):
+    @validate_params(
+        line_sep=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP)
+    )
+    def __init__(self, file_path: str, line_sep: str = "**;"):
         super().__init__(file_path)
         self.line_sep = str(line_sep)
-        self.multi_size = 5
 
     @staticmethod
     def _exceltime_to_datetime(exceltime):
@@ -147,39 +150,21 @@ class ExcelLoader(BaseLoader):
 
         return first_row, first_col
 
-    @staticmethod
-    def _load_csv_line(row, headers):
-        text_line = ""
-        for ind, ti in enumerate(headers):
-            if not str(ti):
-                ti = "None"
-            if not str(row[ind]):
-                row[ind] = "None"
-            text_line += str(ti) + ":" + str(row[ind]) + ";"
-        return text_line
-
-    def load(self):
+    def lazy_load(self) -> Iterator[Document]:
         """
         ：返回：逐行读取表,返回 string list
         """
-        try:
-            file_check.excel_file_check(self.file_path, self.MAX_SIZE)
-        except Exception as e:
-            logger.error(e)
-            return []
+        file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
         # 判断文件种类：支持 xlsx 与 xls 格式
         if self.file_path.endswith(XLRD_EXTENSION):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
             if self._is_zip_bomb():
-                return []
+                raise ValueError(f"file is a risk of zip bombs")
             else:
                 return self._load_xlsx()
-        elif self.file_path.endswith(CSV_EXTENSION):
-            return self._load_csv()
         else:
-            logger.error(f"{self.file_path} file type is not one of (csv, xlsx, xls).")
-            return []
+            raise TypeError(f"'{self.file_path}' file type is not one of (xlsx, xls).")
 
     def _get_xlsx_title(self, ws, first_row, first_col):
         title = []
@@ -214,13 +199,14 @@ class ExcelLoader(BaseLoader):
         # 获取标题列表
         title = self._get_xlsx_title(ws, first_row, first_col)
 
+        column_end = ws.max_column + 1
         for row_index in range(first_row + 1, ws.max_row + 1):
             # 空行无数据，不解析
             if row_index in blank_rows.keys():
                 continue
 
             text_line = ""
-            for col_index in range(1, ws.max_column + 1):
+            for col_index in range(1, column_end):
                 # 空列无数据，不解析
                 if col_index in blank_cols.keys():
                     continue
@@ -248,14 +234,14 @@ class ExcelLoader(BaseLoader):
 
         # 获取标题列表
         title = self._get_xls_title(ws, first_row, first_col)
-
+        ncols = ws.ncols
         for row_index in range(first_row + 1, ws.nrows):
             # 空行无数据，不解析
             if row_index in blank_rows.keys():
                 continue
 
             text_line = ""
-            for col_index in range(ws.ncols):
+            for col_index in range(ncols):
                 # 空列无数据，不解析
                 if col_index in blank_cols.keys():
                     continue
@@ -271,65 +257,30 @@ class ExcelLoader(BaseLoader):
         return content
 
     def _load_xls(self):
-        docs: List[Doc] = list()
         wb = xlrd.open_workbook(self.file_path, formatting_info=True)
         if wb.nsheets > self.MAX_PAGE_NUM:
-            logger.error(f"file {self.file_path} sheets number more than limit")
-            return docs
+            logger.error(f"file '{self.file_path}' sheets number more than limit")
+            return
         for i in range(wb.nsheets):
             ws = wb.sheet_by_index(i)
             content = self._load_xls_one_sheet(ws)
             if not content:
-                logger.info(f"In file [{self.file_path}] sheet [{ws.name}] is empty")
+                logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
                 continue
+            yield Document(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
 
-            doc = Doc(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
-            docs.append(doc)
-        logger.info(f"file {self.file_path} Loading completed")
-        return docs
+        logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_xlsx(self):
-        docs: List[Doc] = list()
         wb = load_workbook(self.file_path, data_only=True)
         if len(wb.sheetnames) > self.MAX_PAGE_NUM:
-            logger.error(f"file {self.file_path} sheets number more than limit")
-            return docs
+            logger.error(f"file '{self.file_path}' sheets number more than limit")
+            return
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
             content = self._load_xlsx_one_sheet(ws)
             if not content:
-                logger.info(f"In file [{self.file_path}] sheet [{sheet_name}] is empty")
+                logger.info(f"In file ['{self.file_path}'] sheet ['{sheet_name}'] is empty")
                 continue
-
-            doc = Doc(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
-            docs.append(doc)
-        logger.info(f"file {self.file_path} Loading completed")
-        return docs
-
-    def _load_csv_lines(self, reader, headers):
-        content = ""
-        for row in reader:
-            if len(row) > 0:
-                text_line = self._load_csv_line(row, headers)
-                content += text_line + self.line_sep
-            else:
-                break
-        return content
-
-    def _load_csv(self):
-        docs: List[Doc] = list()
-        content = ""
-        try:
-            with open(self.file_path, mode="r", encoding="utf-8-sig") as file:
-                reader = csv.reader(file)
-                headers = next(reader)  # 读取第一行标题
-                content = self._load_csv_lines(reader, headers)
-        except Exception as e:
-            logger.error(e)
-            return docs
-        if content:
-            doc = Doc(page_content=content, metadata={"source": self.file_path})
-            docs.append(doc)
-        else:
-            logger.info(f"file {self.file_path} is empty")
-        return docs
+            yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
+        logger.info(f"file '{self.file_path}' Loading completed")

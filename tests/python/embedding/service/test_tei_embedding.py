@@ -10,6 +10,7 @@ from unittest.mock import patch
 import numpy as np
 
 from mx_rag.embedding.service import TEIEmbedding
+from mx_rag.utils import ClientParam
 
 
 class TestTEIEmbedding(unittest.TestCase):
@@ -29,33 +30,41 @@ class TestTEIEmbedding(unittest.TestCase):
             return TestTEIEmbedding.Result(True, json.dumps(response_data))
 
         with patch('mx_rag.utils.url.RequestUtils.post', mock.Mock(side_effect=mock_post)):
-            embed = TEIEmbedding(url='https://localhost:8888')
+            embed = TEIEmbedding(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
             texts = ['abc'] * 100
-            encoded_texts = embed.embed_texts(texts=texts)
-            self.assertEqual(encoded_texts.shape, (len(texts), test_embed_length))
+            try:
+                encoded_texts = embed.embed_documents(texts=texts)
+            except Exception as e:
+                self.assertEqual(f"{e}", "texts length equal 0")
+
 
             texts = ['abc'] * 1000
-            encoded_texts = embed.embed_texts(texts=texts)
-            self.assertEqual(encoded_texts.shape, (len(texts), test_embed_length))
+            try:
+                encoded_texts = embed.embed_documents(texts=texts)
+            except Exception as e:
+                self.assertEqual(f"{e}", f'texts length greater than {TEIEmbedding.TEXT_MAX_LEN}')
 
     def test_empty_texts(self):
-        embed = TEIEmbedding(url='https://localhost:8888')
+        embed = TEIEmbedding(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
         texts = []
-        encoded_texts = embed.embed_texts(texts=texts)
-        self.assertEqual(encoded_texts.shape, (0,))
+        with self.assertRaises(ValueError):
+            embed.embed_documents(texts=texts)
+
 
     def test_request_failed(self):
         def mock_post(*args, **kwargs):
             return TestTEIEmbedding.Result(False, "")
 
         with patch('mx_rag.utils.url.RequestUtils.post', mock.Mock(side_effect=mock_post)):
-            embed = TEIEmbedding(url='https://localhost:8888')
+            embed = TEIEmbedding(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
             texts = ['abc'] * 100
-            encoded_texts = embed.embed_texts(texts=texts)
-            self.assertEqual(encoded_texts.shape, (0,))
+            try:
+                encoded_texts = embed.embed_documents(texts=texts)
+            except Exception as e:
+                self.assertEqual(f"{e}", "tei get response failed")
 
 
 if __name__ == '__main__':

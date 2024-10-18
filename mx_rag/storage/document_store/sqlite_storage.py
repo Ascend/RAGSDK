@@ -3,10 +3,13 @@
 import os
 from typing import List, Optional
 
+from loguru import logger
 from sqlalchemy import create_engine, Column, Integer, String, JSON
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from mx_rag.storage.document_store.base_storage import Docstore, Document, StorageError
+from mx_rag.storage.document_store.base_storage import Docstore, MxDocument, StorageError
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_CHUNKS_NUM, check_db_file_limit
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
 
@@ -40,8 +43,8 @@ class ChunkModel(Base):
 
 
 class SQLiteDocstore(Docstore):
-
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
+    MAX_DOC_NAME_LEN = 1024
 
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
@@ -51,9 +54,14 @@ class SQLiteDocstore(Docstore):
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    def add(self, documents: List[Document]) -> List[int]:
+    @validate_params(documents=dict(
+        validator=lambda x: 0 < len(x) < MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
+        message="param must be List[MxDocument] and length range in [0, 1000 * 1000]"))
+    def add(self, documents: List[MxDocument]) -> List[int]:
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise StorageError("Insufficient remaining space, please clear disk space")
+        self._check_input_documents(documents)
+        check_db_file_limit(self.db_path)
         with self.session() as session:
             try:
                 chunk_idx = session.query(ChunkIdxModel).filter_by(id=1).first()
@@ -72,11 +80,18 @@ class SQLiteDocstore(Docstore):
                 chunk_idx.chunk_nums += len(chunks)
                 session.bulk_save_objects(chunks)
                 session.commit()
+                logger.debug(f"success add {chunks[0].document_name} in chunks_table.")
                 return idxs
+            except SQLAlchemyError as sql_err:
+                session.rollback()
+                logger.error(f"Database error while adding chunks: {sql_err}")
+                raise StorageError(f"Failed to add chunks due to database error: {sql_err}") from sql_err
             except Exception as err:
                 session.rollback()
                 raise StorageError(f"add chunk failed, {err}") from err
 
+    @validate_params(doc_name=dict(validator=lambda x: 0 < len(x) <= SQLiteDocstore.MAX_DOC_NAME_LEN,
+                                   message="param length range (0, 1024]"))
     def delete(self, doc_name: str) -> List[int]:
         with self.session() as session:
             try:
@@ -84,18 +99,39 @@ class SQLiteDocstore(Docstore):
                 idxs = [c.index_id for c in chunks]
                 chunks.delete(synchronize_session=False)
                 session.commit()
+                logger.debug(f"success delete {doc_name} in chunks_table.")
                 return idxs
+            except SQLAlchemyError as sql_err:
+                session.rollback()
+                logger.error(f"Database error while deleting doc: {sql_err}")
+                raise StorageError(f"Failed to add chunks due to database error: {sql_err}") from sql_err
             except Exception as err:
                 session.rollback()
                 raise StorageError(f"delete chunk failed, {err}") from err
 
-    def search(self, index_id: int) -> Optional[Document]:
+    @validate_params(index_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
+    def search(self, index_id: int) -> Optional[MxDocument]:
         with self.session() as session:
             chunk = session.query(ChunkModel).filter_by(index_id=index_id).first()
             if chunk is not None:
-                return Document(
+                return MxDocument(
                     page_content=chunk.chunk_content,
                     metadata=chunk.chunk_metadata,
                     document_name=chunk.document_name
                 )
             return chunk
+
+    def get_all_index_id(self) -> List[int]:
+        with self.session() as session:
+            chunks = session.query(ChunkModel)
+            ids = [chunk.index_id for chunk in chunks.all()]
+            return ids
+
+    def _check_input_documents(self, documents: List[MxDocument]):
+        for document in documents:
+            if len(document.document_name) >= 1024:
+                raise ValueError("the document_name length of documents must less than 1024")
+            if len(str(document.metadata)) >= 1024:
+                raise ValueError("the metadata length of documents must less than 1024")
+            if len(document.page_content) > TEXT_MAX_LEN:
+                raise ValueError("the page_content length of documents exceed limit 1000 * 1000")

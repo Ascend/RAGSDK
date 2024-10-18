@@ -8,19 +8,30 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_torch_npu_available
 
 from mx_rag.reranker.reranker import Reranker
+from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, INT_32_MAX, TEXT_MAX_LEN,
+                                 validata_list_str, BOOL_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP, STR_MAX_LEN)
 from mx_rag.utils.file_check import FileCheck
 
 try:
     import torch_npu
 
     torch.npu.set_compile_mode(jit_compile=False)
+except ImportError as e:
+    logger.warning(f"Failed to import torch_npu: {e}. LocalReranker will run on CPU.")
 except Exception as e:
-    logger.warning(f"import torch_npu failed:{e}, LocalReranker will running on cpu")
+    logger.error(f"Unexpected error while importing torch_npu: {e}. LocalReranker will run on CPU.")
 
 
 class LocalReranker(Reranker):
-    TEXT_MAX_LEN = 1000 * 1000
 
+    @validate_params(
+        model_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
+                    message="param must be int and value range [0, 63]"),
+        k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K,
+               message="param must be int and value range [1, 10000]"),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+    )
     def __init__(self,
                  model_path: str,
                  dev_id: int = 0,
@@ -48,21 +59,23 @@ class LocalReranker(Reranker):
     @staticmethod
     def create(**kwargs):
         if "model_path" not in kwargs or not isinstance(kwargs.get("model_path"), str):
-            raise KeyError("model_path param error. ")
+            logger.error("model_path param error. ")
+            return None
 
         return LocalReranker(**kwargs)
 
+    @validate_params(
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+                   message="param must meets: Type is List[str], "
+                           "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
+        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
+    )
     def rerank(self,
                query: str,
                texts: List[str],
                batch_size: int = 32,
                max_length: int = 512) -> np.array:
-        if len(texts) == 0:
-            return np.array([])
-        elif len(texts) > LocalReranker.TEXT_MAX_LEN:
-            logger.error(f'texts list length must less than {LocalReranker.TEXT_MAX_LEN}')
-            return np.array([])
-
         sentence_pairs = [[query, text] for text in texts]
 
         result = []

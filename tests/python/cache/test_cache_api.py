@@ -7,8 +7,9 @@ from unittest.mock import patch
 
 from gptcache import Cache
 
-from mx_rag.cache.cache_api import init_mxrag_cache
-from mx_rag.cache.cache_config import CacheConfig, SimilarityCacheConfig
+from mx_rag.cache.cache_api.cache_init import _init_mxrag_cache
+from mx_rag.cache import CacheConfig, SimilarityCacheConfig
+from mx_rag.storage.vectorstore import SimilarityStrategy
 
 
 class TestCacheApi(unittest.TestCase):
@@ -24,12 +25,12 @@ class TestCacheApi(unittest.TestCase):
         cache = Cache()
         mock_init_similar_cache = mock.Mock(return_value=None)
         with patch('gptcache.adapter.api.init_similar_cache', mock_init_similar_cache):
-            init_mxrag_cache(cache, "test_init_memory_config", cache_config)
+            _init_mxrag_cache(cache, "test_init_memory_config", cache_config)
         mock_init_similar_cache.assert_called_once()
 
-    @patch("mx_rag.cache.cache_storage.CacheVecStorage.create")
-    @patch("mx_rag.cache.cache_similarity.CacheSimilarity.create")
-    @patch("mx_rag.cache.cache_emb.CacheEmb.create")
+    @patch("mx_rag.cache.cache_storage.cache_vec_storage.CacheVecStorage.create")
+    @patch("mx_rag.cache.cache_similarity.cache_similarity.CacheSimilarity.create")
+    @patch("mx_rag.cache.cache_emb.cache_emb.CacheEmb.create")
     @patch("gptcache.manager.get_data_manager")
     def test_init_similarity_api(self, vector_create, similarity_create, emb_create, mock_get_data_manager):
         vector_create.return_value = None
@@ -45,7 +46,7 @@ class TestCacheApi(unittest.TestCase):
                 "vector_type": "npu_faiss_db",
                 "x_dim": dim,
                 "devs": [npu_dev],
-                "index_type": "FLAT:L2"
+                "similarity_strategy": SimilarityStrategy.FLAT_L2
             },
             cache_config="sqlite",
             emb_config={
@@ -68,7 +69,7 @@ class TestCacheApi(unittest.TestCase):
         cache = Cache()
         mock_init_similar_cache = mock.Mock(return_value=None)
         with patch('gptcache.adapter.api.init_similar_cache', mock_init_similar_cache):
-            init_mxrag_cache(cache, "test_init_similarity_config", cache_config)
+            _init_mxrag_cache(cache, "test_init_similarity_config", cache_config)
 
         mock_init_similar_cache.assert_called_once()
 

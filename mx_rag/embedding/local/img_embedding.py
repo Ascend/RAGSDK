@@ -1,40 +1,42 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from pathlib import Path
+import base64
+import io
 from typing import List
 
-import PIL
-import numpy as np
 import torch
-
 from PIL import Image
+from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoProcessor, AutoModel, is_torch_npu_available
 
-from mx_rag.embedding.embedding import Embedding
-from mx_rag.utils.file_check import FileCheck, SecFileCheck
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBBEDDING_TEXT_COUNT, \
+    IMG_EMBBEDDING_TEXT_LEN, validata_list_str, MB, EMBBEDDING_IMG_COUNT, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils.file_check import FileCheck
 
 try:
     import torch_npu
+
     torch.npu.set_compile_mode(jit_compile=False)
+except ImportError as e:
+    logger.warning(f"Failed to import torch_npu: {e}. ImageEmbedding will run on cpu.")
 except Exception as e:
-    logger.warning(f"import torch_npu failed:{e}, img_embedding will running on cpu")
+    logger.error(f"Unexpected error while importing torch_npu: {e}. ImageEmbedding will run on cpu.")
 
 
-class ImageEmbedding(Embedding):
-    SUPPORT_IMG_TYPE = (".jpg", ".png")
-    MAX_IMAGE_SIZE = 100 * 1024 * 1024
-    TEXT_COUNT = 1000 * 1000
-    IMAGE_COUNT = 1000
-    TEXT_LEN = 256
+class ImageEmbedding(Embeddings):
 
+    @validate_params(
+        dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID, message="param value range [0, 63]"),
+        use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+    )
     def __init__(self, model_path: str, dev_id: int = 0, use_fp16: bool = True):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
 
         self.use_fp16 = use_fp16
         self.model = AutoModel.from_pretrained(self.model_path)
-        self.preprocess = AutoProcessor.from_pretrained(self.model_path)
+        self.processor = AutoProcessor.from_pretrained(self.model_path)
 
         if self.use_fp16:
             self.model = self.model.half()
@@ -49,50 +51,55 @@ class ImageEmbedding(Embedding):
     @staticmethod
     def create(**kwargs):
         if "model_path" not in kwargs or not isinstance(kwargs.get("model_path"), str):
-            raise KeyError("model_path param error. ")
+            logger.error("model_path param error. ")
+            return None
 
         return ImageEmbedding(**kwargs)
 
-    def embed_texts(self, texts: List[str]) -> np.ndarray:
-        if len(texts) == 0:
-            return np.array([])
-        elif len(texts) > self.TEXT_COUNT:
-            logger.error(f'texts list length must less than {self.TEXT_COUNT}')
-            return np.array([])
-
-        for text in texts:
-            if len(text) > self.TEXT_LEN:
-                logger.error(f"text len can not greater than {self.TEXT_LEN}")
-                return np.array([])
-
-        inputs = self.preprocess(text=texts, padding=True, return_tensors="pt", max_length=512).to(self.model.device)
+    @validate_params(
+        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, IMG_EMBBEDDING_TEXT_LEN]),
+                   message="param must meets: Type is List[str], "
+                           "list length range [1, 1000 * 1000], str length range [1, 256]"))
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        inputs = self.processor(text=texts, padding=True, return_tensors="pt", max_length=512).to(self.model.device)
         with torch.no_grad():
             text_features = self.model.get_text_features(**inputs).detach().cpu()
-            text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
+            text_features_norm = text_features.norm(p=2, dim=-1, keepdim=True)
+            contains_zero = torch.any(torch.eq(text_features_norm, 0))
+            if contains_zero:
+                raise ValueError("contains zero, can not be divide")
+            text_features = text_features / text_features_norm
 
-        return text_features.numpy()
+        return text_features.tolist()
 
-    def embed_images(self, images: List[str]) -> np.ndarray:
+    def embed_query(self, text: str) -> List[float]:
+        embeddings = self.embed_documents([text])
+        if not embeddings:
+            raise ValueError("embedding text failed")
+
+        return embeddings[0]
+
+    @validate_params(
+        images=dict(
+            validator=lambda x: validata_list_str(x, [1, EMBBEDDING_IMG_COUNT], [1, 100*MB]),
+            message="param must meets: Type is List[str], list length range [0, 1000], str length range [1, 100*MB]"))
+    def embed_images(self, images: List[str]) -> List[List[float]]:
         image_features = []
 
-        if len(images) == 0:
-            return np.array([])
-        elif len(images) > self.IMAGE_COUNT:
-            logger.error(f'texts list length must less than {self.IMAGE_COUNT}')
-            return np.array([])
+        for image_content in images:
+            with Image.open(io.BytesIO(base64.b64decode(image_content))) as fi:
+                inputs = self.processor(images=fi, return_tensors="pt").to(self.model.device)
 
-        for image in images:
-            FileCheck.check_path_is_exist_and_valid(image)
-            SecFileCheck(image, self.MAX_IMAGE_SIZE).check()
-            if Path(image).suffix not in self.SUPPORT_IMG_TYPE:
-                raise TypeError(f"embed img:[{image}] failed because the file type not be supported")
-
-            fi = PIL.Image.open(image)
-            inputs = self.preprocess(images=fi, return_tensors="pt").to(self.model.device)
-            fi.close()
             image_feature = self.model.get_image_features(**inputs)
-            image_feature = image_feature / image_feature.norm(p=2, dim=-1, keepdim=True)
+            image_feature_norm = image_feature.norm(p=2, dim=-1, keepdim=True)
+            contains_zero = torch.any(torch.eq(image_feature_norm, 0))
+            if contains_zero:
+                raise ValueError("contains zero, can not be divide")
+            image_feature = image_feature / image_feature_norm
 
-            image_features.extend(image_feature.detach().cpu().numpy())
+            image_features.append(image_feature)
 
-        return np.stack(image_features)
+        if not image_features:
+            raise Exception("embedding image failed")
+
+        return torch.cat(image_features).tolist()

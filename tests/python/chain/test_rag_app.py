@@ -5,6 +5,9 @@ from unittest.mock import MagicMock
 
 from loguru import logger
 from transformers import is_torch_npu_available
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.output_parsers import BaseOutputParser
+from langchain_core.prompts import PromptTemplate
 
 from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.document.loader import DocxLoader
@@ -12,11 +15,10 @@ from mx_rag.knowledge import KnowledgeDB
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever, MultiQueryRetriever
-from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+from mx_rag.storage.vectorstore.faiss_npu import MindFAISS, SimilarityStrategy
 from mx_rag.storage.document_store import SQLiteDocstore
-from mx_rag.chain import SingleText2TextChain, MultiText2TextChain
-from mx_rag.document.splitter.char_text_splitter import CharTextSplitter
-from mx_rag.retrievers import PromptTemplate, OutputParser
+from mx_rag.chain import SingleText2TextChain
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 
 class MyTestCase(unittest.TestCase):
@@ -32,34 +34,35 @@ class MyTestCase(unittest.TestCase):
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
         loader = DocxLoader(os.path.realpath(os.path.join(current_dir, "../../data/mxVision.docx")))
-        spliter = CharTextSplitter()
+        spliter = RecursiveCharacterTextSplitter()
         res = loader.load_and_split(spliter)
         emb = TextEmbedding("/workspace/bge-large-zh/", 2)
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, devs=[0], index_type="FLAT:L2", load_local_index="./faiss.index")
+        index = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+                          load_local_index="./faiss.index")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("mxVision.docx",
                               [d.page_content for d in res],
-                              embed_func=emb.embed_texts,
+                              embed_func=emb.embed_documents,
                               metadatas=[d.metadata for d in res]
                                 )
 
         logger.info("create MindFAISS done")
-        llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct", url="http://70.255.71.175:3000", timeout=120)
+        llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct", base_url="http://70.255.71.175:3000", timeout=120)
 
         def test_rag_chain_npu_single(self):
             """
             测试单条搜索结果，包含source_documents和不包含source_documents进行测试
             """
-            r = Retriever(vector_store=vector_store, k=1, score_threshold=0.5, embed_func=emb.embed_texts)
+            r = Retriever(vector_store=vector_store, k=1, score_threshold=0.5, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             good_prompt = "mxVision软件架构包含哪些模块？"
 
             # 非流式输出，结果不包含source_documents
-            query_response = rag.query(good_prompt, max_tokens=1024, temperature=0.1, top_p=1.0)
+            query_response = rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1, top_p=1.0))
             logger.debug(f"response {query_response}")
             self.assertEqual(query_response.get('query', None), "mxVision软件架构包含哪些模块？")
             self.assertTrue(query_response.get('result', None) is not None)
@@ -67,7 +70,7 @@ class MyTestCase(unittest.TestCase):
 
             rag.source = True
             # 非流式输出，结果包含source_documents
-            query_response = rag.query(good_prompt, max_tokens=1024, temperature=0.1, top_p=1.0)
+            query_response = rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1, top_p=1.0))
             self.assertTrue(query_response.get('query', None) == "mxVision软件架构包含哪些模块？")
             self.assertTrue(query_response.get('result', None) is not None)
             source_documents = query_response.get('source_documents', None)
@@ -77,7 +80,8 @@ class MyTestCase(unittest.TestCase):
 
             # 流式输出，结果不包含source_documents
             rag.source = False
-            for response in rag.query(good_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                      top_p=1.0, stream=True)):
                 query_response = response
                 self.assertEqual(response.get('query', None), "mxVision软件架构包含哪些模块？")
                 self.assertTrue(response.get('result', None) is not None)
@@ -86,7 +90,8 @@ class MyTestCase(unittest.TestCase):
 
             # 流式输出，结果包含source_documents
             rag.source = True
-            for response in rag.query(good_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                      top_p=1.0, stream=True)):
                 query_response = response
                 self.assertEqual(response.get('query', None), "mxVision软件架构包含哪些模块？")
                 self.assertTrue(response.get('result', None) is not None)
@@ -98,11 +103,12 @@ class MyTestCase(unittest.TestCase):
 
         def test_rag_chain_npu_multi_doc(self):
             multi_sr_prompt = "mxVision软件包介绍"
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_texts, k=5, score_threshold=0.7)
+            r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, k=5, score_threshold=0.7)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             query_response = ""
-            for response in rag.query(multi_sr_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query(multi_sr_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                          top_p=1.0, stream=True)):
                 query_response = response
                 logger.trace(f"response {response}")
                 self.assertEqual(response.get('query', None), "mxVision软件包介绍")
@@ -114,7 +120,7 @@ class MyTestCase(unittest.TestCase):
         def test_rag_chain_npu_multi_doc_query_rewrite(self):
             multi_sr_prompt = "mxVision软件包介绍"
 
-            class Parse(OutputParser):
+            class Parse(BaseOutputParser):
                 def parse(self, output: str) -> List[str]:
                     lines = []
                     for line in output.splitlines()[1:]:
@@ -124,59 +130,31 @@ class MyTestCase(unittest.TestCase):
                     return lines[0:3]
 
             prompt = PromptTemplate(
-                "你是AI语言助手。你的任务是通过用户给定的原始问题生成3"
+                input_variables=["question"],
+                template="你是AI语言助手。你的任务是通过用户给定的原始问题生成3"
                 "个不同版本问题，以便用户从向量数据库中检索相关文档。通过生成多个相似问题来帮助用户克服一些基于距离的相似性搜索的限制。"
                 "请使用中文简洁回答，问题之间使用换行符分隔。原始问题: {question}"
             )
 
             r = MultiQueryRetriever(llm=llm, prompt=prompt, parser=Parse(), vector_store=vector_store,
-                                    embed_func=emb.embed_texts, k=5,
+                                    embed_func=emb.embed_documents, k=5,
                                     score_threshold=0.7)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
             query_response = ""
-            for response in rag.query(multi_sr_prompt, max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query(multi_sr_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                          top_p=1.0, stream=True)):
                 query_response = response
                 logger.trace(f"response {response}")
             logger.debug(f"response {query_response}")
 
-        def test_multi_turn_rag_chain_npu_multi_doc(self):
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_texts, k=5, score_threshold=0.5)
-            rag = MultiText2TextChain(retriever=r, llm=llm)
-            rag.source = True
-
-            response = rag.query("请记住小明的爸爸是酱板鸭", max_tokens=1024,
-                                 temperature=1.0,
-                                 top_p=0.1)
-            logger.debug(f"stream response {response}")
-
-            response = rag.query("小明的爸爸是谁", max_tokens=1024, temperature=1.0, top_p=0.1)
-            logger.debug(f"stream response {response}")
-            self.assertTrue("酱板鸭" in response.get("result"))
-
-            for i in range(2, 23):
-                response = rag.query("小明的爸爸是谁", max_tokens=1024, temperature=1.0, top_p=0.1)
-                len1 = i * 2 + 1
-                logger.debug(f"stream response {response}, {len(rag._history)}, {len1}")
-                if i >= 20:
-                    self.assertTrue("酱板鸭" not in response.get("result"))
-                else:
-                    self.assertTrue("酱板鸭" in response.get("result"))
-                self.assertTrue(
-                    len(rag._history) == len1 if len1 < rag._max_history * 2 else rag._max_history * 2)
-                cnt = 0
-                for x in rag._history:
-                    user = ["user", "assistant"][cnt % 2]
-                    logger.debug(f"role = {x['role']}, user = {user}")
-                    self.assertTrue(x['role'] == user)
-                    cnt += 1
-            self.assertTrue(len(rag._history) == 39)
 
         def test_rag_chain_npu_no_doc(self):
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_texts, score_threshold=0.5)
+            r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, score_threshold=0.5)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
-            for response in rag.query("CANN是什么呢", max_tokens=1024, temperature=0.1, top_p=1.0, stream=True):
+            for response in rag.query("CANN是什么呢", LLMParameterConfig(max_tokens=1024, temperature=0.1,
+                                                                         top_p=1.0, stream=True)):
                 logger.trace(f"response {response}")
                 self.assertTrue(len(response.get('source_documents', None)) == 0)
 
@@ -184,7 +162,6 @@ class MyTestCase(unittest.TestCase):
         # test_rag_chain_npu_multi_doc(self)
         # test_rag_chain_npu_no_doc(self)
         test_rag_chain_npu_multi_doc_query_rewrite(self)
-        test_multi_turn_rag_chain_npu_multi_doc(self)
 
 
 if __name__ == '__main__':

@@ -5,14 +5,18 @@ import itertools
 from loguru import logger
 from paddleocr import PaddleOCR
 from pptx import Presentation
-from mx_rag.document.loader.base_loader import BaseLoader
-from mx_rag.document.doc import Doc
-from mx_rag.utils.file_check import FileCheck
+from langchain_core.documents import Document
+from langchain_community.document_loaders.base import BaseLoader
+
+from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
+from mx_rag.utils.file_check import SecFileCheck, FileCheckError, PathNotFileException
 
 
-class PowerPointLoader(BaseLoader):
+class PowerPointLoader(BaseLoader, mxBaseLoader):
     EXTENSION = (".pptx",)
     MAX_SIZE = 100 * 1024 * 1024
+    MAX_TABLE_ROW = 100
+    MAX_TABLE_COL = 50
 
     def __init__(self, file_path, lang="ch"):
         super().__init__(file_path)
@@ -21,26 +25,23 @@ class PowerPointLoader(BaseLoader):
         except Exception as err:
             raise ValueError(f"init ocr failed, {err}") from err
 
-    def load(self):
-        try:
-            self._check_file_valid()
-        except Exception as err:
-            logger.error(f"check {self.file_path} failed, {err}")
-            return []
-
+    def lazy_load(self):
+        self._check_file_valid()
         try:
             return self._load_ppt()
+        except ValueError as ve:
+            logger.error(f"Value error: {ve}")
+            return iter([])
         except Exception as err:
-            logger.error(f"load {self.file_path} failed, {err}")
-            return []
+            logger.error(f"load '{self.file_path}' failed, {err}")
+            return iter([])
 
     def _check_file_valid(self):
-        FileCheck.check_path_is_exist_and_valid(self.file_path)
-        FileCheck.check_file_size(self.file_path, self.MAX_SIZE)
+        SecFileCheck(self.file_path, self.MAX_SIZE).check()
         if not self.file_path.endswith(self.EXTENSION):
-            raise ValueError("file type not correct")
+            raise TypeError("file type not correct")
         if self._is_zip_bomb():
-            raise ValueError(f"{self.file_path} is a risk of zip bombs")
+            raise ValueError(f"'{self.file_path}' is a risk of zip bombs")
 
     def _load_merged_cell(self, data, cell, row, col):
         span_height = cell.span_height
@@ -50,8 +51,10 @@ class PowerPointLoader(BaseLoader):
                 data[span_row][span_col] = cell.text
 
     def _load_table(self, table):
-        rows = len(table.rows)
-        cols = len(table.columns)
+        if (len(table.rows) > self.MAX_TABLE_ROW) or (len(table.columns) > self.MAX_TABLE_COL):
+            logger.warning(f"can not load table over {self.MAX_TABLE_ROW} rows or {self.MAX_TABLE_COL} cols")
+        rows = min(len(table.rows), self.MAX_TABLE_ROW)
+        cols = min(len(table.columns), self.MAX_TABLE_COL)
         # 初始化一个二维列表来存储表格数据
         data = [["" for _ in range(cols)] for _ in range(rows)]
         for row in range(rows):
@@ -68,7 +71,12 @@ class PowerPointLoader(BaseLoader):
 
     def _load_image_text(self, image_bytes):
         result = self.ocr.ocr(image_bytes, cls=True)
-        return [line[1][0] for line in result[0]]
+        try:
+            res = [line[1][0] for line in result[0]]
+            return res
+        except TypeError as err:
+            logger.info(f"can not load text from image, {err}")
+            return None
 
     def _load_slide(self, slide):
         slide_text = []
@@ -77,7 +85,8 @@ class PowerPointLoader(BaseLoader):
             if hasattr(shape, "image"):
                 image_data = shape.image.blob
                 img_text = self._load_image_text(image_data)
-                slide_text.extend(img_text)
+                if img_text is not None:
+                    slide_text.extend(img_text)
 
             # 检查形状是否为表格
             if shape.has_table:
@@ -91,10 +100,7 @@ class PowerPointLoader(BaseLoader):
         return " ".join(slide_text)
 
     def _load_ppt(self):
-        docs = []
         prs = Presentation(self.file_path)
         for slide in prs.slides:
             slide_text = self._load_slide(slide)
-            doc = Doc(page_content=slide_text, metadata={"source": self.file_path})
-            docs.append(doc)
-        return docs
+            yield Document(page_content=slide_text, metadata={"source": self.file_path})

@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import urllib.request
+import urllib.parse
 from typing import Dict, Iterator
 
 import urllib3
 from loguru import logger
 
-from mx_rag.libs.glib.checker.url_checker import HttpUrlChecker, HttpsUrlChecker
-from .cert import TlsConfig
-from .common import UrlUtilException
-from .file_check import FileCheck, SecFileCheck
+from glib.checker import HttpUrlChecker, HttpsUrlChecker
+from mx_rag.utils.client_param import ClientParam
 from .cert_check import CertContentsChecker
-
-LIMIT_1M_SIZE = 1024 * 1024
+from .common import MB
+from .file_check import SecFileCheck
+from .tls_cfg import get_two_way_auth_ssl_context, get_default_context, get_one_way_auth_ssl_context
 
 HTTP_SUCCESS = 200
-
-
-class UrlError(Exception):
-    pass
+MAX_CERT_FILE_SIZE = MB
+MIN_PASSWORD_LENGTH = 8
+PASSWORD_REQUIREMENT = 2
 
 
 class Result:
@@ -29,7 +28,7 @@ class Result:
 
 def is_url_valid(url, use_http) -> bool:
     if url.startswith("http:") and not use_http:
-        raise UrlError("http protocol is not support")
+        return False
     check_key = "url"
     if use_http and HttpUrlChecker(check_key).check({check_key: url}):
         return True
@@ -39,49 +38,83 @@ def is_url_valid(url, use_http) -> bool:
 
 
 class RequestUtils:
-    MAX_FILE_SIZE = 1 * 1024 * 1024
 
     def __init__(self,
                  retries=3,
-                 timeout=10,
                  num_pools=200,
                  maxsize=200,
-                 response_limit_size=LIMIT_1M_SIZE,
-                 cert_file: str = "",
-                 crl_file: str = "",
-                 use_http: bool = False):
-        self.use_http = use_http
-        if cert_file:
-            FileCheck.check_path_is_exist_and_valid(cert_file)
-            SecFileCheck(cert_file, self.MAX_FILE_SIZE).check()
-            try:
-                with open(cert_file, "r") as f:
-                    ca_data = f.read()
-            except Exception as e:
-                logger.warning(f"read cert file failed, find exception: {e}")
-                raise UrlUtilException('read cert file failed') from e
+                 client_param: ClientParam = ClientParam()
+                 ):
 
-            ret = CertContentsChecker("cert").check_dict({"cert": ca_data})
-            if not ret:
-                logger.error(f"invalid mef ca cert content: {ret.reason}")
-                raise UrlUtilException('invalid cert content')
+        self.use_http = client_param.use_http
+        self.response_limit_size = client_param.response_limit_size
 
-            if crl_file:
-                FileCheck.check_path_is_exist_and_valid(crl_file)
-                SecFileCheck(crl_file, self.MAX_FILE_SIZE).check()
-
-            success, ssl_ctx = TlsConfig.get_client_ssl_context(cert_file, crl_file)
-            if not success:
-                raise UrlUtilException('unable to add ca_file for request')
+        if client_param.ssl_context:
+            ssl_ctx = client_param.ssl_context
+        elif not client_param.use_http:
+            # 未配置ssl context并且使用https时，校验证书相关参数合法性
+            self._check_https_para(client_param)
+            # 配置双向认证
+            if client_param.key_file or client_param.crt_file or client_param.pwd:
+                ssl_ctx = get_two_way_auth_ssl_context(client_param)
+            else:
+                # 配置单向认证
+                ssl_ctx = get_one_way_auth_ssl_context(client_param)
         else:
-            ssl_ctx = TlsConfig.get_init_context()
-
+            ssl_ctx = get_default_context()
+        self.ssl_ctx = ssl_ctx
+        self.client_param = client_param
         self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
                                         retries=retries,
-                                        timeout=timeout,
+                                        timeout=client_param.timeout,
                                         num_pools=num_pools,
                                         maxsize=maxsize)
-        self.response_limit_size = response_limit_size
+
+    @staticmethod
+    def _check_ca_content(ca_file: str):
+        try:
+            with open(ca_file, "r") as f:
+                ca_data = f.read()
+        except FileNotFoundError as e:
+            logger.error(f"Certificate file '{ca_file}' not found.")
+            raise ValueError(f"Certificate file '{ca_file}' not found.") from e
+        except PermissionError as e:
+            logger.error(f"Permission denied when reading certificate file: '{ca_file}'")
+            raise ValueError(f"Permission denied for certificate file: {ca_file}") from e
+        except Exception as e:
+            logger.error(f"read cert file failed, find exception: {e}")
+            raise ValueError('read cert file failed') from e
+
+        ret = CertContentsChecker("cert").check_dict({"cert": ca_data})
+        if not ret:
+            logger.error(f"invalid ca cert content: '{ret.reason}'")
+            raise ValueError('invalid cert content')
+
+    @staticmethod
+    def _check_password(plain_text: str):
+        if not plain_text:
+            raise ValueError("Invalid password length.")
+
+        # Initialize flags for character types
+        has_lower = has_upper = has_digits = has_symbol = False
+
+        # Iterate through each character in the plain text
+        for char in plain_text:
+            if char.islower():
+                has_lower = True
+            elif char.isupper():
+                has_upper = True
+            elif char.isdigit():
+                has_digits = True
+            else:
+                has_symbol = True
+
+        # Check if password meets requirements
+        if len(plain_text) < MIN_PASSWORD_LENGTH and \
+                (has_lower + has_upper + has_digits + has_symbol) < PASSWORD_REQUIREMENT:
+            logger.warning("The password is too weak. It should contain at least two of the following:"
+                           " lowercase characters, uppercase characters, numbers, and symbols,"
+                           " and the password must contain at least %d characters. ", MIN_PASSWORD_LENGTH)
 
     def post(self, url: str, body: str, headers: Dict):
         if not is_url_valid(url, self.use_http):
@@ -94,12 +127,18 @@ class RequestUtils:
                                          body=body,
                                          headers=headers,
                                          preload_content=False)
+        except urllib3.exceptions.HTTPError as e:
+            logger.error(f"Request failed due to HTTP error: {e}")
+            return Result(False, "")
         except Exception as e:
-            logger.error(f"request {url} failed, find exception: {e}")
+            logger.error(f"request failed, find exception: {e}")
             return Result(False, "")
 
         try:
             content_length = int(response.headers.get("Content-Length"))
+        except ValueError as e:
+            logger.error(f"Invalid Content-Length header in response: {e}")
+            return Result(False, "")
         except Exception as e:
             logger.error(f"get content length failed, find exception: {e}")
             return Result(False, "")
@@ -112,7 +151,7 @@ class RequestUtils:
             try:
                 response_data = response.read(amt=self.response_limit_size)
             except Exception as e:
-                logger.error(f"read response failed, find exception: {e}")
+                logger.error(f"Failed to read response: {e}")
                 return Result(False, "")
 
             return Result(True, response_data)
@@ -127,15 +166,30 @@ class RequestUtils:
 
         try:
             response = self.pool.request(method='POST', url=url, body=body, headers=headers, preload_content=False)
+        except urllib3.exceptions.HTTPError as e:
+            logger.error(f"Request failed due to HTTP error: {e}")
+            yield Result(False, "")
+            return
         except Exception as e:
-            logger.error(f"request {url} failed, find exception: {e}")
+            logger.error(f"request failed, find exception: {e}")
             yield Result(False, "")
             return
 
         try:
-            content_type = str(response.headers.get("Content-Type"))
+            content_type = response.headers.get("Content-Type")
+            if content_type is None:
+                raise ValueError("Invalid Content-Type header")
+            content_type = str(content_type)
+        except KeyError as e:
+            logger.error(f"Content-Type header is missing: {e}")
+            yield Result(False, "")
+            return
+        except ValueError as e:
+            logger.error(f"Invalid Content-Type header: {e}")
+            yield Result(False, "")
+            return
         except Exception as e:
-            logger.error(f"get content type failed, find exception: {e}")
+            logger.error(f"Failed to get Content-Type, unexpected error: {e}")
             yield Result(False, "")
             return
 
@@ -150,6 +204,38 @@ class RequestUtils:
         else:
             logger.error(f"request failed with status code {response.status}")
             yield Result(False, "")
+
+    def get(self, url: str, headers: Dict):
+        if not is_url_valid(url, self.use_http):
+            logger.error(f"url check failed")
+            return ""
+
+        try:
+            req = urllib.request.Request(url, headers=headers, method="GET")
+            response = urllib.request.urlopen(req, timeout=self.client_param.timeout, context=self.ssl_ctx)
+        except urllib3.exceptions.HTTPError as e:
+            logger.error(f"HTTP request failed with error: {e}")
+            return ""
+        except Exception as e:
+            logger.error(f"request failed, find exception: {e}")
+            return ""
+        content_type = response.headers.get('Content-Type')
+        if content_type is None:
+            logger.warning(f"No 'Content-Type' found in the response headers")
+            return ""
+
+        if "text/html" not in content_type:
+            logger.warning(f"Content-Type is not 'text/html' in response")
+            return ""
+        if response.status == HTTP_SUCCESS:
+            try:
+                return response.read(amt=self.response_limit_size)
+            except Exception as e:
+                logger.error(f"read response failed, find exception: {e}")
+                return ""
+        else:
+            logger.error(f"request failed with status code {response.status}")
+            return ""
 
     def _iter_lines(self, response, chunk_size=1024) -> Iterator[Result]:
         buffer = b''
@@ -169,6 +255,22 @@ class RequestUtils:
 
             if buffer:
                 yield Result(True, buffer)
+        except urllib3.exceptions.HTTPError as e:
+            logger.error(f"HTTP error while reading response: {e}")
+            yield Result(False, "")
         except Exception as e:
             logger.error(f"read response failed, find exception: {e}")
             yield Result(False, "")
+
+    def _check_https_para(self, client_param: ClientParam):
+        SecFileCheck(client_param.ca_file, MAX_CERT_FILE_SIZE).check()
+        self._check_ca_content(client_param.ca_file)
+
+        # crt key pwd 3个参数须同时有效
+        if client_param.crt_file or client_param.key_file or client_param.pwd:
+            SecFileCheck(client_param.crt_file, MAX_CERT_FILE_SIZE).check()
+            SecFileCheck(client_param.key_file, MAX_CERT_FILE_SIZE).check()
+            self._check_password(client_param.pwd)
+
+        if client_param.crl_file:
+            SecFileCheck(client_param.crl_file, MAX_CERT_FILE_SIZE).check()

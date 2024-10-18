@@ -9,6 +9,7 @@ from unittest import mock
 from unittest.mock import patch
 
 from mx_rag.reranker.service import TEIReranker
+from mx_rag.utils import ClientParam
 
 
 class TestTEIReranker(unittest.TestCase):
@@ -26,7 +27,7 @@ class TestTEIReranker(unittest.TestCase):
             return TestTEIReranker.Result(True, json.dumps(response_data))
 
         with patch('mx_rag.utils.url.RequestUtils.post', mock.Mock(side_effect=mock_post)):
-            rerank = TEIReranker(url='https://localhost:8888')
+            rerank = TEIReranker(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
             texts = ['我是小黑', '我是小红'] * 100
             scores = rerank.rerank(query='你好', texts=texts)
@@ -37,25 +38,25 @@ class TestTEIReranker(unittest.TestCase):
             self.assertEqual(scores.shape, (len(texts),))
 
     def test_empty_texts(self):
-        rerank = TEIReranker(url='https://localhost:8888')
+        rerank = TEIReranker(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
-        texts = []
+        texts = ["text"]
         scores = rerank.rerank(query='你好', texts=texts)
         self.assertEqual(scores.shape, (0,))
 
     def test_texts_too_long(self):
-        rerank = TEIReranker(url='https://localhost:8888')
+        rerank = TEIReranker(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
         texts = ['我是小黑', '我是小红'] * 500001
-        scores = rerank.rerank(query='你好', texts=texts)
-        self.assertEqual(scores.shape, (0,))
+        with self.assertRaises(ValueError):
+            rerank.rerank(query='你好', texts=texts)
 
     def test_request_failed(self):
         def mock_post(url: str, body: str, headers: Dict):
             return TestTEIReranker.Result(False, "")
 
         with patch('mx_rag.utils.url.RequestUtils.post', mock.Mock(side_effect=mock_post)):
-            rerank = TEIReranker(url='https://localhost:8888')
+            rerank = TEIReranker(url='https://localhost:8888', api_key="xxxx", client_param=ClientParam(use_http=True))
 
             texts = ['我是小黑', '我是小红'] * 300
             scores = rerank.rerank(query='你好', texts=texts)

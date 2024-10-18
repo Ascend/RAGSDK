@@ -1,45 +1,63 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from abc import ABC
-from typing import List
 
+from typing import List, Callable
+
+from langchain_core.pydantic_v1 import Field
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.documents import Document
 from loguru import logger
+import numpy as np
 
-from mx_rag.document.loader.docx_loader import Doc
+from langchain_core.retrievers import BaseRetriever
 from mx_rag.storage.document_store import Docstore
+from mx_rag.storage.vectorstore import VectorStore
+from mx_rag.utils.common import MAX_TOP_K, TEXT_MAX_LEN, validate_params
 
 
-class Retriever(ABC):
+class Retriever(BaseRetriever):
+    vector_store: VectorStore
+    document_store: Docstore
+    embed_func: Callable[[List[str]], List[List[float]]]
+    k: int = Field(default=1, ge=1, le=MAX_TOP_K)
+    score_threshold: float = Field(default=None, ge=0.0, le=1.0)
 
-    def __init__(self, vector_store, document_store: Docstore, embed_func, k: int = 1, score_threshold: float = 0.1):
-        super().__init__()
-        self._vector_store = vector_store
-        self._document_store = document_store
-        self._embed_func = embed_func
-        self._k = k
-        self._score_threshold = score_threshold
+    class Config:
+        arbitrary_types_allowed = True
 
-    def get_relevant_documents(self, query: str) -> List[Doc]:
-        docs = self._get_relevant_documents(query)
-        return docs[:self._k]
+    @validate_params(
+        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                   message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]")
+    )
+    def _get_relevant_documents(self, query: str, *,
+                                run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
+        embedding = self.embed_func([query])
 
-    def _get_relevant_documents(self, query: str) -> List[Doc]:
-        embedding = self._embed_func([query])
-        scores, indices = self._vector_store.search(embedding, k=self._k)
-        sr = []
+        if self.score_threshold is None:
+            scores, indices = self.vector_store.search(np.array(embedding), k=self.k)
+        else:
+            scores, indices = self.vector_store.search_with_threshold(np.array(embedding),
+                                                                      k=self.k, threshold=self.score_threshold)
+
+        result = []
 
         for i, idx in enumerate(indices[0]):
             logger.debug(f"check {i}/{idx}")
-            doc = self._document_store.search(idx)
+            if idx < 0:
+                continue
+            doc = self.document_store.search(idx)
             if doc is None:
                 continue
             logger.debug(f"scores {scores[0][i]}, page content len: {len(doc.page_content)}")
-            sr.append((doc, scores[0][i]))
+            result.append((doc, scores[0][i]))
 
-        logger.info(f"Filter is [<={self._score_threshold}]")
-        docs = [Doc(doc.page_content, doc.metadata) for doc, similarity in sr if similarity <= self._score_threshold]
+        return self._post_process_result(result)
+
+    def _post_process_result(self, result: List[tuple]):
+        docs = [Document(page_content=doc.page_content, metadata=doc.metadata)
+                for doc, similarity in result]
 
         if len(docs) == 0:
             logger.warning("no relevant documents found!!!")
 
-        return docs
+        return docs[:self.k]
