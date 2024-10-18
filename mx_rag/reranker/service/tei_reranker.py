@@ -10,7 +10,7 @@ import numpy as np
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, MAX_TOP_K, INT_32_MAX, MAX_QUERY_LENGTH, TEXT_MAX_LEN, \
-    validata_list_str, STR_TYPE_CHECK_TIP, MAX_API_KEY_LEN
+    validata_list_str, STR_TYPE_CHECK_TIP, MAX_API_KEY_LEN, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -19,7 +19,6 @@ class TEIReranker(Reranker):
     HEADERS = {
         'Content-Type': 'application/json'
     }
-    TEXT_MAX_LEN = 1000 * 1000
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
@@ -80,9 +79,9 @@ class TEIReranker(Reranker):
     @validate_params(
         query=dict(validator=lambda x: 1 <= len(x) <= MAX_QUERY_LENGTH,
                    message="param length range [1, 128 * 1024 * 1024]"),
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], "
-                           "list length range [1, 1000 * 1000], str length range [1, 2 ** 31 - 1]"),
+                           "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def rerank(self,
