@@ -11,7 +11,7 @@ from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 class BaseLoader(ABC):
     MAX_SIZE = 100 * 1024 * 1024
     MAX_PAGE_NUM = 1000
-    MAX_FILE_CNT = 1024*5
+    MAX_FILE_CNT = 1024
 
     @validate_params(
         file_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
@@ -26,13 +26,13 @@ class BaseLoader(ABC):
             with zipfile.ZipFile(self.file_path, "r") as zip_ref:
                 # 检查点1：检查文件个数，文件个数大于预期值时上报异常退出
                 file_count = len(zip_ref.infolist())
-                if file_count >= self.MAX_FILE_CNT:
+                if file_count >= self.MAX_FILE_CNT * self.multi_size:
                     logger.error(f'zipfile({self.file_path}) contains {file_count} files exceed max file count ')
                     return True
                 # 检查点2：检查第一层解压文件总大小，总大小超过设定的上限值
                 total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
                 if total_uncompressed_size > self.MAX_SIZE * self.multi_size:
-                    logger.error(f"'{self.file_path}' is ZIP bomb: file is too large after decompression.")
+                    logger.error(f"'{self.file_path}' is zip bomb: file is too large after decompression.")
                     return True
                 # 检查点3：检查第一层解压文件总大小，磁盘剩余空间-文件总大<200M
                 remain_size = psutil.disk_usage('/').free
