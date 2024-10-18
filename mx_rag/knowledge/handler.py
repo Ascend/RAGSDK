@@ -162,6 +162,7 @@ def upload_dir(params: FilesLoadInfo):
                  f"because no loader or splitter has been registered.")
     return files, fail_dir_files
 
+
 @validate_params(
     knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
     file_names=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 1000,
