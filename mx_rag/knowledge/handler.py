@@ -29,11 +29,8 @@ def upload_files(
         loader_mng: LoaderMng,
         embed_func: Callable[[List[str]], List[List[float]]],
         force: bool = False,
-        fail_dir_files: List[str] = None
 ):
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
-    if fail_dir_files is None:
-        fail_dir_files = []
     if len(files) > knowledge.max_loop_limit:
         raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, upload files failed')
     fail_files = []
@@ -65,7 +62,8 @@ def upload_files(
                 logger.warning(f"exception encountered while rollback, {e}")
             logger.error(f"add '{file}' failed, {err}")
             continue
-    logger.error(f"Finally, adding these files '{fail_files+fail_dir_files}' has failed")
+    logger.error(f"These files '{fail_files}' add failed")
+    return list(set(files)-set(fail_files)), fail_files
 
 
 def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
@@ -159,8 +157,10 @@ def upload_dir(params: FilesLoadInfo):
             count += 1
         else:
             fail_dir_files.append(file.as_posix())
-    upload_files(knowledge, files, loader_mng, embed_func, force, fail_dir_files)
-
+    upload_files(knowledge, files, loader_mng, embed_func, force)
+    logger.error(f"These files '{fail_dir_files}' are not of supported types "
+                 f"because no loader or splitter has been registered.")
+    return files, fail_dir_files
 
 @validate_params(
     knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
