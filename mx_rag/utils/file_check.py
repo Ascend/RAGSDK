@@ -92,7 +92,10 @@ class FileCheck:
     @staticmethod
     def check_files_num_in_directory(directory_path: str, suffix: str, limit: int):
         files = os.listdir(directory_path)
-        filtered_files = [file for file in files if file.endswith(suffix)]
+        if suffix:
+            filtered_files = [file for file in files if file.endswith(suffix)]
+        else:
+            filtered_files = [file for file in files]
         if len(filtered_files) > limit:
             raise FileCheckError(f"The number of '{suffix}' files in '{directory_path}' exceed {limit}")
 
