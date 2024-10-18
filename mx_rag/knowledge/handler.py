@@ -132,6 +132,7 @@ def upload_dir(params: FilesLoadInfo):
     embedding模型需要与支持的文件类型一致,否则会出现embedding错误.
     """
     FileCheck.dir_check(dir_path)
+    FileCheck.check_files_num_in_directory(dir_path, "", FILE_COUNT_MAX)
     loader_types = []
     for file_types, _ in loader_mng.loaders.values():
         loader_types.extend(file_types)
