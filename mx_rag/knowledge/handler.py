@@ -157,10 +157,12 @@ def upload_dir(params: FilesLoadInfo):
             files.append(file.as_posix())
             count += 1
         else:
-            fail_dir_files.append(file.as_posix())
+            fail_dir_files.append(file)
+    if len(fail_dir_files) > 0:
+        logger.error(f"These files '{fail_dir_files}' are not of supported types "
+                     f"because no loader or splitter has been registered.")
     fail_files = upload_files(knowledge, files, loader_mng, embed_func, force)
-    if len(fail_dir_files+fail_files) > 0:
-        logger.error(f"These files '{fail_dir_files+fail_files}' add failed")
+
     return fail_dir_files+fail_files
 
 
