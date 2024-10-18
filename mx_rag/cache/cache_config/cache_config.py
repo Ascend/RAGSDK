@@ -100,10 +100,10 @@ class SimilarityCacheConfig(CacheConfig):
 
     Attributes:
         config_type: (str) 表明缓存类型，similarity_cache_config
-        vector_config: Union[VectorBase, Dict[str, Any]] 向量数据库配置参数
-        cache_config: Union[CacheBase, str] 缓存数据库配置参数
-        emb_config: Union[BaseEmbedding, Dict[str, Any]] embedding 配置参数
-        similarity_config: Union[SimilarityEvaluation, Dict[str, Any]] 相似度 配置参数
+        vector_config: Dict[str, Any] 向量数据库配置参数
+        cache_config: str 缓存数据库配置参数
+        emb_config: Dict[str, Any] embedding 配置参数
+        similarity_config: Dict[str, Any] 相似度 配置参数
         retrieval_top_k: int 检索时的TOPK参数
         clean_size: int 每次添加满的时候删除的元素个数 1 表示每次删除一个
         **kwargs: 配置基类的参数
@@ -124,12 +124,12 @@ class SimilarityCacheConfig(CacheConfig):
                            message=DICT_TYPE_CHECK_TIP),
     )
     def __init__(self,
+                 vector_config: Dict[str, Any],
+                 cache_config: str,
+                 emb_config: Dict[str, Any],
+                 similarity_config: Dict[str, Any],
                  retrieval_top_k: int = 1,
                  clean_size: int = 1,
-                 vector_config: Dict[str, Any] = None,
-                 cache_config: str = None,
-                 emb_config: Dict[str, Any] = None,
-                 similarity_config: Dict[str, Any] = None,
                  **kwargs):
         super().__init__(**kwargs)
 
