@@ -6,20 +6,20 @@ import psutil
 
 import zipfile
 from loguru import logger
-
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 
 class BaseLoader(ABC):
     MAX_SIZE = 100 * 1024 * 1024
     MAX_PAGE_NUM = 1000
     MAX_FILE_CNT = 1024*5
 
+    @validate_params(
+        file_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+    )
     def __init__(self, file_path):
         self.file_path = file_path
         self.multi_size = 5
 
-    @abstractmethod
-    def load(self):
-        pass
 
     def _is_zip_bomb(self):
         try:
@@ -42,6 +42,9 @@ class BaseLoader(ABC):
                     return True
 
                 return False
+        except zipfile.BadZipfile as e:
+            logger.error(f"The provided path '{self.file_path}' is not a valid ZIP file or is corrupted: {e}")
+            return True
         except Exception as e:
-            logger.error(f"Error checking ZIP bomb: {e}")
+            logger.error(f"Unexpected error occurred while checking ZIP bomb: {e}")
             return True
