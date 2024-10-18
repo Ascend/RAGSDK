@@ -49,22 +49,22 @@ class TestSummary(unittest.TestCase):
 
     def test_split_summary_by_threshold(self):
         su = Summary(llm=self.llm)
-        res = su._split_summary_by_threshold(["aaa"], merge_threshold=8)
+        res = su._split_summary_by_threshold(["aaa"], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 0)])
 
-        res = su._split_summary_by_threshold(["aaa", "1b2"], merge_threshold=8)
+        res = su._split_summary_by_threshold(["aaa", "1b2"], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 1)])
 
-        res = su._split_summary_by_threshold(["aaa", "1b2", "2c3"], merge_threshold=8)
+        res = su._split_summary_by_threshold(["aaa", "b"*1000, "2c3"*20], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 1), (2, 2)])
 
-        res = su._split_summary_by_threshold(["aaa", "1b2", "2c3", "ddd", "67"], merge_threshold=8)
+        res = su._split_summary_by_threshold(["aaa", "2"*1020, "2c3", "ddd", "67"], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 1), (2, 4)])
 
-        res = su._split_summary_by_threshold(["1111", "22", "1111111111111111", "33", "33"], merge_threshold=4)
+        res = su._split_summary_by_threshold(["11"*1024, "22"*1024, "111111"*1024, "33", "33"], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 0), (1, 1), (2, 2), (3, 4)])
 
-        res = su._split_summary_by_threshold(["1111111111111111", "33", "33"], merge_threshold=4)
+        res = su._split_summary_by_threshold(["11111"*1024, "33", "33"], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 0), (1, 2)])
 
     @patch("mx_rag.summary.summary.Summary._summarize")
@@ -72,11 +72,11 @@ class TestSummary(unittest.TestCase):
         summary_mock.side_effect = self.mock_summary
         su = Summary(llm=self.llm)
 
-        res = su.merge_text_summarize(["aaa"], merge_threshold=8, not_summarize_threshold=4)
+        res = su.merge_text_summarize(["aaa"], merge_threshold=1024, not_summarize_threshold=4)
         self.assertSequenceEqual(res, "aaa")
 
-        res = su.merge_text_summarize(["aaa"], merge_threshold=8, not_summarize_threshold=2)
+        res = su.merge_text_summarize(["aaa"], merge_threshold=1024, not_summarize_threshold=2)
         self.assertSequenceEqual(res, "aa")
 
-        res = su.merge_text_summarize(["aa", "eb2", "hc34"], merge_threshold=8, not_summarize_threshold=2)
-        self.assertSequenceEqual(res, "aa\n\ne\n\nh")
+        res = su.merge_text_summarize(["aa", "eb2", "hc34"], merge_threshold=1024, not_summarize_threshold=2)
+        self.assertSequenceEqual(res, "aa\n\neb2\n\nhc3")

@@ -115,7 +115,7 @@ class Summary(BaseModel):
     )
     def merge_text_summarize(self, texts: List[str], merge_threshold: int = 4 * 1024, not_summarize_threshold=30,
                              prompt: PromptTemplate = _MERGE_TEXT_SUMMARY_TEMPLATE) -> str:
-        if merge_threshold < not_summarize_threshold:
+        if merge_threshold <= not_summarize_threshold:
             raise ValueError("merge_threshold must bigger than not_summarize_threshold.")
         if len(texts) >= self.max_texts_length:
             raise ValueError(f"texts must be less than {self.max_texts_length}"
