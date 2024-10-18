@@ -77,7 +77,7 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             rect = page.rect
             estimated_width = int(rect.width * 2)  # 放大两倍后的宽度
             estimated_height = int(rect.height * 2)  # 放大两倍后的高度
-            # 判断放大两倍后是否超出2000像素
+            # 判断放大两倍后是否超出4096像素
             if estimated_width > 4096 or estimated_height > 4096:
                 raise ValueError(f"Page {page_num} 2*size exceed limit 4096 : width={rect.width},"
                                  f" height={rect.height}")
