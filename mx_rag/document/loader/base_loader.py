@@ -12,6 +12,7 @@ from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 class BaseLoader(ABC):
     MAX_SIZE = 100 * 1024 * 1024
     MAX_PAGE_NUM = 1000
+    MAX_WORD_NUM = 500000
     MAX_FILE_CNT = 1024
 
     @validate_params(
