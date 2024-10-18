@@ -63,7 +63,7 @@ def upload_files(
             logger.error(f"add '{file}' failed, {err}")
             continue
     logger.error(f"These files '{fail_files}' add failed")
-    return list(set(files)-set(fail_files)), fail_files
+    return fail_files
 
 
 def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
@@ -157,10 +157,10 @@ def upload_dir(params: FilesLoadInfo):
             count += 1
         else:
             fail_dir_files.append(file.as_posix())
-    upload_files(knowledge, files, loader_mng, embed_func, force)
-    logger.error(f"These files '{fail_dir_files}' are not of supported types "
+    fail_files = upload_files(knowledge, files, loader_mng, embed_func, force)
+    logger.error(f"These files '{fail_dir_files+fail_files}' are not of supported types "
                  f"because no loader or splitter has been registered.")
-    return files, fail_dir_files
+    return fail_dir_files+fail_files
 
 
 @validate_params(
