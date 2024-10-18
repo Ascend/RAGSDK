@@ -8,7 +8,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_torch_npu_available
 
 from mx_rag.reranker.reranker import Reranker
-from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, INT_32_MAX, TEXT_MAX_LEN,
+from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, INT_32_MAX, TEXT_MAX_LEN, MAX_PATH_LENGTH,
                                  validata_list_str, BOOL_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP, STR_MAX_LEN)
 from mx_rag.utils.file_check import FileCheck
 
@@ -25,7 +25,8 @@ except Exception as e:
 class LocalReranker(Reranker):
 
     @validate_params(
-        model_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        model_path=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_PATH_LENGTH,
+                        message="param must be str and str length range [0, 1024]"),
         dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
                     message="param must be int and value range [0, 63]"),
         k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K,
