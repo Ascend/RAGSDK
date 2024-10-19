@@ -28,18 +28,20 @@ class BaseLoader(ABC):
                 # 检查点1：检查文件个数，文件个数大于预期值时上报异常退出
                 file_count = len(zip_ref.infolist())
                 if file_count >= self.MAX_FILE_CNT * self.multi_size:
-                    logger.error(f'zipfile({self.file_path}) contains {file_count} files exceed max file count ')
+                    logger.error(f'zip file ({self.file_path}) contains {file_count} files, exceed '
+                                 f'the limit of {self.MAX_FILE_CNT * self.multi_size}')
                     return True
                 # 检查点2：检查第一层解压文件总大小，总大小超过设定的上限值
                 total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
                 if total_uncompressed_size > self.MAX_SIZE * self.multi_size:
-                    logger.error(f"'{self.file_path}' is zip bomb: file is too large after decompression.")
+                    logger.error(f"zip file '{self.file_path}' uncompressed size is {total_uncompressed_size} bytes"
+                                 f"exceeds the limit of {self.MAX_SIZE * self.multi_size} bytes, Potential ZIP bomb")
                     return True
                 # 检查点3：检查第一层解压文件总大小，磁盘剩余空间-文件总大<200M
                 remain_size = psutil.disk_usage('/').free
-                if remain_size - total_uncompressed_size < self.MAX_SIZE:
-                    logger.error(f'zipfile({self.file_path}) size is ({total_uncompressed_size})'
-                                 f' only {remain_size} disk space available')
+                if remain_size - total_uncompressed_size < self.MAX_SIZE*1000:
+                    logger.error(f'zip file ({self.file_path}) uncompressed size is {total_uncompressed_size} bytes'
+                                 f' only {remain_size} bytes of disk space available')
                     return True
 
                 return False
