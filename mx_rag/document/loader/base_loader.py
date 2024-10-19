@@ -8,7 +8,6 @@ import psutil
 from loguru import logger
 
 from mx_rag.utils import file_check
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 
 
 class BaseLoader(ABC):
