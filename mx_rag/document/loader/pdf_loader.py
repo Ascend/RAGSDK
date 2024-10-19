@@ -72,10 +72,17 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         for page_num in range(pdf_document.page_count):
             page = pdf_document.load_page(page_num)
             mat = fitz.Matrix(2, 2)
-            pm = page.get_pixmap(matrix=mat, alpha=False)
 
-            if pm.width > 2000 or pm.height > 2000:
-                pm = page.get_pixmap(matrix=fitz.Matrix(1, 1), alpha=False)
+            # 获取页面的宽高（未放大）
+            rect = page.rect
+            estimated_width = int(rect.width * 2)  # 放大两倍后的宽度
+            estimated_height = int(rect.height * 2)  # 放大两倍后的高度
+            # 判断放大两倍后是否超出4096像素
+            if estimated_width > 4096 or estimated_height > 4096:
+                raise ValueError(f"Page {page_num} 2*size exceed limit 4096 : width={rect.width},"
+                                 f" height={rect.height}")
+
+            pm = page.get_pixmap(matrix=mat, alpha=False)
 
             img = Image.frombytes("RGB", [pm.width, pm.height], pm.samples)
             img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)

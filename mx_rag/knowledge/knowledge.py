@@ -12,8 +12,8 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
-from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, STR_TYPE_CHECK_TIP, DB_FILE_LIMIT, \
-    STR_LENGTH_CHECK_1024, check_db_file_limit
+from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, STR_TYPE_CHECK_TIP, \
+    STR_LENGTH_CHECK_1024, check_db_file_limit, validata_list_str, MAX_PATH_WHITE, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
 
@@ -39,7 +39,7 @@ class KnowledgeStore:
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
     @validate_params(
-        db_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP)
+        db_path=dict(validator=lambda x: len(x) < 1024 and isinstance(x, str), message=STR_TYPE_CHECK_TIP_1024)
     )
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
@@ -50,8 +50,8 @@ class KnowledgeStore:
         os.chmod(db_path, 0o600)
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024),
-        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
+        doc_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def add(self, knowledge_name: str, doc_name: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
@@ -76,8 +76,8 @@ class KnowledgeStore:
                 raise KnowledgeError(f"add chunk failed, {err}") from err
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024),
-        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
+        doc_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def delete(self, knowledge_name: str, doc_name: str):
         with self.session() as session:
@@ -103,7 +103,7 @@ class KnowledgeStore:
                 raise KnowledgeError(f"delete chunk failed, {err}") from err
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def get_all(self, knowledge_name: str):
         with self.session() as session:
@@ -115,8 +115,8 @@ class KnowledgeStore:
             return ret
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024),
-        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
+        doc_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def check_document_exist(self, knowledge_name: str, doc_name: str) -> bool:
         with self.session() as session:
@@ -133,9 +133,10 @@ class KnowledgeDB(KnowledgeBase):
                          message="param must be instance of Docstore"),
         vector_store=dict(validator=lambda x: isinstance(x, VectorStore),
                           message="param must be instance of VectorStore"),
-        knowledge_name=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
-        white_paths=dict(validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x),
-                         message="param type must be List[str]"),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
+        white_paths=dict(validator=lambda x: validata_list_str(x, [1, MAX_PATH_WHITE], [1, MAX_PATH_WHITE]),
+                         message="param must meets: Type is List[str], "
+                                 "list length range [1, 1024], str length range [1, 1024]"),
         max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX,
                             message=f"param value range must be [1, {FILE_COUNT_MAX}]")
     )
@@ -161,7 +162,10 @@ class KnowledgeDB(KnowledgeBase):
         return self._knowledge_store.get_all(self.knowledge_name)
 
     @validate_params(
-        texts=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]"),
+        doc_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
+                   message="param must meets: Type is List[str], "
+                           "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
         metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
     )
     def add_file(
@@ -183,7 +187,7 @@ class KnowledgeDB(KnowledgeBase):
         self._vector_store.add(np.array(embeddings), ids)
 
     @validate_params(
-        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+        doc_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def delete_file(self, doc_name: str):
         self._knowledge_store.delete(self.knowledge_name, doc_name)
@@ -193,7 +197,7 @@ class KnowledgeDB(KnowledgeBase):
             logger.warning("the number of documents does not match the number of vectors")
 
     @validate_params(
-        doc_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+        doc_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def check_document_exist(self, doc_name: str) -> bool:
         return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name)
@@ -212,7 +216,7 @@ class KnowledgeMgrStore:
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
     @validate_params(
-        db_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP)
+        db_path=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
@@ -223,7 +227,7 @@ class KnowledgeMgrStore:
         os.chmod(db_path, 0o600)
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def add(self, knowledge_name: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
@@ -244,7 +248,7 @@ class KnowledgeMgrStore:
                 raise KnowledgeError(f"add knowledge failed, {err}") from err
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024)
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def delete(self, knowledge_name: str):
         with self.session() as session:
