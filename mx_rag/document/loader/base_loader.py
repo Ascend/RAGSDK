@@ -23,7 +23,6 @@ class BaseLoader(ABC):
         self.multi_size = 5
         file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
 
-
     def _is_zip_bomb(self):
         try:
             with zipfile.ZipFile(self.file_path, "r") as zip_ref:
