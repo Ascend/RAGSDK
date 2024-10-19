@@ -32,6 +32,8 @@ from ragas.metrics.critique import (
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.common import validate_params, validata_list_str, validata_list_list_str, TEXT_MAX_LEN, MB
+from mx_rag.embedding.local import TextEmbedding
+from mx_rag.embedding.service import TEIEmbedding
 
 
 class Evaluate:
@@ -59,7 +61,8 @@ class Evaluate:
 
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, LLM), message="param must be instance of LLM"),
-        embedding=dict(validator=lambda x: isinstance(x, Embeddings), message="param must be instance of Embeddings")
+        embedding=dict(validator=lambda x: isinstance(x, (TextEmbedding, TEIEmbedding)),
+                       message="param must be instance of TextEmbedding or TEIEmbedding")
     )
     def __init__(self,
                  llm: LLM,

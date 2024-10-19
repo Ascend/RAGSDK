@@ -5,6 +5,7 @@ import urllib.parse
 from typing import Dict, Iterator
 
 import urllib3
+from urllib3.exceptions import TimeoutError as urllib3_TimeoutError, HTTPError
 from loguru import logger
 
 from glib.checker import HttpUrlChecker, HttpsUrlChecker
@@ -127,11 +128,14 @@ class RequestUtils:
                                          body=body,
                                          headers=headers,
                                          preload_content=False)
-        except urllib3.exceptions.HTTPError as e:
-            logger.error(f"Request failed due to HTTP error: {e}")
+        except urllib3_TimeoutError:
+            logger.error("The request timed out")
             return Result(False, "")
-        except Exception as e:
-            logger.error(f"request failed, find exception: {e}")
+        except HTTPError:
+            logger.error("Request failed due to HTTP error")
+            return Result(False, "")
+        except Exception:
+            logger.error("request failed")
             return Result(False, "")
 
         try:
@@ -166,12 +170,16 @@ class RequestUtils:
 
         try:
             response = self.pool.request(method='POST', url=url, body=body, headers=headers, preload_content=False)
-        except urllib3.exceptions.HTTPError as e:
-            logger.error(f"Request failed due to HTTP error: {e}")
+        except urllib3_TimeoutError:
+            logger.error("The request timed out")
             yield Result(False, "")
             return
-        except Exception as e:
-            logger.error(f"request failed, find exception: {e}")
+        except HTTPError:
+            logger.error("Request failed due to HTTP error")
+            yield Result(False, "")
+            return
+        except Exception:
+            logger.error(f"request failed")
             yield Result(False, "")
             return
 
@@ -213,11 +221,14 @@ class RequestUtils:
         try:
             req = urllib.request.Request(url, headers=headers, method="GET")
             response = urllib.request.urlopen(req, timeout=self.client_param.timeout, context=self.ssl_ctx)
-        except urllib3.exceptions.HTTPError as e:
-            logger.error(f"HTTP request failed with error: {e}")
+        except urllib3_TimeoutError:
+            logger.error("The request timed out")
             return ""
-        except Exception as e:
-            logger.error(f"request failed, find exception: {e}")
+        except HTTPError:
+            logger.error("HTTP request failed with error")
+            return ""
+        except Exception:
+            logger.error(f"request failed")
             return ""
         content_type = response.headers.get('Content-Type')
         if content_type is None:

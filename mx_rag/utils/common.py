@@ -5,7 +5,7 @@ import inspect
 import os
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import List, Dict
 
 from OpenSSL import crypto
 from loguru import logger
@@ -20,6 +20,7 @@ EMBBEDDING_IMG_COUNT = 1000
 IMG_EMBBEDDING_TEXT_LEN = 256
 MAX_FILE_SIZE = 100 * 1024 * 1024
 TEXT_MAX_LEN = 1000 * 1000
+STR_MAX_LEN = 128 * 1024 * 1024
 MAX_VEC_DIM = 1024 * 1024
 NODE_MAX_TEXT_LENGTH = 128 * 1024 * 1024
 MILVUS_INDEX_TYPES = ["FLAT"]
@@ -245,3 +246,38 @@ def check_db_file_limit(db_path: str, limit: int = DB_FILE_LIMIT):
         return
     if os.path.getsize(db_path) > limit:
         raise Exception(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")
+
+
+def header_check(headers: Dict):
+    """
+    安全检查headers
+    Args:
+        headers: headers列表
+    """
+    if len(headers) > 100:
+        logger.error("the length of headers exceed 100")
+        return False
+    for k, v in headers.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            logger.error("The headers is not of the Dict[str, str] type")
+            return False
+        if len(k) > 100 or len(v) > 1000:
+            logger.error("The length of key in headers exceed 100 or the length of value in headers exceed 1000")
+            return False
+        if v.lower().find("%0d") != -1 or v.lower().find("%0a") != -1 or v.find("\n") != -1:
+            logger.error("The headers cannot contain %0d or %0a or \\n")
+            return False
+    return True
+
+
+def check_api_key(api_key):
+    if not isinstance(api_key, str):
+        logger.error("api_key is not str")
+        return False
+    if len(api_key) > MAX_API_KEY_LEN:
+        logger.error(f"length of api_key must in range [0, {MAX_API_KEY_LEN}]")
+        return False
+    if api_key.lower().find("%0d") != -1 or api_key.lower().find("%0a") != -1 or api_key.find("\n") != -1:
+        logger.error("api_key contain illegal character %0d or %0a or \\n")
+        return False
+    return True

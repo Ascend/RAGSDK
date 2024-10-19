@@ -95,7 +95,7 @@ def _init_mxrag_similar_cache(cache_obj: Cache, cache_name: str, config: Similar
         内部接口，根据SimilarityCacheConfig 初始化指定cache_name的cache实例，为语义相关cache
 
     Args:
-        cache_obj:str 缓存存储目录 由用户提供，需要符合安全标准
+        cache_obj:Cache 缓存实例
         cache_name:str cache实例的键值
         config:SimilarityCacheConfig 语义相似缓存配置数据
     Return:
@@ -138,7 +138,7 @@ def _init_mxrag_memory_cache(cache_obj: Cache, cache_name: str, config: CacheCon
         内部接口，根据CacheConfig 初始化指定cache_name的cache实例，为memory_cache only
 
     Args:
-        cache_obj:str 缓存存储目录 由用户提供，需要符合安全标准
+        cache_obj:Cache 缓存实例
         cache_name:str cache实例的键值
         config:CacheConfig memory_cache 缓存配置数据
     Return:
@@ -181,7 +181,7 @@ def _init_mxrag_cache(cache_obj: Cache, cache_name: str, config):
         内部接口，根据config 初始化指定cache_name的cache实例
 
     Args:
-        cache_obj:str 缓存存储目录 由用户提供，需要符合安全标准
+        cache_obj:Cache 缓存实例
         cache_name:str cache实例的键值
         config:CacheConfig/SimilarityCacheConfig 缓存配置数据
     Return:

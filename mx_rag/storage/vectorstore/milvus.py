@@ -65,6 +65,7 @@ class MilvusDB(VectorStore):
 
         # 只有安全通道时才支持传输敏感信息
         if use_http:
+            logger.warning("The HTTP channel is insecure and will not transmit authentication information")
             kwargs.pop("password", None)
             kwargs.pop("token", None)
 
