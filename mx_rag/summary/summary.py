@@ -74,7 +74,7 @@ class Summary(BaseModel):
                   prompt: PromptTemplate = _SUMMARY_TEMPLATE) -> List[str]:
         if len(texts) > self.max_texts_length:
             raise ValueError(f"texts can not be greater than {self.max_texts_length}"
-                             f",you can set the chunk_size to be larger")
+                             f",you can set chunk_size to a larger value")
 
         with ThreadPoolExecutor() as executor:
             submits = []
@@ -119,9 +119,9 @@ class Summary(BaseModel):
             raise ValueError("merge_threshold must bigger than not_summarize_threshold.")
         if len(texts) > self.max_texts_length:
             raise ValueError(f"texts can not be greater than {self.max_texts_length}"
-                             f",you can set the chunk_size to be larger")
+                             f",you can set chunk_size to be a larger value")
         if self.counter >= 10:
-            raise RecursionError("Maximum recursion depth reached, you can set the merge_threshold to be larger")
+            raise RecursionError("Maximum recursion depth reached, you can set merge_threshold to a larger value")
 
         splits = self._split_summary_by_threshold(texts, merge_threshold)
         res = self.summarize(["\n\n".join(texts[s[0]:s[1] + 1]) for s in splits], not_summarize_threshold, prompt)
