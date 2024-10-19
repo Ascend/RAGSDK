@@ -163,9 +163,9 @@ class KnowledgeDB(KnowledgeBase):
 
     @validate_params(
         doc_name=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
-        texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [0, TEXT_MAX_LEN]),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
                    message="param must meets: Type is List[str], "
-                           "list length range [1, 2 ** 31 - 1], str length range [0, 1000 * 1000]"),
+                           "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
         metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
     )
     def add_file(
