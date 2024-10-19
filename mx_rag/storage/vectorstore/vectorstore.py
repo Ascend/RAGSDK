@@ -17,6 +17,7 @@ class SimilarityStrategy(Enum):
 
 class VectorStore(ABC):
     MAX_VEC_NUM = 100 * 1000 * 1000 * 1000
+    MAX_SEARCH_BATCH = 1024 * 1024
 
     def __init__(self):
         self.score_scale = None
