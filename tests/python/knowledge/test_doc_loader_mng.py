@@ -11,7 +11,7 @@ from mx_rag.knowledge.doc_loader_mng import LoaderMng, LoaderInfo, SplitterInfo
 
 class LoaderMngTestCase(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.realpath(os.path.join(current_dir, "../../../data/test.xlsx"))
+    data_dir = os.path.realpath(os.path.join(current_dir, "../../../tests/data/test.xlsx"))
 
     def test_register_loader(self):
         loader_mng = LoaderMng()
