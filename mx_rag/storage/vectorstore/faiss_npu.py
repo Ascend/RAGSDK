@@ -73,10 +73,10 @@ class MindFAISS(VectorStore):
         similarity = self.SIMILARITY_STRATEGY_MAP.get(similarity_strategy, None)
         if similarity is None:
             raise MindFAISSError(f"Unsupported similarity strategy: {similarity_strategy}")
+        FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
         if os.path.exists(self.load_local_index):
             logger.info(f"Loading index from local index file: '{self.load_local_index}'")
             try:
-                FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
                 cpu_index = faiss.read_index(self.load_local_index)
                 self.index = ascendfaiss.index_cpu_to_ascend(self.device, cpu_index)
                 self.score_scale = similarity.get("scale", None)
