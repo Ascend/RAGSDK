@@ -9,7 +9,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_t
 
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, INT_32_MAX, TEXT_MAX_LEN,
-                                 validata_list_str, BOOL_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP)
+                                 validata_list_str, BOOL_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP, STR_MAX_LEN)
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -59,14 +59,15 @@ class LocalReranker(Reranker):
     @staticmethod
     def create(**kwargs):
         if "model_path" not in kwargs or not isinstance(kwargs.get("model_path"), str):
-            raise KeyError("model_path param error. ")
+            logger.error("model_path param error. ")
+            return None
 
         return LocalReranker(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], "
-                           "list length range [1, 1000 * 1000], str length range [1, 2 ** 31 - 1]"),
+                           "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
         max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )

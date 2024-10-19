@@ -8,19 +8,42 @@ from mx_rag.utils.common import validate_params
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain.base import Chain
 from mx_rag.llm import Text2ImgMultiModel
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN
 
 
 class Text2ImgChain(Chain):
-    """ 大模型输入prompt，生成prompt相关的图片 """
+    """使用 Text2ImgMultiModel 从文本提示生成图像的链。"""
 
     @validate_params(
         multi_model=dict(validator=lambda x: isinstance(x, Text2ImgMultiModel),
                          message="param must be instance of Text2ImgMultiModel")
     )
     def __init__(self, multi_model):
+        """初始化 Text2ImgChain。
+
+        参数:
+            multi_model: 用于生成图像的 Text2ImgMultiModel。
+        """
         self._multi_model = multi_model
 
-    def query(self, text: str = "", llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
-        return self._multi_model.text2img(prompt=kwargs.get("prompt"),
+    @validate_params(
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                  message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                        message="llm_config must be instance of LLMParameterConfig")
+    )
+    def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
+        """从给定的文本提示生成图像。
+
+        参数:
+            text: 用于生成图像的文本提示。
+            llm_config: 用于查询的 LLM 配置 (此实现中未使用)。
+            *args: 其他位置参数 (此实现中未使用)。
+            **kwargs: 可以传递给 Text2ImgMultiModel 的其他关键字参数。
+
+        返回:
+            包含生成图像的字典。
+        """
+        return self._multi_model.text2img(prompt=text,
                                           output_format=kwargs.get("output_format", "png"),
                                           size=kwargs.get("size", "512*512"))

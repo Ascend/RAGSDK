@@ -5,13 +5,13 @@ import re
 from abc import abstractmethod, ABC
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import List, Any, Tuple, Dict
+from typing import List, Tuple, Dict
 
 from langchain_community.document_loaders import TextLoader
 from loguru import logger
 
 from mx_rag.utils import ClientParam
-from mx_rag.utils.common import validate_params, validata_list_str
+from mx_rag.utils.common import validate_params, validata_list_str, header_check
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.url import RequestUtils
 
@@ -48,8 +48,8 @@ class HTMLParser(GenerateQaParser):
         urls=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 1000]),
                   message="param must meets: Type is List[str], list length range [1, 10000], "
                           "str length range [1, 1000]"),
-        headers=dict(validator=lambda x: x is None or isinstance(x, dict),
-                     message="param must be None or instance of dict"),
+        headers=dict(validator=lambda x: x is None or header_check(x),
+                     message="headers check failed, please see the log"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"),
     )
@@ -121,20 +121,22 @@ class MarkDownParser(GenerateQaParser):
                           message="param must be int and value range [1, 10000]")
     )
     def __init__(self, file_path: str, max_file_num: int = MAX_FILE_NUM):
-        FileCheck.dir_check(file_path)
-        FileCheck.check_files_num_in_directory(file_path, ".md", max_file_num)
         self.file_path = file_path
+        self.max_file_num = max_file_num
 
     def parse(self) -> Tuple[List[str], List[str]]:
-        def _load_file(_mk: Any):
+        def _load_file(_mk):
             SecFileCheck(_mk.as_posix(), MAX_FILE_SIZE_10M).check()
-            for doc in _md_load(_mk.as_posix()):
-                return _mk.name, doc
+            docs = _md_load(_mk.as_posix())
+            if not docs:
+                return _mk.name, ""
+            return _mk.name, docs[0]
 
+        FileCheck.dir_check(self.file_path)
+        FileCheck.check_files_num_in_directory(self.file_path, ".md", self.max_file_num)
         titles = []
         contents = []
         task_list = []
-
         with ThreadPoolExecutor() as executor:
             for _mk in Path(self.file_path).glob("*.md"):
                 thread_pool_exc = executor.submit(
@@ -145,6 +147,8 @@ class MarkDownParser(GenerateQaParser):
                 task_list.append(thread_pool_exc)
         for future in concurrent.futures.as_completed(task_list):
             title, content = future.result()
+            if not content:
+                continue
             titles.append(title)
             contents.append(content)
         return titles, contents

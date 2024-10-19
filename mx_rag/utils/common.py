@@ -2,9 +2,10 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import functools
 import inspect
+import os
 from datetime import datetime
 from enum import Enum
-from typing import List
+from typing import List, Dict
 
 from OpenSSL import crypto
 from loguru import logger
@@ -19,11 +20,14 @@ EMBBEDDING_IMG_COUNT = 1000
 IMG_EMBBEDDING_TEXT_LEN = 256
 MAX_FILE_SIZE = 100 * 1024 * 1024
 TEXT_MAX_LEN = 1000 * 1000
+STR_MAX_LEN = 128 * 1024 * 1024
 MAX_VEC_DIM = 1024 * 1024
 NODE_MAX_TEXT_LENGTH = 128 * 1024 * 1024
 MILVUS_INDEX_TYPES = ["FLAT"]
 MILVUS_METRIC_TYPES = ["L2", "IP", "COSINE"]
 MAX_API_KEY_LEN = 128
+MAX_PATH_WHITE = 1024
+FILE_TYPE_COUNT = 32
 
 MAX_PROMPT_LENGTH = 1 * 1024 * 1024
 MAX_URL_LENGTH = 128
@@ -34,11 +38,15 @@ MB = 1048576  # 1024 * 1024
 GB = 1073741824  # 1024 * 1024 * 1024
 STR_TYPE_CHECK_TIP = "param must be str"
 BOOL_TYPE_CHECK_TIP = "param must be bool"
+DICT_TYPE_CHECK_TIP = "param must be dict"
+CLASS_TYPE_CHECK_TIP = "param must be class type"
 INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
-
-
+STR_LENGTH_CHECK_1024 = "param length must be less than 1024"
+STR_TYPE_CHECK_TIP_1024 = "param must be str and less than 1024"
 NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
+DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
+MAX_CHUNKS_NUM = 1000 * 1000
 
 
 class UrlUtilException(Exception):
@@ -190,4 +198,89 @@ def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List
         if not min_str_limit <= len(text) <= max_str_limit:
             logger.error(f"The element in List[str] length not in [{min_str_limit}, {max_str_limit}]")
             return False
+    return True
+
+
+def validata_list_list_str(texts: List[List[str]],
+                           length_limit: List[int],
+                           inner_length_limit: List[int],
+                           str_limit: List[int]):
+    """
+    用于List[List[str]]类型的数据校验
+    Args:
+        texts: 输入数据字符串列表
+        length_limit: 列表长度范围
+        inner_length_limit: 内部列表长度范围
+        str_limit: 字符串长度范围
+
+    Returns:
+
+    """
+    if len(length_limit) != 2:
+        logger.error("the length limit length must equal two")
+        return False
+
+    min_length_limit = length_limit[0]
+    max_length_limit = length_limit[1]
+    if not min_length_limit <= len(texts) <= max_length_limit:
+        logger.error(f"The List[List[str]] length not in [{min_length_limit}, {max_length_limit}]")
+        return False
+
+    for text in texts:
+        if not isinstance(text, List):
+            logger.error("the element in the list is not a list")
+            return False
+
+        res = validata_list_str(text, inner_length_limit, str_limit)
+        if not res:
+            return False
+
+    return True
+
+
+def check_db_file_limit(db_path: str, limit: int = DB_FILE_LIMIT):
+    """
+    检查db文件大小不超过限制limit
+    Args:
+        db_path: db文件路径
+        limit: 大小限制
+    """
+    if not os.path.exists(db_path):
+        return
+    if os.path.getsize(db_path) > limit:
+        raise Exception(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")
+
+
+def header_check(headers: Dict):
+    """
+    安全检查headers
+    Args:
+        headers: headers列表
+    """
+    if len(headers) > 100:
+        logger.error("the length of headers exceed 100")
+        return False
+    for k, v in headers.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            logger.error("The headers is not of the Dict[str, str] type")
+            return False
+        if len(k) > 100 or len(v) > 1000:
+            logger.error("The length of key in headers exceed 100 or the length of value in headers exceed 1000")
+            return False
+        if v.lower().find("%0d") != -1 or v.lower().find("%0a") != -1 or v.find("\n") != -1:
+            logger.error("The headers cannot contain %0d or %0a or \\n")
+            return False
+    return True
+
+
+def check_api_key(api_key):
+    if not isinstance(api_key, str):
+        logger.error("api_key is not str")
+        return False
+    if len(api_key) > MAX_API_KEY_LEN:
+        logger.error(f"length of api_key must in range [0, {MAX_API_KEY_LEN}]")
+        return False
+    if api_key.lower().find("%0d") != -1 or api_key.lower().find("%0a") != -1 or api_key.find("\n") != -1:
+        logger.error("api_key contain illegal character %0d or %0a or \\n")
+        return False
     return True

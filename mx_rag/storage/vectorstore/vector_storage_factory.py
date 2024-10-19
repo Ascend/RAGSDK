@@ -4,7 +4,8 @@
 向量数据库的工厂类，用于生产mxrag的向量数据库
 """
 from abc import ABC
-from typing import Optional, Dict, Any
+from typing import Optional
+from loguru import logger
 
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.storage.vectorstore import MindFAISS
@@ -39,16 +40,27 @@ class VectorStorageFactory(ABC):
             ValueError: 数据类型不匹配
         """
         if "vector_type" not in kwargs:
-            raise KeyError("need vector_type param. ")
+            logger.error("need vector_type param. ")
+            return None
 
         vector_type = kwargs.pop("vector_type")
 
         if not isinstance(vector_type, str):
-            raise ValueError("vector_type should be str type. ")
+            logger.error("vector_type should be str type. ")
+            return None
 
         if vector_type not in cls.NPU_SUPPORT_VEC_TYPE:
-            raise KeyError(f"vector type is not support. {vector_type}")
+            logger.error(f"vector type is not support. {vector_type}")
+            return None
 
         creator = cls.NPU_SUPPORT_VEC_TYPE.get(vector_type)
-        vector_store = creator(**kwargs)
+        try:
+            vector_store = creator(**kwargs)
+        except KeyError:
+            logger.error(f"create vector store key error")
+            return None
+        except Exception:
+            logger.error(f"exception occurred while constructing vector store")
+            return None
+
         return vector_store

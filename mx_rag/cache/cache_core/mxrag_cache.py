@@ -13,7 +13,6 @@ from gptcache.core import Cache
 from loguru import logger
 
 from mx_rag.cache import CacheConfig, SimilarityCacheConfig
-from mx_rag.cache.cache_api.cache_init import init_mxrag_cache
 from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_QUERY_LENGTH, STR_TYPE_CHECK_TIP
 
 
@@ -26,7 +25,14 @@ def _default_load(data: str) -> Any:
 
 
 class MxRAGCache:
+    # 每条缓存的最大缓存字符数
     cache_limit: int = TEXT_MAX_LEN
+
+    # 最大级联个数
+    cache_join_size_limit : int = 6
+
+    # 当前级联个数
+    current_join_size : int = 0
     verbose: bool = False
 
     @validate_params(
@@ -37,10 +43,16 @@ class MxRAGCache:
     def __init__(self,
                  cache_name: str,
                  config: CacheConfig):
-        self.cache_name = cache_name
-        self.cache_obj = Cache()
+        self.__cache_obj = Cache()
 
-        init_mxrag_cache(self.cache_obj, self.cache_name, config)
+        try:
+            from mx_rag.cache.cache_api.cache_init import _init_mxrag_cache
+
+            _init_mxrag_cache(self.__cache_obj, cache_name, config)
+        except KeyError:
+            logger.error("init rag cache failed because key error")
+        except Exception:
+            logger.error("init rag cache failed")
 
     @staticmethod
     def _update(
@@ -57,13 +69,15 @@ class MxRAGCache:
 
     @classmethod
     @validate_params(
-        cache_limit=dict(validator=lambda x: 0 < x <= TEXT_MAX_LEN, message="param value range (0, 1000 * 1000]")
+        cache_limit=dict(
+            validator=lambda x: isinstance(x, int) and 0 < x <= TEXT_MAX_LEN,
+            message="param value range (0, 1000 * 1000]")
     )
     def set_cache_limit(cls, cache_limit: int):
         cls.cache_limit = cache_limit
 
     @validate_params(
-        query=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH),
+        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH),
     )
     def search(self, query: str):
         """
@@ -74,7 +88,7 @@ class MxRAGCache:
         Return:
             answer: 如果命中则为缓存问题，未命中则返回None
         """
-        if not self.cache_obj.has_init:
+        if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
 
         from gptcache.adapter.api import adapt, _cache_data_converter
@@ -88,7 +102,7 @@ class MxRAGCache:
             _cache_data_converter,
             self._update,
             prompt=query,
-            cache_obj=self.cache_obj
+            cache_obj=self.__cache_obj
         )
 
         if answer is not None:
@@ -98,8 +112,10 @@ class MxRAGCache:
         return answer
 
     @validate_params(
-        query=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH),
-        answer=dict(validator=lambda x: 0 < len(x) <= TEXT_MAX_LEN)
+        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH,
+                   message="param must str and char range is (0, 128 * 1024 * 1024]"),
+        answer=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                    message="param must str and char range is (0, 1000 * 1000]")
     )
     def update(self, query: str, answer: str):
         """
@@ -111,7 +127,7 @@ class MxRAGCache:
         Return:
             None
         """
-        if not self.cache_obj.has_init:
+        if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
 
         if not self._check_limit(answer):
@@ -129,7 +145,7 @@ class MxRAGCache:
             self._update,
             cache_skip=True,
             prompt=query,
-            cache_obj=self.cache_obj
+            cache_obj=self.__cache_obj
         )
         self._verbose_log("Update!")
 
@@ -140,10 +156,10 @@ class MxRAGCache:
         Return:
             None
         """
-        if not self.cache_obj.has_init:
+        if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
 
-        self.cache_obj.flush()
+        self.__cache_obj.flush()
         self._verbose_log("Flush!")
 
     def get_obj(self):
@@ -153,10 +169,10 @@ class MxRAGCache:
         Return:
             gptcache
         """
-        if not self.cache_obj.has_init:
+        if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
 
-        return self.cache_obj
+        return self.__cache_obj
 
     @validate_params(
         next_cache=dict(validator=lambda x: isinstance(x, MxRAGCache)),
@@ -170,13 +186,33 @@ class MxRAGCache:
         Return:
             None
         """
-        if not self.cache_obj.has_init:
+        if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
 
-        if next_cache.get_obj() == self.cache_obj:
-            raise ValueError("forbidden join self cache")
+        self._join_check(next_cache)
 
-        self.cache_obj.next_cache = next_cache.get_obj()
+        self.__cache_obj.next_cache = next_cache.get_obj()
+        MxRAGCache.current_join_size = MxRAGCache.current_join_size + 1
+
+    def _join_check(self, next_cache):
+        logger.debug(f"cache deepth:{MxRAGCache.current_join_size} cache_limit:{MxRAGCache.cache_join_size_limit}")
+
+        if MxRAGCache.current_join_size >= MxRAGCache.cache_join_size_limit:
+            raise OverflowError(
+                f"the number of cache join deepth cannot be greater than {MxRAGCache.cache_join_size_limit}")
+
+        loop_cnt : int = 0
+        next_cache_obj = next_cache.get_obj()
+        while next_cache_obj is not None:
+            if loop_cnt >= MxRAGCache.cache_join_size_limit:
+                raise OverflowError(
+                    f"the number of cache join deepth cannot be greater than {MxRAGCache.cache_join_size_limit}"
+                )
+
+            if next_cache_obj == self.__cache_obj:
+                raise ValueError("forbidden loop join")
+            next_cache_obj = next_cache_obj.next_cache
+            loop_cnt = loop_cnt + 1
 
     def _check_limit(self, input_text: str):
         return True if (len(input_text) < self.cache_limit) else False
@@ -191,4 +227,4 @@ class MxRAGCache:
             None
         """
         if self.verbose:
-            logger.info(f"'{self.cache_name}': " + log_str)
+            logger.info(log_str)
