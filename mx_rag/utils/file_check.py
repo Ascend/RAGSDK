@@ -98,8 +98,8 @@ class FileCheck:
                     count += 1
             else:
                 count += 1
-        if count > limit:
-            raise FileCheckError(f"The number of '{suffix}' files in '{directory_path}' exceed {limit}")
+            if count > limit:
+                raise FileCheckError(f"The number of '{suffix}' files in '{directory_path}' exceed {limit}")
 
     @staticmethod
     def check_file_owner(file_path: str):
