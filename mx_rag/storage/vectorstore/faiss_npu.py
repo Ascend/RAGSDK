@@ -150,6 +150,12 @@ class MindFAISS(VectorStore):
     @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
                               message="param must be List[int]"))
     def add(self, embeddings: np.ndarray, ids: List[int]):
+        if len(embeddings.shape) != 2:
+            raise MindFAISSError("shape of embedding must equal to 2")
+        if embeddings.shape[0] != len(ids):
+            raise MindFAISSError("Length of embeddings is not equal to number of ids")
+        if len(ids) + self.index.ntotal >= self.MAX_VEC_NUM:
+            raise MindFAISSError(f"tatol num of ids/embeding is reach to limit {self.MAX_VEC_NUM}")
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
             logger.debug(f"success add ids {ids} in MindFAISS.")
