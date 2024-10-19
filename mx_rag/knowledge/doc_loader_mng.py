@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
 
-from mx_rag.utils.common import validate_params, NO_SPLIT_FILE_TYPE
+from mx_rag.utils.common import validate_params, NO_SPLIT_FILE_TYPE, STR_TYPE_CHECK_TIP_1024
 
 
 @dataclass
@@ -61,12 +61,16 @@ class LoaderMng:
         self.splitter_types.extend(file_types)
         self.splitters[splitter_class] = (file_types, SplitterInfo(splitter_class, splitter_params or {}))
 
+    @validate_params(
+        file_suffix=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024))
     def get_loader(self, file_suffix: str) -> LoaderInfo:
         for file_types, loader_info in self.loaders.values():
             if file_suffix in file_types:
                 return loader_info
         raise KeyError(f"No loader registered for file type '{file_suffix}'")
 
+    @validate_params(
+        file_suffix=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024))
     def get_splitter(self, file_suffix: str) -> SplitterInfo:
         for file_types, splitter_info in self.splitters.values():
             if file_suffix in file_types:

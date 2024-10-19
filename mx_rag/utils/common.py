@@ -26,6 +26,7 @@ NODE_MAX_TEXT_LENGTH = 128 * 1024 * 1024
 MILVUS_INDEX_TYPES = ["FLAT"]
 MILVUS_METRIC_TYPES = ["L2", "IP", "COSINE"]
 MAX_API_KEY_LEN = 128
+MAX_PATH_WHITE = 1024
 
 MAX_PROMPT_LENGTH = 1 * 1024 * 1024
 MAX_URL_LENGTH = 128
@@ -40,7 +41,7 @@ DICT_TYPE_CHECK_TIP = "param must be dict"
 INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
 STR_LENGTH_CHECK_1024 = "param length must be less than 1024"
-
+STR_TYPE_CHECK_TIP_1024 = "param must be str and less than 1024"
 NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
 DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
 MAX_CHUNKS_NUM = 1000 * 1000
