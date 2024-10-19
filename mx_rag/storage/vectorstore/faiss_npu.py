@@ -142,20 +142,27 @@ class MindFAISS(VectorStore):
             self.save_local()
         return res
 
-    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param value range (0, 10000]"))
+    @validate_params(
+        k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param value range (0, 10000]"),
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
     def search(self, embeddings: np.ndarray, k: int = 3):
+        if len(embeddings.shape) != 2:
+            raise MindFAISSError("shape of embedding must equal to 2")
+        if embeddings.shape[0] >= self.MAX_SEARCH_BATCH:
+            raise MindFAISSError(f"num of embeddings must less {self.MAX_SEARCH_BATCH}")
         scores, indices = self.index.search(embeddings, k)
         return self._score_scale(scores.tolist()), indices.tolist()
 
-    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
-                              message="param must be List[int]"))
+    @validate_params(
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
     def add(self, embeddings: np.ndarray, ids: List[int]):
         if len(embeddings.shape) != 2:
             raise MindFAISSError("shape of embedding must equal to 2")
         if embeddings.shape[0] != len(ids):
             raise MindFAISSError("Length of embeddings is not equal to number of ids")
         if len(ids) + self.index.ntotal >= self.MAX_VEC_NUM:
-            raise MindFAISSError(f"tatol num of ids/embeding is reach to limit {self.MAX_VEC_NUM}")
+            raise MindFAISSError(f"total num of ids/embeding is reach to limit {self.MAX_VEC_NUM}")
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
             logger.debug(f"success add ids {ids} in MindFAISS.")
