@@ -215,6 +215,9 @@ class KnowledgeDB(KnowledgeBase):
 class KnowledgeMgrStore:
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
+    @validate_params(
+        db_path=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024)
+    )
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
         self.db_path = db_path
