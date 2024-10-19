@@ -29,12 +29,12 @@ def upload_files(
         files: List[str],
         loader_mng: LoaderMng,
         embed_func: Callable[[List[str]], List[List[float]]],
-        force: bool = False
+        force: bool = False,
 ):
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
     if len(files) > knowledge.max_loop_limit:
         raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, upload files failed')
-
+    fail_files = []
     for file in files:
         _check_file(file, force, knowledge)
         file_obj = Path(file)
@@ -58,10 +58,14 @@ def upload_files(
             # 当添加文档失败时，删除已添加的部分文档做回滚，捕获异常是为了正常回滚
             try:
                 knowledge.delete_file(file_obj.name)
+                fail_files.append(file)
             except Exception as e:
                 logger.warning(f"exception encountered while rollback, {e}")
-            logger.error(f"add '{file_obj.name}' failed, {err}")
+            logger.error(f"add '{file}' failed, {err}")
             continue
+    if len(fail_files) > 0:
+        logger.error(f"These files '{fail_files}' add failed")
+    return fail_files
 
 
 def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
@@ -145,6 +149,7 @@ def upload_dir(params: FilesLoadInfo):
         support_file_type = list(set(loader_types) & set(NO_SPLIT_FILE_TYPE))
     count = 0
     files = []
+    unsupported_files = []
     for file in Path(dir_path).glob("*"):
         if count >= knowledge.max_loop_limit:
             raise FileHandlerError(f'The number of files in the {dir_path} must less than'
@@ -152,7 +157,14 @@ def upload_dir(params: FilesLoadInfo):
         if file.suffix in support_file_type:
             files.append(file.as_posix())
             count += 1
-    upload_files(knowledge, files, loader_mng, embed_func, force)
+        else:
+            unsupported_files.append(file)
+    if len(unsupported_files) > 0:
+        logger.error(f"These files '{unsupported_files}' are not of supported types "
+                     f"because no loader or splitter has been registered.")
+    fail_files = upload_files(knowledge, files, loader_mng, embed_func, force)
+
+    return unsupported_files+fail_files
 
 
 @validate_params(

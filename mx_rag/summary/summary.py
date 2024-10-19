@@ -31,6 +31,8 @@ def _thread_pool_callback(worker):
 class Summary(BaseModel):
     llm: Text2TextLLM
     llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)
+    counter: int = 0
+    max_texts_length: int = 1024
 
     class Config:
         arbitrary_types_allowed = True
@@ -66,10 +68,14 @@ class Summary(BaseModel):
         not_summarize_threshold=dict(validator=lambda x: 0 < x <= 1 * MB, message="param value range (0, 1048576]"),
         prompt=dict(validator=lambda x: set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH,
                     message="prompt must like PromptTemplate(input_variables=['text'], "
-                            "template='length range (0, 1024 * 1024]')")
+                            "template='length range (0, 1048576]')")
     )
     def summarize(self, texts: List[str], not_summarize_threshold: int = 30,
                   prompt: PromptTemplate = _SUMMARY_TEMPLATE) -> List[str]:
+        if len(texts) > self.max_texts_length:
+            raise ValueError(f"texts can not be greater than {self.max_texts_length}"
+                             f",you can set chunk_size to a larger value")
+
         with ThreadPoolExecutor() as executor:
             submits = []
             no_summary_texts_set = set()
@@ -97,16 +103,29 @@ class Summary(BaseModel):
 
     @validate_params(
         texts=dict(
-            validator=lambda x: all(isinstance(item, str) for item in x) and 0 < sum(len(item) for item in x) <= 1*MB),
-        merge_threshold=dict(validator=lambda x: 0 < x <= 1 * MB),
-        not_summarize_threshold=dict(validator=lambda x: 0 < x <= 1 * MB),
-        prompt=dict(validator=lambda x: set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH)
+            validator=lambda x: all(isinstance(item, str) for item in x) and 0 < sum(len(item) for item in x) <= 1*MB,
+            message="param must be list[str], and all length range in (0, 1048576]"),
+        merge_threshold=dict(validator=lambda x: 1024 <= x <= 1 * MB,
+                             message="param value range [1024, 1048576]"),
+        not_summarize_threshold=dict(validator=lambda x: 0 < x <= 1 * MB,
+                                     message="param value range (0, 1048576]"),
+        prompt=dict(validator=lambda x: set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH,
+                    message="prompt must like PromptTemplate(input_variables=['text'], "
+                            "template='length range (0, 1048576]')")
     )
     def merge_text_summarize(self, texts: List[str], merge_threshold: int = 4 * 1024, not_summarize_threshold=30,
                              prompt: PromptTemplate = _MERGE_TEXT_SUMMARY_TEMPLATE) -> str:
+        if merge_threshold <= not_summarize_threshold:
+            raise ValueError("merge_threshold must bigger than not_summarize_threshold.")
+        if len(texts) > self.max_texts_length:
+            raise ValueError(f"texts can not be greater than {self.max_texts_length}"
+                             f",you can set chunk_size to a larger value")
+        if self.counter >= 10:
+            raise RecursionError("Maximum recursion depth reached, you can set merge_threshold to a larger value")
 
         splits = self._split_summary_by_threshold(texts, merge_threshold)
         res = self.summarize(["\n\n".join(texts[s[0]:s[1] + 1]) for s in splits], not_summarize_threshold, prompt)
+        self.counter += 1
 
         if len(res) > len(texts):
             raise Exception("sub summary number should less than origin summary number")

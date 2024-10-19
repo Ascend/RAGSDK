@@ -12,7 +12,7 @@ from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, INT_32_MAX, TEXT_MAX_LEN, validata_list_str, \
-    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP
+    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -70,9 +70,9 @@ class TextEmbedding(Embeddings):
         return TextEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
-                           "str length range [1, 2 ** 31 - 1]"),
+                           "str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
         max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
@@ -87,7 +87,7 @@ class TextEmbedding(Embeddings):
         return result.tolist()
 
     @validate_params(
-        text=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
+        text=dict(validator=lambda x: 1 <= len(x) <= STR_MAX_LEN, message="param value range [1, 128 * 1024 * 1024]"),
         max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def embed_query(self, text: str, max_length: int = 512) -> List[float]:
@@ -98,9 +98,9 @@ class TextEmbedding(Embeddings):
         return embeddings[0]
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, INT_32_MAX]),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
-                           "str length range [1, 2 ** 31 - 1]"),
+                           "str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
         max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
@@ -173,6 +173,9 @@ class TextEmbedding(Embeddings):
         elif self.pooling_method == 'mean':
             s = torch.sum(last_hidden_state * attention_mask.unsqueeze(-1).float(), dim=1)
             d = attention_mask.sum(dim=1, keepdim=True).float()
+            contains_zero = torch.any(torch.eq(d, 0))
+            if contains_zero:
+                raise ValueError("contains zero, can not be divide")
             return s / d
         else:
             raise NotImplementedError(f'Pooling method "{self.pooling_method}" not implemented!')

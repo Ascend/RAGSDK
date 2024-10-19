@@ -9,7 +9,7 @@ from loguru import logger
 
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str, \
-    STR_TYPE_CHECK_TIP, MAX_API_KEY_LEN
+    STR_TYPE_CHECK_TIP, check_api_key, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -25,8 +25,8 @@ class TEIEmbedding(Embeddings):
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
-        api_key=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_API_KEY_LEN,
-                     message="param must be str and str length range [0, 128]"),
+        api_key=dict(validator=lambda x: check_api_key(x),
+                     message="api_key check failed, please see the log"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"),
     )
@@ -55,9 +55,9 @@ class TEIEmbedding(Embeddings):
         return TEIEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, INT_32_MAX]),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
-                           "str length range [1, 2 ** 31 - 1]"),
+                           "str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
     )
     def embed_documents(self,
@@ -100,7 +100,7 @@ class TEIEmbedding(Embeddings):
         return result
 
     @validate_params(
-        text=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
+        text=dict(validator=lambda x: 1 <= len(x) <= STR_MAX_LEN, message="param length range [1, 128 * 1024 * 1024]")
     )
     def embed_query(self, text: str) -> List[float]:
         embeddings = self.embed_documents([text])

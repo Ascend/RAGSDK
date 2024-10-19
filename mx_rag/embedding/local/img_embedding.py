@@ -25,7 +25,6 @@ except Exception as e:
 
 
 class ImageEmbedding(Embeddings):
-    SUPPORT_IMG_TYPE = (".jpg", ".png")
 
     @validate_params(
         dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID, message="param value range [0, 63]"),
@@ -65,7 +64,11 @@ class ImageEmbedding(Embeddings):
         inputs = self.processor(text=texts, padding=True, return_tensors="pt", max_length=512).to(self.model.device)
         with torch.no_grad():
             text_features = self.model.get_text_features(**inputs).detach().cpu()
-            text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
+            text_features_norm = text_features.norm(p=2, dim=-1, keepdim=True)
+            contains_zero = torch.any(torch.eq(text_features_norm, 0))
+            if contains_zero:
+                raise ValueError("contains zero, can not be divide")
+            text_features = text_features / text_features_norm
 
         return text_features.tolist()
 
@@ -88,7 +91,11 @@ class ImageEmbedding(Embeddings):
                 inputs = self.processor(images=fi, return_tensors="pt").to(self.model.device)
 
             image_feature = self.model.get_image_features(**inputs)
-            image_feature = image_feature / image_feature.norm(p=2, dim=-1, keepdim=True)
+            image_feature_norm = image_feature.norm(p=2, dim=-1, keepdim=True)
+            contains_zero = torch.any(torch.eq(image_feature_norm, 0))
+            if contains_zero:
+                raise ValueError("contains zero, can not be divide")
+            image_feature = image_feature / image_feature_norm
 
             image_features.append(image_feature)
 

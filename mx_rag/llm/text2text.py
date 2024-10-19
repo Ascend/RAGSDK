@@ -24,7 +24,7 @@ def _check_sys_messages(sys_messages: List[dict] = None) -> bool:
     if sys_messages is None:
         return True
 
-    if len(sys_messages) > 16:
+    if not isinstance(sys_messages, list) or len(sys_messages) > 16:
         return False
 
     for d in sys_messages:
