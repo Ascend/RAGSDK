@@ -20,7 +20,6 @@ class BaseLoader(ABC):
         self.file_path = file_path
         self.multi_size = 5
 
-
     def _is_zip_bomb(self):
         try:
             with zipfile.ZipFile(self.file_path, "r") as zip_ref:
