@@ -1,24 +1,27 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import os
 from typing import Dict, Any, List, Tuple, Type, Optional
-from dataclasses import dataclass
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
 
-from mx_rag.utils.common import validate_params, NO_SPLIT_FILE_TYPE, STR_TYPE_CHECK_TIP_1024
+from mx_rag.utils.common import (DICT_TYPE_CHECK_TIP, validata_list_str, validate_params, NO_SPLIT_FILE_TYPE,
+                                 FILE_TYPE_COUNT, CLASS_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP_1024)
 
 
-@dataclass
 class LoaderInfo:
-    loader_class: Type
-    loader_params: Dict[str, Any]
+    def __init__(self,
+                 loader_class: Type,
+                 loader_params: Dict[str, Any]):
+        self.loader_class = loader_class
+        self.loader_params = loader_params
 
 
-@dataclass
 class SplitterInfo:
-    splitter_class: Type
-    splitter_params: Dict[str, Any]
+    def __init__(self,
+                 splitter_class: Type,
+                 splitter_params: Dict[str, Any]):
+        self.splitter_class = splitter_class
+        self.splitter_params = splitter_params
 
 
 class LoaderMng:
@@ -32,8 +35,11 @@ class LoaderMng:
         self.splitter_types: list = []
 
     @validate_params(
-        file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 32,
-                        message="param must meets: Type is List[str], list length range [1, 32]")
+        loader_class=dict(validator=lambda x: isinstance(x, type), message=CLASS_TYPE_CHECK_TIP),
+        file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
+                        message="param must meets: Type is List[str], "
+                                "list length range [1, 32], str length range [1, 32]"),
+        loader_params=dict(validator=lambda x: isinstance(x, Dict) or x is None, message=DICT_TYPE_CHECK_TIP)
     )
     def register_loader(self, loader_class: BaseLoader, file_types: List[str],
                         loader_params: Optional[Dict[str, Any]] = None):
@@ -46,8 +52,12 @@ class LoaderMng:
         self.loaders[loader_class] = (file_types, LoaderInfo(loader_class, loader_params or {}))
 
     @validate_params(
-        file_types=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 32,
-                        message="param must meets: Type is List[str], list length range [1, 32]")
+        splitter_class=dict(validator=lambda x: isinstance(x, type), message=CLASS_TYPE_CHECK_TIP),
+        file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
+                        message="param must meets: Type is List[str], "
+                                "list length range [1, 32], str length range [1, 32]"),
+
+        splitter_params=dict(validator=lambda x: isinstance(x, Dict) or x is None, message=DICT_TYPE_CHECK_TIP)
     )
     def register_splitter(self, splitter_class: TextSplitter, file_types: List[str],
                           splitter_params: Optional[Dict[str, Any]] = None):
@@ -78,12 +88,16 @@ class LoaderMng:
 
         raise KeyError(f"No splitter registered for file type '{file_suffix}'")
 
+    @validate_params(
+        loader_class=dict(validator=lambda x: isinstance(x, type), message=CLASS_TYPE_CHECK_TIP))
     def unregister_loader(self, loader_class: Type):
         if loader_class in self.loaders:
             del self.loaders[loader_class]
         else:
             raise KeyError(f"Loader class '{loader_class}' is not registered")
 
+    @validate_params(
+        splitter_class=dict(validator=lambda x: isinstance(x, type), message=CLASS_TYPE_CHECK_TIP))
     def unregister_splitter(self, splitter_class: Type):
         if splitter_class in self.splitters:
             del self.splitters[splitter_class]
