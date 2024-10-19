@@ -6,8 +6,7 @@ import zipfile
 import psutil
 
 from loguru import logger
-
-from mx_rag.utils import file_check
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
 
 
 class BaseLoader(ABC):
@@ -16,10 +15,12 @@ class BaseLoader(ABC):
     MAX_WORD_NUM = 500000
     MAX_FILE_CNT = 1024
 
+    @validate_params(
+        file_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+    )
     def __init__(self, file_path):
         self.file_path = file_path
         self.multi_size = 5
-        file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
 
     def _is_zip_bomb(self):
         try:
