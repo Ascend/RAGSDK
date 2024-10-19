@@ -205,8 +205,12 @@ class MilvusDB(VectorStore):
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
     )
     def add(self, embeddings: np.ndarray, ids: List[int]):
+        if len(embeddings.shape) != 2:
+            raise MilvusError("shape of embedding must equal to 2")
         if embeddings.shape[0] != len(ids):
             raise MilvusError("Length of embeddings is not equal to number of ids")
+        if len(ids) >= self.MAX_VEC_NUM:
+            raise MilvusError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         embeddings = embeddings.astype(np.float32)
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
