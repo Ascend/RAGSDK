@@ -5,6 +5,7 @@ from multiprocessing import Process, Value, Lock, Queue
 
 from mx_rag.chain.single_text_to_text import SingleText2TextChain
 from mx_rag.llm.llm_parameter import LLMParameterConfig
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN
 
 
 class ParallelText2TextChain(SingleText2TextChain):
@@ -22,6 +23,10 @@ class ParallelText2TextChain(SingleText2TextChain):
         self.prefill_queue = Queue()
         self.lock = Lock()
 
+    @validate_params(text=dict(
+        validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+        message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"
+    ))
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95),
               *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
         return self._query(text, llm_config)
