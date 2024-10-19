@@ -27,6 +27,7 @@ MILVUS_INDEX_TYPES = ["FLAT"]
 MILVUS_METRIC_TYPES = ["L2", "IP", "COSINE"]
 MAX_API_KEY_LEN = 128
 MAX_PATH_WHITE = 1024
+FILE_TYPE_COUNT = 32
 
 MAX_PROMPT_LENGTH = 1 * 1024 * 1024
 MAX_URL_LENGTH = 128
@@ -38,6 +39,7 @@ GB = 1073741824  # 1024 * 1024 * 1024
 STR_TYPE_CHECK_TIP = "param must be str"
 BOOL_TYPE_CHECK_TIP = "param must be bool"
 DICT_TYPE_CHECK_TIP = "param must be dict"
+CLASS_TYPE_CHECK_TIP = "param must be class type"
 INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
 STR_LENGTH_CHECK_1024 = "param length must be less than 1024"
