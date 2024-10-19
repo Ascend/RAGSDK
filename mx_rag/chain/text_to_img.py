@@ -8,6 +8,7 @@ from mx_rag.utils.common import validate_params
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain.base import Chain
 from mx_rag.llm import Text2ImgMultiModel
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN
 
 
 class Text2ImgChain(Chain):
@@ -25,6 +26,12 @@ class Text2ImgChain(Chain):
         """
         self._multi_model = multi_model
 
+    @validate_params(
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                  message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                        message="llm_config must be instance of LLMParameterConfig")
+    )
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) -> Dict:
         """从给定的文本提示生成图像。
 

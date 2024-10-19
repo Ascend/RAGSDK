@@ -48,10 +48,12 @@ class SingleText2TextChain(Chain):
         self._docs = []
         self._query_str = ""
 
-    @validate_params(text=dict(
-        validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-        message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"
-    ))
+    @validate_params(
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                  message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                        message="llm_config must be instance of LLMParameterConfig")
+    )
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95),
               *args, **kwargs) \
             -> Union[Dict, Iterator[Dict]]:
