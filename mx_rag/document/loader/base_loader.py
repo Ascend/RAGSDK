@@ -23,7 +23,6 @@ class BaseLoader(ABC):
     def __init__(self, file_path):
         self.file_path = file_path
         self.multi_size = 5
-
         file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
 
     def _is_zip_bomb(self):
