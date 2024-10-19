@@ -11,13 +11,12 @@ from mx_rag.knowledge.doc_loader_mng import LoaderMng, LoaderInfo, SplitterInfo
 
 class LoaderMngTestCase(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.realpath(os.path.join(current_dir, "../../../tests/data/test.xlsx"))
 
     def test_register_loader(self):
         loader_mng = LoaderMng()
         loader_mng.register_loader(ExcelLoader, [".xlsx"])
         loader_info = loader_mng.get_loader(".xlsx")
-        loader = loader_info.loader_class(file_path=self.data_dir)
+        loader = loader_info.loader_class(file_path=os.path.join(self.current_dir, "../../../data/test.xlsx"))
         self.assertIsInstance(loader, ExcelLoader)
 
     def test_register_splitter(self):
