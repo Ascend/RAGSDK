@@ -5,7 +5,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
 
 from mx_rag.utils.common import (DICT_TYPE_CHECK_TIP, validata_list_str, validate_params, NO_SPLIT_FILE_TYPE,
-                                 FILE_TYPE_COUNT, CLASS_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP_1024)
+                                 FILE_TYPE_COUNT, CLASS_TYPE_CHECK_TIP)
 
 
 class LoaderInfo:
