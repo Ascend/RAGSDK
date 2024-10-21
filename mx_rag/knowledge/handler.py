@@ -10,7 +10,7 @@ from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.doc_loader_mng import LoaderMng
 from mx_rag.knowledge.knowledge import KnowledgeDB
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP, NO_SPLIT_FILE_TYPE, \
-    STR_LENGTH_CHECK_1024, FILE_COUNT_MAX
+    FILE_COUNT_MAX, STR_TYPE_CHECK_TIP_1024
 from mx_rag.utils.file_check import SecFileCheck, FileCheck
 
 
@@ -98,7 +98,7 @@ def _is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
 class FilesLoadInfo:
     @validate_params(
         knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
-        dir_path=dict(validator=lambda x: len(x) < 1024, message=STR_LENGTH_CHECK_1024),
+        dir_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
         loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
         embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
         force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
