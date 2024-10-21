@@ -35,7 +35,6 @@ class BaseLoader(ABC):
                                  f'the limit of {self.MAX_FILE_CNT * self.multi_size}')
                     return True
                 # 检查点2：检查第一层解压文件总大小，总大小超过设定的上限值
-                # total_uncompressed_size = sum(zinfo.file_size for zinfo in zip_ref.infolist())
                 total_uncompressed_size = 0
                 for zinfo in zip_ref.infolist():
                     total_uncompressed_size += zinfo.file_size
