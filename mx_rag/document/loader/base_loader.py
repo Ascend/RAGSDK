@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import os
 from abc import ABC, abstractmethod
 import zipfile
 import psutil
@@ -40,8 +40,8 @@ class BaseLoader(ABC):
                     logger.error(f"zip file '{self.file_path}' uncompressed size is {total_uncompressed_size} bytes"
                                  f"exceeds the limit of {self.MAX_SIZE * self.multi_size} bytes, Potential ZIP bomb")
                     return True
-                # 检查点3：检查第一层解压文件总大小，磁盘剩余空间-文件总大<200M
-                remain_size = psutil.disk_usage('/').free
+                # 检查点3：检查第一层解压文件总大小，磁盘剩余空间-文件总大小<200M
+                remain_size = psutil.disk_usage(os.getcwd()).free
                 if remain_size - total_uncompressed_size < self.MAX_SIZE:
                     logger.error(f'zip file ({self.file_path}) uncompressed size is {total_uncompressed_size} bytes'
                                  f' only {remain_size} bytes of disk space available')
