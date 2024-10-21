@@ -12,7 +12,7 @@ from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, INT_32_MAX, TEXT_MAX_LEN, validata_list_str, \
-    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP, STR_MAX_LEN
+    STR_TYPE_CHECK_TIP, BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -27,7 +27,8 @@ except Exception as e:
 
 class TextEmbedding(Embeddings):
     @validate_params(
-        model_path=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        model_path=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_PATH_LENGTH,
+                        message="param must be str and str length range [0, 1024]"),
         dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
                     message="param must be int and value range [0, 63]"),
         use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
