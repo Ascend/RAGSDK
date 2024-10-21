@@ -10,7 +10,7 @@ from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.doc_loader_mng import LoaderMng
 from mx_rag.knowledge.knowledge import KnowledgeDB
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP, NO_SPLIT_FILE_TYPE, \
-    FILE_COUNT_MAX, STR_TYPE_CHECK_TIP_1024
+    FILE_COUNT_MAX, STR_TYPE_CHECK_TIP_1024, MAX_PATH_LENGTH
 from mx_rag.utils.file_check import SecFileCheck, FileCheck
 
 
@@ -164,13 +164,11 @@ def upload_dir(params: FilesLoadInfo):
                      f"because no loader or splitter has been registered.")
     fail_files = upload_files(knowledge, files, loader_mng, embed_func, force)
 
-    return unsupported_files+fail_files
+    return unsupported_files + fail_files
 
 
 @validate_params(
-    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
-    file_names=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 1000,
-                    message="param must meets: Type is List[str], list length range [1, 1000]")
+    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB")
 )
 def delete_files(
         knowledge: KnowledgeDB,
@@ -179,7 +177,8 @@ def delete_files(
     """删除上传的文档，需传入待删除的文档名称"""
     if not isinstance(file_names, list) or not file_names:
         raise FileHandlerError(f"files param {file_names} is invalid")
-
+    if len(file_names) > knowledge.max_loop_limit:
+        raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, delete files failed')
     count = 0
     for filename in file_names:
         if not isinstance(filename, str):
