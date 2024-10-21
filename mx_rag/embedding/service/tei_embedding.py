@@ -9,7 +9,7 @@ from loguru import logger
 
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str, \
-    STR_TYPE_CHECK_TIP, MAX_API_KEY_LEN, STR_MAX_LEN, MAX_URL_LENGTH
+    STR_TYPE_CHECK_TIP, check_api_key, STR_MAX_LEN, MAX_URL_LENGTH
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -26,8 +26,8 @@ class TEIEmbedding(Embeddings):
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_URL_LENGTH,
                  message="param must be str and str length range [0, 128]"),
-        api_key=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_API_KEY_LEN,
-                     message="param must be str and str length range [0, 128]"),
+        api_key=dict(validator=lambda x: check_api_key(x),
+                     message="api_key check failed, please see the log"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"),
     )

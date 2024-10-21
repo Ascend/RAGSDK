@@ -11,3 +11,4 @@ class Chain(ABC):
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) \
             -> Union[Dict, Iterator[Dict]]:
         """ query by text"""
+        raise NotImplementedError

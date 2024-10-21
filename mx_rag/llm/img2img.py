@@ -32,8 +32,8 @@ class Img2ImgMultiModel:
     @validate_params(
         prompt=dict(validator=lambda x: 0 < len(x) <= MAX_PROMPT_LENGTH,
                     message="param length range (0, 1 * 1024 * 1024]"),
-        image_content=dict(validator=lambda x: 0 < len(x) <= 100 * MB,
-                           message="param length range (0, 100 * 1024 * 1024]"),
+        image_content=dict(validator=lambda x: 0 < len(x) <= 10 * MB,
+                           message="param length range (0, 10 * 1024 * 1024]"),
         size=dict(validator=lambda x: re.compile(r"^\d{1,5}\*\d{1,5}$").match(x) is not None,
                   message=r"param must match '^\d{1,5}\*\d{1,5}$'"),
     )
@@ -54,10 +54,10 @@ class Img2ImgMultiModel:
         try:
             res = json.loads(response.data)
         except json.JSONDecodeError as e:
-            logger.error(f"response content cannot convert to json format: {e}")
+            logger.error(f"JSONDecodeError: response content cannot convert to json format")
             return resp
         except Exception as e:
-            logger.error(f"json load error: {e}")
+            logger.error(f"json load error")
             return resp
 
         if self.IMAGE_ITEM not in res:

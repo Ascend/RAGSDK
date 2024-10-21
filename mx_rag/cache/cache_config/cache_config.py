@@ -7,10 +7,9 @@ SimilarityCacheConfig 继承CacheConfig提供 语义相似cache
 """
 from enum import Enum
 from typing import Dict, Any
-import multiprocessing
-import threading
 
-from mx_rag.utils.common import validate_params, MB, GB, BOOL_TYPE_CHECK_TIP, DICT_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, \
+    validate_dict, validate_lock, MB, GB, BOOL_TYPE_CHECK_TIP, DICT_TYPE_CHECK_TIP
 
 
 class EvictPolicy(Enum):
@@ -30,9 +29,6 @@ class EvictPolicy(Enum):
     RR: str = 'RR'
 
 
-def _get_default_save_folder():
-    return "/home/HwHiAiUser/Ascend/mxRag/cache_save_folder"
-
 
 class CacheConfig:
     """
@@ -50,6 +46,7 @@ class CacheConfig:
         lock: (lockable) 多进程或者多线程安全锁
         data_save_folder: (str) 缓存数据存储路径
     """
+    DEFAULT_SAVE_FOLDER = "/home/HwHiAiUser/Ascend/mxRag/cache_save_folder"
 
     @validate_params(
         cache_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100000,
@@ -66,13 +63,13 @@ class CacheConfig:
                         message="param must meets: Type is float, value range [0.0, 1.0]"),
         disable_report=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         lock=dict(
-            validator=lambda x: x is None or isinstance(x, (type(multiprocessing.Lock()), type(threading.Lock()))),
+            validator=lambda x: x is None or validate_lock(x),
             message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
     )
     def __init__(self,
                  cache_size: int,
                  eviction_policy: EvictPolicy = EvictPolicy.LRU,
-                 data_save_folder: str = _get_default_save_folder(),
+                 data_save_folder: str = DEFAULT_SAVE_FOLDER,
                  min_free_space: int = 1 * GB,
                  auto_flush : int = 20,
                  similarity_threshold: float = 0.8,
@@ -80,7 +77,7 @@ class CacheConfig:
                  lock=None):
 
         if auto_flush > cache_size:
-            raise ValueError("auto flush value range is (0, cache_size]")
+            raise ValueError(f"auto flush value range is (0, {cache_size}]")
 
         self.config_type = "memory_cache_config"
         self.cache_size = cache_size
@@ -100,10 +97,10 @@ class SimilarityCacheConfig(CacheConfig):
 
     Attributes:
         config_type: (str) 表明缓存类型，similarity_cache_config
-        vector_config: Union[VectorBase, Dict[str, Any]] 向量数据库配置参数
-        cache_config: Union[CacheBase, str] 缓存数据库配置参数
-        emb_config: Union[BaseEmbedding, Dict[str, Any]] embedding 配置参数
-        similarity_config: Union[SimilarityEvaluation, Dict[str, Any]] 相似度 配置参数
+        vector_config: Dict[str, Any] 向量数据库配置参数
+        cache_config: str 缓存数据库配置参数
+        emb_config: Dict[str, Any] embedding 配置参数
+        similarity_config: Dict[str, Any] 相似度 配置参数
         retrieval_top_k: int 检索时的TOPK参数
         clean_size: int 每次添加满的时候删除的元素个数 1 表示每次删除一个
         **kwargs: 配置基类的参数
@@ -116,25 +113,22 @@ class SimilarityCacheConfig(CacheConfig):
                         message="param must meets: Type is int, value greater than 0"),
         cache_config=dict(validator=lambda x: isinstance(x, str) and x == "sqlite",
                           message="param must be 'sqlite' now"),
-        vector_config=dict(validator=lambda x: isinstance(x, Dict),
-                           message=DICT_TYPE_CHECK_TIP),
-        emb_config=dict(validator=lambda x: isinstance(x, Dict),
-                           message=DICT_TYPE_CHECK_TIP),
-        similarity_config=dict(validator=lambda x: isinstance(x, Dict),
-                           message=DICT_TYPE_CHECK_TIP),
+        vector_config=dict(validator=lambda x: validate_dict(x), message=DICT_TYPE_CHECK_TIP),
+        emb_config=dict(validator=lambda x: validate_dict(x), message=DICT_TYPE_CHECK_TIP),
+        similarity_config=dict(validator=lambda x: validate_dict(x), message=DICT_TYPE_CHECK_TIP),
     )
     def __init__(self,
+                 vector_config: Dict[str, Any],
+                 cache_config: str,
+                 emb_config: Dict[str, Any],
+                 similarity_config: Dict[str, Any],
                  retrieval_top_k: int = 1,
                  clean_size: int = 1,
-                 vector_config: Dict[str, Any] = None,
-                 cache_config: str = None,
-                 emb_config: Dict[str, Any] = None,
-                 similarity_config: Dict[str, Any] = None,
                  **kwargs):
         super().__init__(**kwargs)
 
         if clean_size > self.cache_size:
-            raise ValueError("clean size value range is (0, cache_size]")
+            raise ValueError(f"clean size value range is (0, {self.cache_size}]")
 
         self.config_type = "similarity_cache_config"
         self.vector_config = vector_config

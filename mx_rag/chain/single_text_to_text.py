@@ -9,7 +9,7 @@ from loguru import logger
 
 from langchain_core.retrievers import BaseRetriever
 
-from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, TEXT_MAX_LEN
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import Chain
 from mx_rag.llm import Text2TextLLM
@@ -23,8 +23,8 @@ class SingleText2TextChain(Chain):
 
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
-        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever) or x is None,
-                       message="param must be None or instance of BaseRetriever"),
+        retriever=dict(validator=lambda x: isinstance(x, BaseRetriever),
+                       message="param must be instance of BaseRetriever"),
         reranker=dict(validator=lambda x: isinstance(x, Reranker) or x is None,
                       message="param must be None or instance of Reranker"),
         prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= 512 * 1024,
@@ -48,6 +48,12 @@ class SingleText2TextChain(Chain):
         self._docs = []
         self._query_str = ""
 
+    @validate_params(
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                  message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                        message="llm_config must be instance of LLMParameterConfig")
+    )
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95),
               *args, **kwargs) \
             -> Union[Dict, Iterator[Dict]]:

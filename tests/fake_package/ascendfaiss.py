@@ -5,6 +5,7 @@ import numpy as np
 
 class AscendIndexFlat:
     def __init__(self, *args, **kwargs):
+        self.ntotal = 0
         pass
 
     def add_with_ids(self, *args, **kwargs):

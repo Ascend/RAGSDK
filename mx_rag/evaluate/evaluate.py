@@ -32,6 +32,8 @@ from ragas.metrics.critique import (
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.common import validate_params, validata_list_str, validata_list_list_str, TEXT_MAX_LEN, MB
+from mx_rag.embedding.local import TextEmbedding
+from mx_rag.embedding.service import TEIEmbedding
 
 
 class Evaluate:
@@ -59,7 +61,8 @@ class Evaluate:
 
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, LLM), message="param must be instance of LLM"),
-        embedding=dict(validator=lambda x: isinstance(x, Embeddings), message="param must be instance of Embeddings")
+        embedding=dict(validator=lambda x: isinstance(x, (TextEmbedding, TEIEmbedding)),
+                       message="param must be instance of TextEmbedding or TEIEmbedding")
     )
     def __init__(self,
                  llm: LLM,
@@ -122,8 +125,7 @@ class Evaluate:
                  metrics_name: list[str],
                  datasets: Dict[str, Any],
                  language: str = None,
-                 prompt_dir: str = None,
-                 **kwargs) -> Optional[Result]:
+                 prompt_dir: str = None) -> Optional[Result]:
         """
         根据metrics_name列表 计算得分
         Args:
@@ -131,7 +133,6 @@ class Evaluate:
             datasets: 数据集 参考ragas官网
             language: 本地化语言
             prompt_dir: 本地化语言对应的prompt 路径
-            **kwargs: ragas 运行时参数
 
         Returns:ragas 评估结果 Result
         """
@@ -148,8 +149,7 @@ class Evaluate:
             data = ragas_evaluate(dataset=datesets,
                                   metrics=metrics,
                                   llm=self.eval_llm,
-                                  embeddings=self.eval_embedding,
-                                  **kwargs)
+                                  embeddings=self.eval_embedding)
         except ValueError:
             logger.error("ragas evaluate run failed value error")
             return None
@@ -163,8 +163,7 @@ class Evaluate:
                         metrics_name: list[str],
                         datasets: Dict[str, Any],
                         language: str = None,
-                        prompt_dir: str = None,
-                        **kwargs) \
+                        prompt_dir: str = None) \
             -> Optional[Dict[str, List[float]]]:
         """
         根据metrics_name列表 计算得分
@@ -173,11 +172,10 @@ class Evaluate:
             datasets: 数据集 参考ragas官网
             language: 本地化语言
             prompt_dir: 本地化语言对应的prompt 路径
-            **kwargs: ragas 运行时参数
 
         Returns:Dict[str, List[float]]
         """
-        data = self.evaluate(metrics_name, datasets, language, prompt_dir, **kwargs)
+        data = self.evaluate(metrics_name, datasets, language, prompt_dir)
         if data is None:
             logger.error("evaluate fatal error")
             return None

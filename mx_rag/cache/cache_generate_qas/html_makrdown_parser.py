@@ -11,7 +11,7 @@ from langchain_community.document_loaders import TextLoader
 from loguru import logger
 
 from mx_rag.utils import ClientParam
-from mx_rag.utils.common import validate_params, validata_list_str
+from mx_rag.utils.common import validate_params, validata_list_str, header_check
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.url import RequestUtils
 
@@ -48,8 +48,8 @@ class HTMLParser(GenerateQaParser):
         urls=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 1000]),
                   message="param must meets: Type is List[str], list length range [1, 10000], "
                           "str length range [1, 1000]"),
-        headers=dict(validator=lambda x: x is None or isinstance(x, dict),
-                     message="param must be None or instance of dict"),
+        headers=dict(validator=lambda x: x is None or header_check(x),
+                     message="headers check failed, please see the log"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"),
     )

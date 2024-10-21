@@ -10,7 +10,7 @@ import numpy as np
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, MAX_TOP_K, INT_32_MAX, MAX_QUERY_LENGTH, TEXT_MAX_LEN, \
-    validata_list_str, STR_TYPE_CHECK_TIP, MAX_API_KEY_LEN, STR_MAX_LEN, MAX_URL_LENGTH
+    validata_list_str, STR_TYPE_CHECK_TIP, check_api_key, STR_MAX_LEN, MAX_URL_LENGTH
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -19,14 +19,14 @@ class TEIReranker(Reranker):
     HEADERS = {
         'Content-Type': 'application/json'
     }
+    TEXT_MAX_LEN = 1000 * 1000
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_URL_LENGTH,
                  message="param must be str and str length range [0, 128]"),
         k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K,
                message="param must be int and value range [1, 10000]"),
-        api_key=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_API_KEY_LEN,
-                     message="param must be str and str length range [0, 128]"),
+        api_key=dict(validator=lambda x: check_api_key(x), message="api_key check failed, please see the log"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam")
     )
