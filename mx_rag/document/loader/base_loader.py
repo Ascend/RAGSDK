@@ -18,7 +18,7 @@ class BaseLoader(ABC):
     MAX_FILE_CNT = 1024
 
     @validate_params(
-        file_path=dict(validator=lambda x: isinstance(x, str) and len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
+        file_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024, message=STR_TYPE_CHECK_TIP_1024),
     )
     def __init__(self, file_path):
         self.file_path = file_path

@@ -12,7 +12,7 @@ from openpyxl.cell import MergedCell
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
@@ -20,7 +20,7 @@ XLRD_EXTENSION = (".xls",)
 
 class ExcelLoader(BaseLoader, mxBaseLoader):
     @validate_params(
-        line_sep=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP)
+        line_sep=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024, message=STR_TYPE_CHECK_TIP_1024)
     )
     def __init__(self, file_path: str, line_sep: str = "**;"):
         super().__init__(file_path)
