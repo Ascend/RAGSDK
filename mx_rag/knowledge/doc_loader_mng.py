@@ -5,7 +5,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
 
 from mx_rag.utils.common import (DICT_TYPE_CHECK_TIP, validata_list_str, validate_params, NO_SPLIT_FILE_TYPE,
-                                 FILE_TYPE_COUNT, CLASS_TYPE_CHECK_TIP)
+                                 FILE_TYPE_COUNT)
 
 
 class LoaderInfo:
@@ -35,7 +35,8 @@ class LoaderMng:
         self.splitter_types: list = []
 
     @validate_params(
-        loader_class=dict(validator=lambda x: isinstance(x, type), message=CLASS_TYPE_CHECK_TIP),
+        loader_class=dict(validator=lambda x: issubclass(x, BaseLoader),
+                          message="param must be langchain_community BaseLoader subclass"),
         file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
@@ -52,7 +53,8 @@ class LoaderMng:
         self.loaders[loader_class] = (file_types, LoaderInfo(loader_class, loader_params or {}))
 
     @validate_params(
-        splitter_class=dict(validator=lambda x: isinstance(x, type), message=CLASS_TYPE_CHECK_TIP),
+        splitter_class=dict(validator=lambda x: issubclass(x, TextSplitter),
+                            message="param must be langchain_community TextSplitter subclass"),
         file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
@@ -91,7 +93,8 @@ class LoaderMng:
         raise KeyError(f"No splitter registered for file type '{file_suffix}'")
 
     @validate_params(
-        loader_class=dict(validator=lambda x: isinstance(x, type), message=CLASS_TYPE_CHECK_TIP))
+        loader_class=dict(validator=lambda x: issubclass(x, BaseLoader),
+                          message="param must be langchain_community BaseLoader subclass"))
     def unregister_loader(self, loader_class: Type):
         if loader_class in self.loaders:
             del self.loaders[loader_class]
@@ -99,7 +102,8 @@ class LoaderMng:
             raise KeyError(f"Loader class '{loader_class}' is not registered")
 
     @validate_params(
-        splitter_class=dict(validator=lambda x: isinstance(x, type), message=CLASS_TYPE_CHECK_TIP))
+        splitter_class=dict(validator=lambda x: issubclass(x, TextSplitter),
+                            message="param must be langchain_community TextSplitter subclass"))
     def unregister_splitter(self, splitter_class: Type):
         if splitter_class in self.splitters:
             del self.splitters[splitter_class]

@@ -41,7 +41,6 @@ GB = 1073741824  # 1024 * 1024 * 1024
 STR_TYPE_CHECK_TIP = "param must be str"
 BOOL_TYPE_CHECK_TIP = "param must be bool"
 DICT_TYPE_CHECK_TIP = "param must be dict"
-CLASS_TYPE_CHECK_TIP = "param must be class type"
 INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
 STR_LENGTH_CHECK_1024 = "param length range [1, 1024]"

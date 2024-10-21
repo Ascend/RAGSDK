@@ -142,9 +142,6 @@ class KnowledgeDB(KnowledgeBase):
                           message="param must be instance of VectorStore"),
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024),
-        white_paths=dict(validator=lambda x: validata_list_str(x, [1, MAX_PATH_LENGTH], [1, MAX_PATH_LENGTH]),
-                         message="param must meets: Type is List[str], "
-                                 "list length range [1, 1024], str length range [1, 1024]"),
         max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX,
                             message=f"param value range must be [1, {FILE_COUNT_MAX}]")
     )
