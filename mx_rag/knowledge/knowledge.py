@@ -39,7 +39,7 @@ class KnowledgeStore:
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
     @validate_params(
-        db_path=dict(validator=lambda x: 0 < len(x) < 1024 and isinstance(x, str), message=STR_TYPE_CHECK_TIP_1024)
+        db_path=dict(validator=lambda x: 0 < len(x) <= 1024 and isinstance(x, str), message=STR_TYPE_CHECK_TIP_1024)
     )
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
@@ -50,9 +50,9 @@ class KnowledgeStore:
         os.chmod(db_path, 0o600)
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024),
-        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def add(self, knowledge_name: str, doc_name: str):
@@ -78,9 +78,9 @@ class KnowledgeStore:
                 raise KnowledgeError(f"add chunk failed, {err}") from err
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024),
-        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def delete(self, knowledge_name: str, doc_name: str):
@@ -107,7 +107,7 @@ class KnowledgeStore:
                 raise KnowledgeError(f"delete chunk failed, {err}") from err
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024)
     )
     def get_all(self, knowledge_name: str):
@@ -120,9 +120,9 @@ class KnowledgeStore:
             return ret
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024),
-        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def check_document_exist(self, knowledge_name: str, doc_name: str) -> bool:
@@ -140,7 +140,7 @@ class KnowledgeDB(KnowledgeBase):
                          message="param must be instance of Docstore"),
         vector_store=dict(validator=lambda x: isinstance(x, VectorStore),
                           message="param must be instance of VectorStore"),
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024),
         white_paths=dict(validator=lambda x: validata_list_str(x, [1, MAX_PATH_WHITE], [1, MAX_PATH_WHITE]),
                          message="param must meets: Type is List[str], "
@@ -170,7 +170,7 @@ class KnowledgeDB(KnowledgeBase):
         return self._knowledge_store.get_all(self.knowledge_name)
 
     @validate_params(
-        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024),
         texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
                    message="param must meets: Type is List[str], "
@@ -196,7 +196,7 @@ class KnowledgeDB(KnowledgeBase):
         self._vector_store.add(np.array(embeddings), ids)
 
     @validate_params(
-        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def delete_file(self, doc_name: str):
@@ -207,7 +207,7 @@ class KnowledgeDB(KnowledgeBase):
             logger.warning("the number of documents does not match the number of vectors")
 
     @validate_params(
-        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def check_document_exist(self, doc_name: str) -> bool:
@@ -227,7 +227,7 @@ class KnowledgeMgrStore:
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
 
     @validate_params(
-        db_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        db_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                      message=STR_TYPE_CHECK_TIP_1024)
     )
     def __init__(self, db_path: str):
@@ -239,7 +239,7 @@ class KnowledgeMgrStore:
         os.chmod(db_path, 0o600)
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024)
     )
     def add(self, knowledge_name: str):
@@ -261,7 +261,7 @@ class KnowledgeMgrStore:
                 raise KnowledgeError(f"add knowledge failed, {err}") from err
 
     @validate_params(
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024,
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024)
     )
     def delete(self, knowledge_name: str):

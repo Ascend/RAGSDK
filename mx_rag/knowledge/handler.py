@@ -98,7 +98,7 @@ def _is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
 class FilesLoadInfo:
     @validate_params(
         knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
-        dir_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 1024, message=STR_TYPE_CHECK_TIP_1024),
+        dir_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024, message=STR_TYPE_CHECK_TIP_1024),
         loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
         embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
         force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),

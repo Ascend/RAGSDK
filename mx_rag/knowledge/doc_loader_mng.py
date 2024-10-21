@@ -72,7 +72,7 @@ class LoaderMng:
         self.splitters[splitter_class] = (file_types, SplitterInfo(splitter_class, splitter_params or {}))
 
     @validate_params(
-        file_suffix=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < FILE_TYPE_COUNT,
+        file_suffix=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= FILE_TYPE_COUNT,
                          message="param must be str, length range [1, 32]"))
     def get_loader(self, file_suffix: str) -> LoaderInfo:
         for file_types, loader_info in self.loaders.values():
@@ -81,7 +81,7 @@ class LoaderMng:
         raise KeyError(f"No loader registered for file type '{file_suffix}'")
 
     @validate_params(
-        file_suffix=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < FILE_TYPE_COUNT,
+        file_suffix=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= FILE_TYPE_COUNT,
                          message="param must be str, length range [1, 32]"))
     def get_splitter(self, file_suffix: str) -> SplitterInfo:
         for file_types, splitter_info in self.splitters.values():
