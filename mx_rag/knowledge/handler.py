@@ -9,8 +9,9 @@ from mx_rag.document.loader import BaseLoader
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.doc_loader_mng import LoaderMng
 from mx_rag.knowledge.knowledge import KnowledgeDB
-from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP, NO_SPLIT_FILE_TYPE
-from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP, NO_SPLIT_FILE_TYPE, \
+    FILE_COUNT_MAX, STR_TYPE_CHECK_TIP_1024
+from mx_rag.utils.file_check import SecFileCheck, FileCheck
 
 
 class FileHandlerError(Exception):
@@ -97,6 +98,7 @@ def _is_in_white_paths(file_obj: Path, white_paths: List[str]) -> bool:
 class FilesLoadInfo:
     @validate_params(
         knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
+        dir_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024, message=STR_TYPE_CHECK_TIP_1024),
         loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
         embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
         force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
@@ -133,9 +135,8 @@ def upload_dir(params: FilesLoadInfo):
     超过最大文件数量则退出;load_image为True时只支持图片类型, False时只支持文档类型;支持图片类型时,无需注册spliter;支持文档类型时必须注册spliter;
     embedding模型需要与支持的文件类型一致,否则会出现embedding错误.
     """
-    dir_path_obj = Path(dir_path)
-    if not dir_path_obj.is_dir():
-        raise FileHandlerError(f"dir path '{dir_path}' is invalid")
+    FileCheck.dir_check(dir_path)
+    FileCheck.check_files_num_in_directory(dir_path, "", FILE_COUNT_MAX)
     loader_types = []
     for file_types, _ in loader_mng.loaders.values():
         loader_types.extend(file_types)
