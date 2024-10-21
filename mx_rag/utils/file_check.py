@@ -91,15 +91,9 @@ class FileCheck:
 
     @staticmethod
     def check_files_num_in_directory(directory_path: str, suffix: str, limit: int):
-        count = 0
-        for file in Path(directory_path).glob("*"):
-            if suffix:
-                if file.suffix == suffix:
-                    count += 1
-            else:
-                count += 1
-            if count > limit:
-                raise FileCheckError(f"The number of '{suffix}' files in '{directory_path}' exceed {limit}")
+        count = sum(1 for file in Path(directory_path).glob("*") if not suffix or file.suffix == suffix)
+        if count > limit:
+            raise FileCheckError(f"The number of '{suffix}' files in '{directory_path}' exceed {limit}")
 
     @staticmethod
     def check_file_owner(file_path: str):
