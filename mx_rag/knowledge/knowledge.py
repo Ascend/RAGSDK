@@ -8,7 +8,9 @@ from loguru import logger
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base
+from langchain_core.embeddings import Embeddings
 
+from mx_rag.embedding.local import TextEmbedding, ImageEmbedding
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
@@ -172,6 +174,10 @@ class KnowledgeDB(KnowledgeBase):
         texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
                    message="param must meets: Type is List[str], "
                            "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
+        # embed_func=dict(validator=lambda x: isinstance(x.__self__, (TextEmbedding, ImageEmbedding)),
+        #                 message="param must be method of either TextEmbedding or ImageEmbedding"),
+        embed_func=dict(validator=lambda x: issubclass(x.__self__.__class__, Embeddings),
+                        message="param must be method of subclass of langchain_core Embeddings"),
         metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
     )
     def add_file(
