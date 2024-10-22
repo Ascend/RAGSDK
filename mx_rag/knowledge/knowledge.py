@@ -174,10 +174,8 @@ class KnowledgeDB(KnowledgeBase):
         texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
                    message="param must meets: Type is List[str], "
                            "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
-        # embed_func=dict(validator=lambda x: isinstance(x.__self__, (TextEmbedding, ImageEmbedding)),
-        #                 message="param must be method of either TextEmbedding or ImageEmbedding"),
-        embed_func=dict(validator=lambda x: issubclass(x.__self__.__class__, Embeddings),
-                        message="param must be method of subclass of langchain_core Embeddings"),
+        embed_func=dict(validator=lambda x: isinstance(x.__self__, (TextEmbedding, ImageEmbedding)),
+                        message="param must be method of either TextEmbedding or ImageEmbedding"),
         metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
     )
     def add_file(
