@@ -130,7 +130,6 @@ class Summary(BaseModel):
 
             if len(res) > len(texts):
                 raise Exception("sub summary number should less than origin summary number")
-
             if len(res) == 1:
                 return res[0]
             elif len(res) > 1:
