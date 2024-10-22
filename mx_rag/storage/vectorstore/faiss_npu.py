@@ -13,7 +13,7 @@ from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, STR_MAX_LEN
 
 
 class MindFAISSError(Exception):
@@ -49,7 +49,9 @@ class MindFAISS(VectorStore):
         similarity_strategy=dict(
             validator=lambda x: isinstance(x, SimilarityStrategy) and x in MindFAISS.SIMILARITY_STRATEGY_MAP,
             message="param must be enum of SimilarityStrategy"),
-        auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+        auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        load_local_index=dict(
+            validator=lambda x: isinstance(x, str) and len(x) <= STR_MAX_LEN, message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(
             self,

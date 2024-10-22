@@ -59,7 +59,7 @@ class FileCheck:
             raise FileCheckError(f"Input path '{path}' is not valid str")
 
         if len(path) > FileCheck.MAX_PATH_LENGTH:
-            raise FileCheckError(f"Input path '{path}' length over limit")
+            raise FileCheckError(f"Input path '{path[:FileCheck.MAX_PATH_LENGTH]}'... length over limit")
 
         if ".." in path:
             raise FileCheckError(f"there are illegal characters in path '{path}'")
