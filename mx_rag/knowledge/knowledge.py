@@ -142,7 +142,7 @@ class KnowledgeDB(KnowledgeBase):
                           message="param must be instance of VectorStore"),
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024),
-        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX,
+        max_file_count=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX,
                             message=f"param value range must be [1, {FILE_COUNT_MAX}]")
     )
     def __init__(
@@ -152,13 +152,13 @@ class KnowledgeDB(KnowledgeBase):
             vector_store: VectorStore,
             knowledge_name: str,
             white_paths: List[str],
-            max_loop_limit: int = 1000,
+            max_file_count: int = 1000,
     ):
         super().__init__(white_paths)
         self._knowledge_store = knowledge_store
         self._vector_store = vector_store
         self._document_store = chunk_store
-        self.max_loop_limit = max_loop_limit
+        self.max_file_count = max_file_count
         self.knowledge_name = knowledge_name
         self._check_store_accordance()
 

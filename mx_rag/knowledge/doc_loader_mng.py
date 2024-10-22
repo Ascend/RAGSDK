@@ -5,7 +5,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
 
 from mx_rag.utils.common import (DICT_TYPE_CHECK_TIP, validata_list_str, validate_params, NO_SPLIT_FILE_TYPE,
-                                 FILE_TYPE_COUNT)
+                                 FILE_TYPE_COUNT, validate_dict)
 
 
 class LoaderInfo:
@@ -40,7 +40,8 @@ class LoaderMng:
         file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
-        loader_params=dict(validator=lambda x: isinstance(x, Dict) or x is None, message=DICT_TYPE_CHECK_TIP)
+        loader_params=dict(validator=lambda x: (validate_dict(x) if isinstance(x, Dict) else False) or x is None,
+                           message="param must meets: Type is Dict[str, Any]")
     )
     def register_loader(self, loader_class: BaseLoader, file_types: List[str],
                         loader_params: Optional[Dict[str, Any]] = None):
@@ -59,7 +60,8 @@ class LoaderMng:
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
 
-        splitter_params=dict(validator=lambda x: isinstance(x, Dict) or x is None, message=DICT_TYPE_CHECK_TIP)
+        splitter_params=dict(validator=lambda x: (validate_dict(x) if isinstance(x, Dict) else False) or x is None,
+                             message="param must meets: Type is Dict[str, Any]")
     )
     def register_splitter(self, splitter_class: TextSplitter, file_types: List[str],
                           splitter_params: Optional[Dict[str, Any]] = None):

@@ -32,8 +32,8 @@ def upload_files(
         force: bool = False,
 ):
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
-    if len(files) > knowledge.max_loop_limit:
-        raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, upload files failed')
+    if len(files) > knowledge.max_file_count:
+        raise FileHandlerError(f'files list length must less than {knowledge.max_file_count}, upload files failed')
     fail_files = []
     for file in files:
         _check_file(file, force, knowledge)
@@ -151,9 +151,9 @@ def upload_dir(params: FilesLoadInfo):
     files = []
     unsupported_files = []
     for file in Path(dir_path).glob("*"):
-        if count >= knowledge.max_loop_limit:
+        if count >= knowledge.max_file_count:
             raise FileHandlerError(f'The number of files in the {dir_path} must less than'
-                                   f' {knowledge.max_loop_limit}, upload dir failed')
+                                   f' {knowledge.max_file_count}, upload dir failed')
         if file.suffix in support_file_type:
             files.append(file.as_posix())
             count += 1
@@ -168,17 +168,17 @@ def upload_dir(params: FilesLoadInfo):
 
 
 @validate_params(
-    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB")
+    knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
 )
 def delete_files(
         knowledge: KnowledgeDB,
         file_names: List[str]
 ):
     """删除上传的文档，需传入待删除的文档名称"""
+    if len(file_names) > knowledge.max_file_count:
+        raise FileHandlerError(f'files list length must less than {knowledge.max_file_count}, delete files failed')
     if not isinstance(file_names, list) or not file_names:
         raise FileHandlerError(f"files param {file_names} is invalid")
-    if len(file_names) > knowledge.max_loop_limit:
-        raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, delete files failed')
     count = 0
     for filename in file_names:
         if not isinstance(filename, str):
