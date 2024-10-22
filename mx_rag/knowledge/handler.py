@@ -172,18 +172,18 @@ def upload_dir(params: FilesLoadInfo):
 )
 def delete_files(
         knowledge: KnowledgeDB,
-        file_names: List[str]
+        doc_names: List[str]
 ):
     """删除上传的文档，需传入待删除的文档名称"""
-    if len(file_names) > knowledge.max_file_count:
+    if len(doc_names) > knowledge.max_file_count:
         raise FileHandlerError(f'files list length must less than {knowledge.max_file_count}, delete files failed')
-    if not isinstance(file_names, list) or not file_names:
-        raise FileHandlerError(f"files param {file_names} is invalid")
+    if not isinstance(doc_names, list) or not doc_names:
+        raise FileHandlerError(f"files param {doc_names} is invalid")
     count = 0
-    for filename in file_names:
-        if not isinstance(filename, str):
-            raise FileHandlerError(f"file path '{filename}' is invalid")
-        if not knowledge.check_document_exist(filename):
+    for doc_name in doc_names:
+        if not isinstance(doc_name, str):
+            raise FileHandlerError(f"file path '{doc_name}' is invalid")
+        if not knowledge.check_document_exist(doc_name):
             continue
-        knowledge.delete_file(filename)
+        knowledge.delete_file(doc_name)
         count += 1
