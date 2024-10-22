@@ -137,8 +137,8 @@ class Summary(BaseModel):
                 return self.merge_text_summarize(res, merge_threshold, not_summarize_threshold, prompt)
             else:
                 raise ValueError("summarize failed, get null content")
-        except Exception as e:
-            raise ValueError(f"summarize failed: {e}")
+        except Exception as err:
+            raise ValueError(f"summarize failed: {err}") from err
         finally:
             self.counter = 0
 
