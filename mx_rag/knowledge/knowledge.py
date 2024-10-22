@@ -177,7 +177,7 @@ class KnowledgeDB(KnowledgeBase):
                    message="param must meets: Type is List[str], "
                            "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
         metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX and all(validate_dict(item) for item in x),
-                       message=DICT_TYPE_CHECK_TIP)
+                       message='param must meets: Type is List[str], list length range [1, 2 ** 31 - 1]')
     )
     def add_file(
             self,
