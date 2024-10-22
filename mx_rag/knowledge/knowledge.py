@@ -13,7 +13,8 @@ from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, \
-    check_db_file_limit, validata_list_str, MAX_PATH_WHITE, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024
+    check_db_file_limit, validata_list_str, MAX_PATH_WHITE, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_dict, \
+    DICT_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import check_disk_free_space
 
@@ -175,7 +176,8 @@ class KnowledgeDB(KnowledgeBase):
         texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
                    message="param must meets: Type is List[str], "
                            "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
-        metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
+        metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX and all(validate_dict(item) for item in x),
+                       message=DICT_TYPE_CHECK_TIP)
     )
     def add_file(
             self,
