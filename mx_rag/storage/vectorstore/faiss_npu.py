@@ -13,7 +13,7 @@ from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, STR_MAX_LEN
 
 
 class MindFAISSError(Exception):
@@ -49,7 +49,9 @@ class MindFAISS(VectorStore):
         similarity_strategy=dict(
             validator=lambda x: isinstance(x, SimilarityStrategy) and x in MindFAISS.SIMILARITY_STRATEGY_MAP,
             message="param must be enum of SimilarityStrategy"),
-        auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+        auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        load_local_index=dict(
+            validator=lambda x: isinstance(x, str) and len(x) <= STR_MAX_LEN, message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(
             self,
@@ -136,20 +138,35 @@ class MindFAISS(VectorStore):
     @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
                               message="param must be List[int]"))
     def delete(self, ids: List[int]):
+        if len(ids) >= self.MAX_VEC_NUM:
+            raise MindFAISSError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         res = self.index.remove_ids(np.array(ids))
         logger.debug(f"success remove ids {ids} in MindFAISS.")
         if self.auto_save:
             self.save_local()
         return res
 
-    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param value range (0, 10000]"))
+    @validate_params(
+        k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param value range (0, 10000]"),
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
     def search(self, embeddings: np.ndarray, k: int = 3):
+        if len(embeddings.shape) != 2:
+            raise MindFAISSError("shape of embedding must equal to 2")
+        if embeddings.shape[0] >= self.MAX_SEARCH_BATCH:
+            raise MindFAISSError(f"num of embeddings must less {self.MAX_SEARCH_BATCH}")
         scores, indices = self.index.search(embeddings, k)
         return self._score_scale(scores.tolist()), indices.tolist()
 
-    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
-                              message="param must be List[int]"))
+    @validate_params(
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
     def add(self, embeddings: np.ndarray, ids: List[int]):
+        if len(embeddings.shape) != 2:
+            raise MindFAISSError("shape of embedding must equal to 2")
+        if embeddings.shape[0] != len(ids):
+            raise MindFAISSError("Length of embeddings is not equal to number of ids")
+        if len(ids) + self.index.ntotal >= self.MAX_VEC_NUM:
+            raise MindFAISSError(f"total num of ids/embeding is reach to limit {self.MAX_VEC_NUM}")
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
             logger.debug(f"success add ids {ids} in MindFAISS.")

@@ -17,8 +17,6 @@ class LLMParameterConfig:
         top_p: float = 1.0,控制模型生成过程中考虑的词汇范围，使用累计概率选择候选词，直到累计概率超过给定的阈值。
         seed: Optional[int] = None,用于指定推理过程的随机种子
         stream: bool = False,是否使用流式回答，默认False
-    Return:
-        score 比较分数
     """
     @validate_params(
         max_tokens=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= INT_32_MAX,

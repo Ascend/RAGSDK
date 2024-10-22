@@ -49,6 +49,8 @@ class FileCheck:
 
     @staticmethod
     def check_file_size(file_path: str, max_file_size: int):
+        if len(file_path) > FileCheck.MAX_PATH_LENGTH:
+            raise FileCheckError(f"Input path '{file_path[:FileCheck.MAX_PATH_LENGTH]}...' length over limit")
         file_size = os.path.getsize(file_path)
         if file_size > max_file_size:
             raise FileCheckError(f"FileSizeLimit: '{file_path}' size over Limit: {max_file_size}")
@@ -59,7 +61,7 @@ class FileCheck:
             raise FileCheckError(f"Input path '{path}' is not valid str")
 
         if len(path) > FileCheck.MAX_PATH_LENGTH:
-            raise FileCheckError(f"Input path '{path}' length over limit")
+            raise FileCheckError(f"Input path '{path[:FileCheck.MAX_PATH_LENGTH]}'... length over limit")
 
         if ".." in path:
             raise FileCheckError(f"there are illegal characters in path '{path}'")
@@ -74,13 +76,22 @@ class FileCheck:
 
     @staticmethod
     def check_path_is_exist_and_valid(path: str, check_real_path: bool = True):
-        if not isinstance(path, str) or not os.path.exists(path):
+        if not isinstance(path, str):
+            raise FileCheckError(f"Input path '{path}' is not valid str")
+        
+        if len(path) > FileCheck.MAX_PATH_LENGTH:
+            raise FileCheckError(f"Input path '{path[:FileCheck.MAX_PATH_LENGTH]}...' length over limit")
+
+        if not os.path.exists(path):
             raise FileCheckError(f"path '{path}' is not exists")
 
         FileCheck.check_input_path_valid(path, check_real_path)
 
     @staticmethod
     def dir_check(file_path: str):
+        if len(file_path) > FileCheck.MAX_PATH_LENGTH:
+            raise FileCheckError(f"Input path '{file_path[:FileCheck.MAX_PATH_LENGTH]}...' length over limit")
+
         if not file_path.startswith("/"):
             raise FileCheckError(f"dir '{file_path}' must be an absolute path")
 
@@ -91,13 +102,16 @@ class FileCheck:
 
     @staticmethod
     def check_files_num_in_directory(directory_path: str, suffix: str, limit: int):
-        files = os.listdir(directory_path)
-        filtered_files = [file for file in files if file.endswith(suffix)]
-        if len(filtered_files) > limit:
+        if len(directory_path) > FileCheck.MAX_PATH_LENGTH:
+            raise FileCheckError(f"Input path '{directory_path[:FileCheck.MAX_PATH_LENGTH]}...' length over limit")
+        count = sum(1 for file in Path(directory_path).glob("*") if not suffix or file.suffix == suffix)
+        if count > limit:
             raise FileCheckError(f"The number of '{suffix}' files in '{directory_path}' exceed {limit}")
 
     @staticmethod
     def check_file_owner(file_path: str):
+        if len(file_path) > FileCheck.MAX_PATH_LENGTH:
+            raise FileCheckError(f"Input path '{file_path[:FileCheck.MAX_PATH_LENGTH]}...' length over limit")
         current_user_uid = os.getuid()
 
         def check_owner(path: str, path_type: str):

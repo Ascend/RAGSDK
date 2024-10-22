@@ -5,6 +5,7 @@ from multiprocessing import Process, Value, Lock, Queue
 
 from mx_rag.chain.single_text_to_text import SingleText2TextChain
 from mx_rag.llm.llm_parameter import LLMParameterConfig
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_PROMPT_LENGTH
 
 
 class ParallelText2TextChain(SingleText2TextChain):
@@ -16,12 +17,22 @@ class ParallelText2TextChain(SingleText2TextChain):
         "下面是已知信息:"
     )
 
+    @validate_params(
+        prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
+                    message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]")
+    )
     def __init__(self, prompt: str = FIRST_RAG_PROMPT, **kwargs):
         super().__init__(prompt=prompt, **kwargs)
         self.prefill_done = Value('i', 0)
         self.prefill_queue = Queue()
         self.lock = Lock()
 
+    @validate_params(
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                  message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                        message="llm_config must be instance of LLMParameterConfig")
+    )
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95),
               *args, **kwargs) -> Union[Dict, Iterator[Dict]]:
         return self._query(text, llm_config)

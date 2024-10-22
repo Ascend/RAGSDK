@@ -171,6 +171,8 @@ class MilvusDB(VectorStore):
     @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
                               message="param must be List[int]"))
     def delete(self, ids: List[int]):
+        if len(ids) >= self.MAX_VEC_NUM:
+            raise MilvusError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
@@ -178,8 +180,14 @@ class MilvusDB(VectorStore):
         logger.debug(f"success delete ids {ids} in MilvusDB.")
         return res
 
-    @validate_params(k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param length range (0, 10000]"))
+    @validate_params(
+        k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param length range (0, 10000]"),
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
     def search(self, embeddings: np.ndarray, k: int = 3):
+        if len(embeddings.shape) != 2:
+            raise MilvusError("shape of embedding must equal to 2")
+        if embeddings.shape[0] >= self.MAX_SEARCH_BATCH:
+            raise MilvusError(f"num of embeddings must less {self.MAX_SEARCH_BATCH}")
         embeddings = embeddings.astype(np.float32)
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
@@ -202,11 +210,16 @@ class MilvusDB(VectorStore):
         return self._score_scale(scores), ids
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type")
     )
     def add(self, embeddings: np.ndarray, ids: List[int]):
+        if len(embeddings.shape) != 2:
+            raise MilvusError("shape of embedding must equal to 2")
         if embeddings.shape[0] != len(ids):
             raise MilvusError("Length of embeddings is not equal to number of ids")
+        if len(ids) >= self.MAX_VEC_NUM:
+            raise MilvusError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         embeddings = embeddings.astype(np.float32)
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
