@@ -171,6 +171,8 @@ class MilvusDB(VectorStore):
     @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
                               message="param must be List[int]"))
     def delete(self, ids: List[int]):
+        if len(ids) >= self.MAX_VEC_NUM:
+            raise MilvusError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         if not self.client.has_collection(self._collection_name):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")

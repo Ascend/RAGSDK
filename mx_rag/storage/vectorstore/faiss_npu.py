@@ -136,6 +136,8 @@ class MindFAISS(VectorStore):
     @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
                               message="param must be List[int]"))
     def delete(self, ids: List[int]):
+        if len(ids) >= self.MAX_VEC_NUM:
+            raise MindFAISSError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         res = self.index.remove_ids(np.array(ids))
         logger.debug(f"success remove ids {ids} in MindFAISS.")
         if self.auto_save:
