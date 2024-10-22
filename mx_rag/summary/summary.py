@@ -138,7 +138,7 @@ class Summary(BaseModel):
             else:
                 raise ValueError("summarize failed, get null content")
         except Exception as e:
-            logger.error(f"summarize failed: {e}")
+            raise ValueError(f"summarize failed: {e}")
         finally:
             self.counter = 0
 
