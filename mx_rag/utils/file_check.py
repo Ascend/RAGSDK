@@ -59,7 +59,7 @@ class FileCheck:
             raise FileCheckError(f"Input path '{path}' is not valid str")
 
         if len(path) > FileCheck.MAX_PATH_LENGTH:
-            raise FileCheckError(f"Input path '{path}' length over limit")
+            raise FileCheckError(f"Input path '{path[:FileCheck.MAX_PATH_LENGTH]}'... length over limit")
 
         if ".." in path:
             raise FileCheckError(f"there are illegal characters in path '{path}'")
@@ -91,9 +91,8 @@ class FileCheck:
 
     @staticmethod
     def check_files_num_in_directory(directory_path: str, suffix: str, limit: int):
-        files = os.listdir(directory_path)
-        filtered_files = [file for file in files if file.endswith(suffix)]
-        if len(filtered_files) > limit:
+        count = sum(1 for file in Path(directory_path).glob("*") if not suffix or file.suffix == suffix)
+        if count > limit:
             raise FileCheckError(f"The number of '{suffix}' files in '{directory_path}' exceed {limit}")
 
     @staticmethod

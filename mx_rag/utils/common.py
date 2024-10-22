@@ -6,6 +6,8 @@ import os
 from datetime import datetime
 from enum import Enum
 from typing import List, Dict
+import multiprocessing
+import _thread
 
 from OpenSSL import crypto
 from loguru import logger
@@ -32,6 +34,7 @@ FILE_TYPE_COUNT = 32
 MAX_PROMPT_LENGTH = 1 * 1024 * 1024
 MAX_URL_LENGTH = 128
 MAX_MODEL_NAME_LENGTH = 128
+MAX_PATH_LENGTH = 1024
 
 KB = 1024
 MB = 1048576  # 1024 * 1024
@@ -42,8 +45,8 @@ DICT_TYPE_CHECK_TIP = "param must be dict"
 CLASS_TYPE_CHECK_TIP = "param must be class type"
 INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
-STR_LENGTH_CHECK_1024 = "param length must be less than 1024"
-STR_TYPE_CHECK_TIP_1024 = "param must be str and less than 1024"
+STR_LENGTH_CHECK_1024 = "param length range [1, 1024]"
+STR_TYPE_CHECK_TIP_1024 = "param must be str, length range [1, 1024]"
 NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
 DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
 MAX_CHUNKS_NUM = 1000 * 1000
@@ -284,3 +287,65 @@ def check_api_key(api_key):
         logger.error("api_key contain illegal character %0d or %0a or \\n")
         return False
     return True
+
+
+def validate_dict(param: dict,
+                  max_str_length:int = 1024 * 1024,
+                  max_list_length:int = 4096,
+                  max_dict_length:int = 1024,
+                  max_check_depth:int = 3) -> bool:
+    """
+    递归校验字典和字典里面的key以及value是否超过允许范围
+    Args:
+        param: dict 字典输入
+        max_str_length: int 字典里面最大字符串限制
+        max_list_length: int 字典里面最大的列表长度限制
+        max_dict_length: int 字典包含的元素个数限制
+        max_check_depth: int 字典校验深度
+    """
+    if max_check_depth <= 0:
+        logger.error(f"dict nest depth cannot exceed {max_check_depth}")
+        return False
+
+    def check_str(data):
+        if isinstance(data, str):
+            if not 0 <= len(data) <= max_str_length:
+                logger.error(f"param string length must in range[0, {max_str_length}]")
+                return False
+        return True
+
+    def check_dict(data):
+        if isinstance(data, dict):
+            res = validate_dict(data, max_str_length, max_list_length, max_dict_length, max_check_depth - 1)
+            return res
+        return True
+
+    def check_list(data):
+        if isinstance(data, list):
+            if not 0 <= len(data) <= max_list_length:
+                logger.error(f"param list length must in range[0, {max_list_length}]")
+                return False
+
+            for item in data:
+                if not all([check(item) for check in check_callback]):
+                    return False
+        return True
+
+    if not isinstance(param, dict):
+        logger.error("param type should dict")
+        return False
+
+    if not 0 <= len(param) <= max_dict_length:
+        logger.error(f"param dict length must in range[0, {max_dict_length}]")
+        return False
+
+    check_callback = [check_str, check_list, check_dict]
+    for key, value in param.items():
+        if not all([check(key) and check(value) for check in check_callback]):
+            logger.error("param dict check failed")
+            return False
+    return True
+
+
+def validate_lock(lock) -> bool:
+    return isinstance(lock, (multiprocessing.synchronize.Lock, _thread.LockType))
