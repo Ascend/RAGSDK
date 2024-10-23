@@ -102,8 +102,8 @@ class LoaderMng:
                           message="param must be langchain_community BaseLoader subclass"))
     def unregister_loader(self, loader_class: Type):
         if loader_class in self.loaders:
+            self.loader_types = list(set(self.loader_types) - set(self.loaders[loader_class][0]))
             del self.loaders[loader_class]
-            self.loader_types = list(set(self.loader_types)-set(self.loaders[loader_class]))
         else:
             raise KeyError(f"Loader class '{loader_class}' is not registered")
 
@@ -112,7 +112,7 @@ class LoaderMng:
                             message="param must be langchain_community TextSplitter subclass"))
     def unregister_splitter(self, splitter_class: Type):
         if splitter_class in self.splitters:
+            self.splitter_types = list(set(self.splitter_types) - set(self.splitters[splitter_class][0]))
             del self.splitters[splitter_class]
-            self.splitter_types = list(set(self.splitter_types) - set(self.splitters[splitter_class]))
         else:
             raise KeyError(f"Splitter class '{splitter_class}' is not registered")
