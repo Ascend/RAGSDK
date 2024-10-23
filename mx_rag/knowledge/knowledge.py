@@ -133,6 +133,16 @@ class KnowledgeStore:
             return True if chunk is not None else False
 
 
+def _check_metadatas(metadatas: List[dict] = None) -> bool:
+    if metadatas is None:
+        return True
+    if not isinstance(metadatas, list) or not (0 < len(metadatas) <= INT_32_MAX):
+        return False
+    for item in metadatas:
+        return validate_dict(item, max_str_length=1024*1024, max_list_length=4096,
+                             max_dict_length=1024, max_check_depth=3)
+
+
 class KnowledgeDB(KnowledgeBase):
     @validate_params(
         knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore),
@@ -176,8 +186,8 @@ class KnowledgeDB(KnowledgeBase):
         texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
                    message="param must meets: Type is List[str], "
                            "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
-        metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX and all(validate_dict(item) for item in x),
-                       message='param must meets: Type is List[str], list length range [1, 2 ** 31 - 1]')
+        metadatas=dict(validator=lambda x: _check_metadatas(x),
+                       message='param must meets: Type is List[dict] or None, list length range [1, 2 ** 31 - 1]')
     )
     def add_file(
             self,
