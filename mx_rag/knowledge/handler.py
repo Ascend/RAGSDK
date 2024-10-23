@@ -179,11 +179,9 @@ def delete_files(
         raise FileHandlerError(f'files list length must less than {knowledge.max_file_count}, delete files failed')
     if not isinstance(doc_names, list) or not doc_names:
         raise FileHandlerError(f"files param {doc_names} is invalid")
-    count = 0
     for doc_name in doc_names:
         if not isinstance(doc_name, str):
             raise FileHandlerError(f"file path '{doc_name}' is invalid")
         if not knowledge.check_document_exist(doc_name):
             continue
         knowledge.delete_file(doc_name)
-        count += 1
