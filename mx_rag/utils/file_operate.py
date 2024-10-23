@@ -4,7 +4,6 @@
 import json
 import os
 import re
-import shutil
 import stat
 
 from loguru import logger
@@ -12,40 +11,7 @@ from loguru import logger
 from .file_check import FileCheck, SecFileCheck
 
 R_FLAGS = os.O_RDONLY
-W_FLAGS = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
 MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-
-
-def write_jsonl_to_file(datas: list[dict], file: str, line_limit: int = 10000, length_limit: int = 1024):
-    if len(datas) > line_limit:
-        raise Exception(f"datas len longer than {line_limit}, is {len(datas)}")
-
-    file_path = os.path.dirname(file)
-    file_basename = os.path.basename(file)
-    FileCheck.dir_check(file_path)
-    if not re.match(r".*.jsonl", file_basename):
-        raise Exception(f"file '{file}' is not a jsonl file name")
-
-    try:
-        _write_jsonl_file(datas, file, length_limit)
-    except IOError as io_error:
-        logger.error(f"write data to file failed, find IOError: {io_error}")
-        raise Exception(f"write jsonl to file IO Error") from io_error
-    except Exception as e:
-        logger.error(f"write data to file failed, find Exception: {e}")
-        raise Exception(f"write jsonl to file failed") from e
-    logger.info(f"write data to file '{file_basename}' success")
-
-
-def _write_jsonl_file(datas, file, length_limit):
-    with os.fdopen(os.open(file, W_FLAGS, MODES), "w") as f:
-        for data in datas:
-            data_str = json.dumps(data, ensure_ascii=False)
-            if len(data_str) > length_limit:
-                logger.warning(f"data longer than {length_limit}, is {len(data_str)}")
-                continue
-            f.write(data_str)
-            f.write("\n")
 
 
 def read_jsonl_from_file(file: str,
@@ -85,8 +51,3 @@ def _read_jsonl_file(file, length_limit, line_cnt, line_limit):
         if line_cnt >= line_limit:
             logger.warning(f"read data more than {line_limit} lines")
     return datas
-
-
-def check_disk_free_space(path, volume):
-    _, _, free = shutil.disk_usage(path)
-    return free < volume

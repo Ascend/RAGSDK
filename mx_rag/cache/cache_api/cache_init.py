@@ -18,8 +18,7 @@ from mx_rag.cache.cache_similarity.cache_similarity import CacheSimilarity
 from mx_rag.cache.cache_storage.cache_vec_storage import CacheVecStorage
 from mx_rag.cache.cache_emb.cache_emb import CacheEmb
 from mx_rag.utils.common import validate_params, MB, GB
-from mx_rag.utils.file_check import SecFileCheck, FileCheck
-from mx_rag.utils.file_operate import check_disk_free_space
+from mx_rag.utils.file_check import SecFileCheck, FileCheck, check_disk_free_space
 
 
 def _cache_file_secure_check(file_path: str, file_max_size: int):
