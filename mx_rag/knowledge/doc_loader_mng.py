@@ -103,6 +103,7 @@ class LoaderMng:
     def unregister_loader(self, loader_class: Type):
         if loader_class in self.loaders:
             del self.loaders[loader_class]
+            self.loader_types = list(set(self.loader_types)-set(self.loaders[loader_class]))
         else:
             raise KeyError(f"Loader class '{loader_class}' is not registered")
 
@@ -112,5 +113,6 @@ class LoaderMng:
     def unregister_splitter(self, splitter_class: Type):
         if splitter_class in self.splitters:
             del self.splitters[splitter_class]
+            self.splitter_types = list(set(self.splitter_types) - set(self.splitters[splitter_class]))
         else:
             raise KeyError(f"Splitter class '{splitter_class}' is not registered")
