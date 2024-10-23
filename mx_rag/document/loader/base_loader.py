@@ -35,13 +35,11 @@ class BaseLoader(ABC):
                                  f'the limit of {self.MAX_FILE_CNT * self.multi_size}')
                     return True
                 # 检查点2：检查第一层解压文件总大小，总大小超过设定的上限值
-                total_uncompressed_size = 0
-                for zinfo in zip_ref.infolist():
-                    total_uncompressed_size += zinfo.file_size
-                    if total_uncompressed_size > self.MAX_SIZE * self.multi_size:
-                        logger.error(f"zip file '{self.file_path}' uncompressed size is {total_uncompressed_size} bytes"
-                                     f"exceeds the limit of {self.MAX_SIZE * self.multi_size} bytes, ZIP bomb")
-                        return True
+                is_size_exceeded, total_uncompressed_size = _check_uncompressed_size(
+                    zip_ref, self.MAX_SIZE * self.multi_size)
+                if is_size_exceeded:
+                    return True
+
                 # 检查点3：检查第一层解压文件总大小，磁盘剩余空间-文件总大小<200M
                 remain_size = psutil.disk_usage(os.getcwd()).free
                 if remain_size - total_uncompressed_size < self.MAX_SIZE * 2:
@@ -51,8 +49,19 @@ class BaseLoader(ABC):
 
                 return False
         except zipfile.BadZipfile as e:
-            logger.error(f"The provided path '{self.file_path}' is not a valid ZIP file or is corrupted: {e}")
+            logger.error(f"The provided path '{self.file_path}' is not a valid zip file or is corrupted: {e}")
             return True
         except Exception as e:
-            logger.error(f"Unexpected error occurred while checking ZIP bomb: {e}")
+            logger.error(f"Unexpected error occurred while checking zip bomb: {e}")
             return True
+
+
+def _check_uncompressed_size(zip_ref, max_size):
+    total_uncompressed_size = 0
+    for zinfo in zip_ref.infolist():
+        total_uncompressed_size += zinfo.file_size
+        if total_uncompressed_size > max_size:
+            logger.error(f"zip file uncompressed size is {total_uncompressed_size} bytes"
+                         f"exceeds the limit of {max_size} bytes, zip bomb")
+            return True, total_uncompressed_size
+    return False, total_uncompressed_size
