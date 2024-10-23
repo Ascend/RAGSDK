@@ -10,8 +10,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument, StorageError
 from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_CHUNKS_NUM, check_db_file_limit
-from mx_rag.utils.file_check import FileCheck
-from mx_rag.utils.file_operate import check_disk_free_space
+from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 Base = declarative_base()
 

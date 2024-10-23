@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
+import shutil
 from pathlib import Path
 
 
@@ -133,3 +134,8 @@ class FileCheck:
         dir_path = os.path.dirname(os.path.abspath(file_path))
         # 检查目录的属主
         check_owner(dir_path, "directory")
+
+
+def check_disk_free_space(path, volume):
+    _, _, free = shutil.disk_usage(path)
+    return free < volume

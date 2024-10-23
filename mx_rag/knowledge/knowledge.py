@@ -14,8 +14,7 @@ from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, \
     check_db_file_limit, validata_list_str, MAX_PATH_WHITE, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024
-from mx_rag.utils.file_check import FileCheck
-from mx_rag.utils.file_operate import check_disk_free_space
+from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 Base = declarative_base()
 

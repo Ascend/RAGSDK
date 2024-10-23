@@ -52,10 +52,6 @@ DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
 MAX_CHUNKS_NUM = 1000 * 1000
 
 
-class UrlUtilException(Exception):
-    pass
-
-
 def safe_get(data, keys, default=None):
     """
     安全地获取嵌套字典或列表中的值。
