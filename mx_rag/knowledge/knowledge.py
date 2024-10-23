@@ -183,9 +183,10 @@ class KnowledgeDB(KnowledgeBase):
                       message=STR_TYPE_CHECK_TIP_1024),
         texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
                    message="param must meets: Type is List[str], "
-                           "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
+                           f"list length range [1, {INT_32_MAX}], str length range [1, {TEXT_MAX_LEN}]"),
         metadatas=dict(validator=lambda x: _check_metadatas(x),
-                       message='param must meets: Type is List[dict] or None, list length range [1, 2 ** 31 - 1]')
+                       message='param must meets: Type is List[dict] or None,'
+                               f' list length range [1, {INT_32_MAX}], other check please see the log')
     )
     def add_file(
             self,
