@@ -36,7 +36,8 @@ class LoaderMng:
 
     @validate_params(
         loader_class=dict(validator=lambda x: issubclass(x, BaseLoader),
-                          message="param must be subclass of BaseLoader of langchain_community.document_loaders.base"),
+                          message="param must be a subclass of BaseLoader in "
+                                  "langchain_community.document_loaders.base"),
         file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
@@ -56,7 +57,7 @@ class LoaderMng:
 
     @validate_params(
         splitter_class=dict(validator=lambda x: issubclass(x, TextSplitter),
-                            message="param must be subclass of TextSplitter of langchain_text_splitters.base"),
+                            message="param must be a subclass of TextSplitter in langchain_text_splitters.base"),
         file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
