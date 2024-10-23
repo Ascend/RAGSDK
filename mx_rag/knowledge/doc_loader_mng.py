@@ -41,7 +41,7 @@ class LoaderMng:
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
         loader_params=dict(validator=lambda x: (validate_dict(x) if isinstance(x, Dict) else False) or x is None,
-                           message="param must meets: Type is Dict[str, Any]")
+                           message="param must meets: Type is Dict[str, Any] or None")
     )
     def register_loader(self, loader_class: BaseLoader, file_types: List[str],
                         loader_params: Optional[Dict[str, Any]] = None):
@@ -61,7 +61,7 @@ class LoaderMng:
                                 "list length range [1, 32], str length range [1, 32]"),
 
         splitter_params=dict(validator=lambda x: (validate_dict(x) if isinstance(x, Dict) else False) or x is None,
-                             message="param must meets: Type is Dict[str, Any]")
+                             message="param must meets: Type is Dict[str, Any] or None")
     )
     def register_splitter(self, splitter_class: TextSplitter, file_types: List[str],
                           splitter_params: Optional[Dict[str, Any]] = None):
