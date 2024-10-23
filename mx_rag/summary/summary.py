@@ -120,22 +120,26 @@ class Summary(BaseModel):
         if len(texts) > self.max_texts_length:
             raise ValueError(f"texts can not be greater than {self.max_texts_length}"
                              f",you can set chunk_size to a larger value")
-        if self.counter >= 10:
-            raise RecursionError("Maximum recursion depth reached, you can set merge_threshold to a larger value")
+        try:
+            if self.counter >= 10:
+                raise RecursionError("Maximum recursion depth reached, you can set merge_threshold to a larger value")
 
-        splits = self._split_summary_by_threshold(texts, merge_threshold)
-        res = self.summarize(["\n\n".join(texts[s[0]:s[1] + 1]) for s in splits], not_summarize_threshold, prompt)
-        self.counter += 1
+            splits = self._split_summary_by_threshold(texts, merge_threshold)
+            res = self.summarize(["\n\n".join(texts[s[0]:s[1] + 1]) for s in splits], not_summarize_threshold, prompt)
+            self.counter += 1
 
-        if len(res) > len(texts):
-            raise Exception("sub summary number should less than origin summary number")
-
-        if len(res) == 1:
-            return res[0]
-        elif len(res) > 1:
-            return self.merge_text_summarize(res, merge_threshold, not_summarize_threshold, prompt)
-        else:
-            raise ValueError("summarize failed, get null content")
+            if len(res) > len(texts):
+                raise Exception("sub summary number should less than origin summary number")
+            if len(res) == 1:
+                return res[0]
+            elif len(res) > 1:
+                return self.merge_text_summarize(res, merge_threshold, not_summarize_threshold, prompt)
+            else:
+                raise ValueError("summarize failed, get null content")
+        except Exception as err:
+            raise ValueError(f"summarize failed: {err}") from err
+        finally:
+            self.counter = 0
 
     def _summarize(self, text: str, prompt: PromptTemplate) -> str:
         return self.llm.chat(prompt.format(text=text), llm_config=self.llm_config)
