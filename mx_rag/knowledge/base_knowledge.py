@@ -4,14 +4,14 @@ import inspect
 from abc import ABC, abstractmethod
 from typing import List
 
-from mx_rag.utils.common import validate_params, validata_list_str, MAX_PATH_WHITE
+from mx_rag.utils.common import validate_params, validata_list_str, MAX_PATH_LENGTH
 
 
 class KnowledgeBase(ABC):
     @validate_params(
-        white_paths=dict(validator=lambda x: validata_list_str(x, [1, MAX_PATH_WHITE], [1, MAX_PATH_WHITE]),
-                         message="param must meets: Type is List[str], "
-                                 "list length range [1, 1024], str length range [1, 1024]"))
+        white_paths=dict(validator=lambda x: validata_list_str(x, [1, MAX_PATH_LENGTH], [1, MAX_PATH_LENGTH]),
+                         message=f"param must meets: Type is List[str], "
+                                 f"list length range [1, {MAX_PATH_LENGTH}], str length range [1, {MAX_PATH_LENGTH}]"))
     def __init__(self, white_paths: List[str]):
         self.white_paths = white_paths
 
