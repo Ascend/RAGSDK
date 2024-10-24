@@ -4,6 +4,7 @@ import inspect
 from abc import ABC, abstractmethod
 from typing import List
 
+from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.common import validate_params, validata_list_str, MAX_PATH_LENGTH
 
 
@@ -14,6 +15,8 @@ class KnowledgeBase(ABC):
                                  f"list length range [1, {MAX_PATH_LENGTH}], str length range [1, {MAX_PATH_LENGTH}]"))
     def __init__(self, white_paths: List[str]):
         self.white_paths = white_paths
+        for white_path in white_paths:
+            FileCheck.dir_check(white_path)
 
     @abstractmethod
     def add_file(self, doc_name, texts, embed_func, metadatas):
