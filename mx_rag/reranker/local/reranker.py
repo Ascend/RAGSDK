@@ -8,9 +8,9 @@ import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_torch_npu_available
 
 from mx_rag.reranker.reranker import Reranker
-from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, INT_32_MAX, TEXT_MAX_LEN,
-                                 validata_list_str, BOOL_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP,
-                                 MAX_QUERY_LENGTH, STR_MAX_LEN, MAX_PATH_LENGTH)
+from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, TEXT_MAX_LEN,
+                                 validata_list_str, BOOL_TYPE_CHECK_TIP,
+                                 MAX_QUERY_LENGTH, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE)
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -72,8 +72,9 @@ class LocalReranker(Reranker):
         texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], "
                            "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
-        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]"),
-        max_length=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
+        batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
+                        message=f"param value range [1, {MAX_BATCH_SIZE}]"),
+        max_length=dict(validator=lambda x: 1 <= x <= STR_MAX_LEN, message=f"param value range [1, {STR_MAX_LEN}]")
     )
     def rerank(self,
                query: str,
