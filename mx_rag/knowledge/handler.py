@@ -10,7 +10,7 @@ from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.doc_loader_mng import LoaderMng
 from mx_rag.knowledge.knowledge import KnowledgeDB
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP, NO_SPLIT_FILE_TYPE, \
-    FILE_COUNT_MAX, STR_TYPE_CHECK_TIP_1024
+    FILE_COUNT_MAX, STR_TYPE_CHECK_TIP_1024, MAX_PATH_LENGTH
 from mx_rag.utils.file_check import SecFileCheck, FileCheck
 
 
@@ -32,8 +32,8 @@ def upload_files(
         force: bool = False,
 ):
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
-    if len(files) > knowledge.max_loop_limit:
-        raise FileHandlerError(f'files list length must less than {knowledge.max_loop_limit}, upload files failed')
+    if len(files) > knowledge.max_file_count:
+        raise FileHandlerError(f'files list length must less than {knowledge.max_file_count}, upload files failed')
     fail_files = []
     for file in files:
         _check_file(file, force, knowledge)
@@ -151,9 +151,9 @@ def upload_dir(params: FilesLoadInfo):
     files = []
     unsupported_files = []
     for file in Path(dir_path).glob("*"):
-        if count >= knowledge.max_loop_limit:
+        if count >= knowledge.max_file_count:
             raise FileHandlerError(f'The number of files in the {dir_path} must less than'
-                                   f' {knowledge.max_loop_limit}, upload dir failed')
+                                   f' {knowledge.max_file_count}, upload dir failed')
         if file.suffix in support_file_type:
             files.append(file.as_posix())
             count += 1
@@ -164,27 +164,24 @@ def upload_dir(params: FilesLoadInfo):
                      f"because no loader or splitter has been registered.")
     fail_files = upload_files(knowledge, files, loader_mng, embed_func, force)
 
-    return unsupported_files+fail_files
+    return unsupported_files + fail_files
 
 
 @validate_params(
     knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
-    file_names=dict(validator=lambda x: all(isinstance(item, str) for item in x) and 1 <= len(x) <= 1000,
-                    message="param must meets: Type is List[str], list length range [1, 1000]")
 )
 def delete_files(
         knowledge: KnowledgeDB,
-        file_names: List[str]
+        doc_names: List[str]
 ):
     """删除上传的文档，需传入待删除的文档名称"""
-    if not isinstance(file_names, list) or not file_names:
-        raise FileHandlerError(f"files param {file_names} is invalid")
-
-    count = 0
-    for filename in file_names:
-        if not isinstance(filename, str):
-            raise FileHandlerError(f"file path '{filename}' is invalid")
-        if not knowledge.check_document_exist(filename):
+    if len(doc_names) > knowledge.max_file_count:
+        raise FileHandlerError(f'files list length must less than {knowledge.max_file_count}, delete files failed')
+    if not isinstance(doc_names, list) or not doc_names:
+        raise FileHandlerError(f"files param {doc_names} is invalid")
+    for doc_name in doc_names:
+        if not isinstance(doc_name, str):
+            raise FileHandlerError(f"file path '{doc_name}' is invalid")
+        if not knowledge.check_document_exist(doc_name):
             continue
-        knowledge.delete_file(filename)
-        count += 1
+        knowledge.delete_file(doc_name)

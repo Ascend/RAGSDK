@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import ssl
 
-from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP, INT_32_MAX, MAX_URL_LENGTH, MB
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, STR_TYPE_CHECK_TIP, MB
 
 
 class ClientParam:

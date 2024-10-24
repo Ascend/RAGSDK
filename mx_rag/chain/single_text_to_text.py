@@ -14,6 +14,7 @@ from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import Chain
 from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
+from mx_rag.utils.common import MAX_PROMPT_LENGTH
 
 DEFAULT_RAG_PROMPT = """根据上述已知信息，简洁和专业地回答用户的问题。如果无法从已知信息中得到答案，请根据自身经验做出回答"""
 
@@ -27,8 +28,8 @@ class SingleText2TextChain(Chain):
                        message="param must be instance of BaseRetriever"),
         reranker=dict(validator=lambda x: isinstance(x, Reranker) or x is None,
                       message="param must be None or instance of Reranker"),
-        prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= 512 * 1024,
-                    message="param must be str and length range [1, 512 * 1024]"),
+        prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PROMPT_LENGTH,
+                    message=f"param must be str and length range [1, {MAX_PROMPT_LENGTH}]"),
         source=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, llm: Text2TextLLM,

@@ -12,8 +12,8 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
-from mx_rag.utils.common import validate_params, INT_32_MAX, FILE_COUNT_MAX, \
-    check_db_file_limit, validata_list_str, MAX_PATH_WHITE, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024
+from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, \
+    check_db_file_limit, validata_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_dict, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 Base = declarative_base()
@@ -131,6 +131,16 @@ class KnowledgeStore:
             return True if chunk is not None else False
 
 
+def _check_metadatas(metadatas: List[dict] = None) -> bool:
+    if metadatas is None:
+        return True
+    if not isinstance(metadatas, list) or not (0 < len(metadatas) <= TEXT_MAX_LEN):
+        return False
+    for item in metadatas:
+        return validate_dict(item, max_str_length=1024*1024, max_list_length=4096,
+                             max_dict_length=1024, max_check_depth=3)
+
+
 class KnowledgeDB(KnowledgeBase):
     @validate_params(
         knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore),
@@ -141,10 +151,7 @@ class KnowledgeDB(KnowledgeBase):
                           message="param must be instance of VectorStore"),
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024),
-        white_paths=dict(validator=lambda x: validata_list_str(x, [1, MAX_PATH_WHITE], [1, MAX_PATH_WHITE]),
-                         message="param must meets: Type is List[str], "
-                                 "list length range [1, 1024], str length range [1, 1024]"),
-        max_loop_limit=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX,
+        max_file_count=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX,
                             message=f"param value range must be [1, {FILE_COUNT_MAX}]")
     )
     def __init__(
@@ -154,13 +161,13 @@ class KnowledgeDB(KnowledgeBase):
             vector_store: VectorStore,
             knowledge_name: str,
             white_paths: List[str],
-            max_loop_limit: int = 1000,
+            max_file_count: int = 1000,
     ):
         super().__init__(white_paths)
         self._knowledge_store = knowledge_store
         self._vector_store = vector_store
         self._document_store = chunk_store
-        self.max_loop_limit = max_loop_limit
+        self.max_file_count = max_file_count
         self.knowledge_name = knowledge_name
         self._check_store_accordance()
 
@@ -171,10 +178,12 @@ class KnowledgeDB(KnowledgeBase):
     @validate_params(
         doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024),
-        texts=dict(validator=lambda x: validata_list_str(x, [1, INT_32_MAX], [1, TEXT_MAX_LEN]),
+        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], "
-                           "list length range [1, 2 ** 31 - 1], str length range [1, 1000 * 1000]"),
-        metadatas=dict(validator=lambda x: 1 <= len(x) <= INT_32_MAX, message="param length range [1, 2 ** 31 - 1]")
+                           f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]"),
+        metadatas=dict(validator=lambda x: _check_metadatas(x),
+                       message='param must meets: Type is List[dict] or None,'
+                               f' list length range [1, {TEXT_MAX_LEN}], other check please see the log')
     )
     def add_file(
             self,

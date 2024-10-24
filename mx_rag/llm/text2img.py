@@ -30,7 +30,7 @@ class Text2ImgMultiModel:
 
     @validate_params(
         prompt=dict(validator=lambda x: 0 < len(x) <= MAX_PROMPT_LENGTH,
-                    message="param must be str and length range (0, 1 * 1024 * 1024]"),
+                    message=f"param must be str and length range (0, {MAX_PROMPT_LENGTH}]"),
         output_format=dict(validator=lambda x: x in ["png", "jpeg", "jpg", "webp"],
                            message="param must be one of 'png', 'jpeg', 'jpg', 'webp'"),
         size=dict(validator=lambda x: re.compile(r"^\d{1,5}\*\d{1,5}$").match(x) is not None,

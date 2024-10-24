@@ -8,8 +8,8 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 
 from mx_rag.utils import ClientParam
-from mx_rag.utils.common import validate_params, INT_32_MAX, EMBBEDDING_TEXT_COUNT, validata_list_str, \
-    STR_TYPE_CHECK_TIP, check_api_key, STR_MAX_LEN, MAX_URL_LENGTH
+from mx_rag.utils.common import validate_params, EMBBEDDING_TEXT_COUNT, validata_list_str, \
+    check_api_key, STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -59,7 +59,8 @@ class TEIEmbedding(Embeddings):
         texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
                            "str length range [1, 128 * 1024 * 1024]"),
-        batch_size=dict(validator=lambda x: 1 <= x <= INT_32_MAX, message="param value range [1, 2 ** 31 - 1]")
+        batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
+                        message=f"param value range [1, {MAX_BATCH_SIZE}]")
     )
     def embed_documents(self,
                         texts: List[str],
