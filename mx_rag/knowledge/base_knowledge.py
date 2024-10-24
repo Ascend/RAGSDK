@@ -4,7 +4,6 @@ import inspect
 from abc import ABC, abstractmethod
 from typing import List
 
-from mx_rag.utils.common import validate_params, validata_list_str, MAX_PATH_WHITE
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.common import validate_params, validata_list_str, MAX_PATH_LENGTH
 
