@@ -8,7 +8,7 @@ from mx_rag.utils.common import validate_params
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain.base import Chain
 from mx_rag.llm import Text2ImgMultiModel
-from mx_rag.utils.common import validate_params, TEXT_MAX_LEN
+from mx_rag.utils.common import validate_params, MAX_PROMPT_LENGTH
 
 
 class Text2ImgChain(Chain):
@@ -27,8 +27,8 @@ class Text2ImgChain(Chain):
         self._multi_model = multi_model
 
     @validate_params(
-        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-                  message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"),
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
+                  message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
         llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
                         message="llm_config must be instance of LLMParameterConfig")
     )
