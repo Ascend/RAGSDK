@@ -40,17 +40,18 @@ class BaseLoader(ABC):
                     logger.error(f"zip file '{self.file_path}' uncompressed size is {total_uncompressed_size} bytes"
                                  f"exceeds the limit of {self.MAX_SIZE * self.multi_size} bytes, Potential ZIP bomb")
                     return True
+
                 # 检查点3：检查第一层解压文件总大小，磁盘剩余空间-文件总大小<200M
                 remain_size = psutil.disk_usage(os.getcwd()).free
-                if remain_size - total_uncompressed_size < self.MAX_SIZE:
+                if remain_size - total_uncompressed_size < self.MAX_SIZE * 2:
                     logger.error(f'zip file ({self.file_path}) uncompressed size is {total_uncompressed_size} bytes'
                                  f' only {remain_size} bytes of disk space available')
                     return True
 
                 return False
         except zipfile.BadZipfile as e:
-            logger.error(f"The provided path '{self.file_path}' is not a valid ZIP file or is corrupted: {e}")
+            logger.error(f"The provided path '{self.file_path}' is not a valid zip file or is corrupted: {e}")
             return True
         except Exception as e:
-            logger.error(f"Unexpected error occurred while checking ZIP bomb: {e}")
+            logger.error(f"Unexpected error occurred while checking zip bomb: {e}")
             return True

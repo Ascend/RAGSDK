@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 from typing import Optional
 
-from mx_rag.utils.common import validate_params, INT_32_MAX, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, INT_32_MAX, BOOL_TYPE_CHECK_TIP, MAX_TOKEN_NUM
 
 
 class LLMParameterConfig:
@@ -19,8 +19,8 @@ class LLMParameterConfig:
         stream: bool = False,是否使用流式回答，默认False
     """
     @validate_params(
-        max_tokens=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= INT_32_MAX,
-                        message="param must be int and value range [1, 2 ** 31 - 1]"),
+        max_tokens=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOKEN_NUM,
+                        message=f"param must be int and value range [1, {MAX_TOKEN_NUM}]"),
         presence_penalty=dict(validator=lambda x: isinstance(x, float) and -2.0 <= x <= 2.0,
                               message="param must be float and value range [-2.0, 2.0]"),
         frequency_penalty=dict(validator=lambda x: isinstance(x, float) and -2.0 <= x <= 2.0,
