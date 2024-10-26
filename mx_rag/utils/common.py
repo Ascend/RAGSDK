@@ -251,7 +251,7 @@ def check_db_file_limit(db_path: str, limit: int = DB_FILE_LIMIT):
         raise Exception(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")
 
 
-def header_check(headers: Dict):
+def check_header(headers: Dict):
     """
     安全检查headers
     Args:
