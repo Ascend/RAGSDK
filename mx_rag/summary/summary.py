@@ -31,8 +31,8 @@ def _thread_pool_callback(worker):
 class Summary(BaseModel):
     llm: Text2TextLLM
     llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)
-    counter: int = 0
-    max_texts_length: int = 1024
+    __counter: int = 0
+    __max_texts_length: int = 1024
 
     class Config:
         arbitrary_types_allowed = True
@@ -72,8 +72,8 @@ class Summary(BaseModel):
     )
     def summarize(self, texts: List[str], not_summarize_threshold: int = 30,
                   prompt: PromptTemplate = _SUMMARY_TEMPLATE) -> List[str]:
-        if len(texts) > self.max_texts_length:
-            raise ValueError(f"texts can not be greater than {self.max_texts_length}"
+        if len(texts) > self.__max_texts_length:
+            raise ValueError(f"texts can not be greater than {self.__max_texts_length}"
                              f",you can set chunk_size to a larger value")
 
         with ThreadPoolExecutor() as executor:
@@ -117,17 +117,16 @@ class Summary(BaseModel):
                              prompt: PromptTemplate = _MERGE_TEXT_SUMMARY_TEMPLATE) -> str:
         if merge_threshold <= not_summarize_threshold:
             raise ValueError("merge_threshold must bigger than not_summarize_threshold.")
-        if len(texts) > self.max_texts_length:
-            raise ValueError(f"texts can not be greater than {self.max_texts_length}"
+        if len(texts) > self.__max_texts_length:
+            raise ValueError(f"texts can not be greater than {self.__max_texts_length}"
                              f",you can set chunk_size to a larger value")
         try:
-            if self.counter >= 10:
+            if Summary.__counter >= 10:
                 raise RecursionError("Maximum recursion depth reached, you can set merge_threshold to a larger value")
 
             splits = self._split_summary_by_threshold(texts, merge_threshold)
             res = self.summarize(["\n\n".join(texts[s[0]:s[1] + 1]) for s in splits], not_summarize_threshold, prompt)
-            self.counter += 1
-
+            Summary.__counter += 1
             if len(res) > len(texts):
                 raise Exception("sub summary number should less than origin summary number")
             if len(res) == 1:
@@ -139,7 +138,7 @@ class Summary(BaseModel):
         except Exception as err:
             raise ValueError(f"summarize failed: {err}") from err
         finally:
-            self.counter = 0
+            Summary.__counter = 0
 
     def _summarize(self, text: str, prompt: PromptTemplate) -> str:
         return self.llm.chat(prompt.format(text=text), llm_config=self.llm_config)
