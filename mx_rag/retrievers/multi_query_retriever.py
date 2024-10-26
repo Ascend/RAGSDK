@@ -67,7 +67,6 @@ class MultiQueryRetriever(Retriever):
         llm_query = self.prompt.format(question=query)
         llm_response = self.llm.chat(query=llm_query, role="user", llm_config=self.llm_config)
         for sub_query in self.parser.parse(text=str(llm_response)):
-            logger.success(f"sub_query {sub_query}")
             doc = super(MultiQueryRetriever, self)._get_relevant_documents(sub_query)
             docs.extend(doc)
 
