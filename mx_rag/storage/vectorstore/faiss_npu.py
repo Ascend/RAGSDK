@@ -76,6 +76,7 @@ class MindFAISS(VectorStore):
         if similarity is None:
             raise MindFAISSError(f"Unsupported similarity strategy: {similarity_strategy}")
         FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
+        FileCheck.check_filename_valid(self.load_local_index)
         if os.path.exists(self.load_local_index):
             logger.info(f"Loading index from local index file: '{self.load_local_index}'")
             try:
@@ -117,6 +118,7 @@ class MindFAISS(VectorStore):
 
     def save_local(self) -> None:
         FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
+        FileCheck.check_filename_valid(self.load_local_index)
         try:
             if os.path.exists(self.load_local_index):
                 logger.warning(f"the index path '{self.load_local_index}' has already exist, will be overwritten")

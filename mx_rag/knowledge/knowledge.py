@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage.document_store.base_storage import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
-from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, \
+from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, MAX_SQLITE_FILE_NAME_LEN, \
     check_db_file_limit, validata_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_dict, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
@@ -42,6 +42,7 @@ class KnowledgeStore:
     )
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
+        FileCheck.check_filename_valid(db_path, MAX_SQLITE_FILE_NAME_LEN)
         self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
@@ -240,6 +241,7 @@ class KnowledgeMgrStore:
     )
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
+        FileCheck.check_filename_valid(db_path, MAX_SQLITE_FILE_NAME_LEN)
         self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
