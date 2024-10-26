@@ -230,6 +230,8 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
 
         # 判断表单是否有标题+内容，默认至少两行有效行
         if ws.nrows - len(blank_rows.keys()) < 2:
+            logger.info(f"In file ['{self.file_path}'], sheet ['{ws.name}'],"
+                        f" not enough valid rows (at least two rows required). ")
             return content
 
         # 获取标题列表

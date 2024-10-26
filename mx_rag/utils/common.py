@@ -123,6 +123,11 @@ class PubkeyType(Enum):
     EVP_PKEY_EC = 408
 
 
+class Lang(Enum):
+    EN: str = 'en'
+    CH: str = 'ch'
+
+
 class ParseCertInfo:
     """解析根证书信息类"""
 
