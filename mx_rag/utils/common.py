@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from enum import Enum
 from typing import List, Dict
-import multiprocessing
+import multiprocessing.synchronize
 import _thread
 
 from OpenSSL import crypto
