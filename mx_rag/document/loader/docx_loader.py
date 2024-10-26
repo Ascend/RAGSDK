@@ -67,8 +67,11 @@ class DocxLoader(BaseLoader, mxBaseLoader):
         rows = list(element.rows)
         headers = [cell.text for cell in rows[0].cells]
         data = [[cell.text.replace("\n", " ") for cell in row.cells] for row in rows[1:]]
-        result = ["，".join([f"{x}: {y}" for x, y in zip(headers, subdata)]) for subdata in data]
-        res = "；".join(result)
+        if not data:
+            res = "；".join(headers)
+        else:
+            result = ["，".join([f"{x}: {y}" for x, y in zip(headers, subdata)]) for subdata in data]
+            res = "；".join(result)
         return res + "。"
 
     def _is_document_valid(self):

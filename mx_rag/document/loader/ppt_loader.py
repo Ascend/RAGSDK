@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import itertools
+from enum import Enum
 
 from loguru import logger
 from paddleocr import PaddleOCR
@@ -9,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
+from mx_rag.utils.common import validate_params, Lang
 from mx_rag.utils.file_check import SecFileCheck, FileCheckError, PathNotFileException
 
 
@@ -18,10 +20,13 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     MAX_TABLE_ROW = 100
     MAX_TABLE_COL = 50
 
-    def __init__(self, file_path, lang="ch"):
+    @validate_params(
+        lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang")
+    )
+    def __init__(self, file_path, lang=Lang.CH):
         super().__init__(file_path)
         try:
-            self.ocr = PaddleOCR(use_angle_cls=True, lang=lang)
+            self.ocr = PaddleOCR(use_angle_cls=True, lang=lang.value)
         except Exception as err:
             raise ValueError(f"init ocr failed, {err}") from err
 
