@@ -6,7 +6,7 @@ import os
 from datetime import datetime
 from enum import Enum
 from typing import List, Dict
-import multiprocessing
+import multiprocessing.synchronize
 import _thread
 
 from OpenSSL import crypto
@@ -30,6 +30,7 @@ MILVUS_METRIC_TYPES = ["L2", "IP", "COSINE"]
 MAX_API_KEY_LEN = 128
 MAX_PATH_LENGTH = 1024
 FILE_TYPE_COUNT = 32
+MAX_SQLITE_FILE_NAME_LEN = 200
 
 MAX_PROMPT_LENGTH = 1 * 1024 * 1024
 MAX_URL_LENGTH = 128
@@ -120,6 +121,11 @@ class PubkeyType(Enum):
     EVP_PKEY_DSA = 116
     EVP_PKEY_DH = 28
     EVP_PKEY_EC = 408
+
+
+class Lang(Enum):
+    EN: str = 'en'
+    CH: str = 'ch'
 
 
 class ParseCertInfo:
@@ -250,7 +256,7 @@ def check_db_file_limit(db_path: str, limit: int = DB_FILE_LIMIT):
         raise Exception(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")
 
 
-def header_check(headers: Dict):
+def check_header(headers: Dict):
     """
     安全检查headers
     Args:

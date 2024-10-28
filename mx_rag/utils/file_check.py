@@ -38,6 +38,7 @@ class SecFileCheck:
 
 class FileCheck:
     MAX_PATH_LENGTH = 1024
+    DEFAULT_MAX_FILE_NAME_LEN = 255
     BLACKLIST_PATH = [
         "/etc/",
         "/usr/bin/",
@@ -134,6 +135,13 @@ class FileCheck:
         dir_path = os.path.dirname(os.path.abspath(file_path))
         # 检查目录的属主
         check_owner(dir_path, "directory")
+    
+    @staticmethod
+    def check_filename_valid(file_path:str, max_lengh: int = 0):
+        max_lengh = FileCheck.DEFAULT_MAX_FILE_NAME_LEN if max_lengh <= 0 else max_lengh
+        file_name = os.path.basename(file_path)
+        if len(file_name) > max_lengh:
+            raise FileCheckError(f"the file name length of {file_name[:max_lengh]}... is over limit {max_lengh}")
 
 
 def check_disk_free_space(path, volume):

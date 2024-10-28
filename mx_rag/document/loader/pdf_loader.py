@@ -18,23 +18,18 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
-from mx_rag.utils.file_check import SecFileCheck, FileCheckError, PathNotFileException
-from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
-
-
-class PdfLang(Enum):
-    EN: str = 'en'
-    CH: str = 'ch'
+from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, Lang
 
 
 class PdfLoader(BaseLoader, mxBaseLoader):
     EXTENSION = (".pdf",)
     
     @validate_params(
-        lang=dict(validator=lambda x: isinstance(x, PdfLang), message="param must be instance of PdfLang"),
+        lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
         layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
-    def __init__(self, file_path: str, lang: PdfLang = PdfLang.EN, layout_recognize: bool = False):
+    def __init__(self, file_path: str, lang: Lang = Lang.EN, layout_recognize: bool = False):
         super().__init__(file_path)
         self.layout_recognize = layout_recognize
         self.ocr_engine = None

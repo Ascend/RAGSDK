@@ -46,7 +46,7 @@ class LoaderMng:
                                    " other check please see the log")
     )
     def register_loader(self, loader_class: BaseLoader, file_types: List[str],
-                        loader_params: Optional[Dict[str, Any]] = None):
+                        loader_params: Dict[str, Any] = None):
         if len(self.loaders) >= self.MAX_REGISTER_LOADER_NUM:
             raise ValueError(f"More than {self.MAX_REGISTER_LOADER_NUM} loaders are registered")
         repeat_type = list(set(self.loader_types) & set(file_types))
@@ -67,7 +67,7 @@ class LoaderMng:
                                      "other check please see the log")
     )
     def register_splitter(self, splitter_class: TextSplitter, file_types: List[str],
-                          splitter_params: Optional[Dict[str, Any]] = None):
+                          splitter_params: Dict[str, Any] = None):
         if len(self.splitters) >= self.MAX_REGISTER_SPLITTER_NUM:
             raise ValueError(f"More than {self.MAX_REGISTER_SPLITTER_NUM} splitters are registered")
         if bool(set(NO_SPLIT_FILE_TYPE) & set(file_types)):

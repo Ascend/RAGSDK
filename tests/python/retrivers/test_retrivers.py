@@ -13,7 +13,7 @@ from transformers import is_torch_npu_available
 from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.knowledge import KnowledgeDB
 from langchain_core.documents import Document
-from mx_rag.storage.document_store.base_storage import MxDocument
+from mx_rag.storage.document_store import MxDocument
 
 if not is_torch_npu_available():
     cur_dir = os.path.dirname(os.path.realpath(__file__))

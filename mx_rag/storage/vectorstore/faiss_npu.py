@@ -13,7 +13,8 @@ from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, STR_MAX_LEN
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, \
+        MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024
 
 
 class MindFAISSError(Exception):
@@ -51,7 +52,7 @@ class MindFAISS(VectorStore):
             message="param must be enum of SimilarityStrategy"),
         auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         load_local_index=dict(
-            validator=lambda x: isinstance(x, str) and len(x) <= STR_MAX_LEN, message=BOOL_TYPE_CHECK_TIP)
+            validator=lambda x: isinstance(x, str) and len(x) <= MAX_PATH_LENGTH, message=STR_LENGTH_CHECK_1024)
     )
     def __init__(
             self,
@@ -76,6 +77,7 @@ class MindFAISS(VectorStore):
         if similarity is None:
             raise MindFAISSError(f"Unsupported similarity strategy: {similarity_strategy}")
         FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
+        FileCheck.check_filename_valid(self.load_local_index)
         if os.path.exists(self.load_local_index):
             logger.info(f"Loading index from local index file: '{self.load_local_index}'")
             try:
@@ -117,6 +119,7 @@ class MindFAISS(VectorStore):
 
     def save_local(self) -> None:
         FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
+        FileCheck.check_filename_valid(self.load_local_index)
         try:
             if os.path.exists(self.load_local_index):
                 logger.warning(f"the index path '{self.load_local_index}' has already exist, will be overwritten")

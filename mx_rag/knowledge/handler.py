@@ -82,6 +82,7 @@ def _check_file(file: str, force: bool, knowledge: KnowledgeBase):
         if not force:
             raise FileHandlerError(f"file path '{file_obj.name}' is already exist")
         else:
+            logger.info(f"delete files '{file_obj.name}' as file is already exist")
             knowledge.delete_file(file_obj.name)
 
 
