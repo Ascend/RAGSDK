@@ -13,7 +13,8 @@ from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, STR_MAX_LEN
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, \
+        MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024
 
 
 class MindFAISSError(Exception):
