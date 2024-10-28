@@ -51,7 +51,7 @@ class MindFAISS(VectorStore):
             message="param must be enum of SimilarityStrategy"),
         auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         load_local_index=dict(
-            validator=lambda x: isinstance(x, str) and len(x) <= STR_MAX_LEN, message=BOOL_TYPE_CHECK_TIP)
+            validator=lambda x: isinstance(x, str) and len(x) <= MAX_PATH_LENGTH, message=STR_LENGTH_CHECK_1024)
     )
     def __init__(
             self,
