@@ -8,8 +8,9 @@ from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-from mx_rag.storage.document_store.base_storage import Docstore, MxDocument, StorageError
-from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_CHUNKS_NUM, MAX_SQLITE_FILE_NAME_LEN, \
+from mx_rag.storage.document_store import MxDocument
+from mx_rag.storage.document_store.base_storage import StorageError, Docstore
+from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, MAX_SQLITE_FILE_NAME_LEN, \
     check_db_file_limit
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
@@ -63,7 +64,6 @@ class SQLiteDocstore(Docstore):
         FileCheck.check_filename_valid(self.db_path, max_lengh=MAX_SQLITE_FILE_NAME_LEN)
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise StorageError("Insufficient remaining space, please clear disk space")
-        self._check_input_documents(documents)
         check_db_file_limit(self.db_path)
         with self.session() as session:
             try:
@@ -129,12 +129,3 @@ class SQLiteDocstore(Docstore):
             chunks = session.query(ChunkModel)
             ids = [chunk.index_id for chunk in chunks.all()]
             return ids
-
-    def _check_input_documents(self, documents: List[MxDocument]):
-        for document in documents:
-            if len(document.document_name) >= 1024:
-                raise ValueError("the document_name length of documents must less than 1024")
-            if len(str(document.metadata)) >= 1024:
-                raise ValueError("the metadata length of documents must less than 1024")
-            if len(document.page_content) > TEXT_MAX_LEN:
-                raise ValueError("the page_content length of documents exceed limit 1000 * 1000")

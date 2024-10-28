@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 
 from mx_rag.storage.document_store import SQLiteDocstore
-from mx_rag.storage.document_store.base_storage import MxDocument
+from mx_rag.storage.document_store import MxDocument
 
 SQL_PATH = str(Path(__file__).parent.absolute() / "sql.db")
 
