@@ -3,8 +3,9 @@
 
 __all__ = [
     "SQLiteDocstore",
-    "Docstore"
+    "Docstore",
+    "MxDocument"
 ]
 
-from .base_storage import Docstore
+from .base_storage import Docstore, MxDocument
 from .sqlite_storage import SQLiteDocstore
