@@ -3,6 +3,7 @@
 from typing import Dict, Any, List, Tuple, Type, Optional
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
+from loguru import logger
 
 from mx_rag.utils.common import (validata_list_str, validate_params, NO_SPLIT_FILE_TYPE,
                                  FILE_TYPE_COUNT, validate_dict)
@@ -29,10 +30,8 @@ class LoaderMng:
     MAX_REGISTER_SPLITTER_NUM = 1000
 
     def __init__(self):
-        self.loaders: Dict[Type, Tuple[List[str], LoaderInfo]] = {}
-        self.loader_types: list = []
-        self.splitters: Dict[Type, Tuple[List[str], SplitterInfo]] = {}
-        self.splitter_types: list = []
+        self.loaders: Dict[str, LoaderInfo] = {}
+        self.splitters: Dict[str, SplitterInfo] = {}
 
     @validate_params(
         loader_class=dict(validator=lambda x: issubclass(x, BaseLoader),
@@ -49,11 +48,12 @@ class LoaderMng:
                         loader_params: Dict[str, Any] = None):
         if len(self.loaders) >= self.MAX_REGISTER_LOADER_NUM:
             raise ValueError(f"More than {self.MAX_REGISTER_LOADER_NUM} loaders are registered")
-        repeat_type = list(set(self.loader_types) & set(file_types))
-        if len(repeat_type) > 0:
-            raise ValueError(f"loaders type {repeat_type} has been registered")
-        self.loader_types.extend(file_types)
-        self.loaders[loader_class] = (file_types, LoaderInfo(loader_class, loader_params or {}))
+        for file_type_str in file_types:
+            if file_type_str in self.loaders:
+                logger.warning(f"the loader class for file type '{file_type_str}' has been updated "
+                               f"from '{self.loaders[file_type_str].loader_class}' to '{loader_class}'")
+            self.loaders[file_type_str] = LoaderInfo(loader_class, loader_params or {})
+
 
     @validate_params(
         splitter_class=dict(validator=lambda x: issubclass(x, TextSplitter),
@@ -72,18 +72,19 @@ class LoaderMng:
             raise ValueError(f"More than {self.MAX_REGISTER_SPLITTER_NUM} splitters are registered")
         if bool(set(NO_SPLIT_FILE_TYPE) & set(file_types)):
             raise KeyError(f"Unsupported register splitter for file type {set(NO_SPLIT_FILE_TYPE) & set(file_types)}")
-        repeat_type = list(set(self.splitter_types) & set(file_types))
-        if len(repeat_type) > 0:
-            raise ValueError(f"splitters type {repeat_type} has been registered")
-        self.splitter_types.extend(file_types)
-        self.splitters[splitter_class] = (file_types, SplitterInfo(splitter_class, splitter_params or {}))
+        for file_type_str in file_types:
+            if file_type_str in self.splitters:
+                logger.warning(f"the splitter class for file type '{file_type_str}' has been updated "
+                               f"from '{self.splitters[file_type_str].splitter_class}' to '{splitter_class}'")
+            self.splitters[file_type_str] = SplitterInfo(splitter_class, splitter_params or {})
+
 
     @validate_params(
         file_suffix=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= FILE_TYPE_COUNT,
                          message="param must be str, length range [1, 32]"))
     def get_loader(self, file_suffix: str) -> LoaderInfo:
-        for file_types, loader_info in self.loaders.values():
-            if file_suffix in file_types:
+        for file_type, loader_info in self.loaders.items():
+            if file_suffix == file_type:
                 return loader_info
         raise KeyError(f"No loader registered for file type '{file_suffix}'")
 
@@ -91,28 +92,57 @@ class LoaderMng:
         file_suffix=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= FILE_TYPE_COUNT,
                          message="param must be str, length range [1, 32]"))
     def get_splitter(self, file_suffix: str) -> SplitterInfo:
-        for file_types, splitter_info in self.splitters.values():
-            if file_suffix in file_types:
+        for file_type, splitter_info in self.splitters.items():
+            if file_suffix == file_type:
                 return splitter_info
 
         raise KeyError(f"No splitter registered for file type '{file_suffix}'")
 
     @validate_params(
         loader_class=dict(validator=lambda x: issubclass(x, BaseLoader),
-                          message="param must be langchain_community BaseLoader subclass"))
-    def unregister_loader(self, loader_class: Type):
-        if loader_class in self.loaders:
-            self.loader_types = list(set(self.loader_types) - set(self.loaders[loader_class][0]))
-            del self.loaders[loader_class]
+                          message="param must be langchain_community BaseLoader subclass"),
+        file_suffix=dict(validator=lambda x: (isinstance(x, str) and 0 < len(x) <= FILE_TYPE_COUNT) or x is None,
+                         message="param must be str, length range [1, 32], or None")
+    )
+    def unregister_loader(self, loader_class: Type, file_suffix: str = None):
+        keys_delete = []
+        if file_suffix:
+            if file_suffix in self.loaders and self.loaders[file_suffix].loader_class == loader_class:
+                keys_delete.append(file_suffix)
+            else:
+                raise KeyError(f"file type '{file_suffix}': loader class '{loader_class}' is not registered")
         else:
-            raise KeyError(f"Loader class '{loader_class}' is not registered")
+            # 如果file_suffix为空，删除 value 为 loader_class 的所有元素
+            for file, loader_info in self.loaders.items():
+                if loader_info.loader_class == loader_class:
+                    keys_delete.append(file)
+            if not keys_delete:
+                raise KeyError(f"loader class '{loader_class}' is not registered")
+
+        for key in keys_delete:
+            del self.loaders[key]
+
 
     @validate_params(
         splitter_class=dict(validator=lambda x: issubclass(x, TextSplitter),
-                            message="param must be langchain_community TextSplitter subclass"))
-    def unregister_splitter(self, splitter_class: Type):
-        if splitter_class in self.splitters:
-            self.splitter_types = list(set(self.splitter_types) - set(self.splitters[splitter_class][0]))
-            del self.splitters[splitter_class]
+                            message="param must be langchain_community TextSplitter subclass"),
+        file_suffix=dict(validator=lambda x: (isinstance(x, str) and 0 < len(x) <= FILE_TYPE_COUNT) or x is None,
+                         message="param must be str, length range [1, 32], or None")
+    )
+    def unregister_splitter(self, splitter_class: Type, file_suffix: str = None):
+        keys_delete = []
+        if file_suffix:
+            if file_suffix in self.splitters and self.splitters[file_suffix].splitter_class == splitter_class:
+                keys_delete.append(file_suffix)
+            else:
+                raise KeyError(f"file type '{file_suffix}': splitter class '{splitter_class}' is not registered")
         else:
-            raise KeyError(f"Splitter class '{splitter_class}' is not registered")
+            # 删除 value 为 splitter_class 的所有元素
+            for file, splitter_info in self.splitters.items():
+                if splitter_info.splitter_class == splitter_class:
+                    keys_delete.append(file)
+            if not keys_delete:
+                raise KeyError(f"splitter class '{splitter_class}' is not registered")
+        for key in keys_delete:
+            del self.splitters[key]
+
