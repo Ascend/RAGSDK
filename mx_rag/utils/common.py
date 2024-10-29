@@ -292,10 +292,11 @@ def check_api_key(api_key):
 
 
 def validate_dict(param: dict,
-                  max_str_length:int = 1024 * 1024,
-                  max_list_length:int = 4096,
-                  max_dict_length:int = 1024,
-                  max_check_depth:int = 3) -> bool:
+                  max_str_length: int = 1024 * 1024,
+                  max_list_length: int = 4096,
+                  max_dict_length: int = 1024,
+                  max_check_depth: int = 3,
+                  current_depth: int = 0) -> bool:
     """
     递归校验字典和字典里面的key以及value是否超过允许范围
     Args:
@@ -304,9 +305,10 @@ def validate_dict(param: dict,
         max_list_length: int 字典里面最大的列表长度限制
         max_dict_length: int 字典包含的元素个数限制
         max_check_depth: int 字典校验深度
+        current_depth: int 用于计算
     """
     if max_check_depth <= 0:
-        logger.error(f"dict nest depth cannot exceed {max_check_depth}")
+        logger.error(f"dict nest depth cannot exceed {current_depth}")
         return False
 
     def check_str(data):
@@ -318,12 +320,13 @@ def validate_dict(param: dict,
 
     def check_dict(data):
         if isinstance(data, dict):
-            res = validate_dict(data, max_str_length, max_list_length, max_dict_length, max_check_depth - 1)
+            res = validate_dict(data, max_str_length, max_list_length, max_dict_length, max_check_depth - 1,
+                                current_depth + 1)
             return res
         return True
 
-    def check_list(data):
-        if isinstance(data, list):
+    def check_list_tuple_set(data):
+        if isinstance(data, list) or isinstance(data, tuple) or isinstance(data, set):
             if not 0 <= len(data) <= max_list_length:
                 logger.error(f"param list length must in range[0, {max_list_length}]")
                 return False
@@ -341,10 +344,9 @@ def validate_dict(param: dict,
         logger.error(f"param dict length must in range[0, {max_dict_length}]")
         return False
 
-    check_callback = [check_str, check_list, check_dict]
+    check_callback = [check_str, check_list_tuple_set, check_dict]
     for key, value in param.items():
         if not all([check(key) and check(value) for check in check_callback]):
-            logger.error("param dict check failed")
             return False
     return True
 
