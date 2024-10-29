@@ -5,8 +5,9 @@ import os
 import unittest
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
+from mx_rag.document import LoaderMng
+from mx_rag.document.doc_loader_mng import LoaderInfo, SplitterInfo
 from mx_rag.document.loader import ExcelLoader
-from mx_rag.knowledge.doc_loader_mng import LoaderMng, LoaderInfo, SplitterInfo
 
 
 class LoaderMngTestCase(unittest.TestCase):
