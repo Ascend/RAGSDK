@@ -3,28 +3,18 @@
 
 import re
 from typing import List
+from langchain_core.pydantic_v1 import validator
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
-from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers.retriever import Retriever
 from mx_rag.llm.llm_parameter import LLMParameterConfig
-from mx_rag.utils.common import TEXT_MAX_LEN, validate_params
+from mx_rag.utils.common import TEXT_MAX_LEN, MAX_PROMPT_LENGTH, validate_params
 
-DEFAULT_QUERY_PROMPT_EN = PromptTemplate(
-    input_variables=["question"],
-    template="""You are an AI language model assistant. Your task is 
-        to generate 3 different versions of the given user 
-        question to retrieve relevant documents from a vector database. 
-        Your goal is to help the user overcome some of the limitations 
-        of distance-based similarity search. Provide these alternative 
-        questions in english.Please number the answers starting from 1 
-        and separated by newlines. Original question: {question}"""
-)
 
 DEFAULT_QUERY_PROMPT_CH = PromptTemplate(
     input_variables=["question"],
@@ -55,6 +45,15 @@ class MultiQueryRetriever(Retriever):
 
     class Config:
         arbitrary_types_allowed = True  # 允许自定义类型
+
+    @validator('prompt')
+    @classmethod
+    def _validate_prompt(cls, prompt):
+        if set(prompt.input_variables) != {"question"}:
+            raise ValueError('prompt.input_variables must include exactly "question".')
+        if not (0 < len(prompt.template) <= MAX_PROMPT_LENGTH):
+            raise ValueError(f'prompt.template length must be between 1 and {MAX_PROMPT_LENGTH}.')
+        return prompt
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
