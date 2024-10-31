@@ -4,18 +4,16 @@
 import os
 import re
 from dataclasses import dataclass
-from typing import List, Tuple, Any, Iterator
+from typing import Iterator
 
 from pathlib import Path
 import docx
-from docx.text.paragraph import Paragraph
 from loguru import logger
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.file_check import SecFileCheck
-from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
 
 

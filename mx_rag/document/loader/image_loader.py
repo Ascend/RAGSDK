@@ -4,7 +4,6 @@ import base64
 import os
 from pathlib import Path
 from typing import Iterator
-from loguru import logger
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader

@@ -1,6 +1,6 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from typing import Dict, Any, List, Tuple, Type, Optional
+from typing import Dict, Any, List, Type
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
 from loguru import logger
