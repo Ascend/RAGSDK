@@ -302,6 +302,12 @@ class KnowledgeMgrStore:
                 names.append(k.knowledge_name)
             return names
 
+    def check_knowledge_exist(self, knowledge_name: str) -> bool:
+        with self.session() as session:
+            chunk = session.query(KnowledgeMgrModel).filter_by(
+                knowledge_name=knowledge_name).first()
+            return True if chunk is not None else False
+
 
 class KnowledgeMgr:
     @validate_params(
@@ -315,7 +321,7 @@ class KnowledgeMgr:
         knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be type KnowledgeDB")
     )
     def register(self, knowledge: KnowledgeDB):
-        if knowledge.knowledge_name in self.mgr_store.get_all():
+        if self.mgr_store.check_knowledge_exist(knowledge.knowledge_name):
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} has been registered")
         self.mgr_store.add(knowledge.knowledge_name)
 
@@ -323,7 +329,7 @@ class KnowledgeMgr:
         knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be type KnowledgeDB")
     )
     def delete(self, knowledge: KnowledgeDB):
-        if knowledge.knowledge_name not in self.mgr_store.get_all():
+        if not self.mgr_store.check_knowledge_exist(knowledge.knowledge_name):
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} is not be registered")
         if knowledge.get_all_documents():
             raise KnowledgeError(f"please clear knowledge, before delete")
