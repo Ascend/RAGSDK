@@ -306,7 +306,7 @@ class KnowledgeMgrStore:
         with self.session() as session:
             chunk = session.query(KnowledgeMgrModel).filter_by(
                 knowledge_name=knowledge_name).first()
-            return True if chunk is not None else False
+            return chunk is not None
 
 
 class KnowledgeMgr:
