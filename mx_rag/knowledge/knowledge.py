@@ -302,6 +302,10 @@ class KnowledgeMgrStore:
                 names.append(k.knowledge_name)
             return names
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024)
+    )
     def check_knowledge_exist(self, knowledge_name: str) -> bool:
         with self.session() as session:
             chunk = session.query(KnowledgeMgrModel).filter_by(
