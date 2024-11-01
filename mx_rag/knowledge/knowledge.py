@@ -130,7 +130,7 @@ class KnowledgeStore:
         with self.session() as session:
             chunk = session.query(KnowledgeModel).filter_by(
                 knowledge_name=knowledge_name, document_name=doc_name).first()
-            return True if chunk is not None else False
+            return chunk is not None
 
 
 def _check_metadatas(metadatas: List[dict] = None) -> bool:
@@ -308,6 +308,16 @@ class KnowledgeMgrStore:
                 names.append(k.knowledge_name)
             return names
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024)
+    )
+    def check_knowledge_exist(self, knowledge_name: str) -> bool:
+        with self.session() as session:
+            chunk = session.query(KnowledgeMgrModel).filter_by(
+                knowledge_name=knowledge_name).first()
+            return chunk is not None
+
 
 class KnowledgeMgr:
     @validate_params(
@@ -321,7 +331,7 @@ class KnowledgeMgr:
         knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be type KnowledgeDB")
     )
     def register(self, knowledge: KnowledgeDB):
-        if knowledge.knowledge_name in self.mgr_store.get_all():
+        if self.mgr_store.check_knowledge_exist(knowledge.knowledge_name):
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} has been registered")
         self.mgr_store.add(knowledge.knowledge_name)
 
@@ -329,7 +339,7 @@ class KnowledgeMgr:
         knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be type KnowledgeDB")
     )
     def delete(self, knowledge: KnowledgeDB):
-        if knowledge.knowledge_name not in self.mgr_store.get_all():
+        if not self.mgr_store.check_knowledge_exist(knowledge.knowledge_name):
             raise KnowledgeError(f"knowledge {knowledge.knowledge_name} is not be registered")
         if knowledge.get_all_documents():
             raise KnowledgeError(f"please clear knowledge, before delete")

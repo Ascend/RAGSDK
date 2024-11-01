@@ -11,7 +11,7 @@ from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.common import validate_params, Lang
-from mx_rag.utils.file_check import SecFileCheck, FileCheckError, PathNotFileException
+from mx_rag.utils.file_check import SecFileCheck
 
 
 class PowerPointLoader(BaseLoader, mxBaseLoader):

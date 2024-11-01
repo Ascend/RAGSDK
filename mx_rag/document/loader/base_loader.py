@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
-from abc import ABC, abstractmethod
+from abc import ABC
 import zipfile
 import psutil
 
