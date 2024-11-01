@@ -137,11 +137,11 @@ class FileCheck:
         check_owner(dir_path, "directory")
     
     @staticmethod
-    def check_filename_valid(file_path:str, max_lengh: int = 0):
-        max_lengh = FileCheck.DEFAULT_MAX_FILE_NAME_LEN if max_lengh <= 0 else max_lengh
+    def check_filename_valid(file_path: str, max_length: int = 0):
+        max_length = FileCheck.DEFAULT_MAX_FILE_NAME_LEN if max_length <= 0 else max_length
         file_name = os.path.basename(file_path)
-        if len(file_name) > max_lengh:
-            raise FileCheckError(f"the file name length of {file_name[:max_lengh]}... is over limit {max_lengh}")
+        if len(file_name) > max_length:
+            raise FileCheckError(f"the file name length of {file_name[:max_length]}... is over limit {max_length}")
 
 
 def check_disk_free_space(path, volume):

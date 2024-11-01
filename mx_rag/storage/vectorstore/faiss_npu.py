@@ -46,7 +46,7 @@ class MindFAISS(VectorStore):
 
     @validate_params(
         x_dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_VEC_DIM,
-                   message="param must be int and value range [0, 1024 * 1024]"),
+                   message="param must be int and value range (0, 1024 * 1024]"),
         similarity_strategy=dict(
             validator=lambda x: isinstance(x, SimilarityStrategy) and x in MindFAISS.SIMILARITY_STRATEGY_MAP,
             message="param must be enum of SimilarityStrategy"),
