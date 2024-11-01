@@ -5,7 +5,7 @@ import inspect
 import os
 from datetime import datetime
 from enum import Enum
-from typing import List, Dict
+from typing import List, Dict, Optional, Union
 import multiprocessing.synchronize
 import _thread
 
@@ -51,6 +51,7 @@ STR_TYPE_CHECK_TIP_1024 = "param must be str, length range [1, 1024]"
 NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
 DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
 MAX_CHUNKS_NUM = 1000 * 1000
+MAX_PAGE_CONTENT = 16 * MB
 
 
 def safe_get(data, keys, default=None):
@@ -291,63 +292,66 @@ def check_api_key(api_key):
     return True
 
 
-def validate_dict(param: dict,
-                  max_str_length: int = 1024 * 1024,
-                  max_list_length: int = 4096,
-                  max_dict_length: int = 1024,
-                  max_check_depth: int = 3,
-                  current_depth: int = 0) -> bool:
+def validate_sequence(param: Union[str, dict, list, tuple, set],
+                      max_str_length: int = 1024,
+                      max_sequence_length: int = 1024,
+                      max_check_depth: int = 1,
+                      current_depth: int = 0) -> bool:
     """
-    递归校验字典和字典里面的key以及value是否超过允许范围
+    递归校验序列值是否超过允许范围
     Args:
-        param: dict 字典输入
-        max_str_length: int 字典里面最大字符串限制
-        max_list_length: int 字典里面最大的列表长度限制
-        max_dict_length: int 字典包含的元素个数限制
-        max_check_depth: int 字典校验深度
+        param: 序列
+        max_str_length: int 序列中字符串最大限制
+        max_sequence_length: int 序列最大长度限制
+        max_check_depth: int 序列校验深度
         current_depth: int 用于计算
     """
-    if max_check_depth <= 0:
-        logger.error(f"dict nest depth cannot exceed {current_depth}")
+    if max_check_depth < 0:
+        logger.error(f"sequence nest depth cannot exceed {current_depth}")
         return False
 
     def check_str(data):
-        if isinstance(data, str):
-            if not 0 <= len(data) <= max_str_length:
-                logger.error(f"param string length must in range[0, {max_str_length}]")
-                return False
+        if not isinstance(data, str):
+            return True
+
+        if not 0 <= len(data) <= max_str_length:
+            logger.error(f"the {current_depth}th layer string param length must in range[0, {max_str_length}]")
+            return False
+
         return True
 
     def check_dict(data):
-        if isinstance(data, dict):
-            res = validate_dict(data, max_str_length, max_list_length, max_dict_length, max_check_depth - 1,
-                                current_depth + 1)
-            return res
+        for k, v in data.items():
+            if not (check_str(k) and validate_sequence(v, max_str_length, max_sequence_length, max_check_depth - 1,
+                                                       current_depth + 1)):
+                return False
+
         return True
 
     def check_list_tuple_set(data):
-        if isinstance(data, list) or isinstance(data, tuple) or isinstance(data, set):
-            if not 0 <= len(data) <= max_list_length:
-                logger.error(f"param list length must in range[0, {max_list_length}]")
+        for item in data:
+            if not validate_sequence(item, max_str_length, max_sequence_length, max_check_depth - 1,
+                                     current_depth + 1):
                 return False
 
-            for item in data:
-                if not all([check(item) for check in check_callback]):
-                    return False
         return True
 
-    if not isinstance(param, dict):
-        logger.error("param type should dict")
+    if not isinstance(param, (str, dict, set, list, tuple)):
+        return True
+
+    if isinstance(param, str):
+        return check_str(param)
+
+    if not 0 <= len(param) <= max_sequence_length:
+        logger.error(f"the {current_depth}th layer param length must in range[0, {max_sequence_length}]")
         return False
 
-    if not 0 <= len(param) <= max_dict_length:
-        logger.error(f"param dict length must in range[0, {max_dict_length}]")
-        return False
+    if isinstance(param, (set, list, tuple)):
+        return check_list_tuple_set(param)
 
-    check_callback = [check_str, check_list_tuple_set, check_dict]
-    for key, value in param.items():
-        if not all([check(key) and check(value) for check in check_callback]):
-            return False
+    if isinstance(param, dict):
+        return check_dict(param)
+
     return True
 
 

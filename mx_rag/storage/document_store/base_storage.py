@@ -4,13 +4,15 @@ from abc import ABC, abstractmethod
 
 from pydantic.v1 import BaseModel, Field, validator
 
+from mx_rag.utils.common import validate_sequence, MAX_PAGE_CONTENT
+
 
 class StorageError(Exception):
     pass
 
 
 class MxDocument(BaseModel):
-    page_content: str = Field(min_length=1, max_length=1024)
+    page_content: str = Field(min_length=1, max_length=MAX_PAGE_CONTENT)
     metadata: dict = Field(default_factory=dict)
     document_name: str = Field(min_length=1, max_length=1024)
 
@@ -19,12 +21,9 @@ class MxDocument(BaseModel):
 
     @validator('metadata')
     def _validate_metadata(cls, metadata):
-        for k, v in metadata.items():
-            if isinstance(k, str) and isinstance(v, str):
-                continue
-            raise ValueError("metadata must be type Dict[str, str]")
-        if len(str(metadata)) > 1024:
-            raise ValueError("The length of the MxDocument metadata converted into a str cannot exceed 1024.")
+        if not validate_sequence(metadata):
+            raise ValueError("check MxDocument metadata failed")
+
         return metadata
 
 

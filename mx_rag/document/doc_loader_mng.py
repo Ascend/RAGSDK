@@ -6,7 +6,7 @@ from langchain_text_splitters.base import TextSplitter
 from loguru import logger
 
 from mx_rag.utils.common import (validata_list_str, validate_params, NO_SPLIT_FILE_TYPE,
-                                 FILE_TYPE_COUNT, validate_dict)
+                                 FILE_TYPE_COUNT, validate_sequence)
 
 
 class LoaderInfo:
@@ -40,7 +40,7 @@ class LoaderMng:
         file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
-        loader_params=dict(validator=lambda x: (validate_dict(x) if isinstance(x, Dict) else False) or x is None,
+        loader_params=dict(validator=lambda x: (isinstance(x, Dict) and validate_sequence(x)) or x is None,
                            message="param must meets: Type must be Dict or None,"
                                    " other check please see the log")
     )
@@ -61,7 +61,7 @@ class LoaderMng:
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
 
-        splitter_params=dict(validator=lambda x: (validate_dict(x) if isinstance(x, Dict) else False) or x is None,
+        splitter_params=dict(validator=lambda x: (isinstance(x, Dict) and validate_sequence(x)) or x is None,
                              message="param must meets: Type must be Dict or None, "
                                      "other check please see the log")
     )

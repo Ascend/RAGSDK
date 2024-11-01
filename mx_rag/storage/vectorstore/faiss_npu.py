@@ -144,7 +144,7 @@ class MindFAISS(VectorStore):
         if len(ids) >= self.MAX_VEC_NUM:
             raise MindFAISSError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         res = self.index.remove_ids(np.array(ids))
-        logger.debug(f"success remove ids {ids} in MindFAISS.")
+        logger.debug(f"success remove {len(ids)} ids in MindFAISS.")
         if self.auto_save:
             self.save_local()
         return res
@@ -172,7 +172,7 @@ class MindFAISS(VectorStore):
             raise MindFAISSError(f"total num of ids/embeding is reach to limit {self.MAX_VEC_NUM}")
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
-            logger.debug(f"success add ids {ids} in MindFAISS.")
+            logger.debug(f"success add {len(ids)} ids in MindFAISS.")
         except (AttributeError, AssertionError) as e:
             logger.error(f"Failed to add index due to an attribute or assertion error: {e}")
             raise MindFAISSError(f"Failed to add index: {e}") from e
