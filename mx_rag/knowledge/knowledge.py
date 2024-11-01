@@ -14,7 +14,7 @@ from mx_rag.storage.document_store import Docstore, MxDocument
 
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, MAX_SQLITE_FILE_NAME_LEN, \
-    check_db_file_limit, validata_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_dict, STR_MAX_LEN
+    check_db_file_limit, validata_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_sequence, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 Base = declarative_base()
@@ -137,10 +137,16 @@ def _check_metadatas(metadatas: List[dict] = None) -> bool:
     if metadatas is None:
         return True
     if not isinstance(metadatas, list) or not (0 < len(metadatas) <= TEXT_MAX_LEN):
+        logger.error(f"metadatas type incorrect or length over {TEXT_MAX_LEN}")
         return False
     for item in metadatas:
-        return validate_dict(item, max_str_length=1024*1024, max_list_length=4096,
-                             max_dict_length=1024, max_check_depth=3)
+        if not isinstance(item, dict):
+            logger.error("metadata type is not dict")
+            return False
+        if not validate_sequence(item):
+            return False
+
+    return True
 
 
 class KnowledgeDB(KnowledgeBase):
