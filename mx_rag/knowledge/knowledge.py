@@ -130,7 +130,7 @@ class KnowledgeStore:
         with self.session() as session:
             chunk = session.query(KnowledgeModel).filter_by(
                 knowledge_name=knowledge_name, document_name=doc_name).first()
-            return True if chunk is not None else False
+            return chunk is not None
 
 
 def _check_metadatas(metadatas: List[dict] = None) -> bool:
