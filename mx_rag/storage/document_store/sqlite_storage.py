@@ -57,7 +57,7 @@ class SQLiteDocstore(Docstore):
         os.chmod(db_path, 0o600)
 
     @validate_params(documents=dict(
-        validator=lambda x: 0 < len(x) < MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
+        validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
         message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"))
     def add(self, documents: List[MxDocument]) -> List[int]:
         FileCheck.check_input_path_valid(self.db_path, check_blacklist=True)
