@@ -17,12 +17,6 @@ from mx_rag.utils.file_check import SecFileCheck
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP
 
 
-@dataclass
-class ContentsHeading:
-    title: str = ""
-    sub_content: str = ""
-
-
 class DocxLoader(BaseLoader, mxBaseLoader):
     """Loading logic for loading documents from docx."""
     EXTENSION = (".docx",)
