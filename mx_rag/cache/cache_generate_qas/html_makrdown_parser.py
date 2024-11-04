@@ -68,9 +68,9 @@ class HTMLParser(GenerateQaParser):
             import readability
             from html_text import html_text
             response = client.get(url, self.headers)
-            if not response:
+            if not response.success:
                 return "", ""
-            html_doc = readability.Document(response)
+            html_doc = readability.Document(response.data)
             title = html_doc.title()
             content = html_text.extract_text(html_doc.summary(html_partial=True))
             if not title or not content:
