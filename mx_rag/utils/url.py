@@ -216,37 +216,34 @@ class RequestUtils:
     def get(self, url: str, headers: Dict):
         if not is_url_valid(url, self.use_http):
             logger.error(f"url check failed")
-            return ""
+            return Result(False, "")
 
         try:
             req = urllib.request.Request(url, headers=headers, method="GET")
             response = urllib.request.urlopen(req, timeout=self.client_param.timeout, context=self.ssl_ctx)
         except urllib3_TimeoutError:
             logger.error("The request timed out")
-            return ""
+            return Result(False, "")
         except HTTPError:
             logger.error("HTTP request failed with error")
-            return ""
+            return Result(False, "")
         except Exception:
             logger.error(f"request failed")
-            return ""
+            return Result(False, "")
         content_type = response.headers.get('Content-Type')
         if content_type is None:
             logger.warning(f"No 'Content-Type' found in the response headers")
-            return ""
+            return Result(False, "")
 
-        if "text/html" not in content_type:
-            logger.warning(f"Content-Type is not 'text/html' in response")
-            return ""
         if response.status == HTTP_SUCCESS:
             try:
-                return response.read(amt=self.response_limit_size)
+                return Result(True, response.read(amt=self.response_limit_size))
             except Exception as e:
                 logger.error(f"read response failed, find exception: {e}")
-                return ""
+                return Result(False, "")
         else:
             logger.error(f"request failed with status code {response.status}")
-            return ""
+            return Result(False, "")
 
     def _iter_lines(self, response, chunk_size=1024) -> Iterator[Result]:
         buffer = b''
