@@ -44,10 +44,7 @@ class SingleText2TextChain(Chain):
         self._content = ""
         self._prompt = prompt
         self._source = source
-        self._history: List[Dict] = []
         self._role: str = "user"
-        self._docs = []
-        self._query_str = ""
 
     @validate_params(
         text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
@@ -58,7 +55,6 @@ class SingleText2TextChain(Chain):
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95),
               *args, **kwargs) \
             -> Union[Dict, Iterator[Dict]]:
-        self._history = []
         return self._query(text, llm_config)
 
     def _merge_query_prompt(self, query: str, docs: List[Document], prompt: str):
@@ -78,40 +74,41 @@ class SingleText2TextChain(Chain):
         return final_prompt
 
     def _query(self,
-               text: str,
+               question: str,
                llm_config: LLMParameterConfig) -> Union[Dict, Iterator[Dict]]:
 
-        self._query_str = text
-        self._docs = self._retriever.invoke(text)
+        q_docs = self._retriever.invoke(question)
 
-        if self._reranker is not None and len(self._docs) > 0:
-            scores = self._reranker.rerank(text, [doc.page_content for doc in self._docs])
-            self._docs = self._reranker.rerank_top_k(self._docs, scores)
+        if self._reranker is not None and len(q_docs) > 0:
+            scores = self._reranker.rerank(question, [doc.page_content for doc in q_docs])
+            q_docs = self._reranker.rerank_top_k(q_docs, scores)
 
-        question = self._merge_query_prompt(text, copy.deepcopy(self._docs), self._prompt)
+        q_with_promp = self._merge_query_prompt(question, copy.deepcopy(q_docs), self._prompt)
 
         if not llm_config.stream:
-            return self._do_query(question, llm_config)
+            return self._do_query(q_with_promp, llm_config, question=question, q_docs=q_docs)
 
-        return self._do_stream_query(question, llm_config)
+        return self._do_stream_query(q_with_promp, llm_config, question=question, q_docs=q_docs)
 
-    def _do_query(self, text: str, llm_config: LLMParameterConfig) -> Dict:
+    def _do_query(self, q_with_promp: str, llm_config: LLMParameterConfig, question: str, q_docs: List[Document]) \
+            -> Dict:
         logger.info("invoke normal query")
-        resp = {"query": self._query_str, "result": ""}
+        resp = {"query": question, "result": ""}
         if self._source:
-            resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in self._docs]
-        llm_response = self._llm.chat(text, self._history, self._role, llm_config)
+            resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in q_docs]
+        llm_response = self._llm.chat(query=q_with_promp, role=self._role, llm_config=llm_config)
         self._content = llm_response
         resp['result'] = llm_response
         return resp
 
-    def _do_stream_query(self, text: str, llm_config: LLMParameterConfig) -> Iterator[Dict]:
+    def _do_stream_query(self, q_with_promp: str, llm_config: LLMParameterConfig, question: str,
+                         q_docs: List[Document] = None) -> Iterator[Dict]:
         logger.info("invoke stream query")
-        resp = {"query": self._query_str, "result": ""}
-        if self._source:
-            resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in self._docs]
+        resp = {"query": question, "result": ""}
+        if self._source and q_docs:
+            resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in q_docs]
 
-        for response in self._llm.chat_streamly(text, self._history, self._role, llm_config):
+        for response in self._llm.chat_streamly(query=q_with_promp, role=self._role, llm_config=llm_config):
             self._content = response
             resp['result'] = response
             yield resp

@@ -38,7 +38,7 @@ class ParallelText2TextChain(SingleText2TextChain):
         return self._query(text, llm_config)
 
     def _query(self,
-               text: str,
+               question: str,
                llm_config: LLMParameterConfig
                ) -> Union[Dict, Iterator[Dict]]:
         """
@@ -47,19 +47,17 @@ class ParallelText2TextChain(SingleText2TextChain):
             如果prefill完成，检索未完成则此次回答不包含检索内容
 
         Args:
-            text: 用户查询问题
+            question: 用户查询问题
             llm_config: 大模型参数
         Returns:
             用户答案
         """
-        self._query_str = text
-
         # 启动prefill检测进程
-        prefill_process = Process(target=self._prefill_process, args=(text, llm_config))
+        prefill_process = Process(target=self._prefill_process, args=(question, llm_config))
         prefill_process.start()
 
         # 执行检索
-        self._retrieve_process(text)
+        q_docs = self._retrieve_process(question)
 
         # 检测prefill是否完成
         with self.lock:
@@ -71,14 +69,15 @@ class ParallelText2TextChain(SingleText2TextChain):
             answer = answer[0]
         # 否则 走正常推理流程
         else:
-            question = self._prompt + text + "\n" + self.NEXT_RAG_PROMPT
-            for doc in self._docs:
-                question = question + doc.page_content
+            q_with_promp = self._prompt + question + "\n" + self.NEXT_RAG_PROMPT
+            if q_docs:
+                for doc in q_docs:
+                    q_with_promp = q_with_promp + doc.page_content
 
             if not llm_config.stream:
-                answer = self._do_query(question, llm_config)
+                answer = self._do_query(q_with_promp, llm_config, question=question, q_docs=q_docs)
             else:
-                answer = self._do_stream_query(question, llm_config)
+                answer = self._do_stream_query(q_with_promp, llm_config, question=question, q_docs=q_docs)
 
         prefill_process.join()
         self.prefill_done.value = 0
@@ -93,8 +92,8 @@ class ParallelText2TextChain(SingleText2TextChain):
         Returns:
             流式推理结果
         """
-        question = self._prompt + text
-        answer_interator = self._do_stream_query(question, llm_config)
+        q_with_promp = self._prompt + text
+        answer_interator = self._do_stream_query(q_with_promp, llm_config, question=text)
         result = ""
 
         for ans in answer_interator:
@@ -114,9 +113,11 @@ class ParallelText2TextChain(SingleText2TextChain):
         Returns:
             流式推理结果
         """
+        docs = []
         if self._retriever is not None:
-            self._docs = self._retriever.invoke(text)
+            docs = self._retriever.invoke(text)
 
-        if self._reranker is not None and len(self._docs) > 0:
-            scores = self._reranker.rerank(text, [doc.page_content for doc in self._docs])
-            self._docs = self._reranker.rerank_top_k(self._docs, scores)
+        if self._reranker is not None and len(docs) > 0:
+            scores = self._reranker.rerank(text, [doc.page_content for doc in docs])
+            docs = self._reranker.rerank_top_k(docs, scores)
+        return docs
