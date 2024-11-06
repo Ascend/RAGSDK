@@ -5,6 +5,8 @@ import urllib.parse
 from typing import Dict, Iterator
 
 import urllib3
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from urllib3.exceptions import TimeoutError as urllib3_TimeoutError, HTTPError
 from loguru import logger
 
@@ -116,6 +118,29 @@ class RequestUtils:
             logger.warning("The password is too weak. It should contain at least two of the following:"
                            " lowercase characters, uppercase characters, numbers, and symbols,"
                            " and the password must contain at least %d characters. ", MIN_PASSWORD_LENGTH)
+
+    @staticmethod
+    def _check_key_file_is_encrypted(key_path: str):
+        def check(file: str):
+            try:
+                # 无密码方式加载key文件
+                with open(key_path, 'rb') as fi:
+                    key = load_pem_private_key(
+                        fi.read(),
+                        password=None,
+                        backend=default_backend()
+                    )
+                # 如果未抛异常，说明证书未加密
+                return False
+            except TypeError:
+                # 抛出异常说明证书已经加密
+                return True
+            except Exception:
+                # 其他异常表示key文件不是pem格式或者已经损坏
+                raise ValueError("an exception occurred while checking the key file whether encrypted or not")
+
+        if not check(key_path):
+            raise ValueError("key file must encrypted")
 
     def post(self, url: str, body: str, headers: Dict):
         if not is_url_valid(url, self.use_http):
@@ -278,6 +303,8 @@ class RequestUtils:
         if client_param.crt_file or client_param.key_file or client_param.pwd:
             SecFileCheck(client_param.crt_file, MAX_CERT_FILE_SIZE).check()
             SecFileCheck(client_param.key_file, MAX_CERT_FILE_SIZE).check()
+            self._check_key_file_is_encrypted(client_param.key_file)
+            print("0000000000000000000000000000")
             self._check_password(client_param.pwd)
 
         if client_param.crl_file:
