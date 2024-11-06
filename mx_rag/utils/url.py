@@ -137,7 +137,8 @@ class RequestUtils:
                 return True
             except Exception:
                 # 其他异常表示key文件不是pem格式或者已经损坏
-                raise ValueError("an exception occurred while checking the key file whether encrypted or not")
+                logger.error("an exception occurred while checking the key file whether encrypted or not")
+                return False
 
         if not check(key_path):
             raise ValueError("key file must encrypted")
@@ -303,7 +304,7 @@ class RequestUtils:
         if client_param.crt_file or client_param.key_file or client_param.pwd:
             SecFileCheck(client_param.crt_file, MAX_CERT_FILE_SIZE).check()
             SecFileCheck(client_param.key_file, MAX_CERT_FILE_SIZE).check()
-            self._check_key_file_is_encrypted()
+            self._check_key_file_is_encrypted(client_param.key_file)
             self._check_password(client_param.pwd)
 
         if client_param.crl_file:
