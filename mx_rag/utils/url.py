@@ -120,7 +120,7 @@ class RequestUtils:
                            " and the password must contain at least %d characters. ", MIN_PASSWORD_LENGTH)
 
     @staticmethod
-    def _check_key_file_is_encrypted(key_path: str):
+    def _check_key_file_whether_encrypted(key_path: str):
         def check(file: str):
             try:
                 # 无密码方式加载key文件
@@ -304,7 +304,7 @@ class RequestUtils:
         if client_param.crt_file or client_param.key_file or client_param.pwd:
             SecFileCheck(client_param.crt_file, MAX_CERT_FILE_SIZE).check()
             SecFileCheck(client_param.key_file, MAX_CERT_FILE_SIZE).check()
-            self._check_key_file_is_encrypted(client_param.key_file)
+            self._check_key_file_whether_encrypted(client_param.key_file)
             self._check_password(client_param.pwd)
 
         if client_param.crl_file:
