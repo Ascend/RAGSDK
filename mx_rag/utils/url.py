@@ -303,6 +303,7 @@ class RequestUtils:
         if client_param.crt_file or client_param.key_file or client_param.pwd:
             SecFileCheck(client_param.crt_file, MAX_CERT_FILE_SIZE).check()
             SecFileCheck(client_param.key_file, MAX_CERT_FILE_SIZE).check()
+            self._check_key_file_is_encrypted()
             self._check_password(client_param.pwd)
 
         if client_param.crl_file:
