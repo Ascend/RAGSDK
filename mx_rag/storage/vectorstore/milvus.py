@@ -177,7 +177,7 @@ class MilvusDB(VectorStore):
             raise MilvusError(f"collection {self._collection_name} is not existed")
         res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
         self.client.refresh_load(self._collection_name)
-        logger.debug(f"success delete ids {ids} in MilvusDB.")
+        logger.debug(f"success delete {len(ids)} ids in MilvusDB.")
         return res
 
     @validate_params(
@@ -229,7 +229,7 @@ class MilvusDB(VectorStore):
             data.append({"vector": e, "id": i})
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
-        logger.debug(f"success add ids {ids} in MilvusDB.")
+        logger.debug(f"success add {len(ids)} ids in MilvusDB.")
 
     def get_all_ids(self) -> List[int]:
         all_id = self.client.query(self._collection_name, filter="id == 0 or id != 0", output_fields=["id"])

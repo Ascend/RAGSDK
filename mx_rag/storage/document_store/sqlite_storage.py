@@ -49,7 +49,7 @@ class SQLiteDocstore(Docstore):
 
     def __init__(self, db_path: str):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
-        FileCheck.check_filename_valid(db_path, max_lengh=MAX_SQLITE_FILE_NAME_LEN)
+        FileCheck.check_filename_valid(db_path, max_length=MAX_SQLITE_FILE_NAME_LEN)
         self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
         self.session = sessionmaker(bind=engine)
@@ -57,11 +57,11 @@ class SQLiteDocstore(Docstore):
         os.chmod(db_path, 0o600)
 
     @validate_params(documents=dict(
-        validator=lambda x: 0 < len(x) < MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
-        message="param must be List[MxDocument] and length range in [0, 1000 * 1000]"))
+        validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
+        message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"))
     def add(self, documents: List[MxDocument]) -> List[int]:
         FileCheck.check_input_path_valid(self.db_path, check_blacklist=True)
-        FileCheck.check_filename_valid(self.db_path, max_lengh=MAX_SQLITE_FILE_NAME_LEN)
+        FileCheck.check_filename_valid(self.db_path, max_length=MAX_SQLITE_FILE_NAME_LEN)
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             raise StorageError("Insufficient remaining space, please clear disk space")
         check_db_file_limit(self.db_path)

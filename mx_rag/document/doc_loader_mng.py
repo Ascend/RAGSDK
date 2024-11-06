@@ -1,12 +1,12 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from typing import Dict, Any, List, Tuple, Type, Optional
+from typing import Dict, Any, List, Type
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
 from loguru import logger
 
 from mx_rag.utils.common import (validata_list_str, validate_params, NO_SPLIT_FILE_TYPE,
-                                 FILE_TYPE_COUNT, validate_dict)
+                                 FILE_TYPE_COUNT, validate_sequence)
 
 
 class LoaderInfo:
@@ -40,7 +40,7 @@ class LoaderMng:
         file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
-        loader_params=dict(validator=lambda x: (validate_dict(x) if isinstance(x, Dict) else False) or x is None,
+        loader_params=dict(validator=lambda x: (isinstance(x, Dict) and validate_sequence(x)) or x is None,
                            message="param must meets: Type must be Dict or None,"
                                    " other check please see the log")
     )
@@ -54,7 +54,6 @@ class LoaderMng:
                                f"from '{self.loaders[file_type_str].loader_class}' to '{loader_class}'")
             self.loaders[file_type_str] = LoaderInfo(loader_class, loader_params or {})
 
-
     @validate_params(
         splitter_class=dict(validator=lambda x: issubclass(x, TextSplitter),
                             message="param must be a subclass of TextSplitter in langchain_text_splitters.base"),
@@ -62,7 +61,7 @@ class LoaderMng:
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
 
-        splitter_params=dict(validator=lambda x: (validate_dict(x) if isinstance(x, Dict) else False) or x is None,
+        splitter_params=dict(validator=lambda x: (isinstance(x, Dict) and validate_sequence(x)) or x is None,
                              message="param must meets: Type must be Dict or None, "
                                      "other check please see the log")
     )
@@ -78,25 +77,23 @@ class LoaderMng:
                                f"from '{self.splitters[file_type_str].splitter_class}' to '{splitter_class}'")
             self.splitters[file_type_str] = SplitterInfo(splitter_class, splitter_params or {})
 
-
     @validate_params(
         file_suffix=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= FILE_TYPE_COUNT,
                          message="param must be str, length range [1, 32]"))
     def get_loader(self, file_suffix: str) -> LoaderInfo:
-        for file_type, loader_info in self.loaders.items():
-            if file_suffix == file_type:
-                return loader_info
-        raise KeyError(f"No loader registered for file type '{file_suffix}'")
+        loader_info = self.loaders.get(file_suffix)
+        if loader_info is None:
+            raise KeyError(f"No loader registered for file type '{file_suffix}'")
+        return loader_info
 
     @validate_params(
         file_suffix=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= FILE_TYPE_COUNT,
                          message="param must be str, length range [1, 32]"))
     def get_splitter(self, file_suffix: str) -> SplitterInfo:
-        for file_type, splitter_info in self.splitters.items():
-            if file_suffix == file_type:
-                return splitter_info
-
-        raise KeyError(f"No splitter registered for file type '{file_suffix}'")
+        splitter_info = self.splitters.get(file_suffix)
+        if splitter_info is None:
+            raise KeyError(f"No splitter registered for file type '{file_suffix}'")
+        return splitter_info
 
     @validate_params(
         loader_class=dict(validator=lambda x: issubclass(x, BaseLoader),
@@ -122,7 +119,6 @@ class LoaderMng:
         for key in keys_delete:
             del self.loaders[key]
 
-
     @validate_params(
         splitter_class=dict(validator=lambda x: issubclass(x, TextSplitter),
                             message="param must be langchain_community TextSplitter subclass"),
@@ -145,4 +141,3 @@ class LoaderMng:
                 raise KeyError(f"splitter class '{splitter_class}' is not registered")
         for key in keys_delete:
             del self.splitters[key]
-

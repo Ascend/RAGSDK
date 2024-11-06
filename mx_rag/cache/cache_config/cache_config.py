@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Dict, Any
 
 from mx_rag.utils.common import validate_params, \
-    validate_dict, validate_lock, MB, GB, BOOL_TYPE_CHECK_TIP, DICT_TYPE_CHECK_TIP
+    validate_sequence, validate_lock, MB, GB, BOOL_TYPE_CHECK_TIP, DICT_TYPE_CHECK_TIP
 
 
 class EvictPolicy(Enum):
@@ -27,7 +27,6 @@ class EvictPolicy(Enum):
     LFU: str = 'LFU'
     FIFO: str = 'FIFO'
     RR: str = 'RR'
-
 
 
 class CacheConfig:
@@ -60,7 +59,7 @@ class CacheConfig:
         auto_flush=dict(validator=lambda x: isinstance(x, int) and x > 0,
                         message="param must meets: Type is int, and must greater than zero"),
         similarity_threshold=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 1.0,
-                        message="param must meets: Type is float, value range [0.0, 1.0]"),
+                                  message="param must meets: Type is float, value range [0.0, 1.0]"),
         disable_report=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         lock=dict(
             validator=lambda x: x is None or validate_lock(x),
@@ -71,11 +70,10 @@ class CacheConfig:
                  eviction_policy: EvictPolicy = EvictPolicy.LRU,
                  data_save_folder: str = DEFAULT_SAVE_FOLDER,
                  min_free_space: int = 1 * GB,
-                 auto_flush : int = 20,
+                 auto_flush: int = 20,
                  similarity_threshold: float = 0.8,
                  disable_report: bool = False,
                  lock=None):
-
         if auto_flush > cache_size:
             raise ValueError(f"auto flush value range is (0, {cache_size}]")
 
@@ -113,9 +111,12 @@ class SimilarityCacheConfig(CacheConfig):
                         message="param must meets: Type is int, value greater than 0"),
         cache_config=dict(validator=lambda x: isinstance(x, str) and x == "sqlite",
                           message="param must be 'sqlite' now"),
-        vector_config=dict(validator=lambda x: validate_dict(x), message=DICT_TYPE_CHECK_TIP),
-        emb_config=dict(validator=lambda x: validate_dict(x), message=DICT_TYPE_CHECK_TIP),
-        similarity_config=dict(validator=lambda x: validate_dict(x), message=DICT_TYPE_CHECK_TIP),
+        vector_config=dict(validator=lambda x: isinstance(x, dict) and validate_sequence(x, max_check_depth=2),
+                           message=DICT_TYPE_CHECK_TIP),
+        emb_config=dict(validator=lambda x: isinstance(x, dict) and validate_sequence(x),
+                        message=DICT_TYPE_CHECK_TIP),
+        similarity_config=dict(validator=lambda x: isinstance(x, dict) and validate_sequence(x),
+                               message=DICT_TYPE_CHECK_TIP),
     )
     def __init__(self,
                  vector_config: Dict[str, Any],

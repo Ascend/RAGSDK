@@ -2,7 +2,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 from typing import List, Iterator
-from enum import Enum
 
 from pathlib import Path
 import fitz
