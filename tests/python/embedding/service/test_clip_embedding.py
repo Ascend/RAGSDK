@@ -35,10 +35,21 @@ class TestCLIPEmbedding(unittest.TestCase):
                 api_key='valid_api_key',
                 client_param=ClientParam(use_http=True)
             )
-            images = ["image data 1", "image data 2"]
+            images = ["data:image/jpeg;base64,blablalbla1", "data:image/png;base64,blablalbla1"]
             embeddings = clip_embedding.embed_images(images)
             self.assertEqual(len(embeddings), 2)
             self.assertEqual(embeddings, [[0.1, 0.2, 0.3], [0.1, 0.2, 0.3]])
+
+    def test_embed_images_failure(self):
+        with patch('mx_rag.utils.url.RequestUtils.post', Mock(side_effect=mock_post)):
+            clip_embedding = CLIPEmbedding(
+                url='http://valid-url.com',
+                api_key='valid_api_key',
+                client_param=ClientParam(use_http=True)
+            )
+            images = ["image data 1", "image data 2"]
+            with self.assertRaises(ValueError):
+                _ = clip_embedding.embed_images(images)
 
 
 if __name__ == '__main__':

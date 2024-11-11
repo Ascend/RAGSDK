@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import re
 import json
 from typing import List
 
@@ -18,6 +19,15 @@ from mx_rag.utils.common import (
 from mx_rag.utils.common import validate_params, validata_list_str, check_api_key
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
+
+
+def _validate_image_data_uri(image_data_uri):
+    # 正则表达式模式
+    pattern = r'^data:image\/(jpeg|png|gif|bmp|tiff|webp);base64,[A-Za-z0-9+/=]+$'
+    # 校验字符串
+    match = re.match(pattern, image_data_uri)
+    # 返回校验结果
+    return match is not None
 
 
 class CLIPEmbeddingError(Exception):
@@ -79,11 +89,14 @@ class CLIPEmbedding(Embeddings):
     @validate_params(
         images=dict(
             validator=lambda x: validata_list_str(x, [1, EMBBEDDING_IMG_COUNT], [1, 10 * MB]),
-            message=f"param must meets: Type is List[str], list length range [0, {EMBBEDDING_IMG_COUNT}],"
+            message=f"param must meets: Type is List[str], list length range [1, {EMBBEDDING_IMG_COUNT}],"
                     f" str length range [1, {10 * MB}]"),
         batch_size=dict(
             validator=lambda x: 1 <= x <= MAX_BATCH_SIZE, message=f"param value range [1, {MAX_BATCH_SIZE}]"))
     def embed_images(self, images: List[str], batch_size: int = 32) -> List[List[float]]:
+        if not all(_validate_image_data_uri(image_uri) for image_uri in images):
+            raise ValueError("wrong image string, it must match "
+                             "r'^data:image\/(jpeg|png|gif|bmp|tiff|webp);base64,[A-Za-z0-9+/=]+$'")
         return self._encode(uris=images, batch_size=batch_size)
 
     def _encode(self, texts: List[str] = None, uris: List[str] = None, batch_size: int = 32) -> List[List[float]]:
