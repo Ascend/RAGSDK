@@ -1,4 +1,5 @@
 import os
+import json
 import unittest
 from unittest.mock import patch
 
@@ -10,9 +11,13 @@ class TestImageEmbedding(unittest.TestCase):
     @classmethod
     def setup_class(cls):
         os.mkdir("/tmp/chinese-clip-vit-base-patch16/")
+        data = {"vision_config": {'image_size': 224}}
+        with open("/tmp/chinese-clip-vit-base-patch16/config.json", "w") as fi:
+            fi.write(json.dumps(data))
 
     @classmethod
     def teardown_class(cls):
+        os.remove("/tmp/chinese-clip-vit-base-patch16/config.json")
         os.removedirs("/tmp/chinese-clip-vit-base-patch16/")
 
     def setup_method(self, method):
@@ -63,3 +68,7 @@ class TestImageEmbedding(unittest.TestCase):
         text = ["a"] * 1001
         with self.assertRaises(ValueError):
             emb.embed_images(text)
+
+
+if __name__ == '__main__':
+    unittest.main()
