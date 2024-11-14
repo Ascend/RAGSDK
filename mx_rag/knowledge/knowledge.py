@@ -133,7 +133,7 @@ class KnowledgeStore:
             return chunk is not None
 
 
-def _check_metadatas(metadatas: List[dict] = None) -> bool:
+def _check_metadatas(metadatas) -> bool:
     if metadatas is None:
         return True
     if not isinstance(metadatas, list) or not (0 < len(metadatas) <= TEXT_MAX_LEN):

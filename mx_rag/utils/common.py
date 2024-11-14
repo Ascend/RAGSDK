@@ -106,9 +106,14 @@ def validate_params(**validators):
                 # 检查是否通过位置或关键字传递了参数
                 value = _get_value_from_param(arg_name, func, *args, **kwargs)
                 # 运行验证函数
-                if not validator['validator'](value):
-                    raise ValueError(f"The parameter '{arg_name}' of function '{func.__name__}' "
-                                     f"is invalid, message: {validator.get('message')}")
+                try:
+                    if not validator['validator'](value):
+                        raise ValueError(f"The parameter '{arg_name}' of function '{func.__name__}' "
+                                         f"is invalid, message: {validator.get('message')}")
+                except Exception as e:
+                    raise ValueError(f"An exception occur during check parameter. "
+                                     f"The parameter '{arg_name}' of function '{func.__name__}' "
+                                     f"is invalid, message: {validator.get('message')}") from e
             # 如果所有参数都通过验证，则调用原始函数
             return func(*args, **kwargs)
 
@@ -179,7 +184,7 @@ class ParseCertInfo:
         }
 
 
-def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List[int]):
+def validata_list_str(texts, length_limit: List[int], str_limit: List[int]):
     """
     用于List[str]类型的数据校验
     Args:
@@ -190,6 +195,9 @@ def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List
     Returns:
 
     """
+    if not isinstance(texts, List):
+        logger.error("input is not type List[str]")
+        return False
     min_length_limit = length_limit[0]
     max_length_limit = length_limit[1]
     min_str_limit = str_limit[0]
@@ -207,7 +215,7 @@ def validata_list_str(texts: List[str], length_limit: List[int], str_limit: List
     return True
 
 
-def validata_list_list_str(texts: List[List[str]],
+def validata_list_list_str(texts,
                            length_limit: List[int],
                            inner_length_limit: List[int],
                            str_limit: List[int]):
@@ -222,25 +230,21 @@ def validata_list_list_str(texts: List[List[str]],
     Returns:
 
     """
+    if not isinstance(texts, List):
+        logger.error("input is not type List[str]")
+        return False
     if len(length_limit) != 2:
         logger.error("the length limit length must equal two")
         return False
-
     min_length_limit = length_limit[0]
     max_length_limit = length_limit[1]
     if not min_length_limit <= len(texts) <= max_length_limit:
         logger.error(f"The List[List[str]] length not in [{min_length_limit}, {max_length_limit}]")
         return False
-
     for text in texts:
-        if not isinstance(text, List):
-            logger.error("the element in the list is not a list")
-            return False
-
         res = validata_list_str(text, inner_length_limit, str_limit)
         if not res:
             return False
-
     return True
 
 
@@ -257,12 +261,15 @@ def check_db_file_limit(db_path: str, limit: int = DB_FILE_LIMIT):
         raise Exception(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")
 
 
-def check_header(headers: Dict):
+def check_header(headers):
     """
     安全检查headers
     Args:
         headers: headers列表
     """
+    if not isinstance(headers, dict):
+        logger.error("input is not type dict")
+        return False
     if len(headers) > 100:
         logger.error("the length of headers exceed 100")
         return False
