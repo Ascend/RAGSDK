@@ -35,8 +35,8 @@ class ImageEmbedding(Embeddings):
         FileCheck.dir_check(self.model_path)
 
         self.use_fp16 = use_fp16
-        self.model = AutoModel.from_pretrained(self.model_path)
-        self.processor = AutoProcessor.from_pretrained(self.model_path)
+        self.model = AutoModel.from_pretrained(self.model_path, local_files_only=True)
+        self.processor = AutoProcessor.from_pretrained(self.model_path, local_files_only=True)
 
         if self.use_fp16:
             self.model = self.model.half()
