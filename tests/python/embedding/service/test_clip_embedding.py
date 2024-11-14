@@ -35,7 +35,7 @@ class TestCLIPEmbedding(unittest.TestCase):
                 api_key='valid_api_key',
                 client_param=ClientParam(use_http=True)
             )
-            images = ["data:image/jpeg;base64,blablalbla1", "data:image/png;base64,blablalbla1"]
+            images = ["imagedata1", "imagedata2"]
             embeddings = clip_embedding.embed_images(images)
             self.assertEqual(len(embeddings), 2)
             self.assertEqual(embeddings, [[0.1, 0.2, 0.3], [0.1, 0.2, 0.3]])
@@ -47,7 +47,7 @@ class TestCLIPEmbedding(unittest.TestCase):
                 api_key='valid_api_key',
                 client_param=ClientParam(use_http=True)
             )
-            images = ["image data 1", "image data 2"]
+            images = ["^image data 1", "image data 2"]
             with self.assertRaises(ValueError):
                 _ = clip_embedding.embed_images(images)
 
