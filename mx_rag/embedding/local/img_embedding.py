@@ -83,7 +83,7 @@ class ImageEmbedding(Embeddings):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
         # 检查模型文件是否已就绪
-        SecFileCheck(os.path.join(self.model_path, _CLIP_MODELS[self.model_name]['checkpoint']), 2 * GB).check()
+        SecFileCheck(os.path.join(self.model_path, _CLIP_MODELS[self.model_name]['checkpoint']), 10 * GB).check()
 
         self.device = "cpu"
         self.image_size = _CLIP_MODELS[self.model_name]["image_size"]
