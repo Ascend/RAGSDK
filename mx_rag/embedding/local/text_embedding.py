@@ -46,7 +46,7 @@ class TextEmbedding(Embeddings):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
         self.pooling_method = pooling_method
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
         self.model = AutoModel.from_pretrained(model_path, local_files_only=True)
         self.model_lock = lock
 

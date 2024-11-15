@@ -25,7 +25,7 @@ class TestSQLiteStorage(unittest.TestCase):
     def test_sqlite_storage_add(self):
         # 对add函数入参进行校验测试
         doc = MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test")
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             # 期望传入一个列表
             self.db.add(doc)
             # 期望列表元素的类型为MxDocument

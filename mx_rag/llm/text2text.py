@@ -20,7 +20,7 @@ HEADER = {
 }
 
 
-def _check_sys_messages(sys_messages: List[dict] = None) -> bool:
+def _check_sys_messages(sys_messages) -> bool:
     if sys_messages is None:
         return True
 

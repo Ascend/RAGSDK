@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import re
 import json
 from typing import List
 
@@ -18,6 +19,15 @@ from mx_rag.utils.common import (
 from mx_rag.utils.common import validate_params, validata_list_str, check_api_key
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
+
+
+def _validate_image_data_uri(image_data_uri):
+    # 正则表达式模式
+    pattern = r'^[A-Za-z0-9+/=]+$'
+    # 校验字符串
+    match = re.match(pattern, image_data_uri)
+    # 返回校验结果
+    return match is not None
 
 
 class CLIPEmbeddingError(Exception):
@@ -79,24 +89,26 @@ class CLIPEmbedding(Embeddings):
     @validate_params(
         images=dict(
             validator=lambda x: validata_list_str(x, [1, EMBBEDDING_IMG_COUNT], [1, 10 * MB]),
-            message=f"param must meets: Type is List[str], list length range [0, {EMBBEDDING_IMG_COUNT}],"
+            message=f"param must meets: Type is List[str], list length range [1, {EMBBEDDING_IMG_COUNT}],"
                     f" str length range [1, {10 * MB}]"),
         batch_size=dict(
             validator=lambda x: 1 <= x <= MAX_BATCH_SIZE, message=f"param value range [1, {MAX_BATCH_SIZE}]"))
     def embed_images(self, images: List[str], batch_size: int = 32) -> List[List[float]]:
-        return self._encode(uris=images, batch_size=batch_size)
+        if not all(_validate_image_data_uri(image_uri) for image_uri in images):
+            raise ValueError("wrong image string, it must match r'^[A-Za-z0-9+/=]+$'")
+        return self._encode(blobs=images, batch_size=batch_size)
 
-    def _encode(self, texts: List[str] = None, uris: List[str] = None, batch_size: int = 32) -> List[List[float]]:
+    def _encode(self, texts: List[str] = None, blobs: List[str] = None, batch_size: int = 32) -> List[List[float]]:
         texts = texts or []
-        uris = uris or []
+        blobs = blobs or []
 
         inputs = [{'text': text} for text in texts]
-        inputs.extend([{'uri': uri} for uri in uris])
+        inputs.extend([{'blob': blob} for blob in blobs])
         result = []
 
         for start_index in range(0, len(inputs), batch_size):
             batched_inputs = inputs[start_index: start_index + batch_size]
-            request_body = {"data": batched_inputs}
+            request_body = {"data": batched_inputs, "parameters": {"drop_image_content": True}}
             try:
                 resp = self.client.post(self.url, json.dumps(request_body), headers=self.HEADERS)
                 if not resp.success:

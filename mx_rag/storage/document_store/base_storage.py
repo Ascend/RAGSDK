@@ -12,9 +12,9 @@ class StorageError(Exception):
 
 
 class MxDocument(BaseModel):
-    page_content: str = Field(min_length=1, max_length=MAX_PAGE_CONTENT)
+    page_content: str = Field(max_length=MAX_PAGE_CONTENT)
     metadata: dict = Field(default_factory=dict)
-    document_name: str = Field(min_length=1, max_length=1024)
+    document_name: str = Field(max_length=1024)
 
     class Config:
         arbitrary_types_allowed = True
