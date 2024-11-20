@@ -1,12 +1,13 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+import datetime
 import os
 from typing import List, Optional
 
 from loguru import logger
-from sqlalchemy import create_engine, Column, Integer, String, JSON
+from sqlalchemy import create_engine, Column, Integer, String, JSON, DateTime
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 
 from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import StorageError, Docstore
@@ -17,30 +18,18 @@ from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 Base = declarative_base()
 
 
-class ChunkIdxModel(Base):
-    __tablename__ = "chunks_meta"
-
-    id = Column(Integer, primary_key=True)
-    chunk_nums = Column(Integer, comment="累计添加的文档数量，用于设置索引的id", default=0)
-
-    # 三个预留字段
-    reserved1 = Column(String, default=None, nullable=True, comment="预留字段1")
-    reserved2 = Column(String, default=None, nullable=True, comment="预留字段2")
-    reserved3 = Column(String, default=None, nullable=True, comment="预留字段3")
-
-
 class ChunkModel(Base):
     __tablename__ = "chunks_table"
 
-    chunk_id = Column(Integer, primary_key=True)
-    index_id = Column(Integer, comment="对应索引的id")
-    chunk_content = Column(String, comment="chunk内容")
+    chunk_id = Column(Integer, primary_key=True, autoincrement=True)
+    document_id = Column(Integer, comment="文档id")
     document_name = Column(String, comment="对应原始文档文件名")
+    chunk_content = Column(String, comment="chunk内容")
     chunk_metadata = Column(JSON, comment="文档metadata")
-    # 三个预留字段
-    reserved1 = Column(String, default=None, nullable=True, comment="预留字段1")
-    reserved2 = Column(String, default=None, nullable=True, comment="预留字段2")
-    reserved3 = Column(String, default=None, nullable=True, comment="预留字段3")
+    create_time = Column(DateTime, comment="创建时间", default=datetime.datetime.utcnow)
+    __table_args__ = (
+        {"sqlite_autoincrement": True}
+    )
 
 
 class SQLiteDocstore(Docstore):
@@ -52,14 +41,16 @@ class SQLiteDocstore(Docstore):
         FileCheck.check_filename_valid(db_path, max_length=MAX_SQLITE_FILE_NAME_LEN)
         self.db_path = db_path
         engine = create_engine(f"sqlite:///{db_path}")
-        self.session = sessionmaker(bind=engine)
+        self.session = scoped_session(sessionmaker(bind=engine))
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
 
-    @validate_params(documents=dict(
-        validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
-        message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"))
-    def add(self, documents: List[MxDocument]) -> List[int]:
+    @validate_params(
+        documents=dict(
+            validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
+            message="param must be List[MxDocument] and length range in (0, 1000 * 1000]")
+    )
+    def add(self, documents: List[MxDocument], document_id: int) -> List[int]:
         FileCheck.check_input_path_valid(self.db_path, check_blacklist=True)
         FileCheck.check_filename_valid(self.db_path, max_length=MAX_SQLITE_FILE_NAME_LEN)
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
@@ -67,23 +58,14 @@ class SQLiteDocstore(Docstore):
         check_db_file_limit(self.db_path)
         with self.session() as session:
             try:
-                chunk_idx = session.query(ChunkIdxModel).filter_by(id=1).first()
-                # 数据表不存在数据时，创建第一条数据
-                if chunk_idx is None:
-                    chunk_idx = ChunkIdxModel()
-                    session.add(chunk_idx)
-                    session.flush()
-
-                idxs = [chunk_idx.chunk_nums + i for i in range(1, len(documents) + 1)]
                 chunks = [
-                    ChunkModel(chunk_content=doc.page_content, document_name=doc.document_name,
-                               chunk_metadata=doc.metadata, index_id=idx)
-                    for doc, idx in zip(documents, idxs)
+                    ChunkModel(document_id=document_id, document_name=doc.document_name, chunk_content=doc.page_content,
+                               chunk_metadata=doc.metadata) for doc in documents
                 ]
-                chunk_idx.chunk_nums += len(chunks)
-                session.bulk_save_objects(chunks)
+                session.add_all(chunks)
                 session.commit()
                 logger.debug(f"success add {chunks[0].document_name} in chunks_table.")
+                idxs = [chunk.chunk_id for chunk in chunks]
                 return idxs
             except SQLAlchemyError as sql_err:
                 session.rollback()
@@ -95,19 +77,20 @@ class SQLiteDocstore(Docstore):
 
     @validate_params(doc_name=dict(validator=lambda x: 0 < len(x) <= SQLiteDocstore.MAX_DOC_NAME_LEN,
                                    message="param length range (0, 1024]"))
-    def delete(self, doc_name: str) -> List[int]:
+    def delete(self, doc_name: str, document_id: int) -> List[int]:
         with self.session() as session:
             try:
-                chunks = session.query(ChunkModel).filter_by(document_name=doc_name)
-                idxs = [c.index_id for c in chunks]
-                chunks.delete(synchronize_session=False)
+                chunks = session.query(ChunkModel).filter_by(document_id=document_id).all()
+                idxs = [c.chunk_id for c in chunks]
+                for chunk in chunks:
+                    session.delete(chunk)
                 session.commit()
-                logger.debug(f"success delete {doc_name} in chunks_table.")
+                logger.debug(f"success delete ('doc_name': {doc_name}, 'document_id': {document_id}) in chunks_table.")
                 return idxs
             except SQLAlchemyError as sql_err:
                 session.rollback()
                 logger.error(f"Database error while deleting doc: {sql_err}")
-                raise StorageError(f"Failed to add chunks due to database error: {sql_err}") from sql_err
+                raise StorageError(f"Failed to delete chunks due to database error: {sql_err}") from sql_err
             except Exception as err:
                 session.rollback()
                 raise StorageError(f"delete chunk failed, {err}") from err
@@ -115,7 +98,7 @@ class SQLiteDocstore(Docstore):
     @validate_params(index_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
     def search(self, index_id: int) -> Optional[MxDocument]:
         with self.session() as session:
-            chunk = session.query(ChunkModel).filter_by(index_id=index_id).first()
+            chunk = session.query(ChunkModel).filter_by(chunk_id=index_id).first()
             if chunk is not None:
                 return MxDocument(
                     page_content=chunk.chunk_content,
@@ -127,5 +110,5 @@ class SQLiteDocstore(Docstore):
     def get_all_index_id(self) -> List[int]:
         with self.session() as session:
             chunks = session.query(ChunkModel)
-            ids = [chunk.index_id for chunk in chunks.all()]
+            ids = [chunk.chunk_id for chunk in chunks.all()]
             return ids

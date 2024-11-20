@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import _thread
 import functools
 import inspect
+import multiprocessing.synchronize
 import os
+import pathlib
 from datetime import datetime
 from enum import Enum
-from typing import List, Dict, Optional, Union
-import multiprocessing.synchronize
-import _thread
+from typing import List, Union
 
 from OpenSSL import crypto
 from loguru import logger
+
+from mx_rag.utils.file_check import FileCheck
 
 FILE_COUNT_MAX = 8000
 INT_32_MAX = 2 ** 31 - 1
@@ -364,3 +367,16 @@ def validate_sequence(param: Union[str, dict, list, tuple, set],
 
 def validate_lock(lock) -> bool:
     return isinstance(lock, (multiprocessing.synchronize.Lock, _thread.LockType))
+
+
+def check_pathlib_path(path) -> bool:
+    try:
+        if not isinstance(path, pathlib.Path):
+            logger.error("param not type pathlib.Path")
+            return False
+        FileCheck.check_input_path_valid(path.as_posix(), check_blacklist=True)
+        FileCheck.check_filename_valid(path.as_posix(), max_length=MAX_SQLITE_FILE_NAME_LEN)
+        return True
+    except Exception as e:
+        logger.error(f"input path is illegal, exception: {str(e)}")
+        return False
