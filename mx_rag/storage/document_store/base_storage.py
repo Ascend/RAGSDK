@@ -33,9 +33,9 @@ class Docstore(ABC):
         pass
 
     @abstractmethod
-    def delete(self, doc_name):
+    def delete(self, doc_name, document_id):
         pass
 
     @abstractmethod
-    def add(self, documents):
+    def add(self, documents, document_id):
         pass

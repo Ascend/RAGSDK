@@ -29,7 +29,7 @@ def upload_files(
         files: List[str],
         loader_mng: LoaderMng,
         embed_func: Callable[[List[str]], List[List[float]]],
-        force: bool = False,
+        force: bool = False
 ):
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
     if len(files) > knowledge.max_file_count:
@@ -53,7 +53,7 @@ def upload_files(
         texts = [doc.page_content for doc in docs if doc.page_content]
         meta_data = [doc.metadata for doc in docs if doc.page_content]
         try:
-            knowledge.add_file(file_obj.name, texts, embed_func, meta_data)
+            knowledge.add_file(file_obj, texts, embed_func, meta_data)
         except Exception as err:
             # 当添加文档失败时，删除已添加的部分文档做回滚，捕获异常是为了正常回滚
             try:
