@@ -104,7 +104,7 @@ class KnowledgeStore:
                 session.add(document_model)
                 session.commit()
                 logger.debug(f"success add (knowledge_name={knowledge_name}, "
-                             f"doc_name={doc_name}) in knowledge_table.")
+                             f"doc_name={doc_name}, user_id={user_id}) in knowledge_table.")
                 return document_model.document_id
             except SQLAlchemyError as db_err:
                 session.rollback()
@@ -133,13 +133,6 @@ class KnowledgeStore:
                 if not knowledge:
                     logger.debug(f"{knowledge_name} does not exist in knowledge_table, no need delete.")
                     return None
-                # 如果多个user_id持有同一个knowledge，则只删除knowledge_table中user_id和knowledge联系
-                if len(session.query(KnowledgeModel).filter_by(knowledge_id=knowledge.id).all()):
-                    session.delete(knowledge)
-                    session.commit()
-                    logger.debug(f"success delete (knowledge_name={knowledge_name}, "
-                                 f"user_id={user_id}) in knowledge_table.")
-                    return None
                 # 删除文档信息
                 doc_to_delete = session.query(DocumentModel).filter_by(document_name=doc_name,
                                                                        knowledge_id=knowledge.knowledge_id).first()
@@ -151,14 +144,6 @@ class KnowledgeStore:
                     session.commit()
                     logger.debug(f"success delete (knowledge_name={knowledge_name}, "
                                  f"document_name={doc_name}, user_id={user_id}) in document_table.")
-                # 删除文档后，知识库下没有任何文档，则删除知识库
-                knowledge_to_delete = session.query(DocumentModel
-                                                    ).filter_by(knowledge_id=knowledge.knowledge_id).first()
-                if not knowledge_to_delete:
-                    session.delete(knowledge)
-                    session.commit()
-                    logger.debug(f"success delete (knowledge_name={knowledge_name}, "
-                                 f"user_id={user_id}) in knowledge_table.")
                 return doc_to_delete.document_id
             except SQLAlchemyError as db_err:
                 session.rollback()
@@ -211,6 +196,18 @@ class KnowledgeStore:
         with self.session() as session:
             knowledge_list = session.query(KnowledgeModel).filter_by(user_id=user_id).all()
         return knowledge_list or []
+
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024),
+        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
+    )
+    def delete_knowledge(self, knowledge_name, user_id):
+        with self.session() as session:
+            session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, user_id=user_id).delete()
+            session.commit()
+            logger.debug(f"success delete (knowledge_name={knowledge_name}, user_id={user_id}) in knowledge_table.")
 
 
 def _check_metadatas(metadatas) -> bool:
@@ -333,6 +330,7 @@ class KnowledgeDB(KnowledgeBase):
         documents = [document.document_name for document in self.get_all_documents()]
         for document in documents:
             self._storage_and_vector_delete(document)
+        self._knowledge_store.delete_knowledge(self.knowledge_name, self.user_id)
 
     def _check_store_accordance(self) -> None:
         doc_chunks = self._document_store.get_all_index_id()

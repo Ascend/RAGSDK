@@ -51,12 +51,14 @@ class TestKnowledge(unittest.TestCase):
         self.assertEqual(knowledge_db1.get_all_documents()[0].knowledge_name, "test_knowledge")
         self.assertEqual(knowledge_db1.get_all_documents()[0].document_name, "test.md")
         self.assertEqual(knowledge.get_all_knowledge_name(), ["test_knowledge"])
-        # 删除文档，文档所在knowledge是user123和Default共用，仅删除了knowledge_table，文档保留
+        # 删除文档后, 只剩下空的knowledge
         knowledge.delete_file("test.md")
+        self.assertEqual(knowledge.get_all_knowledge_name(), ["test_knowledge"])
         self.assertEqual(knowledge_db1.get_all_knowledge_name(), ["test_knowledge"])
         self.assertEqual(knowledge.get_all_documents(), [])
-        self.assertEqual(knowledge_db1.get_all_documents()[0].document_name, "test.md")
-
+        # 多个usr_id对knowledge关系删除
+        knowledge_mgr_store.delete_usr_id_to_knowledge("Default", "test_knowledge")
+        # user_id和knowledge1对1时，不允许删除关系，使用delete_knowledge删除
         with self.assertRaises(KnowledgeError):
             knowledge_mgr_store.delete_usr_id_to_knowledge("user123", "test_knowledge")
         knowledge_db1.delete_knowledge()
