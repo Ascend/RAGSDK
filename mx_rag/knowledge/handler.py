@@ -139,11 +139,11 @@ def upload_dir(params: FilesLoadInfo):
     FileCheck.dir_check(dir_path)
     FileCheck.check_files_num_in_directory(dir_path, "", FILE_COUNT_MAX)
     loader_types = []
-    for file_types, _ in loader_mng.loaders.values():
-        loader_types.extend(file_types)
+    for file_types, _ in loader_mng.loaders.items():
+        loader_types.append(file_types)
     spliter_types = []
-    for file_types, _ in loader_mng.splitters.values():
-        spliter_types.extend(file_types)
+    for file_types, _ in loader_mng.splitters.items():
+        spliter_types.append(file_types)
     if not load_image:
         support_file_type = list(set(loader_types) & set(spliter_types))
     else:
