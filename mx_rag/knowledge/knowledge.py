@@ -19,7 +19,7 @@ from mx_rag.storage.document_store import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, MAX_SQLITE_FILE_NAME_LEN, \
     check_db_file_limit, validata_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_sequence, STR_MAX_LEN, \
-    check_pathlib_path
+    check_pathlib_path, validate_lock
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 Base = declarative_base()
@@ -240,8 +240,8 @@ class KnowledgeDB(KnowledgeBase):
                             message=f"param value range must be [1, {FILE_COUNT_MAX}]"),
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'"),
-        lock=dict(validator=lambda x: x is None or isinstance(x, type(threading.Lock())),
-                  message="param must be one of None, threading.Lock()")
+        lock=dict(validator=lambda x: x is None or validate_lock(x),
+                  message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
     )
     def __init__(
             self,
