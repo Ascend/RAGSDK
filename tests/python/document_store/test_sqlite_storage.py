@@ -3,9 +3,6 @@
 import unittest
 import os
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import numpy as np
-
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.document_store import MxDocument
 
@@ -27,28 +24,32 @@ class TestSQLiteStorage(unittest.TestCase):
         doc = MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test")
         with self.assertRaises(ValueError):
             # 期望传入一个列表
-            self.db.add(doc)
+            self.db.add(doc, 1)
             # 期望列表元素的类型为MxDocument
-            self.db.add([0])
-
-        # 传入空文档列表，应返回空列表
-        self.assertEqual(self.db.add([doc]), [1])
+            self.db.add([0], 1)
+        self.assertEqual(self.db.add([doc], 1), [1])
 
     def test_sqlite_storage_delete(self):
         # 对delete函数入参进行校验测试
         with self.assertRaises(ValueError):
             # 期望doc_name非空
-            self.db.delete(doc_name="")
+            self.db.delete(doc_name="", document_id=1)
             # 期望doc_name为字符串
-            self.db.delete(0)
+            self.db.delete(0, 1)
         # 传入不存在的doc_name，不删除任何chunk，返回空列表
-        self.assertEqual(self.db.delete(doc_name="test1"), [])
+        self.assertEqual(self.db.delete(doc_name="test1", document_id=1), [])
 
     def test_sqlite_storage_search(self):
         # 对search函数入参进行校验测试
         with self.assertRaises(ValueError):
             # 期望传入一个整数
             self.db.search(-1)
+        doc = MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test")
+        self.db.add([doc], 1)
+        chunk = self.db.search(1)
+        self.assertEqual(chunk.page_content, "Hello mxRAG")
+        self.db.delete("test", 1)
+        self.assertEqual(self.db.get_all_index_id(), [])
 
 
 if __name__ == '__main__':

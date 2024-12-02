@@ -12,7 +12,7 @@ from loguru import logger
 from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, TEXT_MAX_LEN, validata_list_str, \
-    BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE
+    BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, validate_lock
 from mx_rag.utils.file_check import FileCheck
 
 try:
@@ -34,7 +34,7 @@ class TextEmbedding(Embeddings):
         use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         pooling_method=dict(validator=lambda x: x in ["cls", "mean"], message="param must be 'cls' or 'mean'"),
         lock=dict(
-            validator=lambda x: x is None or isinstance(x, (type(multiprocessing.Lock()), type(threading.Lock()))),
+            validator=lambda x: x is None or validate_lock(x),
             message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
     )
     def __init__(self,

@@ -18,7 +18,7 @@ class KnowledgeBase(ABC):
             FileCheck.dir_check(white_path)
 
     @abstractmethod
-    def add_file(self, doc_name, texts, embed_func, metadatas):
+    def add_file(self, file, texts, embed_func, metadatas):
         pass
 
     @abstractmethod
