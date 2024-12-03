@@ -168,6 +168,9 @@ class ExcelLoader(BaseLoader):
             logger.error(e)
             return []
         # 判断文件种类：支持 xlsx 与 xls 格式
+        file_format = xlrd.inspect_format(self.file_path)
+        if not file_format or (file_format != "xlsx" and file_format != 'xls'):
+            raise ValueError('file type is not xlsx and xls')
         if self.file_path.endswith(XLRD_EXTENSION):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
@@ -272,7 +275,7 @@ class ExcelLoader(BaseLoader):
 
     def _load_xls(self):
         docs: List[Doc] = list()
-        wb = xlrd.open_workbook(self.file_path, formatting_info=True)
+        wb = xlrd.open_workbook(self.file_path, formatting_info=True, data_only=True)
         if wb.nsheets > self.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
             return docs
@@ -290,7 +293,7 @@ class ExcelLoader(BaseLoader):
 
     def _load_xlsx(self):
         docs: List[Doc] = list()
-        wb = load_workbook(self.file_path, data_only=True)
+        wb = load_workbook(self.file_path, data_only=True, keep_links=False)
         if len(wb.sheetnames) > self.MAX_PAGE_NUM:
             logger.error(f"file {self.file_path} sheets number more than limit")
             return docs
