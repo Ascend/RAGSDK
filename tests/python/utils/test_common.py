@@ -1,5 +1,7 @@
+import os
 import unittest
 
+from loguru import logger
 from mx_rag.utils.common import validate_sequence
 
 
@@ -40,14 +42,21 @@ class TestCommon(unittest.TestCase):
         self.assertFalse(validate_sequence(data))
 
     def test_validate_dict_list(self):
+        log_file = "./test.log"
+        if os.path.exists(log_file):
+            os.remove(log_file)
+        logger.add(log_file, format="{message}", level="DEBUG")
         # 层数超过1错误
-        data = {"a": ["b"]}
-        self.assertFalse(validate_sequence(data))
-
+        validate_sequence({"a": ["b"]})
         # 第二层长度超过规格
-        data = {"a": ["b"] * 1025}
-        self.assertFalse(validate_sequence(data, max_check_depth=2))
-
+        validate_sequence({"a": ["b"] * 1025}, max_check_depth=2)
         # 第三层长度超过规格错误
-        data = {"a": [["b"] * 1025]}
-        self.assertFalse(validate_sequence(data, max_check_depth=3))
+        validate_sequence({"a": [["b"] * 1025]}, max_check_depth=3)
+        with open("./test.log") as fd:
+            res1 = fd.readline()
+            self.assertTrue(res1.find("nested depth cannot exceed 1") > -1)
+            res2 = fd.readline()
+            self.assertTrue(res2.find("1th layer param length") > -1)
+            res3 = fd.readline()
+            self.assertTrue(res3.find("2th layer param length") > -1)
+            fd.close()
