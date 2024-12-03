@@ -202,6 +202,8 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         # 获取标题列表
         title = self._get_xlsx_title(ws, first_row, first_col)
 
+        max_line_width = 800
+
         column_end = ws.max_column + 1
         for row_index in range(first_row + 1, ws.max_row + 1):
             # 空行无数据，不解析
@@ -217,6 +219,12 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                 val = self._parse_xlsx_cell(ws, row_index, col_index)
                 ti = title[col_index - first_col]
                 text_line += str(ti) + ":" + str(val) + ";"
+
+            # 计算行的字符数
+            line_width = len(text_line)
+            # 检查行宽是否超过最大行宽
+            if line_width > max_line_width:
+                raise ValueError(f"Line width exceeds maximum allowed width of {max_line_width} characters.")
 
             content += text_line + self.line_sep
 
@@ -240,6 +248,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         # 获取标题列表
         title = self._get_xls_title(ws, first_row, first_col)
         ncols = ws.ncols
+        max_line_width = 800
         for row_index in range(first_row + 1, ws.nrows):
             # 空行无数据，不解析
             if row_index in blank_rows.keys():
@@ -257,12 +266,18 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                 else:
                     text_line += str(ti) + ":" + str(val) + ";"
 
+            # 计算行的字符数
+            line_width = len(text_line)
+            # 检查行宽是否超过最大行宽
+            if line_width > max_line_width:
+                raise ValueError(f"Line width exceeds maximum allowed width of {max_line_width} characters.")
+
             content += text_line + self.line_sep
 
         return content
 
     def _load_xls(self):
-        wb = xlrd.open_workbook(self.file_path, formatting_info=True)
+        wb = xlrd.open_workbook(self.file_path, data_only=True, formatting_info=True)
         if wb.nsheets > self.MAX_PAGE_NUM:
             logger.error(f"file '{self.file_path}' sheets number more than limit")
             return
@@ -277,7 +292,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_xlsx(self):
-        wb = load_workbook(self.file_path, data_only=True)
+        wb = load_workbook(self.file_path, data_only=True, keep_links=False)
         if len(wb.sheetnames) > self.MAX_PAGE_NUM:
             logger.error(f"file '{self.file_path}' sheets number more than limit")
             return
