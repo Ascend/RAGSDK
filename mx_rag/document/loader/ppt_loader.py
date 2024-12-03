@@ -75,6 +75,11 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
         return itertools.chain.from_iterable(data)
 
     def _load_image_text(self, image_bytes):
+        # 检查图片大小
+        if 512 < len(image_bytes) <= 10 * 1024 * 1024:  # 假设图片大小在5KB到1MB之间是合理的
+            logger.warning("Image size is out of range.")
+            return None
+
         result = self.ocr.ocr(image_bytes, cls=True)
         try:
             res = [line[1][0] for line in result[0]]
