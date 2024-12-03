@@ -277,7 +277,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         return content
 
     def _load_xls(self):
-        wb = xlrd.open_workbook(self.file_path, data_only=True, formatting_info=True)
+        wb = xlrd.open_workbook(self.file_path, formatting_info=True)
         if wb.nsheets > self.MAX_PAGE_NUM:
             logger.error(f"file '{self.file_path}' sheets number more than limit")
             return
