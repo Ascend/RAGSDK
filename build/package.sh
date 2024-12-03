@@ -54,6 +54,9 @@ function package()
 
     find ./  \( -name "*.sh" -o -name "*.run" \)  -exec  chmod 550 {} \;
 
+    mkdir ./ops
+    cp -rf ${ROOT_PATH}/mx_rag/ops/atlas/self_attention/build/mx_rag_opp.*.so ./ops/
+
     cd ../
     tar -zcvf "${ROOT_PATH}"/output/Ascend-"${PKG_DIR}"_"${VERSION}"_"${py_version}"_linux-"${ARCH}".tar.gz "${PKG_DIR}"
 }

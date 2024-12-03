@@ -38,7 +38,9 @@ uint8_t *GetTilingBuf(T *tilingData)
 {
     uint32_t tilingSize = tilingData->GetDataSize();
     uint8_t *buf = (uint8_t *)malloc(tilingSize);
-    tilingData->SaveToBuffer(buf, tilingSize);
+    if (buf != nullptr) {
+        tilingData->SaveToBuffer(buf, tilingSize);
+    }
     return buf;
 }
 
@@ -64,8 +66,13 @@ int GetSoftMaxTilingInfo(const char *socVersion, BertSelfAttentionTilingData &ti
     AscendC::SoftMaxTilingFunc(srcShape, sizeof(uint16_t), RESVER_SIZE, softMaxTiling);
 
     uint8_t *buf = GetTilingBuf<optiling::SoftMaxTiling>(&softMaxTiling);
+    if (buf == nullptr) {
+        return -1;
+    }
+
     memcpy_s(reinterpret_cast<uint8_t *>(&tiling.softMaxTilingData),
         sizeof(tiling.softMaxTilingData), buf, sizeof(tiling.softMaxTilingData));
+    free(buf);
     return 0;
 }
 

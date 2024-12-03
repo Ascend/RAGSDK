@@ -62,7 +62,6 @@ public:
 
     __aicore__ inline void BufferInit()
     {
-        // ub total 256 * 1024
         pipe.InitBuffer(attention_scores_queue, BUFFER_NUM, seq_process_size * sizeof(DataType)); // 32K * 2 = 64K
         pipe.InitBuffer(attention_probs_queue, BUFFER_NUM, seq_process_size * sizeof(DataType)); // 32K * 2 = 64K
 
@@ -290,7 +289,6 @@ extern "C" __global__ __aicore__ void bert_self_attention(
     AscendC::SyncAll();
 
 
-    SetSysWorkSpacePtr(workspace);
     BertSelfAttention<half> op(tilingData);
 
     op.Init(attention_scores,
