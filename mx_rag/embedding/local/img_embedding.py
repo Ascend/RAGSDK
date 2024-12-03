@@ -121,7 +121,7 @@ class ImageEmbedding(Embeddings):
         return text_features.cpu().numpy().tolist()
 
     @validate_params(
-        texts=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= IMG_EMBBEDDING_TEXT_LEN,
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= IMG_EMBBEDDING_TEXT_LEN,
                    message=f"param must be str, and length range [1, {IMG_EMBBEDDING_TEXT_LEN}]"))
     def embed_query(self, text: str) -> List[float]:
         embeddings = self.embed_documents([text])
