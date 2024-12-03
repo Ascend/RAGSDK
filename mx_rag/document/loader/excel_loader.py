@@ -156,6 +156,9 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         """
         file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
         # 判断文件种类：支持 xlsx 与 xls 格式
+        file_format = xlrd.inspect_format(self.file_path)
+        if not file_format or (file_format != "xlsx" and file_format != 'xls'):
+            raise ValueError('file type is not xlsx and xls')
         if self.file_path.endswith(XLRD_EXTENSION):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
