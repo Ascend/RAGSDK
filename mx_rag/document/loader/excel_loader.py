@@ -12,7 +12,7 @@ from openpyxl.cell import MergedCell
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024, MAX_ROW_NUM, MAX_COL_NUM
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
@@ -185,11 +185,20 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
 
         return title
 
-    def _load_xlsx_one_sheet(self, ws):
+    def _load_xlsx_one_sheet(self, ws, sheet_name):
         """
         功能：读取一个xlsx表单的值，每行值以title:value;title:value....的格式，行与行之间通过self.line_sep分隔
         """
         content = ""
+        if ws.max_row > MAX_ROW_NUM:
+            logger.error(f"Exceeded maximum row limit of {MAX_ROW_NUM} in sheet '{sheet_name}'"
+                         f" of file '{self.file_path}': {ws.max_row} rows found.")
+            return content
+        if ws.max_column > MAX_COL_NUM:
+            logger.error(f"Exceeded maximum row limit of {MAX_COL_NUM} in sheet '{sheet_name}'"
+                         f" of file '{self.file_path}': {ws.max_column} rows found.")
+            return content
+
         blank_rows, blank_cols = self._get_xlsx_blank_rows_and_cols(ws)
 
         # 获取有效第一行,列的索引
@@ -227,6 +236,15 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         功能：读取一个xls表单的值，每行值以title:value;title:value....的格式，行与行之间通过self.line_sep分隔
         """
         content = ""
+        if ws.nrows > MAX_ROW_NUM:
+            logger.error(f"Exceeded maximum row limit of {MAX_ROW_NUM} in sheet '{ws.name}'"
+                         f" of file '{self.file_path}': {ws.nrows} rows found.")
+            return content
+        if ws.ncols > MAX_COL_NUM:
+            logger.error(f"Exceeded maximum row limit of {MAX_COL_NUM} in sheet '{ws.name}'"
+                         f" of file '{self.file_path}': {ws.ncols} rows found.")
+            return content
+
         blank_rows, blank_cols = self._get_xls_blank_rows_and_cols(ws)
         # 获取有效第一行,列的索引
         first_row, first_col = self._get_xls_first_not_blank_row_and_col(ws)
@@ -262,7 +280,11 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         return content
 
     def _load_xls(self):
-        wb = xlrd.open_workbook(self.file_path, formatting_info=True)
+        try:
+            wb = xlrd.open_workbook(self.file_path, formatting_info=True)
+        except Exception as e:
+            logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
+            return
         if wb.nsheets > self.MAX_PAGE_NUM:
             logger.error(f"file '{self.file_path}' sheets number more than limit")
             return
@@ -274,22 +296,24 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                 logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
                 continue
             yield Document(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
-        wb.release_resources()
         logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_xlsx(self):
-        wb = load_workbook(self.file_path, data_only=True, keep_links=False)
+        try:
+            wb = load_workbook(self.file_path, data_only=True, keep_links=False)
+        except Exception as e:
+            logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
+            return
         if len(wb.sheetnames) > self.MAX_PAGE_NUM:
             logger.error(f"file '{self.file_path}' sheets number more than limit")
             return
         for sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
-            content = self._load_xlsx_one_sheet(ws)
+            content = self._load_xlsx_one_sheet(ws, sheet_name)
             if not content:
                 logger.info(f"In file ['{self.file_path}'] sheet ['{sheet_name}'] is empty")
                 continue
             yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
-        wb.close()
         logger.info(f"file '{self.file_path}' Loading completed")
 
 
