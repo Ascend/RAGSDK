@@ -17,8 +17,6 @@ class ClientParam:
                      message="param must be int and value range (0, 600]"),
         response_limit_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 10 * MB,
                                  message="param must be int and value range (0, 10MB]"),
-        ssl_context=dict(validator=lambda x: x is None or isinstance(x, ssl.SSLContext),
-                         message="param must be None or instance of ssl.SSLContext"),
     )
     def __init__(self,
                  use_http: bool = False,
@@ -28,8 +26,7 @@ class ClientParam:
                  crl_file: str = "",
                  pwd: str = "",
                  timeout: int = 60,
-                 response_limit_size: int = MB,
-                 ssl_context: ssl.SSLContext = None):
+                 response_limit_size: int = MB):
         self.use_http = use_http
         self.ca_file = ca_file
         self.crt_file = crt_file
@@ -38,4 +35,3 @@ class ClientParam:
         self.pwd = pwd
         self.timeout: int = timeout
         self.response_limit_size: int = response_limit_size
-        self.ssl_context = ssl_context

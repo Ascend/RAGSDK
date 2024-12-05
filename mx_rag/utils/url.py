@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import urllib.request
-import urllib.parse
 from typing import Dict, Iterator
 
 import urllib3
@@ -52,9 +50,7 @@ class RequestUtils:
         self.use_http = client_param.use_http
         self.response_limit_size = client_param.response_limit_size
 
-        if client_param.ssl_context:
-            ssl_ctx = client_param.ssl_context
-        elif not client_param.use_http:
+        if not client_param.use_http:
             # 未配置ssl context并且使用https时，校验证书相关参数合法性
             self._check_https_para(client_param)
             # 配置双向认证
@@ -65,8 +61,7 @@ class RequestUtils:
                 ssl_ctx = get_one_way_auth_ssl_context(client_param)
         else:
             ssl_ctx = get_default_context()
-        self.ssl_ctx = ssl_ctx
-        self.client_param = client_param
+
         self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
                                         retries=retries,
                                         timeout=client_param.timeout,
@@ -238,38 +233,6 @@ class RequestUtils:
         else:
             logger.error(f"request failed with status code {response.status}")
             yield Result(False, "")
-
-    def get(self, url: str, headers: Dict):
-        if not is_url_valid(url, self.use_http):
-            logger.error(f"url check failed")
-            return Result(False, "")
-
-        try:
-            req = urllib.request.Request(url, headers=headers, method="GET")
-            response = urllib.request.urlopen(req, timeout=self.client_param.timeout, context=self.ssl_ctx)
-        except urllib3_TimeoutError:
-            logger.error("The request timed out")
-            return Result(False, "")
-        except HTTPError:
-            logger.error("HTTP request failed with error")
-            return Result(False, "")
-        except Exception:
-            logger.error(f"request failed")
-            return Result(False, "")
-        content_type = response.headers.get('Content-Type')
-        if content_type is None:
-            logger.warning(f"No 'Content-Type' found in the response headers")
-            return Result(False, "")
-
-        if response.status == HTTP_SUCCESS:
-            try:
-                return Result(True, response.read(amt=self.response_limit_size))
-            except Exception as e:
-                logger.error(f"read response failed, find exception: {e}")
-                return Result(False, "")
-        else:
-            logger.error(f"request failed with status code {response.status}")
-            return Result(False, "")
 
     def _iter_lines(self, response, chunk_size=1024) -> Iterator[Result]:
         buffer = b''

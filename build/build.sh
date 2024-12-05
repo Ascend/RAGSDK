@@ -35,6 +35,8 @@ function build_so_package()
     ${py} ./setup.py build_ext -j"$(nproc)"
     mkdir -p "${SO_OUTPUT_DIR}"
     cp -arfv build/lib.linux-*/mx_rag/* .
+    rm ./setup*.so
+    rm ./version*.so
     rm -rf build
 }
 
