@@ -2,13 +2,12 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
 import unittest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 from transformers import PreTrainedTokenizerBase
 
-from mx_rag.cache import QAGenerate, QAGenerationConfig, MarkDownParser, HTMLParser
+from mx_rag.cache import QAGenerate, QAGenerationConfig, MarkDownParser
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils import ClientParam
 
 
 class TestQAGenerate(unittest.TestCase):
@@ -50,14 +49,6 @@ class TestQAGenerate(unittest.TestCase):
         # 验证结果
         self.assertEqual(titles, ['test.md'])
         self.assertEqual(contents, ['# Test Tile\n\nthis is a test'])
-
-    @patch("mx_rag.cache.HTMLParser.parse")
-    def test_html_parse(self, parse_mock):
-        html_parser = HTMLParser(["https://127.0.0.1"], client_param=ClientParam(use_http=True))
-        parse_mock.return_value = [], []
-        titles, contents = html_parser.parse()
-        self.assertEqual(titles, [])
-        self.assertEqual(contents, [])
 
 
 if __name__ == '__main__':

@@ -34,6 +34,12 @@ def upload_files(
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
     if len(files) > knowledge.max_file_count:
         raise FileHandlerError(f'files list length must less than {knowledge.max_file_count}, upload files failed')
+
+    # 无文件上传时，添加告警提示
+    if not files:
+        logger.warning("no files need to be loaded")
+        return []
+
     fail_files = []
     for file in files:
         _check_file(file, force, knowledge)
@@ -178,8 +184,13 @@ def delete_files(
     """删除上传的文档，需传入待删除的文档名称"""
     if len(doc_names) > knowledge.max_file_count:
         raise FileHandlerError(f'files list length must less than {knowledge.max_file_count}, delete files failed')
-    if not isinstance(doc_names, list) or not doc_names:
+    if not isinstance(doc_names, list):
         raise FileHandlerError(f"files param {doc_names} is invalid")
+
+    if not doc_names:
+        logger.warning("no docs need to be deleted")
+        return
+
     for doc_name in doc_names:
         if not isinstance(doc_name, str):
             raise FileHandlerError(f"file path '{doc_name}' is invalid")

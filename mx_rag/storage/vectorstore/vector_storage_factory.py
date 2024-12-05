@@ -50,7 +50,7 @@ class VectorStorageFactory(ABC):
             return None
 
         if vector_type not in cls.NPU_SUPPORT_VEC_TYPE:
-            logger.error(f"vector type is not support. {vector_type}")
+            logger.error("vector_type is not support. ")
             return None
 
         creator = cls.NPU_SUPPORT_VEC_TYPE.get(vector_type)
