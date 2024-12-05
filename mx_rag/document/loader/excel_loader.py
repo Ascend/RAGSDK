@@ -269,11 +269,12 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         for i in range(wb.nsheets):
             ws = wb.sheet_by_index(i)
             content = self._load_xls_one_sheet(ws)
+
             if not content:
                 logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
                 continue
             yield Document(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
-
+        wb.release_resources()
         logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_xlsx(self):
@@ -288,4 +289,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                 logger.info(f"In file ['{self.file_path}'] sheet ['{sheet_name}'] is empty")
                 continue
             yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
+        wb.close()
         logger.info(f"file '{self.file_path}' Loading completed")
+
+
