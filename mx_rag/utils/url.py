@@ -50,9 +50,7 @@ class RequestUtils:
         self.use_http = client_param.use_http
         self.response_limit_size = client_param.response_limit_size
 
-        if client_param.ssl_context:
-            ssl_ctx = client_param.ssl_context
-        elif not client_param.use_http:
+        if not client_param.use_http:
             # 未配置ssl context并且使用https时，校验证书相关参数合法性
             self._check_https_para(client_param)
             # 配置双向认证
@@ -63,6 +61,7 @@ class RequestUtils:
                 ssl_ctx = get_one_way_auth_ssl_context(client_param)
         else:
             ssl_ctx = get_default_context()
+
         self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
                                         retries=retries,
                                         timeout=client_param.timeout,
