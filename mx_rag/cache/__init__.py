@@ -7,7 +7,6 @@ __all__ = [
     "EvictPolicy",
     "SimilarityCacheConfig",
     "QAGenerationConfig",
-    "HTMLParser",
     "MarkDownParser",
     "QAGenerate"
 ]
@@ -16,4 +15,4 @@ from mx_rag.cache.cache_config.cache_config import CacheConfig, EvictPolicy, Sim
 from mx_rag.cache.cache_core.mxrag_cache import MxRAGCache
 from mx_rag.cache.cache_chain.cache_chain import CacheChainChat
 from mx_rag.cache.cache_generate_qas.generate_qas import QAGenerationConfig, QAGenerate
-from mx_rag.cache.cache_generate_qas.html_makrdown_parser import HTMLParser, MarkDownParser
+from mx_rag.cache.cache_generate_qas.html_makrdown_parser import MarkDownParser
