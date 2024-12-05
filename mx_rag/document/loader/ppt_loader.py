@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
-from mx_rag.utils.common import validate_params, Lang
+from mx_rag.utils.common import validate_params, Lang, MAX_IMAGE_PIXELS
 from mx_rag.utils.file_check import SecFileCheck
 
 
@@ -74,12 +74,25 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
 
         return itertools.chain.from_iterable(data)
 
-    def _load_image_text(self, image_bytes):
-        # 检查图片大小
-        if 512 < len(image_bytes) <= 10 * 1024 * 1024:  # 假设图片大小在5KB到1MB之间是合理的
-            logger.warning("Image size is out of range.")
-            return None
+    def _verify_image_size(self, image_bytes):
+        """Verify if the image dimensions are within acceptable limits."""
+        try:
+            from PIL import Image
+            import io
+            with Image.open(io.BytesIO(image_bytes)) as img:
+                width, height = img.size
+                total_pixels = width * height
+                if total_pixels > MAX_IMAGE_PIXELS:
+                    logger.warning(f"Image too large: {width}x{height} pixels. Skipping OCR.")
+                    return False
+                return True
+        except Exception as err:
+            logger.warning(f"Failed to verify image size: {err}")
+            return False
 
+    def _load_image_text(self, image_bytes):
+        if not self._verify_image_size(image_bytes):
+            return None
         result = self.ocr.ocr(image_bytes, cls=True)
         try:
             res = [line[1][0] for line in result[0]]
