@@ -26,7 +26,7 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     def __init__(self, file_path, lang=Lang.CH):
         super().__init__(file_path)
         try:
-            self.ocr = PaddleOCR(use_angle_cls=True, lang=lang.value)
+            self.ocr = PaddleOCR(use_angle_cls=True, lang=lang.value, show_log=False)
         except Exception as err:
             raise ValueError(f"init ocr failed, {err}") from err
 

@@ -93,7 +93,7 @@ class PdfLoader(BaseLoader, mxBaseLoader):
     def _parser(self):
         if self.ocr_engine is None:
             try:
-                self.ocr_engine = PPStructure(table=True, ocr=True, lang=self.lang.value, layout=True)
+                self.ocr_engine = PPStructure(table=True, ocr=True, lang=self.lang.value, layout=True, show_log=False)
             except AssertionError as e:
                 logger.error(f"Assertion error: {e}")
                 self.ocr_engine = None
