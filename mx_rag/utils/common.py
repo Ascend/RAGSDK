@@ -317,7 +317,7 @@ def validate_sequence(param: Union[str, dict, list, tuple, set],
         current_depth: int 用于计算
     """
     if max_check_depth < 0:
-        logger.error(f"sequence nest depth cannot exceed {current_depth}")
+        logger.error(f"sequence nested depth cannot exceed {current_depth - 1}")
         return False
 
     def check_str(data):
