@@ -11,6 +11,7 @@ from enum import Enum
 from typing import List, Union
 
 from OpenSSL import crypto
+from langchain_core.documents import Document
 from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck
@@ -185,6 +186,37 @@ class ParseCertInfo:
             "Fingerprint": self.fingerprint,
             "Date": f"{self.start_time}--{self.end_time}",
         }
+
+
+def validata_list_document(texts, length_limit: List[int], content_limit: List[int]):
+    """
+    用于List[Document]类型的数据校验
+    Args:
+        texts: 输入检索返回Document列表
+        length_limit: 列表长度范围
+        str_limit: page_content长度范围
+
+    Returns:
+
+    """
+    if not isinstance(texts, List):
+        logger.error("input is not type List[Document]")
+        return False
+    min_length_limit = length_limit[0]
+    max_length_limit = length_limit[1]
+    min_content_limit = content_limit[0]
+    max_content_limit = content_limit[1]
+    if not min_length_limit <= len(texts) <= max_length_limit:
+        logger.error(f"The List[Document] length not in [{min_length_limit}, {max_length_limit}]")
+        return False
+    for text in texts:
+        if not isinstance(text, Document):
+            logger.error("The element in the list is not a Document.")
+            return False
+        if not min_content_limit <= len(text.page_content) <= max_content_limit:
+            logger.error(f"The element in List[Document] length not in [{min_content_limit}, {max_content_limit}]")
+            return False
+    return True
 
 
 def validata_list_str(texts, length_limit: List[int], str_limit: List[int]):
