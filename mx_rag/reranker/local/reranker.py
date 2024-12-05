@@ -11,7 +11,7 @@ from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, TEXT_MAX_LEN,
                                  validata_list_str, BOOL_TYPE_CHECK_TIP,
                                  MAX_QUERY_LENGTH, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE)
-from mx_rag.utils.file_check import FileCheck
+from mx_rag.utils.file_check import FileCheck, safetensors_check
 
 try:
     import torch_npu
@@ -42,9 +42,10 @@ class LocalReranker(Reranker):
         super(LocalReranker, self).__init__(k)
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
-
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=True)
+        safetensors_check(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True, use_safetensors=True)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, local_files_only=True,
+                                                                        use_safetensors=True)
 
         if use_fp16:
             self.model = self.model.half()
