@@ -5,7 +5,7 @@ transformers~=4.41.1
 accelerate==0.29.3
 torch==2.1.0
 torchvision==0.16.0
-cnclip==1.5.1
+cn_clip==1.5.1
 numpy==1.26.4
 urllib3==1.25.8
 pydantic==2.6.3
