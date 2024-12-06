@@ -323,4 +323,3 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
             if wb:
                 wb.close()
                 logger.info(f"file '{self.file_path}' Loading completed")
-
