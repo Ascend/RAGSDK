@@ -13,7 +13,7 @@ from transformers import AutoTokenizer, AutoModel, is_torch_npu_available
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, TEXT_MAX_LEN, validata_list_str, \
     BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, validate_lock
-from mx_rag.utils.file_check import FileCheck
+from mx_rag.utils.file_check import FileCheck, safetensors_check
 
 try:
     import torch_npu
@@ -46,8 +46,9 @@ class TextEmbedding(Embeddings):
         self.model_path = model_path
         FileCheck.dir_check(self.model_path)
         self.pooling_method = pooling_method
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
-        self.model = AutoModel.from_pretrained(model_path, local_files_only=True)
+        safetensors_check(model_path)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True, use_safetensors=True)
+        self.model = AutoModel.from_pretrained(model_path, local_files_only=True, use_safetensors=True)
         self.model_lock = lock
 
         if use_fp16:

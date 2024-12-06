@@ -3,6 +3,7 @@
 import os
 import shutil
 from pathlib import Path
+from loguru import logger
 
 
 class SizeOverLimitException(Exception):
@@ -147,3 +148,10 @@ class FileCheck:
 def check_disk_free_space(path, volume):
     _, _, free = shutil.disk_usage(path)
     return free < volume
+
+
+def safetensors_check(mode_path):
+    path = Path(mode_path)
+    safertensors = any(path.glob('*.safetensors'))
+    if not safertensors:
+        logger.warning('The current model does not contain model files in satensors format.')
