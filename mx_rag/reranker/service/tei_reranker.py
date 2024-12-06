@@ -10,15 +10,12 @@ import numpy as np
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, MAX_TOP_K, MAX_QUERY_LENGTH, TEXT_MAX_LEN, \
-    validata_list_str, check_api_key, STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
+    validata_list_str, STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
 
 class TEIReranker(Reranker):
-    HEADERS = {
-        'Content-Type': 'application/json'
-    }
     TEXT_MAX_LEN = 1000 * 1000
 
     @validate_params(
@@ -26,14 +23,14 @@ class TEIReranker(Reranker):
                  message="param must be str and str length range [0, 128]"),
         k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K,
                message="param must be int and value range [1, 10000]"),
-        api_key=dict(validator=lambda x: check_api_key(x), message="api_key check failed, please see the log"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam")
     )
-    def __init__(self, url: str, k: int = 1, api_key: str = "", client_param=ClientParam()):
+    def __init__(self, url: str, k: int = 1, client_param=ClientParam()):
         super(TEIReranker, self).__init__(k)
         self.url = url
         self.client = None
+        self.headers = {'Content-Type': 'application/json'}
         try:
             self.client = RequestUtils(client_param=client_param)
         except FileCheckError as e:
@@ -42,9 +39,6 @@ class TEIReranker(Reranker):
             logger.error(f"tei client crt is not a file:{e}")
         except Exception:
             logger.error(f"init tei client failed")
-
-        if api_key != "" and not client_param.use_http:
-            self.HEADERS['Authorization'] = "Bearer {}".format(api_key)
 
     @staticmethod
     def create(**kwargs):
@@ -97,7 +91,7 @@ class TEIReranker(Reranker):
 
             request_body = {'query': query, 'texts': texts_batch, 'truncate': True}
             try:
-                resp = self.client.post(self.url, json.dumps(request_body), headers=TEIReranker.HEADERS)
+                resp = self.client.post(self.url, json.dumps(request_body), headers=self.headers)
             except Exception as e:
                 logger.error(f"API request failed with exception: {e}")
                 return np.array([])

@@ -11,9 +11,7 @@ from mx_rag.utils.url import RequestUtils
 
 
 class Img2ImgMultiModel:
-    HEADER = {
-        'Content-Type': 'application/json'
-    }
+
     IMAGE_ITEM = "image"
 
     @validate_params(
@@ -28,6 +26,7 @@ class Img2ImgMultiModel:
         self._url = url
         self._model_name = model_name
         self._client = RequestUtils(client_param=client_param)
+        self.headers = {'Content-Type': 'application/json'}
 
     @validate_params(
         prompt=dict(validator=lambda x: 0 < len(x) <= MAX_PROMPT_LENGTH,
@@ -47,7 +46,7 @@ class Img2ImgMultiModel:
             "model_name": self._model_name
         }
 
-        response = self._client.post(url=self._url, body=json.dumps(payload), headers=self.HEADER)
+        response = self._client.post(url=self._url, body=json.dumps(payload), headers=self.headers)
         if not response.success:
             logger.error("request img to generate img failed")
             return resp

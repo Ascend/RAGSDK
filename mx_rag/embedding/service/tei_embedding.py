@@ -9,7 +9,7 @@ from loguru import logger
 
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, EMBBEDDING_TEXT_COUNT, validata_list_str, \
-    check_api_key, STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
+    STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -19,22 +19,19 @@ class TEIEmbeddingError(Exception):
 
 
 class TEIEmbedding(Embeddings):
-    HEADERS = {
-        'Content-Type': 'application/json'
-    }
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_URL_LENGTH,
                  message="param must be str and str length range [0, 128]"),
-        api_key=dict(validator=lambda x: check_api_key(x),
-                     message="api_key check failed, please see the log"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"),
     )
-    def __init__(self, url: str, api_key: str = "", client_param=ClientParam()):
+    def __init__(self, url: str, client_param=ClientParam()):
         self.url = url
-
         self.client = None
+        self.headers = {
+            'Content-Type': 'application/json'
+        }
         try:
             self.client = RequestUtils(client_param=client_param)
         except FileCheckError as e:
@@ -43,9 +40,6 @@ class TEIEmbedding(Embeddings):
             logger.error(f"tei client crt is not a file:{e}")
         except Exception:
             logger.error(f"init tei client failed")
-
-        if api_key != "" and not client_param.use_http:
-            self.HEADERS['Authorization'] = "Bearer {}".format(api_key)
 
     @staticmethod
     def create(**kwargs):
@@ -73,7 +67,7 @@ class TEIEmbedding(Embeddings):
 
             request_body = {'inputs': texts_batch, 'truncate': True}
 
-            resp = self.client.post(self.url, json.dumps(request_body), headers=self.HEADERS)
+            resp = self.client.post(self.url, json.dumps(request_body), headers=self.headers)
 
             if not resp.success:
                 raise TEIEmbeddingError("tei get response failed")

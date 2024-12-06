@@ -15,10 +15,6 @@ from mx_rag.utils.common import safe_get, MB, validate_params, MAX_URL_LENGTH, M
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.utils.url import RequestUtils
 
-HEADER = {
-    "Content-Type": "application/json"
-}
-
 
 def _check_sys_messages(sys_messages) -> bool:
     if sys_messages is None:
@@ -68,7 +64,8 @@ class Text2TextLLM(LLM):
             sys_messages = []
         request_body = self._get_request_body(query, sys_messages, role, llm_config)
         request_body["stream"] = False
-        response = self._client.post(url=self.base_url, body=json.dumps(request_body), headers=HEADER)
+        response = self._client.post(url=self.base_url, body=json.dumps(request_body),
+                                     headers={"Content-Type": "application/json"})
         if response.success:
             try:
                 data = json.loads(response.data)
@@ -106,7 +103,8 @@ class Text2TextLLM(LLM):
         request_body = self._get_request_body(query, sys_messages, role, llm_config)
         request_body["stream"] = True
         ans = ""
-        response = self._client.post_streamly(url=self.base_url, body=json.dumps(request_body), headers=HEADER)
+        response = self._client.post_streamly(url=self.base_url, body=json.dumps(request_body),
+                                              headers={"Content-Type": "application/json"})
         for result in response:
             if not result.success:
                 logger.error("get response failed")

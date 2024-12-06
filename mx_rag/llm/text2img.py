@@ -11,9 +11,6 @@ from mx_rag.utils.url import RequestUtils
 
 
 class Text2ImgMultiModel:
-    HEADER = {
-        'Content-Type': 'application/json'
-    }
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_URL_LENGTH,
@@ -27,6 +24,7 @@ class Text2ImgMultiModel:
         self._model_name = model_name
         self._url = url
         self._client = RequestUtils(client_param=client_param)
+        self.headers = {'Content-Type': 'application/json'}
 
     @validate_params(
         prompt=dict(validator=lambda x: 0 < len(x) <= MAX_PROMPT_LENGTH,
@@ -45,7 +43,7 @@ class Text2ImgMultiModel:
             "size": size,
             "model_name": self._model_name
         }
-        response = self._client.post(url=self._url, body=json.dumps(request_body), headers=self.HEADER)
+        response = self._client.post(url=self._url, body=json.dumps(request_body), headers=self.headers)
         if not response.success:
             logger.error("text to generate image failed")
             return resp

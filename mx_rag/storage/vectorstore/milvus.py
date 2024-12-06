@@ -62,12 +62,9 @@ class MilvusDB(VectorStore):
             return
 
         server_pem_path = kwargs.get("server_pem_path", None)
-
-        # 只有安全通道时才支持传输敏感信息
-        if use_http:
-            logger.warning("The HTTP channel is insecure and will not transmit authentication information")
-            kwargs.pop("password", None)
-            kwargs.pop("token", None)
+        kwargs.pop("user", None)
+        kwargs.pop("password", None)
+        kwargs.pop("token", None)
 
         # 由于milvus 不支持读取加密的私钥文件，直接丢弃
         kwargs.pop("client_key_path", None)
