@@ -56,9 +56,9 @@ namespace mxrag
             }
 
             auto ascendc_platform = platform_ascendc::PlatformAscendCManager::GetInstance();
-            size_t usrWorkSpaceSize = 0;
-            size_t sysWorkSpaceSize = static_cast<size_t>(ascendc_platform->GetLibApiWorkSpaceSize());
-            size_t workSpaceSisze = usrWorkSpaceSize + sysWorkSpaceSize;
+            long int usrWorkSpaceSize = 0;
+            long int sysWorkSpaceSize = static_cast<long int>(ascendc_platform->GetLibApiWorkSpaceSize());
+            long int workSpaceSisze = usrWorkSpaceSize + sysWorkSpaceSize;
             auto workspace_tensor = at::empty({workSpaceSisze},
                 at::TensorOptions().dtype(at::kByte).device(attention_scores.options().device()));
 

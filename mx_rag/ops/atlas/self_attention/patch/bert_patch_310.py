@@ -25,6 +25,16 @@ old_self_attention_forward = BertSelfAttention.forward
 enable_self_attention_speed: bool = True
 
 
+def set_self_attention_enable_status(status :bool):
+    global enable_self_attention_speed
+    enable_self_attention_speed = status
+
+
+def get_self_attention_enable_status():
+    global enable_self_attention_speed
+    return enable_self_attention_speed
+
+
 class BertSelfAttentionSpeed:
     def __init__(self, config, position_embedding_type=None):
         self.speed_seq_len = [1024, 512, 256]
@@ -45,7 +55,7 @@ class BertSelfAttentionSpeed:
         output_attentions=False,
     ) -> Tuple[torch.Tensor]:
         seq_len = hidden_states.size(1)
-        if seq_len not in self.speed_seq_len or enable_self_attention_speed is False:
+        if seq_len not in self.speed_seq_len or get_self_attention_enable_status() is False:
             return old_self_attention_forward(self, hidden_states, 
                 attention_mask, head_mask, encoder_hidden_states, encoder_attention_mask, 
                 past_key_value, output_attentions)

@@ -54,14 +54,26 @@ function package()
   bash "${CUR_PATH}"/package.sh "$1"
 }
 
+function build_310_ops()
+{
+    py=$1
+    echo "perpare ops build"
+    cd "${ROOT_PATH}/mx_rag/ops/atlas/self_attention"
+    dos2unix build.sh
+    bash build.sh Ascend310P3 "${py}"
+    echo "build ops success"
+}
+
 function main()
 {
     clean
     build_so_package python3.10
     build_wheel_package python3.10 "${PY310_VER}"
+    build_310_ops python3.10
     package "${PY310_VER}"
     build_so_package python3.11
     build_wheel_package python3.11 "${PY311_VER}"
+    build_310_ops python3.11
     package "${PY311_VER}"
 }
 
