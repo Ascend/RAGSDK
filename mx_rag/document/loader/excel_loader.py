@@ -12,7 +12,7 @@ from openpyxl.cell import MergedCell
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils import file_check
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024, MAX_ROW_NUM, MAX_COL_NUM
 
 OPENPYXL_EXTENSION = (".xlsx",)
 XLRD_EXTENSION = (".xls",)
@@ -156,6 +156,9 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         """
         file_check.SecFileCheck(self.file_path, self.MAX_SIZE).check()
         # 判断文件种类：支持 xlsx 与 xls 格式
+        file_format = xlrd.inspect_format(self.file_path)
+        if not file_format or (file_format != "xlsx" and file_format != 'xls'):
+            raise ValueError('file type is not xlsx and xls')
         if self.file_path.endswith(XLRD_EXTENSION):
             return self._load_xls()
         elif self.file_path.endswith(OPENPYXL_EXTENSION):
@@ -182,11 +185,20 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
 
         return title
 
-    def _load_xlsx_one_sheet(self, ws):
+    def _load_xlsx_one_sheet(self, ws, sheet_name):
         """
         功能：读取一个xlsx表单的值，每行值以title:value;title:value....的格式，行与行之间通过self.line_sep分隔
         """
         content = ""
+        if ws.max_row > MAX_ROW_NUM:
+            logger.error(f"Exceeded maximum row limit of {MAX_ROW_NUM} in sheet '{sheet_name}'"
+                         f" of file '{self.file_path}': {ws.max_row} rows found.")
+            return content
+        if ws.max_column > MAX_COL_NUM:
+            logger.error(f"Exceeded maximum row limit of {MAX_COL_NUM} in sheet '{sheet_name}'"
+                         f" of file '{self.file_path}': {ws.max_column} rows found.")
+            return content
+
         blank_rows, blank_cols = self._get_xlsx_blank_rows_and_cols(ws)
 
         # 获取有效第一行,列的索引
@@ -224,6 +236,15 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         功能：读取一个xls表单的值，每行值以title:value;title:value....的格式，行与行之间通过self.line_sep分隔
         """
         content = ""
+        if ws.nrows > MAX_ROW_NUM:
+            logger.error(f"Exceeded maximum row limit of {MAX_ROW_NUM} in sheet '{ws.name}'"
+                         f" of file '{self.file_path}': {ws.nrows} rows found.")
+            return content
+        if ws.ncols > MAX_COL_NUM:
+            logger.error(f"Exceeded maximum row limit of {MAX_COL_NUM} in sheet '{ws.name}'"
+                         f" of file '{self.file_path}': {ws.ncols} rows found.")
+            return content
+
         blank_rows, blank_cols = self._get_xls_blank_rows_and_cols(ws)
         # 获取有效第一行,列的索引
         first_row, first_col = self._get_xls_first_not_blank_row_and_col(ws)
@@ -259,30 +280,46 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
         return content
 
     def _load_xls(self):
-        wb = xlrd.open_workbook(self.file_path, formatting_info=True)
-        if wb.nsheets > self.MAX_PAGE_NUM:
-            logger.error(f"file '{self.file_path}' sheets number more than limit")
-            return
-        for i in range(wb.nsheets):
-            ws = wb.sheet_by_index(i)
-            content = self._load_xls_one_sheet(ws)
-            if not content:
-                logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
-                continue
-            yield Document(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
+        wb = None
+        try:
+            wb = xlrd.open_workbook(self.file_path, formatting_info=True)
+            if wb.nsheets > self.MAX_PAGE_NUM:
+                logger.error(f"file '{self.file_path}' sheets number more than limit")
+                return
+            for i in range(wb.nsheets):
+                ws = wb.sheet_by_index(i)
+                content = self._load_xls_one_sheet(ws)
 
-        logger.info(f"file '{self.file_path}' Loading completed")
+                if not content:
+                    logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
+                    continue
+                yield Document(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
+        except Exception as e:
+            logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
+            return
+        finally:
+            if wb:
+                wb.release_resources()
+                logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_xlsx(self):
-        wb = load_workbook(self.file_path, data_only=True)
-        if len(wb.sheetnames) > self.MAX_PAGE_NUM:
-            logger.error(f"file '{self.file_path}' sheets number more than limit")
+        wb = None
+        try:
+            wb = load_workbook(self.file_path, data_only=True, keep_links=False)
+            if len(wb.sheetnames) > self.MAX_PAGE_NUM:
+                logger.error(f"file '{self.file_path}' sheets number more than limit")
+                return
+            for sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+                content = self._load_xlsx_one_sheet(ws, sheet_name)
+                if not content:
+                    logger.info(f"In file ['{self.file_path}'] sheet ['{sheet_name}'] is empty")
+                    continue
+                yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
+        except Exception as e:
+            logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
             return
-        for sheet_name in wb.sheetnames:
-            ws = wb[sheet_name]
-            content = self._load_xlsx_one_sheet(ws)
-            if not content:
-                logger.info(f"In file ['{self.file_path}'] sheet ['{sheet_name}'] is empty")
-                continue
-            yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
-        logger.info(f"file '{self.file_path}' Loading completed")
+        finally:
+            if wb:
+                wb.close()
+                logger.info(f"file '{self.file_path}' Loading completed")

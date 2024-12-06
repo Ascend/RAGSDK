@@ -63,7 +63,7 @@ class TestExcelLoader(unittest.TestCase):
 
     def test_load_csv(self):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.csv"))
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             docs = loader.load()
 
     def test_lazy_load(self):
