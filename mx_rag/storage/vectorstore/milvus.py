@@ -95,7 +95,7 @@ class MilvusDB(VectorStore):
         x_dim_name = "x_dim"
         url_name = "url"
         similarity_strategy_name = "similarity_strategy"
-        params = "params"
+        param = "param"
 
         if x_dim_name not in kwargs or not isinstance(kwargs.get(x_dim_name), int):
             logger.error("x_dim param error. ")
@@ -112,13 +112,13 @@ class MilvusDB(VectorStore):
 
         url = kwargs.pop(url_name)
         vector_dims = kwargs.pop(x_dim_name)
-        params = kwargs.pop(params, None)
+        param = kwargs.pop(param, None)
         similarity_strategy = kwargs.pop(similarity_strategy_name)
 
         milvus_db = MilvusDB(url, **kwargs)
 
         try:
-            milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, params=params)
+            milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, param=param)
         except KeyError:
             logger.error("milvus create collection meet key error")
         except Exception:
@@ -136,7 +136,7 @@ class MilvusDB(VectorStore):
         similarity_strategy=dict(validator=lambda x: x in MilvusDB.SIMILARITY_STRATEGY_MAP,
                                  message="param must be enum of SimilarityStrategy")
     )
-    def create_collection(self, x_dim: int, similarity_strategy: SimilarityStrategy, params=None):
+    def create_collection(self, x_dim: int, similarity_strategy: SimilarityStrategy, param=None):
         schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
         schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=x_dim)
@@ -152,7 +152,7 @@ class MilvusDB(VectorStore):
             field_name="vector",
             index_type=similarity.get("index"),
             metric_type=similarity.get("metric"),
-            params=params
+            param=param
         )
         self.client.create_collection(
             collection_name=self._collection_name,
