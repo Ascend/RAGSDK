@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
-from mx_rag.utils.common import validate_params, Lang, MAX_IMAGE_PIXELS
+from mx_rag.utils.common import validate_params, Lang, MAX_IMAGE_PIXELS, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import SecFileCheck
 
 
@@ -21,12 +21,14 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     MAX_TABLE_COL = 50
 
     @validate_params(
-        lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang")
+        lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
+        enable_ocr=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
-    def __init__(self, file_path, lang=Lang.CH):
+    def __init__(self, file_path, lang=Lang.CH, enable_ocr=False):
         super().__init__(file_path)
+        self.enable_ocr = enable_ocr
         try:
-            self.ocr = PaddleOCR(use_angle_cls=True, lang=lang.value, show_log=False)
+            self.ocr = PaddleOCR(use_angle_cls=True, lang=lang.value, show_log=False) if enable_ocr else None
         except Exception as err:
             raise ValueError(f"init ocr failed, {err}") from err
 
@@ -104,20 +106,17 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     def _load_slide(self, slide):
         slide_text = []
         for shape in slide.shapes:
-            # 识别图片中的文字
-            if hasattr(shape, "image"):
+            if hasattr(shape, "image") and self.enable_ocr and self.ocr is not None:
                 image_data = shape.image.blob
                 img_text = self._load_image_text(image_data)
                 if img_text is not None:
                     slide_text.extend(img_text)
 
-            # 检查形状是否为表格
             if shape.has_table:
                 table = shape.table
                 table_text = self._load_table(table)
                 slide_text.extend(table_text)
 
-            # 获取AutoShape中的纯文本
             if shape.has_text_frame:
                 slide_text.append(shape.text_frame.text.replace("\n", " "))
         return " ".join(slide_text)
