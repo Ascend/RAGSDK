@@ -98,7 +98,7 @@ class MilvusDB(VectorStore):
         x_dim_name = "x_dim"
         url_name = "url"
         similarity_strategy_name = "similarity_strategy"
-        param = "params"
+        param = "param"
 
         if x_dim_name not in kwargs or not isinstance(kwargs.get(x_dim_name), int):
             logger.error("x_dim param error. ")
