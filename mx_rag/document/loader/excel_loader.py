@@ -298,8 +298,9 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
             logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
             return
         finally:
-            wb.release_resources()
-            logger.info(f"file '{self.file_path}' Loading completed")
+            if wb:
+                wb.release_resources()
+                logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_xlsx(self):
         wb = None
@@ -319,6 +320,7 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
             logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
             return
         finally:
-            wb.close()
-            logger.info(f"file '{self.file_path}' Loading completed")
+            if wb:
+                wb.close()
+                logger.info(f"file '{self.file_path}' Loading completed")
 
