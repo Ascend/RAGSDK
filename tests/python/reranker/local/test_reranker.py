@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import os
 import random
+import shutil
 from typing import Dict
 import unittest
 from unittest.mock import patch
@@ -12,6 +13,14 @@ from mx_rag.reranker.local import LocalReranker
 
 
 class TestLocalReranker(unittest.TestCase):
+    model_path = "/model/reranker"
+
+    def setUp(self) -> None:
+        os.makedirs(self.model_path)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.model_path)
+
     class BatchEncoding(Dict):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
@@ -68,7 +77,7 @@ class TestLocalReranker(unittest.TestCase):
         tok_pre_mock.return_value = TestLocalReranker.Tokenizer()
         torch_avail_mock.return_value = True
 
-        rerank = LocalReranker(model_path='/model/reranker')
+        rerank = LocalReranker(model_path=self.model_path)
         texts = ['我是小黑', '我是小红'] * 100
         ret = rerank.rerank(query='你好', texts=texts)
 
@@ -87,7 +96,7 @@ class TestLocalReranker(unittest.TestCase):
         tok_pre_mock.return_value = TestLocalReranker.Tokenizer()
         torch_avail_mock.return_value = False
 
-        rerank = LocalReranker(model_path='/model/reranker',
+        rerank = LocalReranker(model_path=self.model_path,
                                use_fp16=False)
         texts = ['我是小黑', '我是小红'] * 100
         ret = rerank.rerank(query='你好', texts=texts)

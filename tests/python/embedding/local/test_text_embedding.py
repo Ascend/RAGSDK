@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
+import os
 import random
+import shutil
 from typing import Dict
 import unittest
 from unittest.mock import patch
@@ -12,6 +13,14 @@ from mx_rag.embedding.local import TextEmbedding
 
 
 class TestTextEmbedding(unittest.TestCase):
+    model_path = "/model/embedding"
+
+    def setUp(self) -> None:
+        os.makedirs(self.model_path)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.model_path)
+
     class BatchEncoding(Dict):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)
@@ -70,7 +79,7 @@ class TestTextEmbedding(unittest.TestCase):
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = False
 
-        embed = TextEmbedding(model_path='/model/embedding',
+        embed = TextEmbedding(model_path=self.model_path,
                               pooling_method='mean')
 
         texts = ['test_txt'] * 100
@@ -94,7 +103,7 @@ class TestTextEmbedding(unittest.TestCase):
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
 
-        embed = TextEmbedding(model_path='/model/embedding',
+        embed = TextEmbedding(model_path=self.model_path,
                               use_fp16=False)
 
         texts = ['test_txt'] * 100
@@ -118,7 +127,7 @@ class TestTextEmbedding(unittest.TestCase):
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = False
 
-        embed = TextEmbedding(model_path='/model/embedding',
+        embed = TextEmbedding(model_path=self.model_path,
                               pooling_method='mean')
 
         texts = ['test_txt'] * 100
@@ -144,9 +153,9 @@ class TestTextEmbedding(unittest.TestCase):
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
         with self.assertRaises(ValueError):
-            embed = TextEmbedding(model_path='/model/embedding',
+            embed = TextEmbedding(model_path=self.model_path,
                                   pooling_method='no valid')
-        embed = TextEmbedding(model_path='/model/embedding')
+        embed = TextEmbedding(model_path=self.model_path)
         texts = ['test_txt'] * 100
         embed.embed_documents(texts)
 

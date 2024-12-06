@@ -20,7 +20,7 @@ except ImportError:
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBBEDDING_TEXT_COUNT, \
     IMG_EMBBEDDING_TEXT_LEN, validata_list_str, MB, GB, EMBBEDDING_IMG_COUNT
-from mx_rag.utils.file_check import FileCheck, SecFileCheck
+from mx_rag.utils.file_check import SecFileCheck, SecDirCheck, safetensors_check
 
 try:
     import torch_npu
@@ -81,7 +81,8 @@ class ImageEmbedding(Embeddings):
     def __init__(self, model_name: str, model_path: str, dev_id: int = 0):
         self.model_name = model_name
         self.model_path = model_path
-        FileCheck.dir_check(self.model_path)
+        SecDirCheck(self.model_path, 10 * GB).check()
+        safetensors_check(model_path)
         # 检查模型文件是否已就绪
         SecFileCheck(os.path.join(self.model_path, _CLIP_MODELS[self.model_name]['checkpoint']), 10 * GB).check()
 

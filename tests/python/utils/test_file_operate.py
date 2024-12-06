@@ -2,11 +2,12 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
 import json
+import shutil
 import stat
 import unittest
 from unittest.mock import patch, MagicMock
 
-from mx_rag.utils.file_check import FileCheckError, FileCheck
+from mx_rag.utils.file_check import FileCheckError, FileCheck, SecDirCheck
 from mx_rag.utils.file_operate import read_jsonl_from_file
 
 
@@ -125,6 +126,87 @@ class TestCheckFileOwner(unittest.TestCase):
         with self.assertRaises(FileCheckError):
             FileCheck.check_file_owner(self.file_path)
         print("Test passed: Detected directory not found.")
+
+
+class TestSecDirCheck(unittest.TestCase):
+    dir_path = "/tmp/test_dir"
+
+    def setUp(self) -> None:
+        os.makedirs(self.dir_path)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.dir_path)
+
+    def test_mode_compare(self):
+        checker = SecDirCheck("/tmp", max_size=1024)
+
+        res = checker._compare_mode(0o676, 0o766)
+        self.assertEqual(res, 1)
+
+        res = checker._compare_mode(0o660, 0o660)
+        self.assertEqual(res, 0)
+
+        res = checker._compare_mode(0o540, 0o641)
+        self.assertEqual(res, 1)
+
+        res = checker._compare_mode(0o441, 0o641)
+        self.assertEqual(res, -1)
+
+    def test_dir_file_num_1(self):
+        # 测试当前目录下有两个文件，期望存在一个文件
+        with open(os.path.join(self.dir_path, "1.txt"), "w+") as f:
+            f.write("11111")
+
+        with open(os.path.join(self.dir_path, "2.txt"), "w+") as f:
+            f.write("2222")
+
+        with self.assertRaises(ValueError) as cm:
+            SecDirCheck(self.dir_path, max_size=1024, max_file_num=1).check()
+
+        self.assertTrue("file nums" in cm.exception.__str__())
+
+
+    def test_dir_file_num_2(self):
+        # 测试当前目录及子目录总文件数2个文件，期望存在一个文件
+        with open(os.path.join(self.dir_path, "1.txt"), "w+") as f:
+            f.write("11111")
+
+        os.makedirs("/tmp/test_dir/test")
+        with open(os.path.join(self.dir_path, "2.txt"), "w+") as f:
+            f.write("2222")
+
+        with self.assertRaises(ValueError) as cm:
+            SecDirCheck(self.dir_path, max_size=1024, max_file_num=1).check()
+
+        self.assertTrue("file nums" in cm.exception.__str__())
+
+    def test_dir_depth(self):
+        # 测试当前目录深度，目录深度为2，期望1
+        with open(os.path.join(self.dir_path, "1.txt"), "w+") as f:
+            f.write("11111")
+
+        os.makedirs("/tmp/test_dir/test")
+        with open(os.path.join(self.dir_path, "2.txt"), "w+") as f:
+            f.write("2222")
+
+        with self.assertRaises(ValueError) as cm:
+            SecDirCheck(self.dir_path, max_size=1024, max_depth=1).check()
+
+        self.assertTrue("max_depth" in cm.exception.__str__())
+
+    def test_dir_file_size(self):
+        # 测试当前目录下文件大小不超过1024
+        with open(os.path.join(self.dir_path, "1.txt"), "w+") as f:
+            f.write("11111")
+
+        os.makedirs("/tmp/test_dir/test")
+        with open(os.path.join(self.dir_path, "2.txt"), "w+") as f:
+            f.write("2" * 1025)
+
+        with self.assertRaises(FileCheckError) as cm:
+            SecDirCheck(self.dir_path, max_size=1024).check()
+
+        self.assertTrue("FileSizeLimit" in cm.exception.__str__())
 
 
 if __name__ == '__main__':

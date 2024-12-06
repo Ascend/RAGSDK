@@ -26,11 +26,16 @@ class MyTestCase(unittest.TestCase):
         if os.path.exists(MyTestCase.sql_db_file):
             os.remove(MyTestCase.sql_db_file)
 
+        os.makedirs("/tmp/bge-large-zh/")
+
+    def tearDown(self) -> None:
+        shutil.rmtree("/tmp/bge-large-zh/")
+
     def test_with_npu(self):
         if not is_torch_npu_available():
             return
 
-        emb = TextEmbedding("/workspace/bge-large-zh/")
+        emb = TextEmbedding("/tmp/bge-large-zh/")
         db = SQLiteDocstore("/tmp/sql.db")
         logger.info("create emb done")
         logger.info("set_device done")

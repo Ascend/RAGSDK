@@ -37,6 +37,75 @@ class SecFileCheck:
         FileCheck.check_file_owner(self.file_path)
 
 
+class SecDirCheck:
+    """
+    功能描述:
+        检查目录下在文件是否满足要求
+
+    parameters:
+        dir_path: 目录路径
+        max_size: 目录下，包含子目录中的文件size最大值
+        mode: 目录下所有文件最大权限
+        max_depth：目录下子目录最大深度，目录深度从1开始计数
+        max_file_num：目录下所有的文件总数上限
+    """
+
+    def __init__(self, dir_path, max_size, mode=0o755, max_depth=64, max_file_num=512):
+        self.dir_path = dir_path
+        self.max_size = max_size
+        self.mode = mode
+        self.max_depth = max_depth
+        self.max_file_num = max_file_num
+        self._cur_file_num = 0
+
+    @staticmethod
+    def _get_file_mode(file_path):
+        status = os.stat(file_path)
+        return status.st_mode
+
+    @staticmethod
+    def _compare_mode(mode_a, mode_b):
+        # 文件权限比较，权限为3位八进制数，从右往前比较，遇到第一位a比b大，则认为mode_a比mode_b大
+        mode_a = mode_a & 0o777
+        mode_b = mode_b & 0o777
+
+        if mode_a == mode_b:
+            return 0
+
+        for _ in range(3 * 3):
+            if (mode_a & 1) > (mode_b & 1):
+                return 1
+
+            mode_a >>= 1
+            mode_b >>= 1
+
+        return -1
+
+    def check(self):
+        self._recursive_listdir(self.dir_path, 0)
+
+    def _recursive_listdir(self, path, cur_depth):
+        if cur_depth >= self.max_depth:
+            raise ValueError(f"recursive list dir error because up to max_depth:{self.max_depth}")
+        FileCheck.dir_check(path)
+
+        files = os.listdir(path)
+        for file in files:
+            file_path = os.path.join(path, file)
+
+            if os.path.isfile(file_path):
+                self._cur_file_num += 1
+                if self._cur_file_num > self.max_file_num:
+                    raise ValueError(f"recursive list dir error because up to max file nums:{self.max_file_num}")
+                SecFileCheck(file_path, self.max_size).check()
+                mode = self._get_file_mode(file_path)
+                if self._compare_mode(mode, self.mode) > 0:
+                    raise ValueError(f" the mode of {file_path} is {oct(mode)} not less than {oct(self.mode)}")
+
+            elif os.path.isdir(file_path):
+                self._recursive_listdir(file_path, cur_depth + 1)
+
+
 class FileCheck:
     MAX_PATH_LENGTH = 1024
     DEFAULT_MAX_FILE_NAME_LEN = 255
@@ -81,7 +150,7 @@ class FileCheck:
     def check_path_is_exist_and_valid(path: str, check_real_path: bool = True):
         if not isinstance(path, str):
             raise FileCheckError(f"Input path '{path}' is not valid str")
-        
+
         if len(path) > FileCheck.MAX_PATH_LENGTH:
             raise FileCheckError(f"Input path '{path[:FileCheck.MAX_PATH_LENGTH]}...' length over limit")
 
@@ -136,7 +205,7 @@ class FileCheck:
         dir_path = os.path.dirname(os.path.abspath(file_path))
         # 检查目录的属主
         check_owner(dir_path, "directory")
-    
+
     @staticmethod
     def check_filename_valid(file_path: str, max_length: int = 0):
         max_length = FileCheck.DEFAULT_MAX_FILE_NAME_LEN if max_length <= 0 else max_length
