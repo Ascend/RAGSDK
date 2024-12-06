@@ -315,5 +315,3 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                 continue
             yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
         logger.info(f"file '{self.file_path}' Loading completed")
-
-
