@@ -16,7 +16,7 @@ from mx_rag.utils.common import (
     MAX_BATCH_SIZE,
     MB
 )
-from mx_rag.utils.common import validate_params, validata_list_str, check_api_key
+from mx_rag.utils.common import validate_params, validata_list_str
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -35,18 +35,16 @@ class CLIPEmbeddingError(Exception):
 
 
 class CLIPEmbedding(Embeddings):
-    HEADERS = {'Content-Type': 'application/json'}
 
     @validate_params(
         url=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_URL_LENGTH,
                  message=f"param must be str and str length range [0, {MAX_URL_LENGTH}]"),
-        api_key=dict(validator=lambda x: check_api_key(x),
-                     message="api_key check failed, please see the log"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"))
-    def __init__(self, url: str, api_key: str = "", client_param=ClientParam()):
+    def __init__(self, url: str, client_param=ClientParam()):
         self.url = url
         self.client = None
+        self.headers = {'Content-Type': 'application/json'}
         try:
             self.client = RequestUtils(client_param=client_param)
         except FileCheckError as e:
@@ -55,9 +53,6 @@ class CLIPEmbedding(Embeddings):
             logger.error(f"CLI client crt is not a file:{e}")
         except Exception as e:
             raise CLIPEmbeddingError('CLIP client init failed') from e
-
-        if api_key != "" and not client_param.use_http:
-            self.HEADERS['Authorization'] = "Bearer {}".format(api_key)
 
     @staticmethod
     def create(**kwargs):
@@ -110,7 +105,7 @@ class CLIPEmbedding(Embeddings):
             batched_inputs = inputs[start_index: start_index + batch_size]
             request_body = {"data": batched_inputs, "parameters": {"drop_image_content": True}}
             try:
-                resp = self.client.post(self.url, json.dumps(request_body), headers=self.HEADERS)
+                resp = self.client.post(self.url, json.dumps(request_body), headers=self.headers)
                 if not resp.success:
                     raise CLIPEmbeddingError('failed to get response')
                 resp_data = json.loads(resp.data or "{}")

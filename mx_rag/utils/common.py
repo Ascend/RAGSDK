@@ -324,19 +324,6 @@ def check_header(headers):
     return True
 
 
-def check_api_key(api_key):
-    if not isinstance(api_key, str):
-        logger.error("api_key is not str")
-        return False
-    if len(api_key) > MAX_API_KEY_LEN:
-        logger.error(f"length of api_key must in range [0, {MAX_API_KEY_LEN}]")
-        return False
-    if api_key.lower().find("%0d") != -1 or api_key.lower().find("%0a") != -1 or api_key.find("\n") != -1:
-        logger.error("api_key contain illegal character %0d or %0a or \\n")
-        return False
-    return True
-
-
 def validate_sequence(param: Union[str, dict, list, tuple, set],
                       max_str_length: int = 1024,
                       max_sequence_length: int = 1024,

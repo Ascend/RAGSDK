@@ -20,7 +20,6 @@ class TestCLIPEmbedding(unittest.TestCase):
         with patch('mx_rag.utils.url.RequestUtils.post', Mock(side_effect=mock_post)):
             clip_embedding = CLIPEmbedding(
                 url='http://valid-url.com',
-                api_key='valid_api_key',
                 client_param=ClientParam(use_http=True)
             )
             texts = ["Sample text 1", "Sample text 2"]
@@ -32,7 +31,6 @@ class TestCLIPEmbedding(unittest.TestCase):
         with patch('mx_rag.utils.url.RequestUtils.post', Mock(side_effect=mock_post)):
             clip_embedding = CLIPEmbedding(
                 url='http://valid-url.com',
-                api_key='valid_api_key',
                 client_param=ClientParam(use_http=True)
             )
             images = ["imagedata1", "imagedata2"]
@@ -44,7 +42,6 @@ class TestCLIPEmbedding(unittest.TestCase):
         with patch('mx_rag.utils.url.RequestUtils.post', Mock(side_effect=mock_post)):
             clip_embedding = CLIPEmbedding(
                 url='http://valid-url.com',
-                api_key='valid_api_key',
                 client_param=ClientParam(use_http=True)
             )
             images = ["^image data 1", "image data 2"]
