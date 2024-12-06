@@ -282,36 +282,42 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
     def _load_xls(self):
         try:
             wb = xlrd.open_workbook(self.file_path, formatting_info=True)
+
+            if wb.nsheets > self.MAX_PAGE_NUM:
+                logger.error(f"file '{self.file_path}' sheets number more than limit")
+                return
+            for i in range(wb.nsheets):
+                ws = wb.sheet_by_index(i)
+                content = self._load_xls_one_sheet(ws)
+
+                if not content:
+                    logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
+                    continue
+                yield Document(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
         except Exception as e:
             logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
             return
-        if wb.nsheets > self.MAX_PAGE_NUM:
-            logger.error(f"file '{self.file_path}' sheets number more than limit")
-            return
-        for i in range(wb.nsheets):
-            ws = wb.sheet_by_index(i)
-            content = self._load_xls_one_sheet(ws)
-
-            if not content:
-                logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
-                continue
-            yield Document(page_content=content, metadata={"source": self.file_path, "sheet": ws.name})
-        logger.info(f"file '{self.file_path}' Loading completed")
+        finally:
+            wb.release_resources()
+            logger.info(f"file '{self.file_path}' Loading completed")
 
     def _load_xlsx(self):
         try:
             wb = load_workbook(self.file_path, data_only=True, keep_links=False)
+            if len(wb.sheetnames) > self.MAX_PAGE_NUM:
+                logger.error(f"file '{self.file_path}' sheets number more than limit")
+                return
+            for sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+                content = self._load_xlsx_one_sheet(ws, sheet_name)
+                if not content:
+                    logger.info(f"In file ['{self.file_path}'] sheet ['{sheet_name}'] is empty")
+                    continue
+                yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
         except Exception as e:
             logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
             return
-        if len(wb.sheetnames) > self.MAX_PAGE_NUM:
-            logger.error(f"file '{self.file_path}' sheets number more than limit")
-            return
-        for sheet_name in wb.sheetnames:
-            ws = wb[sheet_name]
-            content = self._load_xlsx_one_sheet(ws, sheet_name)
-            if not content:
-                logger.info(f"In file ['{self.file_path}'] sheet ['{sheet_name}'] is empty")
-                continue
-            yield Document(page_content=content, metadata={"source": self.file_path, "sheet": sheet_name})
-        logger.info(f"file '{self.file_path}' Loading completed")
+        finally:
+            wb.close()
+            logger.info(f"file '{self.file_path}' Loading completed")
+
