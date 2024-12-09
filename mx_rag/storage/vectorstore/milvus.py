@@ -6,13 +6,10 @@ from typing import List
 
 import numpy as np
 from loguru import logger
-from pymilvus import MilvusClient, DataType, MilvusException
+from pymilvus import MilvusClient, DataType
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
-from mx_rag.utils.file_check import SecFileCheck, FileCheckError
-from mx_rag.utils.cert_check import MAX_CERT_LIMIT
-from mx_rag.utils.url import is_url_valid
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, validate_sequence
 
 
 class MilvusError(Exception):
@@ -45,57 +42,24 @@ class MilvusDB(VectorStore):
     }
 
     @validate_params(
-        url=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_URL_LENGTH,
-                 message="param must be str and length range (0, 1024]"),
+        client=dict(validator=lambda x: isinstance(x, MilvusClient),
+                    message="param must be instance of MilvusClient"),
         collection_name=dict(
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
-            message="param must be str and length range (0, 1024]"),
-        use_http=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+            message="param must be str and length range (0, 1024]")
     )
-    def __init__(self, url: str, collection_name: str = "mxRag", use_http: bool = False, **kwargs):
+    def __init__(self, client: MilvusClient, collection_name: str = "mxRag"):
         super().__init__()
-
-        self.client = None
-
-        if not is_url_valid(url, use_http):
-            logger.error("check milvus url failed")
-            return
-
-        server_pem_path = kwargs.get("server_pem_path", None)
-        kwargs.pop("user", None)
-        kwargs.pop("password", None)
-        kwargs.pop("token", None)
-
-        # 由于milvus 不支持读取加密的私钥文件，直接丢弃
-        kwargs.pop("client_key_path", None)
-
-        if not use_http:
-            try:
-                SecFileCheck(server_pem_path, MAX_CERT_LIMIT).check()
-            except FileCheckError as e:
-                logger.error(f"check milvus sever pem file failed: {e}")
-                return
-            except Exception as e:
-                logger.error(f"check milvus server pem failed")
-                return
-
-        try:
-            self.client = MilvusClient(url, **kwargs)
-        except MilvusException as e:
-            logger.error(f"init milvus client meet exception")
-        except Exception as e:
-            logger.error(f"init milvus client failed")
-            self.client = None
-            return
-
+        self.client = client
         self._collection_name = collection_name
 
     @staticmethod
     def create(**kwargs):
+        client = "client"
         x_dim_name = "x_dim"
-        url_name = "url"
         similarity_strategy_name = "similarity_strategy"
-        param = "param"
+        params = "params"
+        collection_name = "collection_name"
 
         if x_dim_name not in kwargs or not isinstance(kwargs.get(x_dim_name), int):
             logger.error("x_dim param error. ")
@@ -106,19 +70,23 @@ class MilvusDB(VectorStore):
             logger.error("similarity_strategy param error. ")
             return None
 
-        if url_name not in kwargs or not isinstance(kwargs.get(url_name), str):
-            logger.error("url param error. ")
+        if client not in kwargs or not isinstance(kwargs.get(client), MilvusClient):
+            logger.error("client param error. ")
             return None
 
-        url = kwargs.pop(url_name)
         vector_dims = kwargs.pop(x_dim_name)
-        param = kwargs.pop(param, None)
+        params = kwargs.pop(params, {})
+        if not isinstance(params, dict):
+            logger.error("params param error. ")
+            return None
         similarity_strategy = kwargs.pop(similarity_strategy_name)
 
-        milvus_db = MilvusDB(url, **kwargs)
+        milvus_db = MilvusDB(kwargs.get(client))
+        if kwargs.get(collection_name) and isinstance(kwargs.get(collection_name), str):
+            milvus_db.set_collection_name(kwargs.get(collection_name))
 
         try:
-            milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, param=param)
+            milvus_db.create_collection(x_dim=vector_dims, similarity_strategy=similarity_strategy, params=params)
         except KeyError:
             logger.error("milvus create collection meet key error")
         except Exception:
@@ -134,9 +102,13 @@ class MilvusDB(VectorStore):
     @validate_params(
         x_dim=dict(validator=lambda x: 0 < x <= MAX_VEC_DIM, message="param value range (0, 1024 * 1024]"),
         similarity_strategy=dict(validator=lambda x: x in MilvusDB.SIMILARITY_STRATEGY_MAP,
-                                 message="param must be enum of SimilarityStrategy")
+                                 message="param must be enum of SimilarityStrategy"),
+        params=dict(validator=lambda x: x is None or (isinstance(x, dict) and validate_sequence(x)),
+                    message="param must be None or dict.")
     )
-    def create_collection(self, x_dim: int, similarity_strategy: SimilarityStrategy, param=None):
+    def create_collection(self, x_dim: int, similarity_strategy: SimilarityStrategy, params=None):
+        if params is None:
+            params = {}
         schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
         schema.add_field(field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=x_dim)
@@ -152,7 +124,7 @@ class MilvusDB(VectorStore):
             field_name="vector",
             index_type=similarity.get("index"),
             metric_type=similarity.get("metric"),
-            param=param
+            params=params
         )
         self.client.create_collection(
             collection_name=self._collection_name,
