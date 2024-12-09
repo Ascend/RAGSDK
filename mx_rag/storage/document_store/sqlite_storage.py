@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 import datetime
 import os
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 from loguru import logger
 from sqlalchemy import create_engine, Column, Integer, String, JSON, DateTime
@@ -31,12 +31,44 @@ class ChunkModel(Base):
         {"sqlite_autoincrement": True}
     )
 
+    def encrypt_chunk(self, encrypt_fun: Callable):
+        if not isinstance(encrypt_fun, Callable):
+            logger.error("encrypt_fun is not callable function, take no effect.")
+            return
+        try:
+            encrypted_chunk = encrypt_fun(self.chunk_content)
+            if not isinstance(encrypted_chunk, str):
+                logger.error("encrypt_fun return value is str, take no effect.")
+                return
+            self.chunk_content = encrypted_chunk
+        except Exception:
+            logger.error("encrypt chunk content failed.")
+
+    def decrypt_chunk(self, decrypt_fun: Callable):
+        if not isinstance(decrypt_fun, Callable):
+            logger.error("decrypt_fun is not callable function, take no effect.")
+            return
+        try:
+            decrypted_chunk = decrypt_fun(self.chunk_content)
+            if not isinstance(decrypted_chunk, str):
+                logger.error("decrypted_chunk return value is str, take no effect.")
+                return
+            self.chunk_content = decrypted_chunk
+        except Exception:
+            logger.error("encrypt chunk content failed.")
+
 
 class SQLiteDocstore(Docstore):
     FREE_SPACE_LIMIT = 200 * 1024 * 1024
     MAX_DOC_NAME_LEN = 1024
 
-    def __init__(self, db_path: str):
+    @validate_params(
+        encrypt_fun=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                         message="encrypt_fun must be None or callable function"),
+        decrypt_fun=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                         message="decrypt_fun must be None or callable function")
+    )
+    def __init__(self, db_path: str, encrypt_fun: Callable = None, decrypt_fun: Callable = None):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
         FileCheck.check_filename_valid(db_path, max_length=MAX_SQLITE_FILE_NAME_LEN)
         self.db_path = db_path
@@ -44,6 +76,8 @@ class SQLiteDocstore(Docstore):
         self.session = scoped_session(sessionmaker(bind=engine))
         Base.metadata.create_all(engine)
         os.chmod(db_path, 0o600)
+        self.__encrypt_fun = encrypt_fun
+        self.__decrypt_fun = decrypt_fun
 
     @validate_params(
         documents=dict(
@@ -62,6 +96,8 @@ class SQLiteDocstore(Docstore):
                     ChunkModel(document_id=document_id, document_name=doc.document_name, chunk_content=doc.page_content,
                                chunk_metadata=doc.metadata) for doc in documents
                 ]
+                if self.__encrypt_fun:
+                    [chunk.encrypt_chunk(self.__encrypt_fun) for chunk in chunks]
                 session.add_all(chunks)
                 session.commit()
                 logger.debug(f"success add {chunks[0].document_name} in chunks_table.")
@@ -99,6 +135,8 @@ class SQLiteDocstore(Docstore):
     def search(self, index_id: int) -> Optional[MxDocument]:
         with self.session() as session:
             chunk = session.query(ChunkModel).filter_by(chunk_id=index_id).first()
+            if self.__decrypt_fun:
+                chunk.decrypt_chunk(self.__decrypt_fun)
             if chunk is not None:
                 return MxDocument(
                     page_content=chunk.chunk_content,

@@ -51,6 +51,16 @@ class TestSQLiteStorage(unittest.TestCase):
         self.db.delete("test", 1)
         self.assertEqual(self.db.get_all_index_id(), [])
 
+    def test_chunk_encrypt(self):
+        def fack_encryt(value):
+            return "fack_encryt"
+
+        db = SQLiteDocstore(SQL_PATH, encrypt_fun=fack_encryt)
+        doc = MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test")
+        db.add([doc], 1)
+        chunk = db.search(1)
+        self.assertEqual(chunk.page_content, "fack_encryt")
+
 
 if __name__ == '__main__':
     unittest.main()
