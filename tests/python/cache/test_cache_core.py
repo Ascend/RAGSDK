@@ -50,6 +50,19 @@ class TestCacheCore(unittest.TestCase):
         answer = mxrag_l2_cache.search("hello world")
         self.assertEqual(answer, "i am bob")
 
+    def test_cache_clear(self):
+        self.clear_cache_file()
+        config = CacheConfig(cache_size=100, data_save_folder=self.data_save_folder)
+        mxrag_cache = MxRAGCache("test_cache", config)
+        mxrag_cache.update("hello world", "yes i am")
+        answer = mxrag_cache.search("hello world")
+        self.assertEqual(answer, "yes i am")
+        mxrag_cache.flush()
+        mxrag_cache.clear()
+        mxrag_cache_new = MxRAGCache("test_cache", config)
+        answer = mxrag_cache_new.search("hello world")
+        self.assertEqual(answer, None)
+
 
 if __name__ == '__main__':
     unittest.main()

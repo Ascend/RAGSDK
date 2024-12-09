@@ -129,6 +129,7 @@ def _init_mxrag_similar_cache(cache_obj: Cache, cache_name: str, config: Similar
         evaluation=similarity,
         config=gptcache_config
     )
+    return vector_save_file, sql_save_file, vector_base
 
 
 def _init_mxrag_memory_cache(cache_obj: Cache, cache_name: str, config: CacheConfig):
@@ -167,6 +168,7 @@ def _init_mxrag_memory_cache(cache_obj: Cache, cache_name: str, config: CacheCon
         evaluation=ExactMatchEvaluation(),
         config=gptcache_config
     )
+    return data_save_file
 
 
 @validate_params(
@@ -189,10 +191,13 @@ def _init_mxrag_cache(cache_obj: Cache, cache_name: str, config):
         ValueError: 当配置数据不在有效范围内时
     """
     _maybe_create_cache_save_folder(config)
+    save_data_path = {}
 
     if config.config_type == "similarity_cache_config":
-        _init_mxrag_similar_cache(cache_obj, cache_name, config)
+        save_data_path["vector_file"], save_data_path["sql_file"], save_data_path["vector_db"] =\
+            _init_mxrag_similar_cache(cache_obj, cache_name, config)
     elif config.config_type == "memory_cache_config":
-        _init_mxrag_memory_cache(cache_obj, cache_name, config)
+        save_data_path["txt_file"] = _init_mxrag_memory_cache(cache_obj, cache_name, config)
     else:
         logger.error("config type not support. ")
+    return save_data_path
