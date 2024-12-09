@@ -22,7 +22,7 @@ class Reranker(ABC):
         objs=dict(validator=lambda x: validata_list_document(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                   message="param must meets: Type is List[Document], list length range [1, 1000 * 1000], "
                            "pagecontent length range [1, 128 * 1024 * 1024]"),
-        scores=dict(validator=lambda x: isinstance(x, np.ndarray) and x.dim == 1 and 1 <= len(x) <= TEXT_MAX_LEN,
+        scores=dict(validator=lambda x: isinstance(x, np.ndarray) and x.ndim == 1 and 1 <= len(x) <= TEXT_MAX_LEN,
                    message="np.array length range [1, 1000 * 1000]")
     )
     def rerank_top_k(self,
