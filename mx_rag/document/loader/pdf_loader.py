@@ -28,7 +28,7 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
         layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
-    def __init__(self, file_path: str, lang: Lang = Lang.EN, layout_recognize: bool = False):
+    def __init__(self, file_path: str, lang: Lang = Lang.CH, layout_recognize: bool = False):
         super().__init__(file_path)
         self.layout_recognize = layout_recognize
         self.ocr_engine = None
