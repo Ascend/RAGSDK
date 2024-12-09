@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import ssl
 from typing import Dict, Iterator
 
 import urllib3
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from urllib3.exceptions import TimeoutError as urllib3_TimeoutError, HTTPError
 from loguru import logger
 
 from glib.checker import HttpUrlChecker, HttpsUrlChecker
+from glib.security import TlsConfig
 from mx_rag.utils.client_param import ClientParam
 from .cert_check import CertContentsChecker
 from .common import MB
 from .file_check import SecFileCheck
-from .tls_cfg import get_two_way_auth_ssl_context, get_default_context, get_one_way_auth_ssl_context
 
 HTTP_SUCCESS = 200
 MAX_CERT_FILE_SIZE = MB
@@ -53,14 +52,24 @@ class RequestUtils:
         if not client_param.use_http:
             # 未配置ssl context并且使用https时，校验证书相关参数合法性
             self._check_https_para(client_param)
-            # 配置双向认证
-            if client_param.key_file or client_param.crt_file or client_param.pwd:
-                ssl_ctx = get_two_way_auth_ssl_context(client_param)
-            else:
-                # 配置单向认证
-                ssl_ctx = get_one_way_auth_ssl_context(client_param)
+            success, ssl_ctx = TlsConfig.get_client_ssl_context(client_param.ca_file, client_param.crl_file)
+            if not success:
+                raise ValueError('unable to add ca or crl to ssl context')
+
+            ssl_ctx.verify_mode = ssl.CERT_REQUIRED
         else:
-            ssl_ctx = get_default_context()
+            ssl_ctx = ssl.create_default_context()
+            ssl_ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+            ssl_ctx.maximum_version = ssl.TLSVersion.TLSv1_3
+            ssl_ctx.set_ciphers(':'.join([
+                'ECDHE-ECDSA-AES128-GCM-SHA256',
+                'ECDHE-ECDSA-AES256-GCM-SHA384',
+                "ECDHE-ECDSA-CHACHA20-POLY1305-SHA256",
+                'ECDHE-RSA-AES128-GCM-SHA256',
+                'ECDHE-RSA-AES256-GCM-SHA384',
+                "ECDHE-RSA-CHACHA20-POLY1305-SHA256"
+            ]))
+            ssl_ctx.verify_mode = ssl.CERT_REQUIRED
 
         self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
                                         retries=retries,
@@ -87,56 +96,6 @@ class RequestUtils:
         if not ret:
             logger.error(f"invalid ca cert content: '{ret.reason}'")
             raise ValueError('invalid cert content')
-
-    @staticmethod
-    def _check_password(plain_text: str):
-        if not plain_text:
-            raise ValueError("Invalid password length.")
-
-        # Initialize flags for character types
-        has_lower = has_upper = has_digits = has_symbol = False
-
-        # Iterate through each character in the plain text
-        for char in plain_text:
-            if char.islower():
-                has_lower = True
-            elif char.isupper():
-                has_upper = True
-            elif char.isdigit():
-                has_digits = True
-            else:
-                has_symbol = True
-
-        # Check if password meets requirements
-        if len(plain_text) < MIN_PASSWORD_LENGTH and \
-                (has_lower + has_upper + has_digits + has_symbol) < PASSWORD_REQUIREMENT:
-            logger.warning("The password is too weak. It should contain at least two of the following:"
-                           " lowercase characters, uppercase characters, numbers, and symbols,"
-                           " and the password must contain at least %d characters. ", MIN_PASSWORD_LENGTH)
-
-    @staticmethod
-    def _check_key_file_whether_encrypted(key_path: str):
-        def check(file: str):
-            try:
-                # 无密码方式加载key文件
-                with open(key_path, 'rb') as fi:
-                    key = load_pem_private_key(
-                        fi.read(),
-                        password=None,
-                        backend=default_backend()
-                    )
-                # 如果未抛异常，说明证书未加密
-                return False
-            except TypeError:
-                # 抛出异常说明证书已经加密
-                return True
-            except Exception:
-                # 其他异常表示key文件不是pem格式或者已经损坏
-                logger.error("an exception occurred while checking the key file whether encrypted or not")
-                return False
-
-        if not check(key_path):
-            raise ValueError("key file must encrypted")
 
     def post(self, url: str, body: str, headers: Dict):
         if not is_url_valid(url, self.use_http):
@@ -262,13 +221,6 @@ class RequestUtils:
     def _check_https_para(self, client_param: ClientParam):
         SecFileCheck(client_param.ca_file, MAX_CERT_FILE_SIZE).check()
         self._check_ca_content(client_param.ca_file)
-
-        # crt key pwd 3个参数须同时有效
-        if client_param.crt_file or client_param.key_file or client_param.pwd:
-            SecFileCheck(client_param.crt_file, MAX_CERT_FILE_SIZE).check()
-            SecFileCheck(client_param.key_file, MAX_CERT_FILE_SIZE).check()
-            self._check_key_file_whether_encrypted(client_param.key_file)
-            self._check_password(client_param.pwd)
 
         if client_param.crl_file:
             SecFileCheck(client_param.crl_file, MAX_CERT_FILE_SIZE).check()
