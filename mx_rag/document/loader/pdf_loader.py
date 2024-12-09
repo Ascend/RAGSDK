@@ -81,6 +81,7 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             img = Image.frombytes("RGB", [pm.width, pm.height], pm.samples)
             img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
             imgs.append(img)
+            del img
 
         for img in imgs:
             ocr_res = self.ocr_engine(img)
