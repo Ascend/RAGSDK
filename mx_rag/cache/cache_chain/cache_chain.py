@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from typing import Any, Union, Dict, Iterator, Callable
+from typing import Union, Dict, Iterator, Callable
 import json
 
 from mx_rag.chain import Chain
@@ -36,9 +36,7 @@ class CacheChainChat(Chain):
                  cache: MxRAGCache,
                  chain: Chain,
                  convert_data_to_cache=_default_data_convert,
-                 convert_data_to_user=_default_data_convert,
-                 **kwargs: Any):
-        super().__init__(**kwargs)
+                 convert_data_to_user=_default_data_convert):
         self._cache = cache
         self._chain = chain
         self._convert_data_to_cache = convert_data_to_cache
