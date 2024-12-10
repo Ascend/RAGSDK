@@ -7,11 +7,13 @@ MXRAGCache 核心功能类
 2、缓存的查询(search)，更新(update)，以及刷新(flush)
 3、缓存的级联功能(join)
 """
+import os
 from typing import Any
 
 from gptcache.core import Cache
 from loguru import logger
 
+from mx_rag.cache.cache_api.cache_init import _get_data_save_file
 from mx_rag.cache import CacheConfig, SimilarityCacheConfig
 from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_QUERY_LENGTH, STR_TYPE_CHECK_TIP
 
@@ -44,11 +46,13 @@ class MxRAGCache:
                  cache_name: str,
                  config: CacheConfig):
         self.__cache_obj = Cache()
+        self.config = config
+        self.cache_name = cache_name
 
         try:
             from mx_rag.cache.cache_api.cache_init import _init_mxrag_cache
 
-            _init_mxrag_cache(self.__cache_obj, cache_name, config)
+            self.data_save_path = _init_mxrag_cache(self.__cache_obj, cache_name, config)
         except KeyError:
             logger.error("init rag cache failed because key error")
         except Exception:
@@ -75,6 +79,25 @@ class MxRAGCache:
     )
     def set_cache_limit(cls, cache_limit: int):
         cls.cache_limit = cache_limit
+
+    def clear(self):
+        if "vector_db" in self.data_save_path:
+            self.data_save_path["vector_db"].delete_all()
+        if "txt_file" in self.data_save_path and os.path.exists(self.data_save_path["txt_file"]):
+            os.remove(self.data_save_path["txt_file"])
+        if "vector_file" in self.data_save_path and os.path.exists(self.data_save_path["vector_file"]):
+            os.remove(self.data_save_path["vector_file"])
+        if "sql_file" in self.data_save_path:
+            import sqlite3
+            conn = sqlite3.connect(self.data_save_path["sql_file"])
+            curses = conn.cursor()
+            curses.execute("SELECT name FROM sqlite_master WHERE type='table';")
+            tables = curses.fetchall()
+            for table in tables:
+                table_name = table[0]
+                curses.execute(f"DELETE FROM {table_name};")
+                conn.commit()
+            conn.commit()
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH),

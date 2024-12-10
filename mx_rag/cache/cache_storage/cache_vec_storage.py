@@ -130,3 +130,7 @@ class CacheVecStorage(VectorBase):
             total:(int) 当前向量数据库存放的个数
         """
         return self._vec_impl.get_ntotal()
+
+    def delete_all(self):
+        ids = self._vec_impl.get_all_ids()
+        self._vec_impl.delete(ids)
