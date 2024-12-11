@@ -8,6 +8,7 @@ import fitz
 import cv2
 import numpy as np
 from loguru import logger
+from tqdm import tqdm
 
 from paddleocr import PPStructure
 from paddleocr.ppstructure.recovery.recovery_to_doc import sorted_layout_boxes
@@ -63,7 +64,9 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         layout_res = []
         imgs = []
 
-        for page_num in range(pdf_document.page_count):
+        logger.info(f"Processing PDF with {pdf_document.page_count} pages using layout recognition...")
+        for page_num in tqdm(range(pdf_document.page_count), desc="Converting PDF pages to images",
+                             total=pdf_document.page_count, disable=pdf_document.page_count < 5):
             page = pdf_document.load_page(page_num)
             mat = fitz.Matrix(2, 2)
 
@@ -83,11 +86,13 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             imgs.append(img)
             del img
 
-        for img in imgs:
-            ocr_res = self.ocr_engine(img)
-            h, w, _ = img.shape
-            result = sorted_layout_boxes(ocr_res, w)
-            layout_res.append(result)
+        for idx, img in enumerate(tqdm(imgs, desc="Performing OCR on pages", total=len(imgs), disable=len(imgs) < 5)):
+            try:
+                ocr_res = self.ocr_engine(img)
+                result = sorted_layout_boxes(ocr_res, img.shape[1])
+                layout_res.append(result)
+            except Exception as e:
+                logger.warning(f"Failed to process page {idx + 1}: {str(e)}")
 
         return layout_res
 
@@ -115,9 +120,13 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         pdf_content = []
 
         with fitz.open(self.file_path) as pdf_document:
-            for page_num in range(pdf_document.page_count):
-                page = pdf_document.load_page(page_num)
-                pdf_content.append(page.get_text("text"))
+            logger.info(f"Extracting text from PDF with {pdf_document.page_count} pages...")
+            for page_num in tqdm(range(pdf_document.page_count), desc="Extracting text"):
+                try:
+                    page = pdf_document.load_page(page_num)
+                    pdf_content.append(page.get_text("text"))
+                except Exception as e:
+                    logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
 
         return self._text_merger(pdf_content)
 
@@ -134,4 +143,6 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             raise TypeError(f"type '{Path(self.file_path).suffix}' is not support")
         _pdf_page_count = self._get_pdf_page_count()
         if _pdf_page_count > self.MAX_PAGE_NUM:
-            raise ValueError(f"too many pages {_pdf_page_count}")
+            raise ValueError(f"PDF has {_pdf_page_count} pages, "
+                             f"which exceeds the maximum limit of {self.MAX_PAGE_NUM} pages")
+        logger.info(f"Starting to process PDF file: {self.file_path}")

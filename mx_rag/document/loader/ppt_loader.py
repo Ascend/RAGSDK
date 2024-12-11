@@ -8,6 +8,7 @@ from paddleocr import PaddleOCR
 from pptx import Presentation
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
+from tqdm import tqdm
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.utils.common import validate_params, Lang, MAX_IMAGE_PIXELS, BOOL_TYPE_CHECK_TIP
@@ -123,6 +124,9 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
 
     def _load_ppt(self):
         prs = Presentation(self.file_path)
-        for slide in prs.slides:
+        total_slides = len(prs.slides)
+        
+        # Only show progress bar if there are more than 5 slides
+        for slide in tqdm(prs.slides, desc="Processing slides", total=total_slides, disable=total_slides < 5):
             slide_text = self._load_slide(slide)
             yield Document(page_content=slide_text, metadata={"source": self.file_path})
