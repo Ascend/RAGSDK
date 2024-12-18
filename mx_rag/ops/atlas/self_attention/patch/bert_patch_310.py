@@ -9,12 +9,12 @@ from transformers.models.bert.modeling_bert import BertSelfAttention
 
 
 def check_transformer_version():
-    import pkg_resources
+    import transformers
     expect_version = "4.41.1"
-    version = pkg_resources.get_distribution("transformers").version
+    version = transformers.__version__
 
     if version != expect_version:
-        raise ImportError(f"transoformers version must equal {expect_version} currents is {version}")
+        raise ImportError(f"transformers version must equal {expect_version} currents is {version}")
 
 
 check_transformer_version()
