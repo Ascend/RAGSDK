@@ -18,12 +18,24 @@ get_version() {
       VERSION=${VERSION%.*}
     fi
   else
-    VERSION="6.0.RC3"
+    VERSION="7.0.RC1"
   fi
+
+  if [ -f "$VERSION_FILE" ]; then
+    B_VERSION=$(sed '/.*version_info:/!d;s/.*: //' "$VERSION_FILE")
+  else
+    B_VERSION="7.0.RC1.B010"
+  fi
+
 }
 
 get_version
-echo "MindX SDK mxrag: ${VERSION}" >> "$ROOT_PATH"/version.info
+
+{
+  echo "MindX SDK mxrag:${VERSION}"
+  echo "mxrag version:${B_VERSION}"
+  echo "Plat: linux $(uname -m)"
+} >> "$ROOT_PATH"/version.info
 
 
 function package()
@@ -35,18 +47,14 @@ function package()
         exit 1
     fi
 
-    ci_package_dir="${ROOT_PATH}"/output/"${PKG_DIR}"/${py_version}/${PKG_DIR}
-    # clean
-    [ -n "$ci_package_dir" ] && rm -rf "${ci_package_dir}"
-
+    cd "${ROOT_PATH}"/output/
     # package
-    mkdir -p -m 700 "${ci_package_dir}"
-    cp -rf "${ROOT_PATH}"/dist/mx_rag*"${py_version}"*.whl "${ci_package_dir}"
+    cp -rf "${ROOT_PATH}"/dist/mx_rag*"${py_version}"*.whl .
 
-    mv "${ROOT_PATH}"/version.info "${ci_package_dir}"
-    cp -rf "${ROOT_PATH}"/requirements.txt "${ci_package_dir}"
+    mv "${ROOT_PATH}"/version.info .
+    cp -rf "${ROOT_PATH}"/requirements.txt .
+    cp -rf "${ROOT_PATH}"/script .
 
-    cd "${ci_package_dir}"
     #将所有目录设置为750，特殊目录单独处理
     find ./ -type d -exec chmod 750 {} \;
     #将所有文件设置640，特殊文件单独处理
@@ -54,11 +62,11 @@ function package()
 
     find ./  \( -name "*.sh" -o -name "*.run" \)  -exec  chmod 550 {} \;
 
-    mkdir ./ops
-    cp -rf ${ROOT_PATH}/mx_rag/ops/atlas/self_attention/build/mx_rag_opp.*.so ./ops/
+    mkdir -p ./ops/310
+    mkdir -p ./ops/910
+    cp -rf "${ROOT_PATH}"/mx_rag/ops/atlas/self_attention/build/mx_rag_opp.*.so ./ops/310
 
-    cd ../
-    tar -zcvf "${ROOT_PATH}"/output/Ascend-"${PKG_DIR}"_"${VERSION}"_"${py_version}"_linux-"${ARCH}".tar.gz "${PKG_DIR}"
+    rm .gitkeep
 }
 
 function main()
