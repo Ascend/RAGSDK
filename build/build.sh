@@ -67,10 +67,6 @@ function build_310_ops()
 function main()
 {
     clean
-    build_so_package python3.10
-    build_wheel_package python3.10 "${PY310_VER}"
-    build_310_ops python3.10
-    package "${PY310_VER}"
     build_so_package python3.11
     build_wheel_package python3.11 "${PY311_VER}"
     build_310_ops python3.11
