@@ -66,7 +66,7 @@ function package()
     mkdir -p ./ops/910
     cp -rf "${ROOT_PATH}"/mx_rag/ops/atlas/self_attention/build/mx_rag_opp.*.so ./ops/310
 
-    rm .gitkeep
+    rm -f .gitkeep
 }
 
 function main()
