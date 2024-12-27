@@ -20,6 +20,7 @@ SQL_PATH = "./sql.db"
 
 class TestHandler(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
+    white_paths = os.path.realpath(os.path.join(current_dir, "../../data/"))
     test_file = os.path.realpath(os.path.join(current_dir, "../../data/test.pdf"))
     test_folder = os.path.realpath(os.path.join(current_dir, "../../data/files/"))
 
@@ -46,7 +47,7 @@ class TestHandler(unittest.TestCase):
         knowledge_store = KnowledgeStore(db_path=SQL_PATH)
         # 初始化知识管理
         knowledge_db = KnowledgeDB(knowledge_store=knowledge_store, chunk_store=chunk_store, vector_store=vector_store,
-                                   knowledge_name="test001", white_paths=[self.current_dir])
+                                   knowledge_name="test001", white_paths=[self.white_paths])
 
         def embed_func(texts):
             embeddings = np.concatenate([np.random.random((1, 1024))])
