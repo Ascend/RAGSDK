@@ -29,7 +29,7 @@ class TestHandler(unittest.TestCase):
         if os.path.exists(SQL_PATH):
             os.remove(SQL_PATH)
 
-    def test_register_loader(self):
+    def test_Handler(self):
         loader_mng = LoaderMng()
         loader_mng.register_loader(DocxLoader, [".docx"])
         loader_mng.register_loader(PdfLoader, [".pdf"])
