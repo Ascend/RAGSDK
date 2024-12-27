@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 import numpy as np
 
-from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, FilesLoadInfo
+from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, FilesLoadInfo, delete_files
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from mx_rag.knowledge import upload_dir
 from mx_rag.document.loader import DocxLoader, PdfLoader, ExcelLoader
@@ -18,7 +18,7 @@ from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 SQL_PATH = "./sql.db"
 
 
-class TestUploadFiles(unittest.TestCase):
+class TestHandler(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     test_file = os.path.realpath(os.path.join(current_dir, "../../data/test.pdf"))
     test_folder = os.path.realpath(os.path.join(current_dir, "../../data/files/"))
@@ -46,7 +46,7 @@ class TestUploadFiles(unittest.TestCase):
         knowledge_store = KnowledgeStore(db_path=SQL_PATH)
         # 初始化知识管理
         knowledge_db = KnowledgeDB(knowledge_store=knowledge_store, chunk_store=chunk_store, vector_store=vector_store,
-                                   knowledge_name="test001", white_paths=["/home/"])
+                                   knowledge_name="test001", white_paths=[self.current_dir])
 
         def embed_func(texts):
             embeddings = np.concatenate([np.random.random((1, 1024))])
@@ -59,3 +59,4 @@ class TestUploadFiles(unittest.TestCase):
         params = FilesLoadInfo(knowledge=knowledge_db, dir_path=self.test_folder, loader_mng=loader_mng,
                                embed_func=embed_func, force=True, load_image=False)
         upload_dir(params=params)
+        delete_files(knowledge_db, ['test.pdf'])
