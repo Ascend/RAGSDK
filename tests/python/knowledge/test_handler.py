@@ -12,10 +12,18 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from mx_rag.knowledge import upload_dir
 from mx_rag.document.loader import DocxLoader, PdfLoader, ExcelLoader
 from mx_rag.document import LoaderMng
+from mx_rag.knowledge.handler import FileHandlerError
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+from mx_rag.utils.file_check import FileCheckError
 
 SQL_PATH = "./sql.db"
+
+
+def embed_func(texts):
+    embeddings = np.concatenate([np.random.random((1, 1024))])
+
+    return [embeddings] * len(texts)
 
 
 class TestHandler(unittest.TestCase):
@@ -29,7 +37,7 @@ class TestHandler(unittest.TestCase):
         if os.path.exists(SQL_PATH):
             os.remove(SQL_PATH)
 
-    def test_Handler(self):
+    def create_knowledge_db(self, knowledge_name="test001"):
         loader_mng = LoaderMng()
         loader_mng.register_loader(DocxLoader, [".docx"])
         loader_mng.register_loader(PdfLoader, [".pdf"])
@@ -37,27 +45,63 @@ class TestHandler(unittest.TestCase):
         loader_mng.register_splitter(RecursiveCharacterTextSplitter,
                                      [".docx", ".pdf"],
                                      {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False})
-        # 初始化向量数据库
         vector_store = MagicMock(spec=MindFAISS)
         vector_store.add = MagicMock(return_value=None)
-        # 初始化文档chunk 关系数据库
-
         chunk_store = SQLiteDocstore(db_path=SQL_PATH)
-        # 初始化知识管理关系数据库
         knowledge_store = KnowledgeStore(db_path=SQL_PATH)
-        # 初始化知识管理
-        knowledge_db = KnowledgeDB(knowledge_store=knowledge_store, chunk_store=chunk_store, vector_store=vector_store,
-                                   knowledge_name="test001", white_paths=[self.white_paths])
+        return KnowledgeDB(knowledge_store=knowledge_store, chunk_store=chunk_store, vector_store=vector_store,
+                           knowledge_name=knowledge_name, white_paths=[self.white_paths])
 
-        def embed_func(texts):
-            embeddings = np.concatenate([np.random.random((1, 1024))])
+    def test_upload_files_with_invalid_knowledge(self):
+        with self.assertRaises(ValueError):
+            upload_files(knowledge=None, files=[self.test_file], loader_mng=LoaderMng(),
+                         embed_func=embed_func, force=True)
 
-            return [embeddings] * len(texts)
+    def test_upload_files_with_invalid_file_paths(self):
+        knowledge_db = self.create_knowledge_db()
+        with self.assertRaises(FileCheckError):
+            upload_files(knowledge=knowledge_db, files=['/test/test.docx' * 100], loader_mng=LoaderMng(),
+                         embed_func=embed_func, force=True)
 
-        upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=loader_mng,
-                     embed_func=embed_func, force=True)
+    def test_upload_files_with_too_many_files(self):
+        knowledge_db = self.create_knowledge_db()
+        knowledge_db.max_file_count = 1
+        with self.assertRaises(FileHandlerError):
+            upload_files(knowledge=knowledge_db, files=[self.test_file, self.test_file], loader_mng=LoaderMng(),
+                         embed_func=embed_func, force=True)
 
-        params = FilesLoadInfo(knowledge=knowledge_db, dir_path=self.test_folder, loader_mng=loader_mng,
+    def test_upload_files_with_invalid_loader(self):
+        knowledge_db = self.create_knowledge_db()
+        with self.assertRaises(ValueError):
+            upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=None,
+                         embed_func=embed_func, force=True)
+
+    def test_upload_files_with_invalid_embed_func(self):
+        knowledge_db = self.create_knowledge_db()
+        with self.assertRaises(ValueError):
+            upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=LoaderMng(),
+                         embed_func=None, force=True)
+
+    def test_upload_files_with_add_file_failure(self):
+        knowledge_db = self.create_knowledge_db()
+        with patch('mx_rag.knowledge.KnowledgeDB.add_file') as mock_add_file:
+            mock_add_file.side_effect = Exception('Add file failed')
+            result = upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=LoaderMng(),
+                                  embed_func=embed_func, force=True)
+            self.assertEqual(result, self.test_file)
+
+    def test_upload_files_success(self):
+        knowledge_db = self.create_knowledge_db()
+        result = upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=LoaderMng(),
+                              embed_func=embed_func, force=True)
+        self.assertEqual(result, [])
+
+    def test_upload_dir(self):
+        knowledge_db = self.create_knowledge_db()
+        params = FilesLoadInfo(knowledge=knowledge_db, dir_path=self.test_folder, loader_mng=LoaderMng(),
                                embed_func=embed_func, force=True, load_image=False)
         upload_dir(params=params)
+
+    def test_delete_files(self):
+        knowledge_db = self.create_knowledge_db()
         delete_files(knowledge_db, ['test.pdf'])
