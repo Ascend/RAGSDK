@@ -10,7 +10,7 @@ import numpy as np
 from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, FilesLoadInfo, delete_files
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from mx_rag.knowledge import upload_dir
-from mx_rag.document.loader import DocxLoader, PdfLoader, ExcelLoader
+from mx_rag.document.loader import DocxLoader, PdfLoader, ImageLoader
 from mx_rag.document import LoaderMng
 from mx_rag.knowledge.handler import FileHandlerError
 from mx_rag.storage.document_store import SQLiteDocstore
@@ -34,6 +34,7 @@ class TestHandler(unittest.TestCase):
     loader_mng = LoaderMng()
     loader_mng.register_loader(DocxLoader, [".docx"])
     loader_mng.register_loader(PdfLoader, [".pdf"])
+    loader_mng.register_loader(ImageLoader, [".png"])
 
     loader_mng.register_splitter(RecursiveCharacterTextSplitter,
                                  [".docx", ".pdf"],
@@ -111,6 +112,13 @@ class TestHandler(unittest.TestCase):
             params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
             result = upload_dir(params=params)
             self.assertEqual(len(result), 3)
+
+    def test_upload_with_image(self):
+        knowledge_db = self.create_knowledge_db()
+        params = FilesLoadInfo(knowledge=knowledge_db, dir_path=self.test_folder, loader_mng=LoaderMng(),
+                               embed_func=embed_func, force=True, load_image=True)
+        result = upload_dir(params=params)
+        self.assertEqual(result, [])
 
     def test_upload_success(self):
         res1 = upload_files(**self.common_params, files=[self.test_file],)
