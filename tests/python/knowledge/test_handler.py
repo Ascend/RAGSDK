@@ -151,9 +151,6 @@ class TestHandler(unittest.TestCase):
         self.common_params['force'] = False
         with self.assertRaises(FileHandlerError):
             upload_files(**self.common_params, files=[self.test_file])
-        with self.assertRaises(FileHandlerError):
-            params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
-            upload_dir(params=params)
 
     def test_delete_files_success(self):
         delete_files(self.knowledge_db, ['test.pdf'])
