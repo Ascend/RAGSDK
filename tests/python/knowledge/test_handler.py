@@ -147,6 +147,7 @@ class TestHandler(unittest.TestCase):
         self.assertEqual(len(res2), 1)
 
     def test_upload_with_not_force(self):
+        upload_files(**self.common_params, files=[self.test_file])
         self.common_params['force'] = False
         with self.assertRaises(FileHandlerError):
             upload_files(**self.common_params, files=[self.test_file])
