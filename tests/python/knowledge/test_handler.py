@@ -30,6 +30,7 @@ class TestHandler(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     white_paths = os.path.realpath(os.path.join(current_dir, "../../data/"))
     test_file = os.path.realpath(os.path.join(current_dir, "../../data/test.pdf"))
+    test_png = os.path.realpath(os.path.join(current_dir, "../../data/test.png"))
     test_folder = os.path.realpath(os.path.join(current_dir, "../../data/files/"))
     loader_mng = LoaderMng()
     loader_mng.register_loader(DocxLoader, [".docx"])
@@ -69,6 +70,8 @@ class TestHandler(unittest.TestCase):
         with self.assertRaises(ValueError):
             params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
             upload_dir(params=params)
+        with self.assertRaises(ValueError):
+            delete_files(None, ['test.pdf'])
 
     def test_upload_with_invalid_file_paths(self):
         with self.assertRaises(FileCheckError):
@@ -77,7 +80,7 @@ class TestHandler(unittest.TestCase):
             params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder * 100, load_image=False)
             upload_dir(params=params)
 
-    def test_upload_with_too_many_files(self):
+    def test_with_too_many_files(self):
         knowledge_db = self.create_knowledge_db()
         knowledge_db.max_file_count = 1
         self.common_params['knowledge'] = knowledge_db
@@ -86,6 +89,8 @@ class TestHandler(unittest.TestCase):
         with self.assertRaises(FileHandlerError):
             params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
             upload_dir(params=params)
+        with self.assertRaises(FileHandlerError):
+            delete_files(knowledge_db, ['file1', 'file2'])
 
     def test_upload_with_invalid_loader(self):
         self.common_params['loader_mng'] = None
@@ -113,20 +118,21 @@ class TestHandler(unittest.TestCase):
             result = upload_dir(params=params)
             self.assertEqual(len(result), 3)
 
-    def test_upload_with_image(self):
-        knowledge_db = self.create_knowledge_db()
-        params = FilesLoadInfo(knowledge=knowledge_db, dir_path=self.test_folder, loader_mng=LoaderMng(),
-                               embed_func=embed_func, force=True, load_image=True)
-        result = upload_dir(params=params)
-        self.assertEqual(result, [])
+    def test_upload_image(self):
+        res1 = upload_files(**self.common_params, files=[self.test_png])
+        self.assertEqual(res1, [])
+        params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=True)
+        res2 = upload_dir(params=params)
+        self.assertEqual(len(res2), 2)
 
     def test_upload_success(self):
-        res1 = upload_files(**self.common_params, files=[self.test_file],)
+        res1 = upload_files(**self.common_params, files=[self.test_file])
         self.assertEqual(res1, [])
         params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
         res2 = upload_dir(params=params)
-        self.assertEqual(res2, [])
+        self.assertEqual(len(res2), 1)
 
-    def test_delete_files(self):
-        knowledge_db = self.create_knowledge_db()
-        delete_files(knowledge_db, ['test.pdf'])
+    def test_delete_files_success(self):
+        delete_files(self.knowledge_db, ['test.pdf'])
+        res = self.knowledge_db.check_document_exist('test.pdf')
+        self.assertEqual(res, False)
