@@ -76,11 +76,17 @@ class TestHandler(unittest.TestCase):
     def test_upload_with_invalid_file_paths(self):
         with self.assertRaises(FileCheckError):
             upload_files(**self.common_params, files=['/test/test.docx' * 100])
+        with self.assertRaises(FileCheckError):
+            upload_files(**self.common_params, files=['/test/test.docx'])
         with self.assertRaises(ValueError):
             params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder * 100, load_image=False)
             upload_dir(params=params)
         with self.assertRaises(ValueError):
-            delete_files(self.knowledge_db, ['test.pdf'*200])
+            delete_files(self.knowledge_db, ['test.pdf' * 200])
+        with self.assertRaises(FileHandlerError):
+            delete_files(self.knowledge_db, ['test123.pdf', 123])
+        with self.assertRaises(FileHandlerError):
+            delete_files(self.knowledge_db, 'test123.pdf')
 
     def test_with_too_many_files(self):
         knowledge_db = self.create_knowledge_db()
@@ -93,6 +99,12 @@ class TestHandler(unittest.TestCase):
             upload_dir(params=params)
         with self.assertRaises(FileHandlerError):
             delete_files(knowledge_db, ['file1', 'file2'])
+
+    def test_with_no_files(self):
+        res1 = upload_files(**self.common_params, files=[])
+        self.assertEqual(res1, [])
+        res2 = delete_files(self.knowledge_db, [])
+        self.assertEqual(res2, None)
 
     def test_upload_with_invalid_loader(self):
         self.common_params['loader_mng'] = None
@@ -133,6 +145,14 @@ class TestHandler(unittest.TestCase):
         params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
         res2 = upload_dir(params=params)
         self.assertEqual(len(res2), 1)
+
+    def test_upload_with_not_force(self):
+        self.common_params['force'] = False
+        with self.assertRaises(FileHandlerError):
+            upload_files(**self.common_params, files=[self.test_file])
+        with self.assertRaises(FileHandlerError):
+            params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
+            upload_dir(params=params)
 
     def test_delete_files_success(self):
         delete_files(self.knowledge_db, ['test.pdf'])
