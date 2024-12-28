@@ -106,7 +106,7 @@ class TestHandler(unittest.TestCase):
         with patch('mx_rag.knowledge.KnowledgeDB.add_file') as mock_add_file:
             mock_add_file.side_effect = Exception('Add file failed')
             result = upload_files(**self.common_params, files=[self.test_file])
-            self.assertEqual(result, self.test_file)
+            self.assertEqual(result, [self.test_file])
 
             params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
             result = upload_dir(params=params)
