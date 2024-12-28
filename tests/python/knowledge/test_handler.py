@@ -44,6 +44,15 @@ class TestHandler(unittest.TestCase):
         if os.path.exists(SQL_PATH):
             os.remove(SQL_PATH)
 
+        # 初始化参数
+        self.knowledge_db = self.create_knowledge_db()
+        self.common_params = {
+            'knowledge': self.knowledge_db,
+            'loader_mng': self.loader_mng,
+            'embed_func': embed_func,
+            'force': True
+        }
+
     def create_knowledge_db(self, knowledge_name="test001"):
         vector_store = MagicMock(spec=MindFAISS)
         vector_store.add = MagicMock(return_value=None)
@@ -52,55 +61,63 @@ class TestHandler(unittest.TestCase):
         return KnowledgeDB(knowledge_store=knowledge_store, chunk_store=chunk_store, vector_store=vector_store,
                            knowledge_name=knowledge_name, white_paths=[self.white_paths])
 
-    def test_upload_files_with_invalid_knowledge(self):
+    def test_upload_with_invalid_knowledge(self):
+        self.common_params['knowledge'] = None
         with self.assertRaises(ValueError):
-            upload_files(knowledge=None, files=[self.test_file], loader_mng=self.loader_mng,
-                         embed_func=embed_func, force=True)
+            upload_files(**self.common_params, files=[self.test_file])
+        with self.assertRaises(ValueError):
+            params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
+            upload_dir(params=params)
 
-    def test_upload_files_with_invalid_file_paths(self):
-        knowledge_db = self.create_knowledge_db()
+    def test_upload_with_invalid_file_paths(self):
         with self.assertRaises(FileCheckError):
-            upload_files(knowledge=knowledge_db, files=['/test/test.docx' * 100], loader_mng=self.loader_mng,
-                         embed_func=embed_func, force=True)
+            upload_files(**self.common_params, files=['/test/test.docx' * 100])
+        with self.assertRaises(ValueError):
+            params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder * 100, load_image=False)
+            upload_dir(params=params)
 
-    def test_upload_files_with_too_many_files(self):
+    def test_upload_with_too_many_files(self):
         knowledge_db = self.create_knowledge_db()
         knowledge_db.max_file_count = 1
+        self.common_params['knowledge'] = knowledge_db
         with self.assertRaises(FileHandlerError):
-            upload_files(knowledge=knowledge_db, files=[self.test_file, self.test_file], loader_mng=self.loader_mng,
-                         embed_func=embed_func, force=True)
+            upload_files(**self.common_params, files=[self.test_file, self.test_file])
+        with self.assertRaises(FileHandlerError):
+            params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
+            upload_dir(params=params)
 
-    def test_upload_files_with_invalid_loader(self):
-        knowledge_db = self.create_knowledge_db()
+    def test_upload_with_invalid_loader(self):
+        self.common_params['loader_mng'] = None
         with self.assertRaises(ValueError):
-            upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=None,
-                         embed_func=embed_func, force=True)
-
-    def test_upload_files_with_invalid_embed_func(self):
-        knowledge_db = self.create_knowledge_db()
+            upload_files(**self.common_params, files=[self.test_file])
         with self.assertRaises(ValueError):
-            upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=self.loader_mng,
-                         embed_func=None, force=True)
+            params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
+            upload_dir(params=params)
 
-    def test_upload_files_with_add_file_failure(self):
-        knowledge_db = self.create_knowledge_db()
+    def test_upload_with_invalid_embed_func(self):
+        self.common_params['embed_func'] = None
+        with self.assertRaises(ValueError):
+            upload_files(**self.common_params, files=[self.test_file])
+        with self.assertRaises(ValueError):
+            params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
+            upload_dir(params=params)
+
+    def test_upload_with_add_file_failure(self):
         with patch('mx_rag.knowledge.KnowledgeDB.add_file') as mock_add_file:
             mock_add_file.side_effect = Exception('Add file failed')
-            result = upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=self.loader_mng,
-                                  embed_func=embed_func, force=True)
+            result = upload_files(**self.common_params, files=[self.test_file])
             self.assertEqual(result, self.test_file)
 
-    def test_upload_files_success(self):
-        knowledge_db = self.create_knowledge_db()
-        result = upload_files(knowledge=knowledge_db, files=[self.test_file], loader_mng=self.loader_mng,
-                              embed_func=embed_func, force=True)
-        self.assertEqual(result, [])
+            params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
+            result = upload_dir(params=params)
+            self.assertEqual(len(result), 3)
 
-    def test_upload_dir(self):
-        knowledge_db = self.create_knowledge_db()
-        params = FilesLoadInfo(knowledge=knowledge_db, dir_path=self.test_folder, loader_mng=self.loader_mng,
-                               embed_func=embed_func, force=True, load_image=False)
-        upload_dir(params=params)
+    def test_upload_success(self):
+        res1 = upload_files(**self.common_params, files=[self.test_file],)
+        self.assertEqual(res1, [])
+        params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder, load_image=False)
+        res2 = upload_dir(params=params)
+        self.assertEqual(res2, [])
 
     def test_delete_files(self):
         knowledge_db = self.create_knowledge_db()
