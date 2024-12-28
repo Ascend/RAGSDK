@@ -79,6 +79,8 @@ class TestHandler(unittest.TestCase):
         with self.assertRaises(ValueError):
             params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder * 100, load_image=False)
             upload_dir(params=params)
+        with self.assertRaises(ValueError):
+            delete_files(self.knowledge_db, ['test.pdf'*200])
 
     def test_with_too_many_files(self):
         knowledge_db = self.create_knowledge_db()
