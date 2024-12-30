@@ -29,7 +29,6 @@ def embed_func(texts):
 class TestHandler(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     white_paths = os.path.realpath(os.path.join(current_dir, "../../data/"))
-    not_white_paths = os.path.realpath(os.path.join(current_dir, "../../python/knowledge/test_handler.py"))
     test_file = os.path.realpath(os.path.join(current_dir, "../../data/test.pdf"))
     test_png = os.path.realpath(os.path.join(current_dir, "../../data/test.png"))
     test_folder = os.path.realpath(os.path.join(current_dir, "../../data/files/"))
@@ -77,8 +76,10 @@ class TestHandler(unittest.TestCase):
     def test_upload_with_invalid_file_paths(self):
         with self.assertRaises(FileCheckError):
             upload_files(**self.common_params, files=['/test/test.docx' * 100])
-        with self.assertRaises(FileCheckError):
-            upload_files(**self.common_params, files=[self.not_white_paths])
+        with patch('mx_rag.knowledge.handler._is_in_white_paths') as mock_is_in_white_paths:
+            mock_is_in_white_paths.return_value = False
+            with self.assertRaises(FileHandlerError):
+                upload_files(**self.common_params, files=[self.test_file])
         with self.assertRaises(ValueError):
             params = FilesLoadInfo(**self.common_params, dir_path=self.test_folder * 100, load_image=False)
             upload_dir(params=params)
@@ -154,6 +155,7 @@ class TestHandler(unittest.TestCase):
             upload_files(**self.common_params, files=[self.test_file])
 
     def test_delete_files_success(self):
+        delete_files(self.knowledge_db, ['test.pdf'])
         upload_files(**self.common_params, files=[self.test_file])
         delete_files(self.knowledge_db, ['test.pdf'])
         res = self.knowledge_db.check_document_exist('test.pdf')
