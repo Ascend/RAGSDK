@@ -7,7 +7,9 @@ import unittest
 from unittest import mock
 import fitz
 from fitz.fitz import EmptyFileError
+from paddle.base import libpaddle
 from mx_rag.document.loader.pdf_loader import PdfLoader
+from mx_rag.utils import Lang
 from mx_rag.utils.file_check import FileCheckError
 
 
@@ -50,12 +52,26 @@ class TestPdfLoader(unittest.TestCase):
 
     def test_load(self):
         loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
-        pdf_doc = loader.load()
+        pdf_doc = list(loader.lazy_load())
         self.assertEqual(15, pdf_doc[0].metadata["page_count"])
         self.assertTrue(pdf_doc[0].metadata["source"].find("files/test.pdf"))
 
-    def test_lazy_load(self):
-        loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
-        pdf_doc = loader.lazy_load()
-        self.assertTrue(hasattr(pdf_doc, '__iter__'), "lazy_load 应返回一个迭代器")
-        self.assertTrue(hasattr(pdf_doc, '__next__'), "lazy_load 应返回一个迭代器")
+    def test_parser(self):
+        loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), layout_recognize=True, lang=Lang.EN)
+        pdf_doc = list(loader.lazy_load())
+        self.assertEqual(15, pdf_doc[0].metadata["page_count"])
+        self.assertTrue(pdf_doc[0].metadata["source"].find("files/test.pdf"))
+
+        with mock.patch('mx_rag.document.loader.pdf_loader.PPStructure') as mock_score_scale:
+            mock_score_scale.side_effect = Exception("Test other exception")
+            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), layout_recognize=True, lang=Lang.EN)
+            pdf_doc = list(loader.lazy_load())
+            self.assertIsNone(loader.ocr_engine)
+
+        with mock.patch('mx_rag.document.loader.pdf_loader.PPStructure') as mock_score_scale:
+            mock_score_scale.side_effect = AssertionError("Test assertion error")
+            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), layout_recognize=True, lang=Lang.EN)
+            pdf_doc = list(loader.lazy_load())
+            self.assertIsNone(loader.ocr_engine)
+
+

@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from mx_rag.document.loader.excel_loader import ExcelLoader
-
+from mx_rag.document.loader.base_loader import BaseLoader
 
 class TestExcelLoader(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -60,14 +60,13 @@ class TestExcelLoader(unittest.TestCase):
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0].page_content, content)
         self.assertEqual(docs[0].metadata["sheet"], '不需要订阅')
+        with patch("mx_rag.document.loader.base_loader.BaseLoader.MAX_PAGE_NUM", new=1):
+            loader = ExcelLoader(os.path.join(self.data_dir, "test.xlsx"))
+            self.assertEqual(loader.load(), [])
 
     def test_load_csv(self):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.csv"))
         with self.assertRaises(ValueError):
             docs = loader.load()
 
-    def test_lazy_load(self):
-        loader = ExcelLoader(os.path.join(self.data_dir, "test.xlsx"))
-        d = loader.lazy_load()
-        self.assertTrue(hasattr(d, '__iter__'), "lazy_load 应返回一个迭代器")
-        self.assertTrue(hasattr(d, '__next__'), "lazy_load 应返回一个迭代器")
+
