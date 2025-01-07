@@ -2,7 +2,8 @@ import os
 import unittest
 
 from loguru import logger
-from mx_rag.utils.common import validate_sequence
+from langchain_core.documents import Document
+from mx_rag.utils.common import validate_sequence, validata_list_list_str, validata_list_document, check_header
 
 
 class TestCommon(unittest.TestCase):
@@ -60,3 +61,42 @@ class TestCommon(unittest.TestCase):
             res3 = fd.readline()
             self.assertTrue(res3.find("2th layer param length") > -1)
             fd.close()
+
+    def test_validata_list_list_str(self):
+        res = validata_list_list_str('x', [1, 10], [1, 10], [1, 10])
+        self.assertFalse(res)
+
+        res = validata_list_list_str(['x'], [1, 2, 10], [1, 10], [1, 10])
+        self.assertFalse(res)
+
+        res = validata_list_list_str(['x']*11, [1, 10], [1, 10], [1, 10])
+        self.assertFalse(res)
+
+        res = validata_list_list_str([['x'*11]], [1, 10], [1, 10], [1, 10])
+        self.assertFalse(res)
+
+        res = validata_list_list_str([['x']], [1, 10], [1, 10], [1, 10])
+        self.assertTrue(res)
+
+    def test_validata_list_document(self):
+        self.assertFalse(validata_list_document('x', [1, 10], [1, 10]))
+        self.assertFalse(validata_list_document(['x'] * 11, [1, 10], [1, 10]))
+        self.assertFalse(validata_list_document(['x'], [1, 10], [1, 10]))
+
+        data1 = Document(page_content='one_text' * 10, metadata={"source": 'file_path'})
+        self.assertFalse(validata_list_document([data1], [1, 10], [1, 10]))
+
+        data = Document(page_content='one_text', metadata={"source": 'file_path'})
+        self.assertTrue(validata_list_document([data], [1, 10], [1, 10]))
+
+    def test_check_header(self):
+        self.assertFalse(check_header('test'))
+        original_dict = {'test': 1}
+        new_dict = {f'{key}_{i}': original_dict[key] for i in range(101) for key in original_dict}
+        self.assertFalse((check_header(original_dict)))
+        self.assertFalse(check_header(new_dict))
+        self.assertFalse(check_header({'test' * 50: '1'}))
+        self.assertFalse(check_header({'test': '1\n'}))
+        self.assertTrue(check_header({'test': '1'}))
+
+

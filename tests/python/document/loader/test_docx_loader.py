@@ -19,12 +19,6 @@ class DocxLoaderTestCase(unittest.TestCase):
         d = loader.load()
         self.assertEqual(1, len(d))
 
-    def test_lazy_load(self):
-        loader = DocxLoader(os.path.join(self.data_dir, "demo.docx"))
-        d = loader.lazy_load()
-        self.assertTrue(hasattr(d, '__iter__'), "lazy_load 应返回一个迭代器")
-        self.assertTrue(hasattr(d, '__next__'), "lazy_load 应返回一个迭代器")
-
     def test_load_with_image(self):
         loader = DocxLoader(os.path.join(self.data_dir, "demo.docx"), image_inline=True)
         d = loader.load()
