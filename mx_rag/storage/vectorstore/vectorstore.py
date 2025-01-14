@@ -3,10 +3,16 @@
 import operator
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict, Union
 
 import numpy as np
 from loguru import logger
+
+
+class SearchMode(Enum):
+    DENSE = 0   # dense search
+    SPARSE = 1  # sparse search
+    HYBRID = 2  # hybrid search
 
 
 class SimilarityStrategy(Enum):
@@ -35,10 +41,19 @@ class VectorStore(ABC):
         pass
 
     @abstractmethod
+    def add_sparse(self, ids, sparse_embeddings):
+        pass
+
+    @abstractmethod
+    def add_dense_and_sparse(self, ids, dense_embeddings, sparse_embeddings):
+        pass
+
+    @abstractmethod
     def get_all_ids(self):
         pass
 
-    def search_with_threshold(self, embeddings: np.ndarray, k: int = 3, threshold: float = 0.1):
+    def search_with_threshold(self, embeddings: Union[np.ndarray, List[Dict[int, float]]],
+                              k: int = 3, threshold: float = 0.1):
         """
         根据阈值进行查找 过滤调不满足的分数
         Args:
@@ -49,7 +64,7 @@ class VectorStore(ABC):
         Returns: 通过search过滤之后的分数
 
         """
-        scores, indices = self.search(embeddings, k)
+        scores, indices = self.search(embeddings, k)[:2]
 
         logger.info(f"Filter is [>={threshold}]")
 
@@ -94,5 +109,5 @@ class VectorStore(ABC):
 
         """
         if self.score_scale is not None:
-            scores = [[self.score_scale(x) for x in scores[0]]]
+            scores = [[self.score_scale(x) for x in row] for row in scores]
         return scores

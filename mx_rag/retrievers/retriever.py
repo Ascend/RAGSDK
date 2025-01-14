@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-from typing import List, Callable
+from typing import List, Callable, Union, Dict
 
 from langchain_core.pydantic_v1 import Field
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
@@ -18,7 +18,7 @@ from mx_rag.utils.common import MAX_TOP_K, TEXT_MAX_LEN, validate_params
 class Retriever(BaseRetriever):
     vector_store: VectorStore
     document_store: Docstore
-    embed_func: Callable[[List[str]], List[List[float]]]
+    embed_func: Callable[[List[str]], Union[List[List[float]], List[Dict[int, float]]]]
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
     score_threshold: float = Field(default=None, ge=0.0, le=1.0)
 
@@ -31,13 +31,13 @@ class Retriever(BaseRetriever):
     )
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
-        embedding = self.embed_func([query])
+        embeddings = self.embed_func([query])
 
         if self.score_threshold is None:
-            scores, indices = self.vector_store.search(np.array(embedding), k=self.k)
+            scores, indices = self.vector_store.search(embeddings, k=self.k)[:2]
         else:
-            scores, indices = self.vector_store.search_with_threshold(np.array(embedding),
-                                                                      k=self.k, threshold=self.score_threshold)
+            scores, indices = self.vector_store.search_with_threshold(embeddings, k=self.k,
+                                                                      threshold=self.score_threshold)
 
         result = []
 
