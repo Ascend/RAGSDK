@@ -81,7 +81,7 @@ get_run_path() {
 }
 real_delete() {
   cd "${CUR_PATH}/.." || {
-    echo "Where is the mxRag?"
+    echo "Where is the RAG SDK?"
     exit 255
   }
   get_run_path
@@ -112,8 +112,8 @@ real_delete() {
     fi
 
     sed -i '/^export MX_RAG_HOME/d' ~/.bashrc
-    log "Uninstall mxRag package successfully."
-    echo 'Uninstall mxRag package successfully.'
+    log "Uninstall RAG SDK package successfully."
+    echo 'Uninstall RAG SDK package successfully.'
   fi
 }
 
