@@ -117,6 +117,12 @@ class MindFAISS(VectorStore):
 
         return MindFAISS(**kwargs)
 
+    def add_sparse(self, ids, sparse_embeddings):
+        raise NotImplementedError
+
+    def add_dense_and_sparse(self, ids, dense_embeddings, sparse_embeddings):
+        raise NotImplementedError
+
     def save_local(self) -> None:
         FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
         FileCheck.check_filename_valid(self.load_local_index)

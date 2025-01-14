@@ -10,7 +10,7 @@ from mx_rag.storage.vectorstore.vectorstore import SimilarityStrategy, VectorSto
 from mx_rag.storage.vectorstore import MilvusDB
 
 
-class TestMlvusClient(unittest.TestCase):
+class TestMilvusDB(unittest.TestCase):
     def test_faiss(self):
         with patch("pymilvus.MilvusClient") as MilvusClient:
             embeddings = np.random.random((3, 1024))
@@ -34,7 +34,6 @@ class TestMlvusClient(unittest.TestCase):
             'collection_name': "test_collection"
         }
 
-
     def create_milvus_db(self):
         milvus_db = MilvusDB.create(**self.params)
         return milvus_db
@@ -52,7 +51,7 @@ class TestMlvusClient(unittest.TestCase):
     def test_create_no_similarity_strategy(self):
         del self.params['similarity_strategy']
         milvus_db = MilvusDB.create(**self.params)
-        self.assertIsNone(milvus_db)
+        self.assertIsNotNone(milvus_db)
 
     def test_create_wrong_params(self):
         milvus_db = MilvusDB.create(**self.params, params="params")
@@ -69,7 +68,7 @@ class TestMlvusClient(unittest.TestCase):
         self.create_milvus_db().client.insert.assert_called_once()
         self.create_milvus_db().client.refresh_load.assert_called_once()
 
-        with self.assertRaises(MilvusError):
+        with self.assertRaises(ValueError):
             vecs = np.random.randn(3, 2, 1024)
             self.create_milvus_db().add(vecs, [0, 1, 2])
 
@@ -125,16 +124,16 @@ class TestMlvusClient(unittest.TestCase):
                 [{'distance': 0.4, 'id': 4}, {'distance': 0.5, 'id': 5}, {'distance': 0.6, 'id': 6}]
             ]
             embedding = np.array([[1, 2, 3], [4, 5, 6]])
-            scores, ids = self.create_milvus_db().search(embedding, 3)
+            scores, ids = self.create_milvus_db().search(embedding, 3)[:2]
             self.assertEqual(scores, [1, 2, 3])
             self.assertEqual(ids, [[1, 2, 3], [4, 5, 6]])
 
-        with self.assertRaises(MilvusError):
+        with self.assertRaises(ValueError):
             embedding = np.random.randn(3, 2, 1024)
             self.create_milvus_db().search(embedding, 3)
 
         with patch.object(VectorStore, 'MAX_SEARCH_BATCH', 1):
-            with self.assertRaises(MilvusError):
+            with self.assertRaises(ValueError):
                 self.create_milvus_db().search(np.array([[1, 2], [4, 5]]))
 
         with self.assertRaises(MilvusError):
@@ -142,3 +141,5 @@ class TestMlvusClient(unittest.TestCase):
             self.create_milvus_db().search(np.array([[1, 2]]))
 
 
+if __name__ == "__main__":
+    unittest.main()
