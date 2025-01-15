@@ -32,6 +32,8 @@ class Retriever(BaseRetriever):
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
         embeddings = self.embed_func([query])
+        if not hasattr(self.vector_store, "search_mode"):
+            embeddings = np.array(embeddings)
 
         if self.score_threshold is None:
             scores, indices = self.vector_store.search(embeddings, k=self.k)[:2]
