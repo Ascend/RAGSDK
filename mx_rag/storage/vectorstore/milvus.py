@@ -6,7 +6,8 @@ from typing import List, Dict, Optional, Any, Union
 
 import numpy as np
 from loguru import logger
-from pymilvus import MilvusClient, DataType, MilvusException
+from pymilvus import MilvusClient, DataType
+from pymilvus.client.types import ExtraList
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy, SearchMode
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
@@ -250,7 +251,7 @@ class MilvusDB(VectorStore):
         self._handle_dense_input(embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
-        logger.debug(f"success add ids {ids} in MilvusDB.")
+        logger.debug(f"success add {len(ids)} ids in MilvusDB.")
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
@@ -401,7 +402,7 @@ class MilvusDB(VectorStore):
         )
         return self._process_search_results(res, output_fields)
 
-    def _process_search_results(self, data: List[List[Dict]], output_fields: Optional[List[str]] = None):
+    def _process_search_results(self, data: ExtraList, output_fields: Optional[List[str]] = None):
         if output_fields is None:
             output_fields = []
         filtered_fields = [field for field in output_fields if field not in ["id", "distance"]]
