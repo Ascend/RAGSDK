@@ -359,6 +359,8 @@ class MilvusDB(VectorStore):
 
     def _perform_dense_search(self, embeddings: np.ndarray, k: int, output_fields: list, **kwargs):
         """Handle dense search logic."""
+        if self.search_mode not in (SearchMode.DENSE, SearchMode.HYBRID):
+            raise ValueError("Sparse search only supports DENSE or HYBRID mode")
         self._validate_dense_input(embeddings)
         embeddings = embeddings.astype(np.float32)
         res = self.client.search(
