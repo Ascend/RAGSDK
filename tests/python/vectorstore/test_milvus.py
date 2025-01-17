@@ -44,9 +44,11 @@ class TestMilvusDB(unittest.TestCase):
             search_mode=SearchMode.HYBRID,
             x_dim=1024
         )
+        self.not_exist_collection = "not_exist_collection"
         self.sparse_vecs = [{1: 0.1, 2: 0.3}, {1: 0.2, 2: 0.1, 3: 0.2}]
         self.dense_vecs = np.random.randn(2, 1024)
         self.ids = [1, 2]
+        self.docs = ["rag", "sdk"]
 
     def create_milvus_db_dense(self):
         return MilvusDB.create(**self.dense_kwargs)
@@ -104,17 +106,53 @@ class TestMilvusDB(unittest.TestCase):
             with self.assertRaises(MilvusError):
                 self.create_milvus_db_dense().add(vecs, [0, 1, 2])
 
-    def test_add_sparse(self):
+    def test_add_sparse_no_docs(self):
         db = self.create_milvus_db_sparse()
         db.add_sparse(self.ids, self.sparse_vecs)
         self.create_milvus_db_dense().client.insert.assert_called_once()
         self.create_milvus_db_dense().client.refresh_load.assert_called_once()
 
-    def test_add_dense_and_sparse(self):
+    def test_add_sparse_with_docs(self):
+        db = self.create_milvus_db_sparse()
+        db.add_sparse(self.ids, self.sparse_vecs, self.docs)
+        self.create_milvus_db_dense().client.insert.assert_called_once()
+        self.create_milvus_db_dense().client.refresh_load.assert_called_once()
+
+    def test_add_sparse_collection_not_exist(self):
+        db = self.create_milvus_db_sparse()
+        db._validate_collection_existence = MagicMock(side_effect=MilvusError("Collection does not exist"))
+        with self.assertRaises(MilvusError):
+            db.add_sparse(self.ids, self.sparse_vecs)
+
+    def test_add_sparse_invalid_search_mode(self):
+        db = self.create_milvus_db_sparse()
+        db._search_mode = SearchMode.DENSE
+        with self.assertRaises(MilvusError):
+            db.add_sparse(self.ids, self.sparse_vecs)
+
+    def test_add_dense_and_sparse_no_docs(self):
         db = self.create_milvus_db_hybrid()
         db.add_dense_and_sparse(self.ids, self.dense_vecs, self.sparse_vecs)
         self.create_milvus_db_dense().client.insert.assert_called_once()
         self.create_milvus_db_dense().client.refresh_load.assert_called_once()
+
+    def test_add_dense_and_sparse_with_docs(self):
+        db = self.create_milvus_db_hybrid()
+        db.add_dense_and_sparse(self.ids, self.dense_vecs, self.sparse_vecs, self.docs)
+        self.create_milvus_db_dense().client.insert.assert_called_once()
+        self.create_milvus_db_dense().client.refresh_load.assert_called_once()
+
+    def test_add_dense_and_sparse_collection_not_exist(self):
+        db = self.create_milvus_db_hybrid()
+        db._validate_collection_existence = MagicMock(side_effect=MilvusError("Collection does not exist"))
+        with self.assertRaises(MilvusError):
+            db.add_dense_and_sparse(self.ids, self.dense_vecs, self.sparse_vecs)
+
+    def test_add_dense_and_sparse_invalid_search_mode(self):
+        db = self.create_milvus_db_hybrid()
+        db._search_mode = SearchMode.DENSE
+        with self.assertRaises(MilvusError):
+            db.add_dense_and_sparse(self.ids, self.dense_vecs, self.sparse_vecs)
 
     def test_delete_data(self):
         vecs = np.random.randn(3, 1024)
