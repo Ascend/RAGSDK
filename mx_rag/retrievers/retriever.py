@@ -42,24 +42,24 @@ class Retriever(BaseRetriever):
                                                                       threshold=self.score_threshold)
 
         result = []
-
-        for i, idx in enumerate(indices[0]):
-            logger.debug(f"check {i}/{idx}")
+        for score, idx in zip(scores[0], indices[0]):
             if idx < 0:
+                logger.warning(f"Index error: idx expected non-negative, given {idx}")
                 continue
             doc = self.document_store.search(idx)
-            if doc is None:
-                continue
-            logger.debug(f"scores {scores[0][i]}, page content len: {len(doc.page_content)}")
-            result.append((doc, scores[0][i]))
+            if doc:
+                result.append((doc, score))
 
         return self._post_process_result(result)
 
     def _post_process_result(self, result: List[tuple]):
-        docs = [Document(page_content=doc.page_content, metadata=doc.metadata)
-                for doc, similarity in result]
+        docs = []
+        for doc, score in result:
+            metadata = doc.metadata
+            metadata.update({'score': score})
+            docs.append(Document(page_content=doc.page_content, metadata=doc.metadata))
 
-        if len(docs) == 0:
+        if not docs:
             logger.warning("no relevant documents found!!!")
 
         return docs[:self.k]

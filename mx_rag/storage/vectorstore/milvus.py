@@ -151,16 +151,15 @@ class MilvusDB(VectorStore):
         search_mode = kwargs.pop("search_mode", SearchMode.DENSE)
 
         milvus_db = MilvusDB(client, collection_name=collection_name, search_mode=search_mode)
-        if (milvus_db.search_mode == SearchMode.DENSE or milvus_db.search_mode == SearchMode.HYBRID) and x_dim is None:
-            logger.error("param error: x_dim can't be None under DENSE or HYBRID search mode")
-            return None
 
         try:
             milvus_db.create_collection(x_dim=x_dim, similarity_strategy=ss, params=params)
         except KeyError:
             logger.error("milvus create collection meet key error")
+            milvus_db = None
         except Exception as e:
             logger.error(f"milvus create collection failed: {e}")
+            milvus_db = None
 
         return milvus_db
 
@@ -222,7 +221,7 @@ class MilvusDB(VectorStore):
             raise MilvusError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
         self.client.refresh_load(self._collection_name)
-        logger.debug(f"success delete ids {ids} in MilvusDB.")
+        logger.info(f"success delete {len(ids)} vectors in MilvusDB.")
         return res
 
     @validate_params(
@@ -251,7 +250,7 @@ class MilvusDB(VectorStore):
         self._handle_dense_input(embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
-        logger.debug(f"success add {len(ids)} ids in MilvusDB.")
+        logger.info(f"success add {len(ids)} ids in MilvusDB.")
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
@@ -265,7 +264,7 @@ class MilvusDB(VectorStore):
         self._handle_sparse_input(sparse_embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
-        logger.debug(f"success add ids {ids} in MilvusDB.")
+        logger.info(f"successfully add {len(ids)} vectors in MilvusDB.")
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
@@ -281,27 +280,12 @@ class MilvusDB(VectorStore):
         self._handle_dense_input(dense_embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
-        logger.debug(f"success add ids {ids} in MilvusDB.")
+        logger.info(f"successfully add {len(ids)} vectors in MilvusDB.")
 
     def get_all_ids(self) -> List[int]:
         all_id = self.client.query(self._collection_name, filter="id == 0 or id != 0", output_fields=["id"])
         ids = [idx['id'] for idx in all_id]
         return ids
-
-    @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, str) for it in x), message="param must be List[str]")
-    )
-    def get_data_by_ids(self, ids):
-        res = self.client.get(
-            collection_name=self._collection_name,
-            ids=ids
-        )
-        ids = []
-        docs = []
-        for data in res:
-            ids.append(data["id"])
-            docs.append(data["document"])
-        return ids, docs
 
     @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))
