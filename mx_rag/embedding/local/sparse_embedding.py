@@ -91,19 +91,7 @@ class SparseEmbedding(Embeddings):
 
         return embeddings[0]
 
-    def _process_batch(self, batch_texts: List[str], max_length: int) -> List[dict]:
-        tokens = self.tokenizer(batch_texts, padding=True, truncation=True, max_length=max_length,
-                                return_tensors='pt').to(self.model.device)
-        output = self.model(**tokens)
-
-        # 计算稀疏向量
-        vec = self._compute_sparse_vector(output.logits, tokens)
-
-        # 获取 token 和分数的映射
-        return self._map_token_to_scores(tokens['input_ids'], vec)
-
-    @staticmethod
-    def _compute_sparse_vector(logits: torch.Tensor, tokens) -> torch.Tensor:
+    def _compute_sparse_vector(self, logits: torch.Tensor, tokens) -> torch.Tensor:
         """
         计算稀疏向量：对 logits 使用 ReLU 和 log(1+x) 变换，并根据 attention_mask 进行调整
         """
@@ -112,8 +100,7 @@ class SparseEmbedding(Embeddings):
             dim=1
         )[0]
 
-    @staticmethod
-    def _map_token_to_scores(input_ids: torch.Tensor, vec: torch.Tensor) -> List[dict]:
+    def _map_token_to_scores(self, input_ids: torch.Tensor, vec: torch.Tensor) -> List[dict]:
         """
         将每个 token_id 映射到对应的分数
         """
@@ -125,6 +112,17 @@ class SparseEmbedding(Embeddings):
             token_id_dict = {idx: token_score[idx] for idx in input_ids[i] if token_score[idx] > 0}
             result.append(token_id_dict)
         return result
+
+    def _process_batch(self, batch_texts: List[str], max_length: int) -> List[dict]:
+        tokens = self.tokenizer(batch_texts, padding=True, truncation=True, max_length=max_length,
+                                return_tensors='pt').to(self.model.device)
+        output = self.model(**tokens)
+
+        # 计算稀疏向量
+        vec = self._compute_sparse_vector(output.logits, tokens)
+
+        # 获取 token 和分数的映射
+        return self._map_token_to_scores(tokens['input_ids'], vec)
 
     def _encode(self, texts: List[str], batch_size: int = 32, max_length: int = 512) -> List[dict]:
         result = []
