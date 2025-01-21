@@ -9,7 +9,7 @@ from loguru import logger
 from transformers import AutoTokenizer, AutoModelForMaskedLM, is_torch_npu_available
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, TEXT_MAX_LEN, validata_list_str, \
-    BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, validate_lock, GB
+    BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, GB
 from mx_rag.utils.file_check import SecDirCheck, safetensors_check
 
 try:
@@ -29,9 +29,6 @@ class SparseEmbedding(Embeddings):
         dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
                     message="param must be int and value range [0, 63]"),
         use_fp16=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
-        lock=dict(
-            validator=lambda x: x is None or validate_lock(x),
-            message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
     )
     def __init__(self,
                  model_path: str,
@@ -94,34 +91,46 @@ class SparseEmbedding(Embeddings):
 
         return embeddings[0]
 
-    def _encode(self,
-                texts: List[str],
-                batch_size: int = 32,
-                max_length: int = 512):
+    def _process_batch(self, batch_texts: List[str], max_length: int) -> List[dict]:
+        tokens = self.tokenizer(batch_texts, padding=True, truncation=True, max_length=max_length,
+                                return_tensors='pt').to(self.model.device)
+        output = self.model(**tokens)
+
+        # 计算稀疏向量
+        vec = self._compute_sparse_vector(output.logits, tokens)
+
+        # 获取 token 和分数的映射
+        return self._map_token_to_scores(tokens['input_ids'], vec)
+
+    @staticmethod
+    def _compute_sparse_vector(logits: torch.Tensor, tokens) -> torch.Tensor:
+        """
+        计算稀疏向量：对 logits 使用 ReLU 和 log(1+x) 变换，并根据 attention_mask 进行调整
+        """
+        return torch.max(
+            torch.log(1 + torch.relu(logits)) * tokens.attention_mask.unsqueeze(-1),
+            dim=1
+        )[0]
+
+    @staticmethod
+    def _map_token_to_scores(input_ids: torch.Tensor, vec: torch.Tensor) -> List[dict]:
+        """
+        将每个 token_id 映射到对应的分数
+        """
+        token_scores = vec.cpu().tolist()
+        input_ids = input_ids.cpu().tolist()
+
+        result = []
+        for i, token_score in enumerate(token_scores):
+            token_id_dict = {idx: token_score[idx] for idx in input_ids[i] if token_score[idx] > 0}
+            result.append(token_id_dict)
+        return result
+
+    def _encode(self, texts: List[str], batch_size: int = 32, max_length: int = 512) -> List[dict]:
         result = []
         for start_index in range(0, len(texts), batch_size):
             batch_texts = texts[start_index:start_index + batch_size]
-            tokens = self.tokenizer(batch_texts, padding=True, truncation=True, max_length=max_length,
-                                    return_tensors='pt').to(self.model.device)
-            output = self.model(**tokens)
-            vec = torch.max(
-                torch.log(
-                    1 + torch.relu(output.logits)
-                ) * tokens.attention_mask.unsqueeze(-1),
-                dim=1)[0]
-            # 获取 token scores，并映射到实际 token
-            token_scores = vec.cpu().tolist()
-            input_ids = tokens['input_ids'].cpu().tolist()
-
-            # 创建 token 和分数的映射字典
-            token_id_list = []
-            for i, token_score in enumerate(token_scores):
-                token_id_dict = {}
-                for idx in input_ids[i]:
-                    if token_score[idx] > 0:
-                        token_id_dict[idx] = token_score[idx]
-                token_id_list.append(token_id_dict)
-            result.extend(token_id_list)
+            batch_result = self._process_batch(batch_texts, max_length)
+            result.extend(batch_result)
         return result
-
 
