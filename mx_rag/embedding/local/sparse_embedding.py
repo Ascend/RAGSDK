@@ -118,11 +118,11 @@ class SparseEmbedding(Embeddings):
 
             # 创建 token 和分数的映射字典
             token_id_list = []
-            for i in range(len(token_scores)):
+            for i, token_score in enumerate(token_scores):
                 token_id_dict = {}
                 for idx in input_ids[i]:
-                    if token_scores[i][idx] > 0:
-                        token_id_dict[idx] = token_scores[i][idx]
+                    if token_score[idx] > 0:
+                        token_id_dict[idx] = token_score[idx]
                 token_id_list.append(token_id_dict)
             result.extend(token_id_list)
         return result
