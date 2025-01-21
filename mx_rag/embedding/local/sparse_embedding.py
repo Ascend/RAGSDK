@@ -45,7 +45,6 @@ class SparseEmbedding(Embeddings):
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
         self.model = AutoModelForMaskedLM.from_pretrained(model_path, local_files_only=True)
 
-
         if use_fp16:
             self.model = self.model.half()
 
