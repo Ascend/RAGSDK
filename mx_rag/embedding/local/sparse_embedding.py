@@ -36,9 +36,7 @@ class SparseEmbedding(Embeddings):
     def __init__(self,
                  model_path: str,
                  dev_id: int = 0,
-                 use_fp16: bool = True,
-                 pooling_method: str = 'cls',
-                 lock=None):
+                 use_fp16: bool = True):
         self.model_path = model_path
         SecDirCheck(self.model_path, 10 * GB).check()
         safetensors_check(model_path)
