@@ -111,9 +111,7 @@ class SQLiteDocstore(Docstore):
                 session.rollback()
                 raise StorageError(f"add chunk failed, {err}") from err
 
-    @validate_params(doc_name=dict(validator=lambda x: 0 < len(x) <= SQLiteDocstore.MAX_DOC_NAME_LEN,
-                                   message="param length range (0, 1024]"))
-    def delete(self, doc_name: str, document_id: int) -> List[int]:
+    def delete(self, document_id: int) -> List[int]:
         with self.session() as session:
             try:
                 chunks = session.query(ChunkModel).filter_by(document_id=document_id).all()
@@ -121,7 +119,7 @@ class SQLiteDocstore(Docstore):
                 for chunk in chunks:
                     session.delete(chunk)
                 session.commit()
-                logger.debug(f"success delete ('doc_name': {doc_name}, 'document_id': {document_id}) in chunks_table.")
+                logger.debug(f"successfully delete document in chunks_table.(document_id: {document_id})")
                 return idxs
             except SQLAlchemyError as sql_err:
                 session.rollback()
@@ -131,10 +129,10 @@ class SQLiteDocstore(Docstore):
                 session.rollback()
                 raise StorageError(f"delete chunk failed, {err}") from err
 
-    @validate_params(index_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
-    def search(self, index_id: int) -> Optional[MxDocument]:
+    @validate_params(chunk_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
+    def search(self, chunk_id: int) -> Optional[MxDocument]:
         with self.session() as session:
-            chunk = session.query(ChunkModel).filter_by(chunk_id=index_id).first()
+            chunk = session.query(ChunkModel).filter_by(chunk_id=chunk_id).first()
             if self.__decrypt_fun:
                 chunk.decrypt_chunk(self.__decrypt_fun)
             if chunk is not None:

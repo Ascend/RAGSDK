@@ -19,8 +19,8 @@ class MilvusError(Exception):
 
 
 class SchemaBuilder:
-    def __init__(self):
-        self.schema = MilvusClient.create_schema(auto_id=False, enable_dynamic_field=True)
+    def __init__(self, auto_id=False):
+        self.schema = MilvusClient.create_schema(auto_id=auto_id, enable_dynamic_field=True)
         self._add_base_fields()
 
     def add_vector_field(self, field_name: str, datatype: DataType, dim: int):
@@ -113,15 +113,20 @@ class MilvusDB(VectorStore):
                          message="param must be instance of SearchMode")
     )
     def __init__(self, client: MilvusClient, collection_name: str = "mxRag",
-                 search_mode: SearchMode = SearchMode.DENSE):
+                 search_mode: SearchMode = SearchMode.DENSE, auto_id=False):
         super().__init__()
         self._client = client
         self._collection_name = collection_name
         self._search_mode = search_mode
+        self._auto_id = auto_id
 
     @property
     def search_mode(self):
         return self._search_mode
+
+    @property
+    def collection_name(self):
+        return self._collection_name
 
     @property
     def client(self):
@@ -149,8 +154,9 @@ class MilvusDB(VectorStore):
 
         collection_name = kwargs.pop("collection_name", "rag_sdk")
         search_mode = kwargs.pop("search_mode", SearchMode.DENSE)
+        auto_id = kwargs.pop("auto_id", False)
 
-        milvus_db = MilvusDB(client, collection_name=collection_name, search_mode=search_mode)
+        milvus_db = MilvusDB(client, collection_name=collection_name, search_mode=search_mode, auto_id=auto_id)
 
         try:
             milvus_db.create_collection(x_dim=x_dim, similarity_strategy=ss, params=params)
@@ -162,25 +168,6 @@ class MilvusDB(VectorStore):
             milvus_db = None
 
         return milvus_db
-
-    @staticmethod
-    def _create_schema_dense(x_dim):
-        builder = SchemaBuilder()
-        builder.add_vector_field("vector", DataType.FLOAT_VECTOR, x_dim)
-        return builder.build()
-
-    @staticmethod
-    def _create_schema_sparse():
-        builder = SchemaBuilder()
-        builder.add_sparse_vector_field("sparse_vector", DataType.SPARSE_FLOAT_VECTOR)
-        return builder.build()
-
-    @staticmethod
-    def _create_schema_hybrid(x_dim):
-        builder = SchemaBuilder()
-        builder.add_vector_field("vector", DataType.FLOAT_VECTOR, x_dim)
-        builder.add_sparse_vector_field("sparse_vector", DataType.SPARSE_FLOAT_VECTOR)
-        return builder.build()
 
     @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))
@@ -240,13 +227,14 @@ class MilvusDB(VectorStore):
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
     )
-    def add(self, embeddings: np.ndarray, ids: List[int], docs: Optional[List[str]] = None):
+    def add(self, embeddings: np.ndarray, ids: List[int], docs: Optional[List[str]] = None,
+            metadatas: Optional[List[Dict]] = None):
         """往向量数据库添加稠密向量，仅适用于稠密模式或混合模式
         """
         self._validate_collection_existence()
         if self.search_mode != SearchMode.DENSE:
             raise MilvusError("search mode needs to be DENSE")
-        data = self._init_insert_data(ids, docs)
+        data = self._init_insert_data(ids, docs, metadatas)
         self._handle_dense_input(embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
@@ -255,12 +243,13 @@ class MilvusDB(VectorStore):
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
     )
-    def add_sparse(self, ids, sparse_embeddings, docs: Optional[List[str]] = None):
+    def add_sparse(self, ids, sparse_embeddings, docs: Optional[List[str]] = None,
+                   metadatas: Optional[List[Dict]] = None):
         self._validate_collection_existence()
         if self.search_mode != SearchMode.SPARSE:
             raise MilvusError("search mode must be SPARSE")
 
-        data = self._init_insert_data(ids, docs)
+        data = self._init_insert_data(ids, docs, metadatas)
         self._handle_sparse_input(sparse_embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
         self.client.refresh_load(self._collection_name)
@@ -270,12 +259,13 @@ class MilvusDB(VectorStore):
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
     )
     def add_dense_and_sparse(self, ids: List[int], dense_embeddings: np.ndarray,
-                             sparse_embeddings: List[Dict[int, float]], docs: Optional[List[str]] = None):
+                             sparse_embeddings: List[Dict[int, float]], docs: Optional[List[str]] = None,
+                             metadatas: Optional[List[Dict]] = None):
         self._validate_collection_existence()
         if self.search_mode != SearchMode.HYBRID:
             raise MilvusError("search mode must be HYBRID")
 
-        data = self._init_insert_data(ids, docs)
+        data = self._init_insert_data(ids, docs, metadatas)
         self._handle_sparse_input(sparse_embeddings, ids, data)
         self._handle_dense_input(dense_embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
@@ -292,6 +282,22 @@ class MilvusDB(VectorStore):
     def has_collection(self, collection_name):
         return self.client.has_collection(collection_name)
 
+    def _create_schema_dense(self, x_dim):
+        builder = SchemaBuilder(self._auto_id)
+        builder.add_vector_field("vector", DataType.FLOAT_VECTOR, x_dim)
+        return builder.build()
+
+    def _create_schema_sparse(self):
+        builder = SchemaBuilder(self._auto_id)
+        builder.add_sparse_vector_field("sparse_vector", DataType.SPARSE_FLOAT_VECTOR)
+        return builder.build()
+
+    def _create_schema_hybrid(self, x_dim):
+        builder = SchemaBuilder(self._auto_id)
+        builder.add_vector_field("vector", DataType.FLOAT_VECTOR, x_dim)
+        builder.add_sparse_vector_field("sparse_vector", DataType.SPARSE_FLOAT_VECTOR)
+        return builder.build()
+
     def _create_schema(self, x_dim: Optional[int] = None):
         if self.search_mode == SearchMode.DENSE:
             return self._create_schema_dense(x_dim)
@@ -303,12 +309,20 @@ class MilvusDB(VectorStore):
         builder = IndexParamsBuilder(self.client, self.search_mode)
         return builder.prepare_index_params(similarity, params)
 
-    def _init_insert_data(self, ids, docs):
+    def _init_insert_data(self, ids, docs, metadatas):
         data = [{"id": i} for i in ids]
         if docs is not None:
             self._validate_docs(docs)
+            if len(ids) != len(docs):
+                raise MilvusError("#id must be equal #doc")
             for i, doc in enumerate(docs):
                 data[i]["document"] = doc
+        if metadatas is not None:
+            self._validate_metadatas(metadatas)
+            if len(ids) != len(metadatas):
+                raise MilvusError("#id must be equal #metadata")
+            for i, metadata in enumerate(metadatas):
+                data[i]["metadata"] = metadata
         return data
 
     def _validate_collection_existence(self):
@@ -341,6 +355,12 @@ class MilvusDB(VectorStore):
                 f"param must be List[str] with max length {self.MAX_SEARCH_BATCH} "
                 f"and each string length in [1, {self.MAX_QUERY_LENGTH}]"
             )
+
+    def _validate_metadatas(self, data):
+        if not isinstance(data, list) or all(isinstance(it, dict) for it in data):
+            raise MilvusError("param error: param must be list[dict]")
+        if len(data) > self.MAX_SEARCH_BATCH:
+            raise MilvusError(f"param error: length of list must be less or equal {self.MAX_SEARCH_BATCH}")
 
     def _handle_dense_input(self, embeddings: Optional[np.ndarray], ids: List[int], data: List[Dict]):
         self._validate_dense_input(embeddings, search=False)

@@ -30,14 +30,8 @@ class TestSQLiteStorage(unittest.TestCase):
         self.assertEqual(self.db.add([doc], 1), [1])
 
     def test_sqlite_storage_delete(self):
-        # 对delete函数入参进行校验测试
-        with self.assertRaises(ValueError):
-            # 期望doc_name非空
-            self.db.delete(doc_name="", document_id=1)
-            # 期望doc_name为字符串
-            self.db.delete(0, 1)
-        # 传入不存在的doc_name，不删除任何chunk，返回空列表
-        self.assertEqual(self.db.delete(doc_name="test1", document_id=1), [])
+        # 不删除任何chunk，返回空列表
+        self.assertEqual(self.db.delete(document_id=1), [])
 
     def test_sqlite_storage_search(self):
         # 对search函数入参进行校验测试
@@ -48,7 +42,7 @@ class TestSQLiteStorage(unittest.TestCase):
         self.db.add([doc], 1)
         chunk = self.db.search(1)
         self.assertEqual(chunk.page_content, "Hello mxRAG")
-        self.db.delete("test", 1)
+        self.db.delete(1)
         self.assertEqual(self.db.get_all_index_id(), [])
 
     def test_chunk_encrypt(self):
