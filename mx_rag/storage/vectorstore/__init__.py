@@ -6,10 +6,11 @@ __all__ = [
     "VectorStore",
     "SimilarityStrategy",
     "MilvusDB",
-    "VectorStorageFactory"
+    "VectorStorageFactory",
+    "SearchMode"
 ]
 
 from .faiss_npu import MindFAISS
-from .vectorstore import VectorStore, SimilarityStrategy
+from .vectorstore import VectorStore, SimilarityStrategy, SearchMode
 from .milvus import MilvusDB
 from .vector_storage_factory import VectorStorageFactory

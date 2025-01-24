@@ -345,7 +345,7 @@ class KnowledgeDB(KnowledgeBase):
         document_id = self._knowledge_store.delete(self.knowledge_name, doc_name, self.user_id)
         if document_id is None:
             return
-        ids = self._document_store.delete(doc_name, document_id)
+        ids = self._document_store.delete(document_id)
         num_removed = self._vector_store.delete(ids)
         if len(ids) != num_removed:
             logger.warning("the number of documents does not match the number of vectors")

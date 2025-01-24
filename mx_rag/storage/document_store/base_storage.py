@@ -29,11 +29,11 @@ class MxDocument(BaseModel):
 
 class Docstore(ABC):
     @abstractmethod
-    def search(self, index_id) -> MxDocument:
+    def search(self, chunk_id) -> MxDocument:
         pass
 
     @abstractmethod
-    def delete(self, doc_name, document_id):
+    def delete(self, document_id):
         pass
 
     @abstractmethod
