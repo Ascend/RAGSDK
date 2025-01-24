@@ -2,8 +2,10 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 from typing import List
-
+from collections import defaultdict
 import torch
+import numpy as np
+
 from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoTokenizer, AutoModelForMaskedLM, is_torch_npu_available
@@ -33,12 +35,14 @@ class SparseEmbedding(Embeddings):
     def __init__(self,
                  model_path: str,
                  dev_id: int = 0,
+                 embedding_method: str = 'last',
                  use_fp16: bool = True):
         self.model_path = model_path
         SecDirCheck(self.model_path, 10 * GB).check()
         safetensors_check(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
         self.model = AutoModelForMaskedLM.from_pretrained(model_path, local_files_only=True)
+        self.embedding_method = embedding_method
 
         if use_fp16:
             self.model = self.model.half()
@@ -91,16 +95,37 @@ class SparseEmbedding(Embeddings):
 
         return embeddings[0]
 
-    def _compute_sparse_vector(self, logits: torch.Tensor, tokens) -> torch.Tensor:
+    def _compute_sparse_logit(self, logits: torch.Tensor, tokens) -> torch.Tensor:
         """
         计算稀疏向量：对 logits 使用 ReLU 和 log(1+x) 变换，并根据 attention_mask 进行调整
         """
         return torch.max(
             torch.log(1 + torch.relu(logits)) * tokens.attention_mask.unsqueeze(-1),
-            dim=1
-        )[0]
+            dim=1)[0]
 
-    def _map_token_to_scores(self, input_ids: torch.Tensor, vec: torch.Tensor) -> List[dict]:
+    def _compute_sparse_last_hidden(self, hidden_state: torch.Tensor):
+        """
+                方式一：使用线性层进行稀疏向量化
+        """
+        sparse_linear = torch.nn.Linear(in_features=hidden_state.size(-1),
+                                        out_features=1).to(self.model.device)
+        token_weights = torch.relu(sparse_linear(hidden_state))
+
+        return token_weights
+
+    def _process_token_weights(self, token_weights: np.ndarray, input_ids: list):
+        # conver to dict
+        result = defaultdict(int)
+        unused_tokens = set([self.tokenizer.cls_token_id, self.tokenizer.eos_token_id,
+                             self.tokenizer.pad_token_id, self.tokenizer.unk_token_id])
+        for w, idx in zip(token_weights, input_ids):
+            if idx not in unused_tokens and w > 0:
+                idx = str(idx)
+                if w > result[idx]:
+                    result[idx] = w
+        return result
+
+    def _map_token_to_scores(self, vec: torch.Tensor, input_ids: torch.Tensor) -> List[dict]:
         """
         将每个 token_id 映射到对应的分数
         """
@@ -116,13 +141,26 @@ class SparseEmbedding(Embeddings):
     def _process_batch(self, batch_texts: List[str], max_length: int) -> List[dict]:
         tokens = self.tokenizer(batch_texts, padding=True, truncation=True, max_length=max_length,
                                 return_tensors='pt').to(self.model.device)
-        output = self.model(**tokens)
+        output = self.model(**tokens, output_hidden_states=True)
 
         # 计算稀疏向量
-        vec = self._compute_sparse_vector(output.logits, tokens)
-
-        # 获取 token 和分数的映射
-        return self._map_token_to_scores(tokens['input_ids'], vec)
+        if self.embedding_method == 'logits':
+            vec = self._compute_sparse_logit(output.logits, tokens)
+            return self._map_token_to_scores(vec, tokens['input_ids'])
+        elif self.embedding_method == 'last':
+            all_lexical_weights = []
+            batch_data = self.tokenizer(
+                batch_texts,
+                truncation=True,
+                padding=True,
+                return_tensors='pt',
+                max_length=max_length,
+            )
+            vec = self._compute_sparse_last_hidden(output.hidden_states[-1])
+            token_weights = vec.squeeze(-1)
+            all_lexical_weights.extend(list(map(self._process_token_weights, token_weights.detach().cpu().numpy(),
+                                    batch_data['input_ids'].cpu().numpy().tolist())))
+            return all_lexical_weights
 
     def _encode(self, texts: List[str], batch_size: int = 32, max_length: int = 512) -> List[dict]:
         result = []
