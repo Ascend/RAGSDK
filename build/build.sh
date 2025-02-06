@@ -80,7 +80,6 @@ function build_ops()
     echo "build $platform ops success"
 }
 
-
 function main()
 {
     clean
