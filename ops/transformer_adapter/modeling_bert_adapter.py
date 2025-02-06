@@ -109,10 +109,9 @@ def prepare_inputs_for_ascend_boost(self, input_ids, position_ids, token_type_id
     mask = attention_mask.clone()
     mask[mask == 0] = -65504.0
     mask[mask == 1] = -0.0
-    attention_mask_max = torch.zeros(batch_size, self.max_seq_len, self.max_seq_len, device="cpu", dtype=torch.half)
+    attention_mask_max = torch.zeros(batch_size, self.max_seq_len, self.max_seq_len, device="npu", dtype=torch.half)
     for i in range(batch_size):
         attention_mask_max[i, :seq_len, :seq_len] = mask[i]
-    attention_mask_max = attention_mask_max.to(input_ids.device)
     token_offset_tensor = torch.full((batch_size,), seq_len, device="npu", dtype=torch.int32)
     seq_len_tensor = torch.full((batch_size,), seq_len, device="npu", dtype=torch.int32)
 

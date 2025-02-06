@@ -11,6 +11,7 @@ PY311_VER=py$(python3.11 -c "import platform; print(platform.python_version().re
 CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 SO_OUTPUT_DIR="${ROOT_PATH}"/mx_rag/lib
+TRANSFOMER_ADAPTER_OUTPUT_DIR="${ROOT_PATH}"/ops/transformer_adapter/output
 
 export CFLAGS="-fstack-protector-strong -fPIC -D_FORTIFY_SOURCE=2 -O2 -ftrapv"
 export LDFLAGS="-Wl,-z,relro,-z,now,-z,noexecstack -s"
@@ -18,6 +19,7 @@ export LDFLAGS="-Wl,-z,relro,-z,now,-z,noexecstack -s"
 function clean()
 {
     [ -n "$SO_OUTPUT_DIR" ] && rm -rf "$SO_OUTPUT_DIR"
+    [ -n "$TRANSFOMER_ADAPTER_OUTPUT_DIR" ] && rm -rf "$TRANSFOMER_ADAPTER_OUTPUT_DIR"
     [ -n "${ROOT_PATH}" ] && rm -rf "${ROOT_PATH}"/dist
     [ -n "${ROOT_PATH}" ] && rm -rf "${ROOT_PATH}"/mx_rag/build
     find "${ROOT_PATH}/mx_rag" -name "*.so" -exec rm {} \;
@@ -40,6 +42,19 @@ function build_so_package()
     rm -rf build
 }
 
+function build_transformer_adapter()
+{
+    py=$1
+    find "${ROOT_PATH}/ops/transformer_adapter"  \( -name "*.so" \) -exec  rm -f {} \;
+
+    cd "${ROOT_PATH}/ops/transformer_adapter"
+    cp "${ROOT_PATH}"/mx_rag/setup.py .
+    ${py} ./setup.py build_ext -j"$(nproc)"
+    mkdir -p "${TRANSFOMER_ADAPTER_OUTPUT_DIR}"
+    cp -arfv build/lib.linux-*/transformer_adapter/*  $TRANSFOMER_ADAPTER_OUTPUT_DIR
+    rm -rf build
+}
+
 function build_wheel_package()
 {
     py=$1
@@ -54,22 +69,26 @@ function package()
   bash "${CUR_PATH}"/package.sh "$1"
 }
 
-function build_310_ops()
+function build_ops()
 {
-    py=$1
+    platform=$1
+    py=$2
     echo "perpare ops build"
-    cd "${ROOT_PATH}/mx_rag/ops/atlas/self_attention"
+    cd "${ROOT_PATH}/ops"
     dos2unix build.sh
-    bash build.sh Ascend310P3 "${py}"
-    echo "build ops success"
+    bash build.sh $platform "${py}"
+    echo "build $platform ops success"
 }
 
 function main()
 {
     clean
     build_so_package python3.11
+    build_transformer_adapter python3.11
     build_wheel_package python3.11 "${PY311_VER}"
-    build_310_ops python3.11
+    build_ops Ascend310P python3.11
+    build_ops Ascend910B python3.11
+
     package "${PY311_VER}"
 }
 

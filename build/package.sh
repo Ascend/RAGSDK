@@ -55,16 +55,20 @@ function package()
     cp -rf "${ROOT_PATH}"/requirements.txt .
     cp -rf "${ROOT_PATH}"/script .
 
+    mkdir -p ./ops/310
+    mkdir -p ./ops/910
+    cp -rf "${ROOT_PATH}"/ops/Ascend910B/lib ./ops/910
+    cp -rf "${ROOT_PATH}"/ops/Ascend310P/lib ./ops/310
+
+    mkdir -p ./ops/transformer_adapter
+    cp -rf "${ROOT_PATH}"/ops/transformer_adapter/output/* ./ops/transformer_adapter
+
     #将所有目录设置为750，特殊目录单独处理
     find ./ -type d -exec chmod 750 {} \;
     #将所有文件设置640，特殊文件单独处理
     find ./ -type f -exec chmod 640 {} \;
 
-    find ./  \( -name "*.sh" -o -name "*.run" \)  -exec  chmod 550 {} \;
-
-    mkdir -p ./ops/310
-    mkdir -p ./ops/910
-    cp -rf "${ROOT_PATH}"/mx_rag/ops/atlas/self_attention/build/mx_rag_opp.*.so ./ops/310
+    find ./  \( -name "*.sh" -o -name "*.run"  -o -name "*.so" \)  -exec  chmod 550 {} \;
 
     rm -f .gitkeep
 }
