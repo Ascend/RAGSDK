@@ -13,7 +13,7 @@ def load_acl_transformer():
     rag_sdk_home_path = os.getenv("RAG_SDK_HOME", "")
     if not rag_sdk_home_path or not os.path.exists(rag_sdk_home_path):
         raise RuntimeError("env RAG_SDK_HOME not exist, source ~/.bashrc")
-    lib_path = os.path.join(rag_sdk_home_path, "mxRag/ops/lib/libatb_torch.so")
+    lib_path = os.path.join(rag_sdk_home_path, "ops/lib/libatb_torch.so")
     torch.classes.load_library(lib_path)
 
 
