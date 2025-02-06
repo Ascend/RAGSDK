@@ -111,7 +111,6 @@ real_delete() {
       rm -rf "$del_real_path"
     fi
 
-    sed -i '/^export MX_RAG_HOME/d' ~/.bashrc
     log "Uninstall RAG SDK package successfully."
     echo 'Uninstall RAG SDK package successfully.'
   fi
