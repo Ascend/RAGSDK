@@ -15,10 +15,8 @@ namespace atb_speed::common {
     GeluOperation::GeluOperation(
         const std::string &name,
         atb_speed::common::AclNNGeluParam param
-    ) : AclNNOperation(name), param_(param)
+    ) : AclNNOperation(name), param_(param), opName_(name)
     {
-        this->opName_ = name;
-        this->param_ = param;
     }
 
     GeluOperation::~GeluOperation()
