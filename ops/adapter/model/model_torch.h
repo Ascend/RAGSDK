@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+*/
+
+#ifndef MODEL_MODEL_TORCH_H
+#define MODEL_MODEL_TORCH_H
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <torch/custom_class.h>
+#include <torch/script.h>
+
+#include "atb_speed/base/model.h"
+#include "atb_speed/utils/timer.h"
+
+
+class ModelTorch : public torch::CustomClassHolder {
+public:
+    explicit ModelTorch(std::string modelName);
+    ~ModelTorch();
+    int64_t SetParam(std::string param);
+    int64_t SetWeight(std::vector<torch::Tensor> atWeightTensors);
+    int64_t SetKVCache(std::vector<torch::Tensor> atKCacheTensors, std::vector<torch::Tensor> atVCacheTensors);
+    std::vector<torch::Tensor> Execute(std::vector<torch::Tensor> atInTensors, std::string param);
+    int64_t ExecuteOut(std::vector<torch::Tensor> atInTensors, std::vector<torch::Tensor> atOutTensors,
+        std::string param);
+    c10::intrusive_ptr<ModelTorch> clone() const { return c10::make_intrusive<ModelTorch>(modelName_); }
+
+private:
+    int64_t AtTensor2Tensor(std::vector<torch::Tensor> &atTensors, std::vector<atb::Tensor> &opsTensors) const;
+    int64_t ExecuteOutImpl(std::vector<atb::Tensor> &inTensors, std::vector<atb::Tensor> &outTensors,
+                        const std::string &param);
+    std::string GetSaveTensorDir() const;
+    void* GetWorkSpace(const uint64_t bufferSize);
+    atb::Tensor CreateInternalTensorFromDesc(const atb::TensorDesc &tensorDesc);
+    void RunTask(std::string taskName, std::function<int()> task);
+private:
+    std::string modelName_;
+    std::shared_ptr<atb_speed::Model> model_;
+    uint64_t executeCount_ = 0;
+    uint64_t modelId_ = 0;
+    std::shared_ptr<atb::Context> context_;
+    std::vector<torch::Tensor> atInternalTensors_;
+    const size_t maxParamLength_ = 20000;
+};
+
+#endif
