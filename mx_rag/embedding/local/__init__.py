@@ -3,11 +3,9 @@
 __all__ = [
     "TextEmbedding",
     "ImageEmbedding",
-    "SparseEmbedding",
-    "BM25Embedding"
+    "SparseEmbedding"
 ]
 
 from mx_rag.embedding.local.text_embedding import TextEmbedding
 from mx_rag.embedding.local.img_embedding import ImageEmbedding
 from mx_rag.embedding.local.sparse_embedding import SparseEmbedding
-from mx_rag.embedding.local.bm25_embedding import BM25Embedding
