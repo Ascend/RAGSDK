@@ -4,7 +4,6 @@
 # Author: Mind SDK
 # Create: 2025
 # History: NA
-set -e
 
 export RAG_SDK_HOME=
 export PYTHONPATH=$RAG_SDK_HOME/ops/transformer_adapter:$PYTHONPATH
