@@ -9,7 +9,7 @@ cn_clip==1.5.1
 numpy==1.26.4
 urllib3==1.25.8
 pydantic==2.6.3
-sqlalchemy==2.0.31
+sqlalchemy==2.0.23
 python-docx==1.1.2
 pillow==10.3.0
 pymilvus==2.4.3
