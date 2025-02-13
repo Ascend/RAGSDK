@@ -1,7 +1,7 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from datetime import datetime
-from typing import Callable, TypeVar, ParamSpec, Optional
+from typing import Callable, Optional
 from sqlalchemy import Integer, String, JSON, DateTime, text, Index, TEXT
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 from loguru import logger
