@@ -50,15 +50,6 @@ class _DocStoreHelper(Docstore):
         self.encrypt_fn = encrypt_fn
         self.decrypt_fn = decrypt_fn
 
-    def _init_db(self):
-        """初始化数据库表结构"""
-        try:
-            Base.metadata.create_all(self.engine)
-            logger.info("Database tables initialized")
-        except SQLAlchemyError as e:
-            logger.critical("Database initialization failed: {}", e)
-            raise StorageError("Database setup failed") from e
-
     def add(
             self,
             documents: List[MxDocument],
@@ -180,6 +171,15 @@ class _DocStoreHelper(Docstore):
         finally:
             session.close()
 
+    def _init_db(self):
+        """初始化数据库表结构"""
+        try:
+            Base.metadata.create_all(self.engine)
+            logger.info("Database tables initialized")
+        except SQLAlchemyError as e:
+            logger.critical("Database initialization failed: {}", e)
+            raise StorageError("Database setup failed") from e
+
     def _batch_operation(self, iterable: Iterable, operation: Callable, desc: str = ""):
         """通用分批次操作执行器"""
 
@@ -195,13 +195,17 @@ class _DocStoreHelper(Docstore):
                 logger.debug(f"Processed {total} items {desc}")
                 batch = []
 
+        def commit_all(iterable: Iterable, session: Session):
+            nonlocal batch
+            for i, item in enumerate(iterable, 1):
+                batch.append(item)
+                if i % self.batch_size == 0:
+                    commit_batch(session)
+            commit_batch(session)  # 提交最后一批
+
         try:
             with self._transaction() as session:  # 使用统一的会话上下文
-                for i, item in enumerate(iterable, 1):
-                    batch.append(item)
-                    if i % self.batch_size == 0:
-                        commit_batch(session)
-                commit_batch(session)  # 提交最后一批
+                commit_all(iterable, session)
                 logger.info(f"Successfully processed {total} items {desc}")
                 return total
         except Exception as e:
