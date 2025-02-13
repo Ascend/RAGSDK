@@ -12,10 +12,10 @@ from mx_rag.utils.common import MAX_CHUNKS_NUM
 
 
 class TestOpenGaussDocstore(unittest.TestCase):
-    @patch("mx_rag.storage.document_store.opengauss_storage.HelperDocStore")
-    def setUp(self, MockHelperDocStore):
+    @patch("mx_rag.storage.document_store.opengauss_storage._DocStoreHelper")
+    def setUp(self, MockDocStoreHelper):
         self.mock_helper = MagicMock(spec=_DocStoreHelper)  # 模拟 HelperDocStore
-        MockHelperDocStore.return_value = self.mock_helper
+        MockDocStoreHelper.return_value = self.mock_helper
         self.docstore = OpenGaussDocstore(
             URL.create(
                 drivername="postgresql",
