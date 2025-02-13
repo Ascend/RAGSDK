@@ -14,7 +14,7 @@ from mx_rag.storage.document_store.models import Base, ChunkModel
 from mx_rag.utils.common import MAX_CHUNKS_NUM
 
 
-class HelperDocStore(Docstore):
+class _DocStoreHelper(Docstore):
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
             self,
@@ -49,6 +49,15 @@ class HelperDocStore(Docstore):
         self.batch_size = batch_size
         self.encrypt_fn = encrypt_fn
         self.decrypt_fn = decrypt_fn
+
+    def _init_db(self):
+        """初始化数据库表结构"""
+        try:
+            Base.metadata.create_all(self.engine)
+            logger.info("Database tables initialized")
+        except SQLAlchemyError as e:
+            logger.critical("Database initialization failed: {}", e)
+            raise StorageError("Database setup failed") from e
 
     def add(
             self,
@@ -156,15 +165,6 @@ class HelperDocStore(Docstore):
         with self._transaction() as session:
             query = session.query(ChunkModel.chunk_id).yield_per(1000)
             return [chunk_id for (chunk_id,) in query]
-
-    def _init_db(self):
-        """初始化数据库表结构"""
-        try:
-            Base.metadata.create_all(self.engine)
-            logger.info("Database tables initialized")
-        except SQLAlchemyError as e:
-            logger.critical("Database initialization failed: {}", e)
-            raise StorageError("Database setup failed") from e
 
     @contextmanager
     def _transaction(self) -> Iterator[scoped_session]:

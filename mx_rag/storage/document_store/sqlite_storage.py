@@ -7,7 +7,7 @@ from sqlalchemy import URL
 
 from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import StorageError, Docstore
-from mx_rag.storage.document_store.helper_storage import HelperDocStore
+from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, MAX_SQLITE_FILE_NAME_LEN, \
     check_db_file_limit
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
@@ -28,7 +28,7 @@ class SQLiteDocstore(Docstore):
         FileCheck.check_filename_valid(db_path, max_length=MAX_SQLITE_FILE_NAME_LEN)
         self.db_path = db_path
         url = URL.create("sqlite", database=db_path)
-        self.doc_store = HelperDocStore(url, encrypt_fn, decrypt_fn)
+        self.doc_store = _DocStoreHelper(url, encrypt_fn, decrypt_fn)
         os.chmod(db_path, 0o600)
 
     @validate_params(

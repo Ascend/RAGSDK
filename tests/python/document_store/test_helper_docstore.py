@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import StorageError
-from mx_rag.storage.document_store.helper_storage import HelperDocStore
+from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.storage.document_store.models import Base, ChunkModel
 from mx_rag.utils.common import MAX_CHUNKS_NUM
 
@@ -22,7 +22,7 @@ class TestHelperDocStore(unittest.TestCase):
             os.remove(SQLITE)
         # Use an in-memory SQLite database for testing
         self.url = URL.create("sqlite", database=SQLITE)
-        self.docstore = HelperDocStore(self.url)
+        self.docstore = _DocStoreHelper(self.url)
         self.test_documents = [
             MxDocument(page_content="content1", metadata={"key": "value1"}, document_name="doc1"),
             MxDocument(page_content="content2", metadata={"key": "value2"}, document_name="doc2"),
@@ -48,7 +48,7 @@ class TestHelperDocStore(unittest.TestCase):
     def test_add_documents_with_encryption(self):
         encrypt_fn = lambda x: x + "_encrypted"
         decrypt_fn = lambda x: x[:-10] if x.endswith("_encrypted") else x
-        docstore = HelperDocStore(self.url, encrypt_fn=encrypt_fn, decrypt_fn=decrypt_fn)
+        docstore = _DocStoreHelper(self.url, encrypt_fn=encrypt_fn, decrypt_fn=decrypt_fn)
         doc_id = 1
         docstore.add(self.test_documents, doc_id)
         with docstore._transaction() as session:
@@ -84,7 +84,7 @@ class TestHelperDocStore(unittest.TestCase):
     def test_search_document_with_decryption_failure(self):
         encrypt_fn = lambda x: x + "_encrypted"
         decrypt_fn = lambda x: x[:-10] if x.endswith("_encrypted") else x
-        docstore = HelperDocStore(self.url, encrypt_fn=encrypt_fn, decrypt_fn=decrypt_fn)
+        docstore = _DocStoreHelper(self.url, encrypt_fn=encrypt_fn, decrypt_fn=decrypt_fn)
         doc_id = 1
         inserted_ids = docstore.add(self.test_documents, doc_id)
         with patch.object(docstore, "decrypt_fn", side_effect=Exception("Decryption Error")):
@@ -112,7 +112,7 @@ class TestHelperDocStore(unittest.TestCase):
         with patch.object(Base.metadata, "create_all") as mock_create_all:
             mock_create_all.side_effect = SQLAlchemyError("Test Error")
             with self.assertRaises(StorageError):
-                HelperDocStore(self.url)
+                _DocStoreHelper(self.url)
             mock_logger.critical.assert_called_once()
 
 

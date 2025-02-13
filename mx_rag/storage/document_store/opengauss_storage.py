@@ -4,14 +4,19 @@ from typing import List, Optional, Callable
 from sqlalchemy import URL
 
 from mx_rag.storage.document_store.base_storage import MxDocument, Docstore
-from mx_rag.storage.document_store.helper_storage import HelperDocStore
+from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM
 
 
 class OpenGaussDocstore(Docstore):
+    @validate_params(
+        url=dict(validator=lambda x: isinstance(x, URL), message="Param must be a URL"),
+        encrypt_fn=dict(validator=lambda x: x is None or callable(x), message="Param must be a callable or None"),
+        decrypt_fn=dict(validator=lambda x: x is None or callable(x), message="Param must be a callable or None")
+    )
     def __init__(self, url: URL, encrypt_fn: Callable = None, decrypt_fn: Callable = None):
         super().__init__()
-        self.doc_store = HelperDocStore(url, encrypt_fn, decrypt_fn)
+        self.doc_store = _DocStoreHelper(url, encrypt_fn, decrypt_fn)
 
     @validate_params(documents=dict(
         validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),

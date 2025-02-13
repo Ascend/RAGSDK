@@ -60,10 +60,18 @@ class ChunkModel(Base):
         Index('ix_create_time', 'create_time')
     )
 
+    def __repr__(self) -> str:
+        """调试用对象表示"""
+        return (
+            f"<Chunk(id={self.chunk_id}, "
+            f"doc={self.document_id}, "
+            f"content_length={len(self.chunk_content)})>"
+        )
+
     @validate_arguments
-    def transform_content(self,
-                          transform_fn: Callable[[str], str],
-                          operation: str = "operation") -> bool:
+    def _transform_content(self,
+                           transform_fn: Callable[[str], str],
+                           operation: str = "operation") -> bool:
         """
         通用内容转换方法
 
@@ -99,16 +107,8 @@ class ChunkModel(Base):
 
     def encrypt_chunk(self, encrypt_fn: Callable[[str], str]) -> bool:
         """加密内容包装方法"""
-        return self.transform_content(encrypt_fn, "Encryption")
+        return self._transform_content(encrypt_fn, "Encryption")
 
     def decrypt_chunk(self, decrypt_fn: Callable[[str], str]) -> bool:
         """解密内容包装方法"""
-        return self.transform_content(decrypt_fn, "Decryption")
-
-    def __repr__(self) -> str:
-        """调试用对象表示"""
-        return (
-            f"<Chunk(id={self.chunk_id}, "
-            f"doc={self.document_id}, "
-            f"content_length={len(self.chunk_content)})>"
-        )
+        return self._transform_content(decrypt_fn, "Decryption")

@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from sqlalchemy import URL
 
 from mx_rag.storage.document_store.base_storage import MxDocument
-from mx_rag.storage.document_store.helper_storage import HelperDocStore
+from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.storage.document_store.opengauss_storage import OpenGaussDocstore
 from mx_rag.utils.common import MAX_CHUNKS_NUM
 
@@ -14,7 +14,7 @@ from mx_rag.utils.common import MAX_CHUNKS_NUM
 class TestOpenGaussDocstore(unittest.TestCase):
     @patch("mx_rag.storage.document_store.opengauss_storage.HelperDocStore")
     def setUp(self, MockHelperDocStore):
-        self.mock_helper = MagicMock(spec=HelperDocStore)  # 模拟 HelperDocStore
+        self.mock_helper = MagicMock(spec=_DocStoreHelper)  # 模拟 HelperDocStore
         MockHelperDocStore.return_value = self.mock_helper
         self.docstore = OpenGaussDocstore(
             URL.create(
