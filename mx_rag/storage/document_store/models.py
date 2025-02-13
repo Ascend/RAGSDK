@@ -64,6 +64,14 @@ class ChunkModel(Base):
             f"content_length={len(self.chunk_content)})>"
         )
 
+    def encrypt_chunk(self, encrypt_fn: Callable[[str], str]) -> bool:
+        """加密内容包装方法"""
+        return self._transform_content(encrypt_fn, "Encryption")
+
+    def decrypt_chunk(self, decrypt_fn: Callable[[str], str]) -> bool:
+        """解密内容包装方法"""
+        return self._transform_content(decrypt_fn, "Decryption")
+
     def _transform_content(self,
                            transform_fn: Callable[[str], str],
                            operation: str = "operation") -> bool:
@@ -99,11 +107,3 @@ class ChunkModel(Base):
                 chunk_id=self.chunk_id
             )
             return False
-
-    def encrypt_chunk(self, encrypt_fn: Callable[[str], str]) -> bool:
-        """加密内容包装方法"""
-        return self._transform_content(encrypt_fn, "Encryption")
-
-    def decrypt_chunk(self, decrypt_fn: Callable[[str], str]) -> bool:
-        """解密内容包装方法"""
-        return self._transform_content(decrypt_fn, "Decryption")
