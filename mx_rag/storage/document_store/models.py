@@ -2,14 +2,10 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from datetime import datetime
 from typing import Callable, TypeVar, ParamSpec, Optional
-from pydantic import validate_arguments
 from sqlalchemy import Integer, String, JSON, DateTime, text, Index, TEXT
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 from loguru import logger
 
-# 类型注解增强
-T = TypeVar('T')
-P = ParamSpec('P')
 Base = declarative_base()
 
 
@@ -68,7 +64,6 @@ class ChunkModel(Base):
             f"content_length={len(self.chunk_content)})>"
         )
 
-    @validate_arguments
     def _transform_content(self,
                            transform_fn: Callable[[str], str],
                            operation: str = "operation") -> bool:
