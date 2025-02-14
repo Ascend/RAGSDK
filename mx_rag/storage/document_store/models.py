@@ -1,9 +1,8 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-from datetime import datetime
-from typing import Callable, Optional
-from sqlalchemy import Integer, String, JSON, DateTime, text, Index, TEXT
-from sqlalchemy.orm import declarative_base, Mapped, mapped_column
+from typing import Callable
+from sqlalchemy import Column, Integer, String, JSON, DateTime, text, Index, TEXT
+from sqlalchemy.orm import declarative_base
 from loguru import logger
 
 Base = declarative_base()
@@ -23,29 +22,29 @@ class ChunkModel(Base):
     """
     __tablename__ = "chunks_table"
 
-    chunk_id: Mapped[int] = mapped_column(
+    chunk_id = Column(
         Integer,
         primary_key=True,
         comment="主键ID",
         autoincrement="auto"
     )
-    document_id: Mapped[int] = mapped_column(
+    document_id = Column(
         Integer,
         comment="文档ID"
     )
-    document_name: Mapped[str] = mapped_column(
+    document_name = Column(
         String(255),
         comment="文档名称"
     )
-    chunk_content: Mapped[str] = mapped_column(
+    chunk_content = Column(
         TEXT,
         comment="文本内容"
     )
-    chunk_metadata: Mapped[Optional[dict]] = mapped_column(
+    chunk_metadata = Column(
         JSON,
         comment="元数据"
     )
-    create_time: Mapped[datetime] = mapped_column(
+    create_time = Column(
         DateTime(timezone=True),
         server_default=text("CURRENT_TIMESTAMP"),
         comment="创建时间"
