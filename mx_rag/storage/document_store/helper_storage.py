@@ -2,7 +2,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from contextlib import contextmanager
 from typing import List, Optional, Callable, Iterator, Iterable
-from pydantic import validate_call
 from sqlalchemy import create_engine, delete, URL
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
@@ -15,7 +14,6 @@ from mx_rag.utils.common import MAX_CHUNKS_NUM
 
 
 class _DocStoreHelper(Docstore):
-    @validate_call(config=dict(arbitrary_types_allowed=True))
     def __init__(
             self,
             url: URL,
