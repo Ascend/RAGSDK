@@ -29,4 +29,4 @@ gptcache==0.1.43
 cachetools==5.3.3
 pandas==2.2.2
 langchain_community==0.2.16
-opengauss-sqlalchemy==2.2.0
+opengauss-sqlalchemy==2.3.1
