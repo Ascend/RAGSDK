@@ -58,7 +58,10 @@ class CacheChainChat(Chain):
         """
         cache_ans = self._cache.search(query=text)
         if cache_ans is not None:
-            return self._convert_data_to_user(json.loads(cache_ans))
+            answer = json.loads(cache_ans)
+            if answer.get("query"):
+                answer["query"] = text
+            return self._convert_data_to_user(answer)
 
         ans = self._chain.query(text, llm_config)
 
