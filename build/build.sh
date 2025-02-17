@@ -52,6 +52,7 @@ function build_transformer_adapter()
     ${py} ./setup.py build_ext -j"$(nproc)"
     mkdir -p "${TRANSFOMER_ADAPTER_OUTPUT_DIR}"
     cp -arfv build/lib.linux-*/transformer_adapter/*  $TRANSFOMER_ADAPTER_OUTPUT_DIR
+    rm -f $TRANSFOMER_ADAPTER_OUTPUT_DIR/setup.cpython*.so
     rm -rf build
 }
 
