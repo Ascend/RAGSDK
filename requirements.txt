@@ -30,3 +30,4 @@ cachetools==5.3.3
 pandas==2.2.2
 langchain_community==0.2.16
 opengauss-sqlalchemy==2.3.1
+psycopg2==2.9.10
