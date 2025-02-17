@@ -8,19 +8,21 @@ from typing import List, Optional, Dict, Union, Any, Iterator, Tuple
 import numpy as np
 from loguru import logger
 from opengauss_sqlalchemy.usertype import Vector, SPARSEVEC, SparseVector
-from sqlalchemy import create_engine, Column, text, BigInteger, Index, MetaData, Table, URL
+from sqlalchemy import Column, text, BigInteger, Index, MetaData, Table, Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 from mx_rag.storage.vectorstore import VectorStore, SearchMode, SimilarityStrategy
 from mx_rag.storage.document_store.base_storage import StorageError
+from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import MAX_COLLECTION_NAME_LENGTH, MAX_TOP_K
 
 
 DEFAULT_INDEX_OPTIONS = {'m': 16, 'ef_construction': 200}
 Base = declarative_base()
 
 
-def vector_model_factory(
+def _vector_model_factory(
     table_name: str,
     search_mode: SearchMode,
     dim: Optional[int] = None,
@@ -50,7 +52,7 @@ def vector_model_factory(
     return HybridModel
 
 
-def metric_to_func_op(metric):
+def _metric_to_func_op(metric):
     metric_map = {
         "vector_l2_ops": "<->",
         "vector_ip_ops": "<#>",
@@ -90,45 +92,41 @@ class OpenGaussDB(VectorStore):
         }
     }
 
+    @validate_params(
+        engine=dict(validator=lambda x: isinstance(x, Engine), message="param must be instance of Engine"),
+        collection_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_COLLECTION_NAME_LENGTH,
+                             message="param must be str and length range (0, 1024]"),
+        search_mode=dict(validator=lambda x: isinstance(x, SearchMode), message="param must be instance of SearchMode")
+    )
     def __init__(
         self,
-        url: URL,
+        engine: Engine,
         collection_name: str = "vectorstore",
-        search_mode: SearchMode = SearchMode.DENSE,
-        **kwargs
+        search_mode: SearchMode = SearchMode.DENSE
     ):
         super().__init__()
-        self.url = url
+        self.engine = engine
         self.table_name = collection_name
         self.search_mode = search_mode
         self.sparse_dim: Optional[int] = None
         self.similarity: Optional[Dict[str, Any]] = None
         self.vector_model: Optional[Any] = None
 
-        # Configure connection pool
-        pool_config = {
-            "pool_size": kwargs.pop("pool_size", 20),
-            "max_overflow": kwargs.pop("max_overflow", 80),
-            "pool_pre_ping": kwargs.pop("pool_pre_ping", True),
-            "pool_timeout": kwargs.pop("pool_timeout", 60)
-        }
-        self.engine = create_engine(self.url, **pool_config)
         self.session_factory = scoped_session(
             sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
         )
 
     @classmethod
     def create(cls, **kwargs) -> Optional["OpenGaussDB"]:
-        if "url" not in kwargs:
-            logger.error(f"Missing required parameters: url")
+        if "engine" not in kwargs:
+            logger.error(f"Missing required parameters: engine")
             return None
 
         try:
             instance = cls(
-                url=kwargs.pop("url"),
+                engine=kwargs.pop("engine"),
                 collection_name=kwargs.pop("collection_name", "vectorstore"),
-                search_mode=kwargs.pop("search_mode", SearchMode.DENSE),
-                **kwargs
+                search_mode=kwargs.pop("search_mode", SearchMode.DENSE)
             )
             instance.create_collection(
                 dense_dim=kwargs.get("dense_dim"),
@@ -142,6 +140,10 @@ class OpenGaussDB(VectorStore):
             logger.error(f"Instance creation failed: {str(e)}")
             return None
 
+    @validate_params(dense_dim=dict(validator=lambda x: x is None or isinstance(x, int),
+                                    message="param requires to be None or int"),
+                     similarity_strategy=dict(validator=lambda x: x is None or isinstance(x, SimilarityStrategy),
+                                              message="param requires to be None or a SimilarityStrategy"))
     def create_collection(
         self,
         dense_dim: Optional[int] = None,
@@ -155,7 +157,7 @@ class OpenGaussDB(VectorStore):
 
         self.sparse_dim = sparse_dim
         self._setup_similarity(similarity_strategy)
-        self.vector_model = vector_model_factory(
+        self.vector_model = _vector_model_factory(
             self.table_name, self.search_mode, dense_dim, sparse_dim
         )
 
@@ -174,16 +176,32 @@ class OpenGaussDB(VectorStore):
         metadata.reflect(bind=self.engine)
         Table(self.table_name, metadata).drop(self.engine)
 
+    @validate_params(
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="param requires to be np.ndarray"),
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
+    )
     def add(self, embeddings: np.ndarray, ids: List[int]):
         if self.search_mode != SearchMode.DENSE:
             raise ValueError("Add requires DENSE mode")
         self._internal_add(ids, embeddings)
 
+    @validate_params(
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
+        sparse_embeddings=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, dict) for it in x),
+                               message="param requires to be a list of dicts")
+    )
     def add_sparse(self, ids: List[int], sparse_embeddings: List[Dict[int, float]]):
         if self.search_mode != SearchMode.SPARSE:
             raise ValueError("Add sparse requires SPARSE mode")
         self._internal_add(ids, sparse=sparse_embeddings)
 
+    @validate_params(
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
+        dense_embeddings=dict(validator=lambda x: isinstance(x, np.ndarray),
+                              message="param requires to be np.ndarray"),
+        sparse_embeddings=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, dict) for it in x),
+                               message="param requires to be a list of dicts")
+    )
     def add_dense_and_sparse(self, ids: List[int],
                              dense_embeddings: np.ndarray,
                              sparse_embeddings: List[Dict[int, float]]):
@@ -191,6 +209,8 @@ class OpenGaussDB(VectorStore):
             raise ValueError("Adding dense and sparse requires HYBRID mode")
         self._internal_add(ids, dense_embeddings, sparse_embeddings)
 
+    @validate_params(
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"))
     def delete(self, ids: List[int]):
         try:
             with self._transaction() as session:
@@ -201,6 +221,9 @@ class OpenGaussDB(VectorStore):
         except SQLAlchemyError as e:
             raise StorageError(f"Delete failed: {e}") from e
 
+    @validate_params(
+        k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param length range (0, 10000]")
+    )
     def search(self, embeddings: Union[List[List[float]], List[Dict[int, float]]], k: int = 3):
         return self._parallel_search(embeddings, k)
 
@@ -356,7 +379,7 @@ class OpenGaussDB(VectorStore):
         k: int = 3
     ) -> Tuple[List[List[float]], List[List[int]]]:
         """Execute parallel searches using thread pool."""
-        metric_func_op = metric_to_func_op(self.similarity["metric"])
+        metric_func_op = _metric_to_func_op(self.similarity["metric"])
         pool_size = self._calculate_pool_size()
 
         try:

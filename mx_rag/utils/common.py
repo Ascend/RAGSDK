@@ -60,6 +60,8 @@ DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
 MAX_CHUNKS_NUM = 1000 * 1000
 MAX_PAGE_CONTENT = 16 * MB
 
+MAX_COLLECTION_NAME_LENGTH = 1024
+
 
 def safe_get(data, keys, default=None):
     """
