@@ -8,31 +8,39 @@ import torch
 import torch_npu
 from transformers.models.bert.modeling_bert import BertModel, BertConfig, BaseModelOutputWithPoolingAndCrossAttentions
 
+from file_check import FileCheck
+
 
 def load_acl_transformer():
     rag_sdk_home_path = os.getenv("RAG_SDK_HOME", "")
-    if not rag_sdk_home_path or not os.path.exists(rag_sdk_home_path):
-        raise RuntimeError("env RAG_SDK_HOME not exist, source ~/.bashrc")
+
+    if not 0 < len(rag_sdk_home_path) <= 1024:
+        raise ValueError("env RAG_SDK_HOME not be set or length over than 1024")
+
     lib_path = os.path.join(rag_sdk_home_path, "ops/lib/libatb_torch.so")
+
+    FileCheck.check_path_is_exist_and_valid(lib_path, check_real_path=False)
+    # 动态库大小限制到100MB
+    FileCheck.check_file_size(lib_path, 100*1024*1024)
+    FileCheck.check_file_owner(lib_path)
+
     torch.classes.load_library(lib_path)
 
-
-def is_nd():
-    soc_version = torch_npu._C._npu_get_soc_version()
-    return soc_version in [104, 220, 221, 222, 223, 224]
-
+enable_bert_speed: bool = True
 
 load_acl_transformer()
-MASK_INC_DIM1 = 1 if is_nd() else 16
-
-enable_self_attention_speed: bool = True
 
 old_init = BertModel.__init__
 old_forward = BertModel.forward
 
 
 def new__init__(self, config, add_pooling_layer=True):
-    self.boost_flag = int(os.getenv("ENABLE_BOOST", 0))
+    enable_boost = os.getenv("ENABLE_BOOST", "False")
+    if enable_boost not in ("True", "False"):
+        raise ValueError("env ENABLE_BOOST value must be True or False")
+
+    self.boost_flag = True if enable_boost == "True" else False
+
     self.max_seq_len = config.max_position_embeddings
     if self.boost_flag:
         old_init(self, config, add_pooling_layer)
