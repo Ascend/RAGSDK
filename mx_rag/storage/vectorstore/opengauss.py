@@ -8,7 +8,6 @@ from typing import List, Optional, Dict, Union, Any, Iterator, Tuple
 import numpy as np
 from loguru import logger
 from opengauss_sqlalchemy.usertype import Vector, SPARSEVEC, SparseVector
-from psycopg2.extensions import register_adapter, AsIs
 from sqlalchemy import create_engine, Column, text, BigInteger, Index, MetaData, Table, URL
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
@@ -16,7 +15,6 @@ from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 from mx_rag.storage.vectorstore import VectorStore, SearchMode, SimilarityStrategy
 from mx_rag.storage.document_store.base_storage import StorageError
 
-register_adapter(np.int64, AsIs)
 
 DEFAULT_INDEX_OPTIONS = {'m': 16, 'ef_construction': 200}
 Base = declarative_base()
