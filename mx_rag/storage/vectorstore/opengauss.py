@@ -105,7 +105,7 @@ class OpenGaussDB(VectorStore):
         self.search_mode = search_mode
         self.sparse_dim: Optional[int] = None
         self.similarity: Optional[Dict[str, Any]] = None
-        self.VectorTable: Optional[Any] = None
+        self.vector_model: Optional[Any] = None
 
         # Configure connection pool
         pool_config = {
@@ -157,7 +157,7 @@ class OpenGaussDB(VectorStore):
 
         self.sparse_dim = sparse_dim
         self._setup_similarity(similarity_strategy)
-        self.VectorTable = vector_model_factory(
+        self.vector_model = vector_model_factory(
             self.table_name, self.search_mode, dense_dim, sparse_dim
         )
 
@@ -196,8 +196,8 @@ class OpenGaussDB(VectorStore):
     def delete(self, ids: List[int]):
         try:
             with self._transaction() as session:
-                delete_count = session.query(self.VectorTable) \
-                    .filter(self.VectorTable.id.in_(ids)) \
+                delete_count = session.query(self.vector_model) \
+                    .filter(self.vector_model.id.in_(ids)) \
                     .delete(synchronize_session=False)
                 return delete_count
         except SQLAlchemyError as e:
@@ -209,12 +209,26 @@ class OpenGaussDB(VectorStore):
     def get_all_ids(self) -> List[int]:
         try:
             with self._transaction() as session:
-                result = session.query(self.VectorTable.id).all()
+                result = session.query(self.vector_model.id).all()
                 ids = [i[0] for i in result]
                 return ids
 
         except SQLAlchemyError as e:
             raise OpenGaussError("Failed to get all ids") from e
+
+    @contextmanager
+    def _transaction(self) -> Iterator[Any]:
+        """Provide transactional scope around a series of operations."""
+        session = self.session_factory()
+        try:
+            yield session
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Transaction failed: {str(e)}")
+            raise StorageError("Database operation failed") from e
+        finally:
+            session.close()
 
     def _internal_add(
             self,
@@ -250,25 +264,11 @@ class OpenGaussDB(VectorStore):
         """Execute bulk insert operation."""
         try:
             with self._transaction() as session:
-                session.bulk_insert_mappings(self.VectorTable, data)
+                session.bulk_insert_mappings(self.vector_model, data)
                 logger.info(f"Inserted {len(data)} vectors")
         except SQLAlchemyError as e:
             logger.error(f"Insert failed: {str(e)}")
             raise StorageError("Bulk insert failed") from e
-
-    @contextmanager
-    def _transaction(self) -> Iterator[Any]:
-        """Provide transactional scope around a series of operations."""
-        session = self.session_factory()
-        try:
-            yield session
-            session.commit()
-        except Exception as e:
-            session.rollback()
-            logger.error(f"Transaction failed: {str(e)}")
-            raise StorageError("Database operation failed") from e
-        finally:
-            session.close()
 
     def _setup_similarity(self, strategy: Optional[SimilarityStrategy]) -> None:
         """Configure similarity search parameters."""
@@ -291,19 +291,19 @@ class OpenGaussDB(VectorStore):
         """Create appropriate indexes for the table."""
         index_options = {**DEFAULT_INDEX_OPTIONS, **params.get("index_creation_with_options", {})}
 
-        if hasattr(self.VectorTable, "vector"):
+        if hasattr(self.vector_model, "vector"):
             Index(
                 "ix_dense_index",
-                self.VectorTable.vector,
+                self.vector_model.vector,
                 opengauss_using=self.similarity["index"],
                 opengauss_with=index_options,
                 opengauss_ops={'vector': self.similarity["metric"]}
             ).create(self.engine)
 
-        if hasattr(self.VectorTable, "sparse_vector"):
+        if hasattr(self.vector_model, "sparse_vector"):
             Index(
                 "ix_sparse_index",
-                self.VectorTable.sparse_vector,
+                self.vector_model.sparse_vector,
                 opengauss_using="hnsw",
                 opengauss_with=index_options,
                 opengauss_ops={'sparse_vector': "sparsevec_ip_ops"}
@@ -321,7 +321,7 @@ class OpenGaussDB(VectorStore):
             emb_str = self._serialize_embedding(emb)
 
             query = session.query(
-                self.VectorTable,
+                self.vector_model,
                 text(f"{field} {metric_func_op} :{param_key} AS score")
             ).order_by(text(f"score {order_dir}")).params(**{param_key: emb_str}).limit(k)
 
