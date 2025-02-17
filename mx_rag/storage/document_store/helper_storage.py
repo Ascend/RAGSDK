@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from contextlib import contextmanager
 from typing import List, Optional, Callable, Iterator, Iterable
-from sqlalchemy import create_engine, delete, URL
+from sqlalchemy import create_engine, delete, URL, Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 from loguru import logger
@@ -16,7 +16,7 @@ from mx_rag.utils.common import MAX_CHUNKS_NUM
 class _DocStoreHelper(Docstore):
     def __init__(
             self,
-            url: URL,
+            engine: Engine,
             encrypt_fn: Optional[Callable[[str], str]] = None,
             decrypt_fn: Optional[Callable[[str], str]] = None,
             batch_size: int = 500
@@ -25,17 +25,12 @@ class _DocStoreHelper(Docstore):
         文档存储实现
 
         Args:
-            url: 数据库连接字符串
+            engine: 数据库引擎
             encrypt_fn: 内容加密函数 (str -> str)
             decrypt_fn: 内容解密函数 (str -> str)
             batch_size: 批量操作大小
         """
-        self.engine = create_engine(
-            url,
-            pool_size=20,
-            max_overflow=10,
-            pool_pre_ping=True
-        )
+        self.engine = engine
         self.session_factory = scoped_session(
             sessionmaker(
                 bind=self.engine,
@@ -152,7 +147,7 @@ class _DocStoreHelper(Docstore):
     def get_all_index_id(self) -> List[int]:
         """获取所有chunk_id的生成器实现"""
         with self._transaction() as session:
-            query = session.query(ChunkModel.chunk_id).yield_per(1000)
+            query = session.query(ChunkModel.chunk_id).yield_per(self.batch_size)
             return [chunk_id for (chunk_id,) in query]
 
     @contextmanager

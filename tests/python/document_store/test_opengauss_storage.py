@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from sqlalchemy import URL
+from sqlalchemy import URL, Engine
 
 from mx_rag.storage.document_store.base_storage import MxDocument
 from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
@@ -13,19 +13,14 @@ from mx_rag.utils.common import MAX_CHUNKS_NUM
 
 class TestOpenGaussDocstore(unittest.TestCase):
     @patch("mx_rag.storage.document_store.opengauss_storage._DocStoreHelper")
-    def setUp(self, MockDocStoreHelper):
-        self.mock_helper = MagicMock(spec=_DocStoreHelper)  # 模拟 HelperDocStore
+    @patch('sqlalchemy.create_engine')
+    def setUp(self, mock_create_engine, MockDocStoreHelper):
+        # Mock the engine and connection
+        self.mock_engine = MagicMock(spec=Engine)
+        mock_create_engine.return_value = self.mock_engine  # Make create_engine return the mock_engine
+        self.mock_helper = MagicMock(spec=_DocStoreHelper)  # mock HelperDocStore
         MockDocStoreHelper.return_value = self.mock_helper
-        self.docstore = OpenGaussDocstore(
-            URL.create(
-                drivername="postgresql",
-                username="testuser",
-                password="testpassword",
-                host="testhost",
-                port=5432,
-                database="testdb"
-            )
-        )
+        self.docstore = OpenGaussDocstore(self.mock_engine)
         self.test_documents = [
             MxDocument(page_content="content1", document_name="test1.docx", metadata={"key": "value1"}),
             MxDocument(page_content="content2", document_name="test1.docx", metadata={"key": "value2"}),
@@ -86,16 +81,16 @@ class TestOpenGaussDocstore(unittest.TestCase):
 
     def test_init_invalid_params(self):
         with self.assertRaises(ValueError):  # Invalid URL - string, not URL object
-            OpenGaussDocstore("not a URL")
+            OpenGaussDocstore("not a engine")
 
         with self.assertRaises(ValueError):
             OpenGaussDocstore(
-                URL.create(drivername="postgresql"), encrypt_fn=123
+                self.mock_engine, encrypt_fn=123
             )  # Invalid encrypt_fn
 
         with self.assertRaises(ValueError):
             OpenGaussDocstore(
-                URL.create(drivername="postgresql"), decrypt_fn=123
+                self.mock_engine, decrypt_fn=123
             )  # Invalid decrypt_fn
 
 

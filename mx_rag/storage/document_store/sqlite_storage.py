@@ -3,7 +3,7 @@
 import os
 from typing import List, Optional, Callable
 
-from sqlalchemy import URL
+from sqlalchemy import URL, create_engine
 
 from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import StorageError, Docstore
@@ -27,8 +27,8 @@ class SQLiteDocstore(Docstore):
         FileCheck.check_input_path_valid(db_path, check_blacklist=True)
         FileCheck.check_filename_valid(db_path, max_length=MAX_SQLITE_FILE_NAME_LEN)
         self.db_path = db_path
-        url = URL.create("sqlite", database=db_path)
-        self.doc_store = _DocStoreHelper(url, encrypt_fn, decrypt_fn)
+        engine = create_engine(url=URL.create("sqlite", database=db_path))
+        self.doc_store = _DocStoreHelper(engine, encrypt_fn, decrypt_fn)
         os.chmod(db_path, 0o600)
 
     @validate_params(
