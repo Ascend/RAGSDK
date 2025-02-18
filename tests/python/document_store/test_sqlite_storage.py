@@ -49,7 +49,7 @@ class TestSQLiteStorage(unittest.TestCase):
         def fack_encryt(value):
             return "fack_encryt"
 
-        db = SQLiteDocstore(SQL_PATH, encrypt_fun=fack_encryt)
+        db = SQLiteDocstore(SQL_PATH, encrypt_fn=fack_encryt)
         doc = MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test")
         db.add([doc], 1)
         chunk = db.search(1)
