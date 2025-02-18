@@ -121,7 +121,8 @@ class SparseEmbedding(Embeddings):
             max_length=max_length,
         ).to(self.model.device)
         # 使用线性层进行稀疏向量化
-        last_hidden_state = self.model(**batch_data, return_dict=True).last_hidden_state
+        with torch.no_grad():
+            last_hidden_state = self.model(**batch_data, return_dict=True).last_hidden_state
         sparse_vecs = torch.relu(self.sparse_linear(last_hidden_state))
         token_weights = sparse_vecs.squeeze(-1)
         all_lexical_weights.extend(list(map(self._process_token_weights, token_weights.detach().cpu().numpy(),
