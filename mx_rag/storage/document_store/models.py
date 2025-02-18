@@ -97,7 +97,6 @@ class ChunkModel(Base):
                 return False
 
             self.chunk_content = transformed
-            logger.info(f"{operation} succeeded for chunk {self.chunk_id}")
             return True
         except Exception as e:
             logger.error(
