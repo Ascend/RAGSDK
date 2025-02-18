@@ -7,24 +7,18 @@ from loguru import logger
 
 from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN, BOOL_TYPE_CHECK_TIP
 
-BM25_FEATURED_MAX_LEN = 10000
-
 
 @validate_params(
     query_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                     message="param must meets: Type is List[str], "
-                            "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
+                            f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]"),
     doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                   message="param must meets: Type is List[str], "
-                          "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
+                          f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]"),
     use_quick=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
 )
 def bm25_featured(query_list: list[str], doc_list: list[str], use_quick: bool = True):
     """bm25对文档对打分"""
-
-    if len(query_list) > BM25_FEATURED_MAX_LEN or len(doc_list) > BM25_FEATURED_MAX_LEN:
-        logger.error(f"bm25_featured inputs len should not bigger than {BM25_FEATURED_MAX_LEN}")
-        return []
 
     if len(query_list) != len(doc_list):
         logger.error(f"bm25_featured query_list and doc_list has different len")

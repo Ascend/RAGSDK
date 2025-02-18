@@ -5,15 +5,15 @@ import os
 from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
-from mx_rag.reranker.local import LocalReranker
-from mx_rag.tools.finetune.dataprocess import improve_query
-from mx_rag.tools.finetune.dataprocess.llm_preferred import SCORING_QD_PROMPT
+from mx_rag.reranker import Reranker
 from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QA_PROMPT
+from mx_rag.tools.finetune.dataprocess.improve_query import improve_query
+from mx_rag.tools.finetune.dataprocess.llm_preferred import SCORING_QD_PROMPT
 from mx_rag.tools.finetune.generator.common import BaseGenerator
-from mx_rag.utils.file_check import FileCheck
-from mx_rag.utils.file_operate import write_jsonl_to_file, read_jsonl_from_file
 from mx_rag.utils.common import (validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN,
                                  MAX_PATH_LENGTH, MAX_PROMPT_LENGTH, BOOL_TYPE_CHECK_TIP)
+from mx_rag.utils.file_check import FileCheck
+from mx_rag.utils.file_operate import write_jsonl_to_file, read_jsonl_from_file
 
 MAX_DATASET_LEN = 10000
 
@@ -76,18 +76,18 @@ class TrainDataGenerator(BaseGenerator):
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
         dataset_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PATH_LENGTH,
-                          message="param must be str and str length range (0, 1024]"),
-        reranker=dict(validator=lambda x: isinstance(x, LocalReranker),
-                      message="param must be instance of LocalReranker")
+                          message=f"param must be str and str length range (0, {MAX_PATH_LENGTH}]"),
+        reranker=dict(validator=lambda x: isinstance(x, Reranker),
+                      message="param must be instance of Reranker")
     )
-    def __init__(self, llm: Text2TextLLM, dataset_path: str, reranker: LocalReranker):
+    def __init__(self, llm: Text2TextLLM, dataset_path: str, reranker: Reranker):
         super().__init__(llm, dataset_path)
         self.reranker = reranker
 
     @validate_params(
         split_doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
-                            message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
-                            "str length range [1, 128 * 1024 * 1024]"),
+                            message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
+                            f"str length range [1, {STR_MAX_LEN}]"),
         data_process_config=dict(validator=lambda x: isinstance(x, DataProcessConfig),
                                  message="param must be instance of DataProcessConfig")
     )
@@ -103,31 +103,31 @@ class TrainDataGenerator(BaseGenerator):
 
         # 流程开始
         logger.info("step Generating rough problem documentation pairs")
-        query_list, doc_list = self.generate_coarsest_qd_pairs(split_doc_list, data_process_config.question_number,
-                                                               data_process_config.generate_qd_prompt)
+        query_list, doc_list = self._generate_coarsest_qd_pairs(split_doc_list, data_process_config.question_number,
+                                                                data_process_config.generate_qd_prompt)
         logger.info("step Generated rough problem documentation pairs finished")
 
         if data_process_config.featured:
             logger.info("step bm25+reranker query document pair selection")
-            query_list, doc_list = self.feature_qd_pair(query_list,
-                                                        doc_list,
-                                                        self.reranker,
-                                                        data_process_config.featured_percentage)
+            query_list, doc_list = self._feature_qd_pair(query_list,
+                                                         doc_list,
+                                                         self.reranker,
+                                                         data_process_config.featured_percentage)
             logger.info("step bm25+reranker selection finished")
 
         if data_process_config.prefered:
             logger.info("step LLM optimizing query document pair")
-            query_list, doc_list = self.prefer_qd_pair(query_list,
-                                                       doc_list,
-                                                       data_process_config.llm_threshold_score,
-                                                       data_process_config.llm_preferred_prompt)
+            query_list, doc_list = self._prefer_qd_pair(query_list,
+                                                        doc_list,
+                                                        data_process_config.llm_threshold_score,
+                                                        data_process_config.llm_preferred_prompt)
             logger.info("step LLM optimizing query document pair finished")
 
         if data_process_config.rewrite:
             logger.info("step Enhancing query diversity and preserving training data")
-            query_list, doc_list = self.rewrite_query(query_list,
-                                                      doc_list,
-                                                      data_process_config.query_rewrite_numer)
+            query_list, doc_list = self._rewrite_query(query_list,
+                                                       doc_list,
+                                                       data_process_config.query_rewrite_numer)
             logger.info("step Enhancing query diversity and preserving training data finished")
 
         train_data = []
@@ -139,10 +139,10 @@ class TrainDataGenerator(BaseGenerator):
 
         return
 
-    def rewrite_query(self,
-                      preferred_query_list: list[str],
-                      preferred_doc_list: list[str],
-                      query_rewrite_numer: int):
+    def _rewrite_query(self,
+                       preferred_query_list: list[str],
+                       preferred_doc_list: list[str],
+                       query_rewrite_numer: int):
         if len(preferred_query_list) > MAX_DATASET_LEN or len(preferred_doc_list) > MAX_DATASET_LEN:
             logger.error(f"inputs len should not bigger than {MAX_DATASET_LEN}")
             return [], []
@@ -194,14 +194,14 @@ class TrainDataGenerator(BaseGenerator):
 
         return query_list, doc_list
 
-    def _rewrite(self, preferred_query_list, preferred_doc_list, rewrite_data_path, chunk_size: int = 500):
+    def _rewrite(self, preferred_query_list, preferred_doc_list, rewrite_data_path, batch_size: int = 512):
         logger.info(f"rewrite query count: {len(preferred_query_list)}")
 
         query_list = []
         count = 0
-        for i in range(0, len(preferred_query_list), chunk_size):
-            chunk_query_list = preferred_query_list[i:i + chunk_size]
-            chunk_doc_list = preferred_doc_list[i:i + chunk_size]
+        for i in range(0, len(preferred_query_list), batch_size):
+            chunk_query_list = preferred_query_list[i:i + batch_size]
+            chunk_doc_list = preferred_doc_list[i:i + batch_size]
             new_query_list = improve_query(self.llm, chunk_query_list)
             temp_qd_pairs = []
             for query, doc in zip(new_query_list, chunk_doc_list):
@@ -209,7 +209,7 @@ class TrainDataGenerator(BaseGenerator):
                     query_list.append(query)
                     temp_qd_pairs.append({"anchor": query, "positive": doc})
             write_jsonl_to_file(temp_qd_pairs, rewrite_data_path, 'a')
-            logger.info(f"The {count + 1} st time rewrite query success by chunk {chunk_size}")
+            logger.info(f"The {count + 1} st time rewrite query success by chunk {batch_size}")
             count += 1
 
         return query_list
