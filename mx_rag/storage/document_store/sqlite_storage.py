@@ -44,6 +44,7 @@ class SQLiteDocstore(Docstore):
         check_db_file_limit(self.db_path)
         return self.doc_store.add(documents, document_id)
 
+    @validate_params(document_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
     def delete(self, document_id: int) -> List[int]:
         return self.doc_store.delete(document_id)
 

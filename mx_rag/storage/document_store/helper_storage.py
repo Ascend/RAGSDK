@@ -54,14 +54,17 @@ class _DocStoreHelper(Docstore):
 
         def batch_insert(chunk_batch, session):
             # 构造模型对象时同步加密
-            chunks = [
-                ChunkModel(
+            chunks = []
+            for doc in chunk_batch:
+                chunk = ChunkModel(
                     document_id=document_id,
                     document_name=doc.document_name,
-                    chunk_content=self.encrypt_fn(doc.page_content) if self.encrypt_fn else doc.page_content,
+                    chunk_content=doc.page_content,
                     chunk_metadata=doc.metadata
-                ) for doc in chunk_batch
-            ]
+                )
+                if self.encrypt_fn:
+                    chunk.encrypt_chunk(self.encrypt_fn)
+                chunks.append(chunk)
             session.bulk_save_objects(chunks, return_defaults=True)
 
         try:
@@ -130,16 +133,15 @@ class _DocStoreHelper(Docstore):
             if not chunk:
                 return None
 
-            content = chunk.chunk_content
             if self.decrypt_fn:
                 try:
-                    content = self.decrypt_fn(content)
+                    chunk.decrypt_chunk(self.decrypt_fn)
                 except Exception as e:
                     logger.error("Decryption failed for chunk {}", chunk_id)
                     raise StorageError("Decryption failed") from e
 
             return MxDocument(
-                page_content=content,
+                page_content=chunk.chunk_content,
                 metadata=chunk.chunk_metadata,
                 document_name=chunk.document_name
             )
