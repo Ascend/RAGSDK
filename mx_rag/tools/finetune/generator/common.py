@@ -5,17 +5,18 @@ from pathlib import Path
 from typing import Callable, List
 
 from loguru import logger
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import TextLoader
-from langchain_core.documents import Document
 
-from mx_rag.document.loader import DocxLoader
-from mx_rag.utils.common import validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN
-from mx_rag.utils.file_check import FileCheck, SecFileCheck
+from mx_rag.document import LoaderMng
 from mx_rag.llm import Text2TextLLM
-from mx_rag.reranker.local import LocalReranker
-from mx_rag.tools.finetune.dataprocess \
-    import bm25_featured, generate_qa_embedding_pairs, llm_preferred, reranker_featured, reciprocal_rank_fusion
+from mx_rag.reranker import Reranker
+from mx_rag.tools.finetune.dataprocess.bm25_featured import bm25_featured
+from mx_rag.tools.finetune.dataprocess.generate_qd import generate_qa_embedding_pairs
+from mx_rag.tools.finetune.dataprocess.llm_preferred import llm_preferred
+from mx_rag.tools.finetune.dataprocess.reciprocal_rank_fusion import reciprocal_rank_fusion
+from mx_rag.tools.finetune.dataprocess.reranker_featured import reranker_featured
+from mx_rag.utils.common import validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN, validate_params, MAX_PATH_LENGTH, \
+    CALLABLE_TYPE_CHECK_TIP
+from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.file_operate import read_jsonl_from_file, write_jsonl_to_file
 
 MAX_DATASET_LEN = 10000
@@ -30,30 +31,34 @@ class BaseGenerator:
         self.llm = llm
         self.dataset_path = dataset_path
 
-    @staticmethod
-    def generate_origin_document(document_path: str, filter_func: Callable[[List[str]], List[str]] = None,
-                                 chunk_size: int = 512, chunk_overlap: int = 10):
+    @validate_params(
+        document_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PATH_LENGTH,
+                           message=f"param must be str and str length range (0, {MAX_PATH_LENGTH}]"),
+        loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
+        filter_func=dict(validator=lambda x: x is None or isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
+    )
+    def generate_origin_document(self, document_path: str, loader_mng: LoaderMng,
+                                 filter_func: Callable[[List[str]], List[str]] = None):
         logger.info("Original document splitting")
         FileCheck.dir_check(document_path)
 
         def doc_load(file_path: str):
             SecFileCheck(file_path, MAX_FILE_SIZE_100M).check()
-            text_loader = TextLoader(file_path, encoding="utf-8")
-            docx_loader = DocxLoader(file_path)
+
             doc_type = os.path.splitext(file_path)[-1]
-            if doc_type == ".md":
-                documents = text_loader.load()
-            elif doc_type == ".docx":
-                documents = docx_loader.load()
-            elif doc_type == ".txt":
-                documents = text_loader.load()
-            else:
-                documents = []
+
+            loader_info = loader_mng.get_loader(doc_type)
+            loader = loader_info.loader_class(file_path=file_path, **loader_info.loader_params)
+
             docs = []
-            for document in documents:
-                docs.append(Document(page_content=document.page_content, metadata=document.metadata))
+            for doc in loader.load():
+                splitter_info = loader_mng.get_splitter(doc_type)
+                splitter = splitter_info.splitter_class(**splitter_info.splitter_params)
+                docs.extend(splitter.split_documents([doc]))
+
             return docs
 
+        # 对数据进行清洗
         def execute_callback(split_texts: List[str]):
             if isinstance(filter_func, Callable):
                 filter_texts = filter_func(split_texts)
@@ -66,20 +71,18 @@ class BaseGenerator:
 
         doc_cnt = 0
         split_doc_list = []
-        file_types = ['*.txt', '*.docx', "*.md"]
-
         doc_set = set()
-        for file_type in file_types:
-            for doc_file in Path(document_path).glob(file_type):
+
+        for file_type in loader_mng.loaders:
+            for doc_file in Path(document_path).glob(f"*{file_type}"):
                 if doc_cnt > MAX_FILE_PROCESS_TIMES:
                     logger.warning(f"unable to process files over {MAX_FILE_PROCESS_TIMES} times")
                     break
                 if not doc_file.is_file():
                     continue
+
                 for doc in doc_load(doc_file.as_posix()):
-                    splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size,
-                                                              chunk_overlap=chunk_overlap)
-                    texts = execute_callback(splitter.split_text(doc.page_content))
+                    texts = execute_callback([doc.page_content])
                     # 去重
                     unique_docs = [x for x in texts if x not in doc_set and not doc_set.add(x)]
                     split_doc_list.extend(unique_docs)
@@ -87,22 +90,19 @@ class BaseGenerator:
 
         return split_doc_list
 
-    def generate_coarsest_qd_pairs(self,
-                                   split_doc_list: list[str],
-                                   question_number: int,
-                                   prompt: str,
-                                   chunk_size: int = 512):
+    def _generate_coarsest_qd_pairs(self,
+                                    split_doc_list: list[str],
+                                    question_number: int,
+                                    prompt: str,
+                                    batch_size: int = 512):
         logger.info("query document pair generation")
-        if len(split_doc_list) > MAX_DATASET_LEN:
-            logger.error(f"inputs len should not bigger than {MAX_DATASET_LEN}, now is {len(split_doc_list)}")
-            return [], []
 
         query_list = []
         doc_list = []
         origin_train_data_path = os.path.join(self.dataset_path, "origin_train_data.jsonl")
         if not os.path.exists(origin_train_data_path):
             query_list, doc_list = self._generate_qd_pairs(
-                split_doc_list, question_number, origin_train_data_path, prompt, chunk_size
+                split_doc_list, question_number, origin_train_data_path, prompt, batch_size
             )
         else:
             logger.info("The qd file is existed, check whether the next generation is required.")
@@ -119,7 +119,7 @@ class BaseGenerator:
                 logger.info("qd pairs generate not finished, continue to process")
                 remain_doc_list = split_doc_list[(interrupted_index + 1):]
                 new_query_list, new_doc_list = self._generate_qd_pairs(
-                    remain_doc_list, question_number, origin_train_data_path, prompt, chunk_size
+                    remain_doc_list, question_number, origin_train_data_path, prompt, batch_size
                 )
                 query_list.extend(new_query_list)
                 doc_list.extend(new_doc_list)
@@ -136,8 +136,8 @@ class BaseGenerator:
         logger.info(f'remove duplicate queries len is {len(deduplicate_queries)}')
         return deduplicate_queries, deduplicate_docs
 
-    def feature_qd_pair(self, query_list: list[str], doc_list: list[str],
-                        reranker: LocalReranker, featured_percentage: float):
+    def _feature_qd_pair(self, query_list: list[str], doc_list: list[str],
+                         reranker: Reranker, featured_percentage: float):
         """文档精选，使用bm25和reranker共同打分，按比率保留前面的问答对"""
         if not (1 > featured_percentage > 0):
             raise ValueError("featured_percentage must 0 ~ 1 range")
@@ -195,8 +195,8 @@ class BaseGenerator:
 
         return featured_query_list, featured_doc_list
 
-    def prefer_qd_pair(self, featured_query_list: list[str], featured_doc_list: list[str],
-                       llm_threshold_score: float, prompt: str, chunk_size: int = 500):
+    def _prefer_qd_pair(self, featured_query_list: list[str], featured_doc_list: list[str],
+                        llm_threshold_score: float, prompt: str, batch_size: int = 512):
         """大模型精选"""
         if not (1 > llm_threshold_score > 0):
             raise ValueError("featured_percentage must 0 ~ 1 range")
@@ -216,11 +216,11 @@ class BaseGenerator:
                 logger.info("LLM scoring not finished, continue to LLM scoring process")
                 remain_query_list = featured_query_list[(interrupted_index + 1):]
                 remain_doc_list = featured_doc_list[(interrupted_index + 1):]
-                scores = self._prefer_scoring(remain_query_list, remain_doc_list, llm_scores_path, prompt, chunk_size)
+                scores = self._prefer_scoring(remain_query_list, remain_doc_list, llm_scores_path, prompt, batch_size)
                 llm_scores.extend(scores)
         else:
             llm_scores = self._prefer_scoring(
-                featured_query_list, featured_doc_list, llm_scores_path, prompt, chunk_size
+                featured_query_list, featured_doc_list, llm_scores_path, prompt, batch_size
             )
         # 使用列表推导式筛选出所有低于阈值分数的数据，并统计筛选结果的长度
         count_upper_threshold_score = len([x for x in llm_scores if x >= llm_threshold_score])
@@ -234,13 +234,13 @@ class BaseGenerator:
 
         return preferred_query_list, preferred_doc_list
 
-    def _prefer_scoring(self, query_list, doc_list, llm_scores_path, prompt, chunk_size: int):
+    def _prefer_scoring(self, query_list, doc_list, llm_scores_path, prompt, batch_size: int):
         logger.info(f"prefer scoring count: {len(query_list)}")
         score_list = []
         count = 0
-        for i in range(0, len(query_list), chunk_size):
-            chunk_query_list = query_list[i:i + chunk_size]
-            chunk_doc_list = doc_list[i:i + chunk_size]
+        for i in range(0, len(query_list), batch_size):
+            chunk_query_list = query_list[i:i + batch_size]
+            chunk_doc_list = doc_list[i:i + batch_size]
             llm_scores = llm_preferred(self.llm, chunk_query_list, chunk_doc_list, prompt)
             score_list.extend(llm_scores)
             qd_pair_scores = [{'anchor': query, 'positive': doc, 'score': score}
@@ -256,13 +256,13 @@ class BaseGenerator:
                            question_number: int,
                            origin_train_data_path: str,
                            prompt: str,
-                           chunk_size: int):
+                           batch_size: int):
         logger.info(f"query document pair generation {len(split_doc_list)}")
         query_list = []
         doc_list = []
         count = 0
-        for i in range(0, len(split_doc_list), chunk_size):
-            chunk_doc_list = split_doc_list[i:i + chunk_size]  # 切片获取当前块的数据
+        for i in range(0, len(split_doc_list), batch_size):
+            chunk_doc_list = split_doc_list[i:i + batch_size]  # 切片获取当前块的数据
             doc_queries = generate_qa_embedding_pairs(self.llm, chunk_doc_list, prompt, question_number)
             qd_pairs = []
             for doc, queries in doc_queries.items():

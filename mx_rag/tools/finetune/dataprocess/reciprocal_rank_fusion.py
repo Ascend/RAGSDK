@@ -6,30 +6,19 @@
 from mx_rag.utils.common import validate_params, validata_list_list_str, TEXT_MAX_LEN, STR_MAX_LEN
 
 MAX_FUSION_LISTS = 10
-MAX_LISTS_LEN = 10000
 
 
 @validate_params(
     rank_lists=dict(
         validator=lambda x: validata_list_list_str(x, [1, TEXT_MAX_LEN], [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
         message="param must meets: Type is list[list[str]], "
-                "list length range [1, 1000 * 1000], inner list length range [1, 1000 * 1000], "
-                "str length range [1, 128 * 1024 * 1024]"
+                f"list length range [1, {TEXT_MAX_LEN}], inner list length range [1, {TEXT_MAX_LEN}], "
+                f"str length range [1, {STR_MAX_LEN}]"
     ),
     k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100,
            message="param must meets: Type is int, length range (0, 100]")
 )
 def reciprocal_rank_fusion(rank_lists: list[list[str]], k: int = 60):
-    if k <= 0:
-        raise Exception(f"k must large than 0, now is: {k}")
-
-    if len(rank_lists) > MAX_FUSION_LISTS:
-        raise Exception(f"rank_lists should not large {MAX_FUSION_LISTS}, now is: {len(rank_lists)}")
-
-    for rank_list in rank_lists:
-        if len(rank_list) > MAX_LISTS_LEN:
-            raise Exception(f"rank_list should not longer than {MAX_LISTS_LEN}, now is: {len(rank_list)}")
-
     # k是常数平滑因子
     fused_rank = {}
 
