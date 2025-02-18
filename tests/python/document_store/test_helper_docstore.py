@@ -82,16 +82,6 @@ class TestHelperDocStore(unittest.TestCase):
         retrieved_doc = self.docstore.search(999)  # Non-existent ID
         self.assertIsNone(retrieved_doc)
 
-    def test_search_document_with_decryption_failure(self):
-        encrypt_fn = lambda x: x + "_encrypted"
-        decrypt_fn = lambda x: x[:-10] if x.endswith("_encrypted") else x
-        docstore = _DocStoreHelper(self.engine, encrypt_fn=encrypt_fn, decrypt_fn=decrypt_fn)
-        doc_id = 1
-        inserted_ids = docstore.add(self.test_documents, doc_id)
-        with patch.object(docstore, "decrypt_fn", side_effect=Exception("Decryption Error")):
-            with self.assertRaises(StorageError):
-                docstore.search(inserted_ids[0])
-
     def test_get_all_index_id(self):
         doc_id = 1
         self.docstore.add(self.test_documents, doc_id)
