@@ -91,7 +91,7 @@ class BaseGenerator:
                                    split_doc_list: list[str],
                                    question_number: int,
                                    prompt: str,
-                                   chunk_size: int = 500):
+                                   chunk_size: int = 512):
         logger.info("query document pair generation")
         if len(split_doc_list) > MAX_DATASET_LEN:
             logger.error(f"inputs len should not bigger than {MAX_DATASET_LEN}, now is {len(split_doc_list)}")

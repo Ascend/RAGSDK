@@ -19,7 +19,7 @@ MAX_TOKENS = 512
     llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
     old_query_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                         message="param must meets: Type is List[str], "
-                                "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]")
+                                f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]")
 )
 def improve_query(llm: Text2TextLLM, old_query_list: list[str]):
     """问题重写"""

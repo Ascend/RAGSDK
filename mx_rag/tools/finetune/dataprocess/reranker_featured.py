@@ -4,14 +4,14 @@
 from loguru import logger
 from tqdm import tqdm
 
-from mx_rag.reranker.local import LocalReranker
+from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN
 
 RERANKER_FEATURED_MAX_LEN = 10000
 
 
 @validate_params(
-    reranker=dict(validator=lambda x: isinstance(x, LocalReranker),
+    reranker=dict(validator=lambda x: isinstance(x, Reranker),
                   message="param must be instance of LocalReranker"),
     query_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                     message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
