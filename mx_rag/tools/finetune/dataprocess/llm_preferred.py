@@ -11,7 +11,6 @@ from langchain.prompts import PromptTemplate
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN, MAX_PROMPT_LENGTH
 
-LLM_PREFERRED_MAX_LEN = 10000
 MAX_TOKENS = 512
 SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关性。相关性评分应该在0到1之间，其中1表示非常相关，0表示不相关。评分应该基于文档内容回答问题的直接程度。
 
@@ -39,21 +38,16 @@ SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关
 @validate_params(
     llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
     query_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
-                    message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
-                            "str length range [1, 128 * 1024 * 1024]"),
+                    message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
+                            f"str length range [1, {STR_MAX_LEN}]"),
     doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
-                  message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
-                          "str length range [1, 128 * 1024 * 1024]"),
+                  message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
+                          f"str length range [1, {STR_MAX_LEN}]"),
     prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]")
 )
 def llm_preferred(llm: Text2TextLLM, query_list: list[str], doc_list: list[str], prompt: str):
     """大模型打分"""
-
-    if len(query_list) > LLM_PREFERRED_MAX_LEN or len(doc_list) > LLM_PREFERRED_MAX_LEN:
-        logger.error(f"llm_preferred's inputs len should not bigger than {LLM_PREFERRED_MAX_LEN}")
-        return []
-
     if len(query_list) != len(doc_list):
         logger.error(f"llm_preferred's query_list and doc_list has different length")
         return []

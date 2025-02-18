@@ -12,7 +12,6 @@ from loguru import logger
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN, MAX_PROMPT_LENGTH
 
-GENERATE_QA_MAX_LEN = 10000
 MAX_TOKENS = 512
 GENERATE_QA_PROMPT = """阅读文章，生成一个相关的问题，例如：
 文章：气候变化对海洋生态系统造成了严重的影响，其中包括海洋温度上升、海平面上升、酸化等问题。这些变化对海洋生物种群分布、生态圈的稳定性以及渔业等方面都产生了深远影响。在全球变暖的背景下，保护海洋生态系统已经成为当务之急。 
@@ -34,7 +33,7 @@ GENERATE_QA_PROMPT = """阅读文章，生成一个相关的问题，例如：
     llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
     doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                   message="param must meets: Type is List[str], "
-                          "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
+                          f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]"),
     prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
     question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100,
@@ -42,11 +41,6 @@ GENERATE_QA_PROMPT = """阅读文章，生成一个相关的问题，例如：
 )
 def generate_qa_embedding_pairs(llm: Text2TextLLM, doc_list: list[str], prompt: str, question_number: int = 1):
     """使用大模型生成问题对"""
-
-    if len(doc_list) > GENERATE_QA_MAX_LEN:
-        logger.error(f"generate_qa_embedding_pairs's inputs len should not bigger than {GENERATE_QA_MAX_LEN}")
-        return {}
-
     doc_queries = multi_processing(llm, prompt, doc_list, question_number)
     return doc_queries
 

@@ -7,11 +7,10 @@ from functools import partial
 from tqdm import tqdm
 from loguru import logger
 
-from mx_rag.tools.finetune.instruction import RuleComplexInstructionRewriter
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
+from mx_rag.tools.finetune.instruction.rule_driven_complex_instruction import RuleComplexInstructionRewriter
 from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN
 
-IMPROVE_QUERY_MAX_LEN = 10000
 MAX_TOKENS = 512
 
 
@@ -23,11 +22,6 @@ MAX_TOKENS = 512
 )
 def improve_query(llm: Text2TextLLM, old_query_list: list[str]):
     """问题重写"""
-
-    if len(old_query_list) > IMPROVE_QUERY_MAX_LEN:
-        logger.error(f"improve_query's inputs len should not bigger than {IMPROVE_QUERY_MAX_LEN}")
-        return []
-
     new_query_list = multi_processing(llm, old_query_list)
 
     return new_query_list
