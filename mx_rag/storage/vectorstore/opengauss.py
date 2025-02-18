@@ -156,7 +156,7 @@ class OpenGaussDB(VectorStore):
     ) -> None:
         """Initialize database schema and indexes."""
         if self.search_mode in [SearchMode.DENSE, SearchMode.HYBRID] and not dense_dim:
-            raise OpenGaussError("dense_dim required for DENSE/HYBRID mode")
+            raise OpenGaussError("param 'dense_dim' required for DENSE/HYBRID search mode")
 
         self.sparse_dim = sparse_dim
         self._setup_similarity(similarity_strategy)
@@ -192,7 +192,7 @@ class OpenGaussDB(VectorStore):
             else:
                 logger.warning(f"Table '{table_name}' does not exist. Skipping drop.")
 
-        except Exception as e:  # Catch potential SQLAlchemy errors
+        except Exception as e:
             logger.error(f"Error dropping table '{table_name}': {e}")
 
     @validate_params(
