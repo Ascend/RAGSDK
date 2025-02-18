@@ -25,7 +25,7 @@ Base = declarative_base()
 def _vector_model_factory(
     table_name: str,
     search_mode: SearchMode,
-    dim: Optional[int] = None,
+    dense_dim: Optional[int] = None,
     sparse_dim: Optional[int] = None
 ) -> Any:
     """Factory function to create vector table model based on search mode."""
@@ -36,7 +36,7 @@ def _vector_model_factory(
     if search_mode == SearchMode.DENSE:
         class DenseModel(BaseModel):
             __tablename__ = table_name
-            vector = Column(Vector(dim))
+            vector = Column(Vector(dense_dim))
         return DenseModel
 
     if search_mode == SearchMode.SPARSE:
@@ -47,19 +47,22 @@ def _vector_model_factory(
 
     class HybridModel(BaseModel):
         __tablename__ = table_name
-        vector = Column(Vector(dim))
+        vector = Column(Vector(dense_dim))
         sparse_vector = Column(SPARSEVEC(sparse_dim))
     return HybridModel
 
 
 def _metric_to_func_op(metric):
     metric_map = {
-        "vector_l2_ops": "<->",
-        "vector_ip_ops": "<#>",
-        "vector_cosine_ops": "<=>",
-        "sparsevec_ip_ops": "<#>"
+        "vector_l2_ops": "<->",      # 欧几里得距离L2
+        "vector_ip_ops": "<#>",      # 负内积
+        "vector_cosine_ops": "<=>",  # 余弦距离
+        "sparsevec_ip_ops": "<#>"    # 负内积
     }
-    return metric_map.get(metric, metric)
+    op = metric_map.get(metric, None)
+    if op is None:
+        raise OpenGaussError(f"not supported metric: {metric}")
+    return op
 
 
 def _serialize_sparse(emb: Dict[int, float], dim: int) -> str:
@@ -117,7 +120,7 @@ class OpenGaussDB(VectorStore):
         )
 
     @classmethod
-    def create(cls, **kwargs) -> Optional["OpenGaussDB"]:
+    def create(cls, **kwargs):
         if "engine" not in kwargs:
             logger.error(f"Missing required parameters: engine")
             return None
@@ -132,7 +135,7 @@ class OpenGaussDB(VectorStore):
                 dense_dim=kwargs.get("dense_dim"),
                 sparse_dim=kwargs.get("sparse_dim", 100000),
                 similarity_strategy=kwargs.get("similarity_strategy"),
-                params=kwargs.get("index_params")
+                params=kwargs.get("params")
             )
             logger.info("Successfully create database instance")
             return instance
@@ -171,10 +174,26 @@ class OpenGaussDB(VectorStore):
             raise StorageError(f"Collection creation failed: {str(e)}") from e
 
     def drop_collection(self):
-        logger.info(f"Drop table: {self.table_name}")
-        metadata = MetaData()
-        metadata.reflect(bind=self.engine)
-        Table(self.table_name, metadata).drop(self.engine)
+        """Drops the table associated with the current object.
+
+        Handles potential exceptions and checks for table existence before dropping.
+        """
+        table_name = self.table_name  # Store it for easier use and clarity
+        logger.info(f"Dropping table: {table_name}")
+
+        try:
+            metadata = MetaData()
+            metadata.reflect(bind=self.engine)
+
+            if table_name in metadata.tables:
+                table = metadata.tables[table_name]
+                table.drop(self.engine)
+                logger.info(f"Table '{table_name}' dropped successfully.")
+            else:
+                logger.warning(f"Table '{table_name}' does not exist. Skipping drop.")
+
+        except Exception as e:  # Catch potential SQLAlchemy errors
+            logger.error(f"Error dropping table '{table_name}': {e}")
 
     @validate_params(
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="param requires to be np.ndarray"),
@@ -357,11 +376,7 @@ class OpenGaussDB(VectorStore):
         if isinstance(emb, np.ndarray):
             if self.search_mode not in [SearchMode.DENSE, SearchMode.HYBRID]:
                 raise ValueError("Dense search requires DENSE/HYBRID mode")
-            return (
-                "vector",
-                "vector",
-                "DESC" if self.similarity["metric"] == 'vector_cosine_ops' else "ASC"
-            )
+            return "vector", "vector", "ASC"
         else:
             if self.search_mode not in [SearchMode.SPARSE, SearchMode.HYBRID]:
                 raise ValueError("Sparse search requires SPARSE/HYBRID mode")

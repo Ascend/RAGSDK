@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 
 import numpy as np
-from sqlalchemy import URL
 from sqlalchemy.engine import Engine
 
 from mx_rag.storage.vectorstore import SearchMode
@@ -15,7 +14,7 @@ class TestVectorModelFactory(unittest.TestCase):
 
     def test_dense_model(self):
         table_name = "dense_table"
-        model = _vector_model_factory(table_name, SearchMode.DENSE, dim=128)
+        model = _vector_model_factory(table_name, SearchMode.DENSE, dense_dim=128)
         self.assertEqual(model.__tablename__, table_name)
         self.assertTrue(hasattr(model, 'vector'))
 
@@ -27,7 +26,7 @@ class TestVectorModelFactory(unittest.TestCase):
 
     def test_hybrid_model(self):
         table_name = "hybrid_table"
-        model = _vector_model_factory(table_name, SearchMode.HYBRID, dim=128, sparse_dim=128)
+        model = _vector_model_factory(table_name, SearchMode.HYBRID, dense_dim=128, sparse_dim=128)
         self.assertEqual(model.__tablename__, table_name)
         self.assertTrue(hasattr(model, 'vector'))
         self.assertTrue(hasattr(model, 'sparse_vector'))
@@ -120,6 +119,24 @@ class TestOpenGaussDB(unittest.TestCase):
 
         self.assertEqual(len(scores), 3)
         self.assertEqual(len(ids), 10)
+
+    @patch.object(OpenGaussDB, '_transaction', return_value=MagicMock())
+    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
+    def test_delete_success(self, mock_create_collection, mock_transaction):
+        mock_create_collection.return_value = None
+        instance = OpenGaussDB.create(engine=self.mock_engine)
+        instance.vector_model = _vector_model_factory(instance.table_name, instance.search_mode)
+
+        mock_session = MagicMock()
+        mock_transaction.return_value.__enter__.return_value = mock_session
+
+        ids_to_delete = [1, 2, 3]
+        mock_session.query.return_value.filter.return_value.delete.return_value = len(ids_to_delete)
+
+        result = instance.delete(ids_to_delete)
+
+        self.assertEqual(result, len(ids_to_delete))
+        mock_session.query.assert_called_once_with(instance.vector_model)
 
 
 if __name__ == "__main__":
