@@ -8,7 +8,7 @@ import numpy as np
 
 from langchain_core.embeddings import Embeddings
 from loguru import logger
-from transformers import AutoTokenizer, AutoModelForMaskedLM, is_torch_npu_available, AutoModel
+from transformers import AutoTokenizer, is_torch_npu_available, AutoModel
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, TEXT_MAX_LEN, validata_list_str, \
     BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, GB
@@ -55,9 +55,9 @@ class SparseEmbedding(Embeddings):
         self.model = self.model.eval()
 
         self.sparse_linear = torch.nn.Linear(in_features=self.model.config.hidden_size,
-                                             out_features=1).to(f'npu:{dev_id}')
+                                             out_features=1).to(self.model.device)
         sparse_model_path = os.path.join(self.model_path, 'sparse_linear.pt')
-        sparse_state_dict = torch.load(sparse_model_path, map_location=f'npu:{dev_id}', weights_only=True)
+        sparse_state_dict = torch.load(sparse_model_path, map_location=self.model.device, weights_only=True)
         self.sparse_linear.load_state_dict(sparse_state_dict)
 
     @staticmethod
@@ -106,7 +106,7 @@ class SparseEmbedding(Embeddings):
                          self.tokenizer.unk_token_id}
         for w, idx in zip(token_weights, input_ids):
             if idx not in unused_tokens and w > 0:
-                idx = str(idx)
+                idx = int(idx)
                 if w > result[idx]:
                     result[idx] = w
         return result
