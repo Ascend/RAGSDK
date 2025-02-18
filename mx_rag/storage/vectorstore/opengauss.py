@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Union, Any, Iterator, Tuple
 import numpy as np
 from loguru import logger
 from opengauss_sqlalchemy.usertype import Vector, SPARSEVEC, SparseVector
-from sqlalchemy import Column, text, BigInteger, Index, MetaData, Table, Engine
+from sqlalchemy import Column, text, BigInteger, Index, MetaData, Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
