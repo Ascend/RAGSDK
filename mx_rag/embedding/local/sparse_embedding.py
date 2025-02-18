@@ -83,7 +83,7 @@ class SparseEmbedding(Embeddings):
                         max_length: int = 512) -> List[dict]:
         result = self._encode(texts, batch_size, max_length)
         if len(result) == 0:
-            raise ValueError("embedding text error")
+            raise ValueError("embedding documents text error")
 
         return result
 
@@ -95,7 +95,7 @@ class SparseEmbedding(Embeddings):
     def embed_query(self, text: str, max_length: int = 512) -> dict:
         embeddings = self.embed_documents([text], max_length=max_length)
         if not embeddings:
-            raise ValueError("embedding text failed")
+            raise ValueError("embedding query text failed")
 
         return embeddings[0]
 
