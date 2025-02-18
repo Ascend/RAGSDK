@@ -65,7 +65,7 @@ class TestOpenGaussDB(unittest.TestCase):
 
     @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
     @patch.object(OpenGaussDB, '_internal_add')
-    def test_add_dense(self, mock_internal_add, mock_create_collection):
+    def test_add(self, mock_internal_add, mock_create_collection):
         mock_create_collection.return_value = None
 
         embeddings = np.random.rand(10, 128)
@@ -137,6 +137,20 @@ class TestOpenGaussDB(unittest.TestCase):
 
         self.assertEqual(result, len(ids_to_delete))
         mock_session.query.assert_called_once_with(instance.vector_model)
+
+    @patch.object(OpenGaussDB, '_transaction', return_value=MagicMock())
+    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
+    def test_get_all_ids(self, mock_create_collection, mock_transaction):
+        mock_create_collection.return_value = None
+        instance = OpenGaussDB.create(engine=self.mock_engine, collection_name="test_table")
+        instance.vector_model = _vector_model_factory(instance.table_name, instance.search_mode)
+
+        mock_session = MagicMock()
+        mock_transaction.return_value.__enter__.return_value = mock_session
+
+        mock_session.query.return_value.all.return_value = [(1,), (2,), (3,)]
+        res = instance.get_all_ids()
+        self.assertEqual(res, [1, 2, 3])
 
 
 if __name__ == "__main__":
