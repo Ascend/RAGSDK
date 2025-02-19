@@ -106,7 +106,7 @@ class SparseEmbedding(Embeddings):
                          self.tokenizer.unk_token_id}
         for w, idx in zip(token_weights, input_ids):
             if idx not in unused_tokens and w > 0:
-                # idx = int(idx)
+                idx = int(idx)
                 if w > result[idx]:
                     result[idx] = w
         return result
