@@ -9,7 +9,7 @@ from loguru import logger
 
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, EMBBEDDING_TEXT_COUNT, validata_list_str, \
-    STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE, MAX_MODE_LENGTH
+    STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
