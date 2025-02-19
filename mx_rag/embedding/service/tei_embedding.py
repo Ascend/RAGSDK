@@ -9,7 +9,7 @@ from loguru import logger
 
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, EMBBEDDING_TEXT_COUNT, validata_list_str, \
-    STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
+    STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE, MAX_MODE_LENGTH
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -25,6 +25,8 @@ class TEIEmbedding(Embeddings):
                  message="param must be str and str length range [0, 128]"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"),
+        embed_mode=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_MODE_LENGTH,
+                        message=f"param must be str and str length range [0, {MAX_MODE_LENGTH}]"),
     )
     def __init__(self, url: str, client_param=ClientParam(), embed_mode: str = 'dense'):
         self.url = url
