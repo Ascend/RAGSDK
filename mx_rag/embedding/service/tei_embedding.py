@@ -26,12 +26,13 @@ class TEIEmbedding(Embeddings):
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"),
     )
-    def __init__(self, url: str, client_param=ClientParam()):
+    def __init__(self, url: str, client_param=ClientParam(), embed_mode="dense"):
         self.url = url
         self.client = None
         self.headers = {
             'Content-Type': 'application/json'
         }
+        self.embed_mode = embed_mode
         try:
             self.client = RequestUtils(client_param=client_param)
         except FileCheckError as e:
@@ -78,6 +79,8 @@ class TEIEmbedding(Embeddings):
                     raise TypeError('tei response is not list')
                 if len(data) != len(texts_batch):
                     raise ValueError('tei response return data with different size')
+                if self.embed_mode == 'sparse':
+                    data = [[{item['index']: item['value'] for item in sub_list}] for sub_list in data]
 
                 result.extend(data)
             except json.JSONDecodeError as json_err:
