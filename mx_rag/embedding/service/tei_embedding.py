@@ -25,8 +25,8 @@ class TEIEmbedding(Embeddings):
                  message="param must be str and str length range [0, 128]"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam"),
-        embed_mode=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_MODE_LENGTH,
-                        message=f"param must be str and str length range [0, {MAX_MODE_LENGTH}]"),
+        embed_mode=dict(validator=lambda x: isinstance(x, str) and x in ('dense', 'sparse'),
+                        message=f"param must be str and in ('dense', 'sparse')"),
     )
     def __init__(self, url: str, client_param=ClientParam(), embed_mode: str = 'dense'):
         self.url = url
