@@ -17,4 +17,9 @@ def get_python_files():
 
 
 if __name__ == "__main__":
-    setup(ext_modules=cythonize(get_python_files()))
+    setup(
+        ext_modules=cythonize(
+            get_python_files(),
+            language_level="3"  # 确保使用Python 3 语法
+        )
+    )

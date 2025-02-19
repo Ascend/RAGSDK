@@ -3,6 +3,7 @@
 
 __all__ = [
     "SQLiteDocstore",
+    "OpenGaussDocstore",
     "MilvusDocstore",
     "Docstore",
     "MxDocument"
@@ -11,3 +12,4 @@ __all__ = [
 from .base_storage import Docstore, MxDocument
 from .sqlite_storage import SQLiteDocstore
 from .milvus_storage import MilvusDocstore
+from .opengauss_storage import OpenGaussDocstore
