@@ -31,20 +31,12 @@ void *Workspace::GetWorkspaceBuffer(uint64_t bufferSize)
 
 uint64_t Workspace::GetWorkspaceBufferRing() const
 {
-    const char *envStr = std::getenv("ATB_CONTEXT_WORKSPACE_RING");
-    if (envStr == nullptr) {
-        return 1;
-    }
-    return atoll(envStr);
+    return 1;
 }
 
 uint64_t Workspace::GetWorkspaceBufferSize() const
 {
-    const char *envStr = std::getenv("ATB_CONTEXT_WORKSPACE_SIZE");
-    if (envStr == nullptr) {
-        return 0;
-    }
-    return atoll(envStr);
+    return 0;
 }
 
 } // namespace atb_speed

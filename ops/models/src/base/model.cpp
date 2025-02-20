@@ -163,8 +163,7 @@ Model::~Model() {}
 int64_t Model::Init(GetWorkspaceFunc getWorkSpaceFunc, CreateTensorFromTensorDescFunc createTensorFromTensorDescFunc,
     RunTaskFunc runTaskFunc)
 {
-    const char *envStr = std::getenv("ATB_OPERATION_EXECUTE_ASYNC");
-    isUsePlanExecuteAsync_ = (envStr != nullptr && std::string(envStr) == "1");
+    isUsePlanExecuteAsync_ = false;
     if (isUsePlanExecuteAsync_ && !runTaskFunc) {
         std::thread thread = std::thread(std::bind(&Model::ThreadProcessTask, this));
         taskProcessThread_ = std::move(thread);

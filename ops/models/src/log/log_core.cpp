@@ -15,19 +15,21 @@ namespace atb_speed {
 static bool GetLogToStdoutFromEnv()
 {
     const char *envLogToStdout = std::getenv("ATB_LOG_TO_STDOUT");
-    return envLogToStdout != nullptr && strcmp(envLogToStdout, "1") == 0;
+    return ((envLogToStdout != nullptr) && (std::strlen(envLogToStdout) == 1) &&
+        (strcmp(envLogToStdout, "1") == 0));
 }
 
 static bool GetLogToFileFromEnv()
 {
-    const char *envLogToStdout = std::getenv("ATB_LOG_TO_FILE");
-    return envLogToStdout != nullptr && strcmp(envLogToStdout, "1") == 0;
+    const char *envLogToFile = std::getenv("ATB_LOG_TO_FILE");
+    return ((envLogToFile != nullptr) && (std::strlen(envLogToFile) == 1) &&
+        (strcmp(envLogToFile, "1") == 0));
 }
 
 static LogLevel GetLogLevelFromEnv()
 {
     const char *env = std::getenv("ATB_LOG_LEVEL");
-    if (env == nullptr) {
+    if (env == nullptr || std::strlen(env) > 5) { // 5, 限制环境变量入参长度
         return LogLevel::WARN;
     }
     std::string envLogLevel(env);

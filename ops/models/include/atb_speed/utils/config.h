@@ -22,9 +22,8 @@ public:
     bool IsLayerInternalTensorReuse() const;
 
 private:
-    static bool IsEnable(const char *env, bool enable = false);
+    static bool IsEnable(bool enable = false);
     void InitSaveTensor();
-    void InitSaveTensor(const char *env, std::set<std::string> &nameSet) const;
 
 private:
     bool isSaveTensor_ = false;

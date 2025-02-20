@@ -12,9 +12,7 @@ namespace common {
 
 AclNNGlobalCache::AclNNGlobalCache()
 {
-    const char *envStr = std::getenv("ATB_ACLNN_CACHE_GLOABL_COUNT");
-    this->globalCacheCountMax_ =
-        envStr != nullptr ? static_cast<uint64_t>(strtol(envStr, nullptr, DECIMAL)) : DEFAULT_ACLNN_GLOBAL_CACHE_SIZE;
+    this->globalCacheCountMax_ =  DEFAULT_ACLNN_GLOBAL_CACHE_SIZE;
 }
 
 std::shared_ptr<AclNNOpCache> AclNNGlobalCache::GetGlobalCache(std::string opName, atb::VariantPack variantPack)

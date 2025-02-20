@@ -31,11 +31,8 @@ OperationTorch::OperationTorch(std::string opName) : opName_(opName), name_(opNa
 {
     opId_ = GetNewOpId();
     nodeId_ = std::to_string(opId_);
-    const char *taskQueueEnv = std::getenv("TASK_QUEUE_ENABLE");
-    const char *blockingEnv = std::getenv("ASCEND_LAUNCH_BLOCKING");
-    
-    isTaskQueueEnable_ = !((taskQueueEnv != nullptr && std::string(taskQueueEnv) == "0") ||
-        (blockingEnv != nullptr && std::string(blockingEnv) == "1"));
+
+    isTaskQueueEnable_ = true;
     ATB_LOG(INFO) << "OperationTorch::OperationTorch, TASK_QUEUE_ENABLE:" << isTaskQueueEnable_ << ", opName:" <<
         opName << ", opId:" << opId_;
     context_ = atb_speed::ContextFactory::GetAtbContext(Utils::GetCurrentStream());
@@ -279,8 +276,7 @@ void OperationTorch::BuildVariantPack(std::vector<torch::Tensor> &atInTensors, s
 
 std::string OperationTorch::GetSaveTensorDir() const
 {
-    const char *envStr = std::getenv("AIT_CMP_TASK_ID");
-    std::string dir = envStr ? std::string(envStr) : std::to_string(executeCount_);
+    std::string dir = std::to_string(executeCount_);
     return atb_speed::Config::GetSaveTensorDir() + "/" + dir + "/" + std::to_string(opId_) + "_OperationTorch";
 }
 
