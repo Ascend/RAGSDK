@@ -87,10 +87,7 @@ int64_t ModelTorch::SetParam(std::string param)
         return atb::ERROR_INVALID_PARAM;
     }
 
-    const char *taskQueueEnv = std::getenv("TASK_QUEUE_ENABLE");
-    const char *blockingEnv = std::getenv("ASCEND_LAUNCH_BLOCKING");
-    bool isTaskQueueEnable = !((taskQueueEnv != nullptr && std::string(taskQueueEnv) == "0") ||
-        (blockingEnv != nullptr && std::string(blockingEnv) == "1"));
+    bool isTaskQueueEnable = true;
     auto getWorkspaceFunc = std::bind(&ModelTorch::GetWorkSpace, this, std::placeholders::_1);
     auto createInternalTensorFromDescFunc =
         std::bind(&ModelTorch::CreateInternalTensorFromDesc, this, std::placeholders::_1);
