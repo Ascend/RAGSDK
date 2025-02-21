@@ -5,20 +5,22 @@ from typing import Optional, List, Union, Tuple
 
 import torch
 from loguru import logger
-from transformers.models.bert.modeling_bert import BertModel, BertConfig, BaseModelOutputWithPoolingAndCrossAttentions
+from transformers.models.roberta.modeling_roberta import RobertaModel, RobertaConfig, \
+    BaseModelOutputWithPoolingAndCrossAttentions
 
 from common_adapater import load_acl_transformer, init_ascend_operations_boost, init_ascend_weight_boost, \
-    prepare_inputs_for_ascend_boost, execute_ascend_operator_boost, generate_token_type_ids, generate_position_ids
+    prepare_inputs_for_ascend_boost, execute_ascend_operator_boost, generate_token_type_ids, \
+    generate_position_ids
 
-enable_bert_speed: bool = True
+enable_roberta_speed: bool = True
 
 load_acl_transformer()
 
-old_init = BertModel.__init__
-old_forward = BertModel.forward
+old_init = RobertaModel.__init__
+old_forward = RobertaModel.forward
 
 
-def new__init__(self, config: BertConfig, add_pooling_layer: bool = True):
+def new__init__(self, config: RobertaConfig, add_pooling_layer: bool = True):
     enable_boost = os.getenv("ENABLE_BOOST", "False")
     if enable_boost not in ("True", "False"):
         raise ValueError("env ENABLE_BOOST value must be True or False")
@@ -28,12 +30,12 @@ def new__init__(self, config: BertConfig, add_pooling_layer: bool = True):
     self.max_seq_len = config.max_position_embeddings
     self.padding_idx = config.pad_token_id
     if self.boost_flag:
-        logger.info("enable bert modle boost")
+        logger.info("enable roberta modle boost")
         old_init(self, config, add_pooling_layer)
         self.init_ascend_operations_boost(config)
         self.layer_id_list = [torch.tensor([i], dtype=torch.int32).npu() for i in range(config.num_hidden_layers)]
     else:
-        logger.info("disenable bert modle boost")
+        logger.info("disenable roberta modle boost")
         old_init(self, config, add_pooling_layer)
 
 
@@ -74,20 +76,21 @@ def forward_boost(
         raise ValueError("You have to specify either input_ids or inputs_embeds")
 
     batch_size, seq_length = input_shape
+
     past_key_values_length = past_key_values[0][0].shape[2] if past_key_values is not None else 0
     device = input_ids.device if input_ids is not None else inputs_embeds.device
 
     if position_ids is not None:
         position_ids = position_ids.view(-1, seq_length).long()
     else:
-        position_ids = generate_position_ids(input_ids, inputs_embeds, past_key_values_length=past_key_values_length)
+        position_ids = generate_position_ids(input_ids, inputs_embeds, is_roberta=True,
+                                             past_key_values_length=past_key_values_length,
+                                             padding_idx=self.padding_idx)
 
     if attention_mask is None:
         attention_mask = torch.ones((batch_size, seq_length + past_key_values_length), device=device)
 
     token_type_ids = generate_token_type_ids(device, input_shape, self.embeddings, token_type_ids)
-
-    head_mask = self.get_head_mask(head_mask, self.config.num_hidden_layers)
 
     # add acl model
     if not self.ascend_weight:
@@ -107,9 +110,9 @@ def forward_boost(
     )
 
 
-BertModel.__init__ = new__init__
-BertModel.init_ascend_operations_boost = init_ascend_operations_boost
-BertModel.init_ascend_weight_boost = init_ascend_weight_boost
-BertModel.prepare_inputs_for_ascend_boost = prepare_inputs_for_ascend_boost
-BertModel.execute_ascend_operator_boost = execute_ascend_operator_boost
-BertModel.forward = forward_boost
+RobertaModel.__init__ = new__init__
+RobertaModel.init_ascend_operations_boost = init_ascend_operations_boost
+RobertaModel.init_ascend_weight_boost = init_ascend_weight_boost
+RobertaModel.prepare_inputs_for_ascend_boost = prepare_inputs_for_ascend_boost
+RobertaModel.execute_ascend_operator_boost = execute_ascend_operator_boost
+RobertaModel.forward = forward_boost
