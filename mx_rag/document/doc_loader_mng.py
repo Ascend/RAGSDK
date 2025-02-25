@@ -59,14 +59,13 @@ class LoaderMng:
                             message="param must be a subclass of TextSplitter in langchain_text_splitters.base"),
         file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
-                                "list length range [1, 32], str length range [1, 32]"),
-
-        splitter_params=dict(validator=lambda x: (isinstance(x, Dict) and validate_sequence(x)) or x is None,
-                             message="param must meets: Type must be Dict or None, "
-                                     "other check please see the log")
+                                "list length range [1, 32], str length range [1, 32]")
     )
     def register_splitter(self, splitter_class: TextSplitter, file_types: List[str],
                           splitter_params: Dict[str, Any] = None):
+        if splitter_params is not None and not (isinstance(splitter_params, Dict)
+                                       and validate_sequence(splitter_params, max_check_depth=2)):
+            raise ValueError("invalid splitter_params.")
         if len(self.splitters) >= self.MAX_REGISTER_SPLITTER_NUM:
             raise ValueError(f"More than {self.MAX_REGISTER_SPLITTER_NUM} splitters are registered")
         if bool(set(NO_SPLIT_FILE_TYPE) & set(file_types)):

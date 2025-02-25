@@ -147,7 +147,7 @@ class FileCheck:
                     raise FileCheckError(f"Input path '{path}' is in blacklist")
 
     @staticmethod
-    def check_path_is_exist_and_valid(path: str, check_real_path: bool = True):
+    def check_path_is_exist_and_valid(path: str, check_real_path: bool = True, check_blacklist: bool = False):
         if not isinstance(path, str):
             raise FileCheckError(f"Input path '{path}' is not valid str")
 
@@ -157,7 +157,7 @@ class FileCheck:
         if not os.path.exists(path):
             raise FileCheckError(f"path '{path}' is not exists")
 
-        FileCheck.check_input_path_valid(path, check_real_path)
+        FileCheck.check_input_path_valid(path, check_real_path, check_blacklist)
 
     @staticmethod
     def dir_check(file_path: str):

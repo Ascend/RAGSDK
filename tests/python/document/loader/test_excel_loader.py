@@ -54,9 +54,6 @@ class TestExcelLoader(unittest.TestCase):
             f'None:中文资讯;source:极客公园;link:行业资讯 | 极客公园 (geekpark.net);count(3月15日为例):7篇;SUM:24篇;{loader.line_sep}'
             f'None:英文文献;source:huggingFace;link:日报 - 拥抱脸部 (huggingface.co);count(3月15日为例):14篇;SUM:55篇;{loader.line_sep}'
             f'None:英文文献;source:PaperWithCode;link:带代码的最新论文 |带代码的论文 (paperswithcode.com);count(3月15日为例):41篇;SUM:55篇;{loader.line_sep}')
-
-        print(docs[0].page_content)
-        print(content)
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0].page_content, content)
         self.assertEqual(docs[0].metadata["sheet"], '不需要订阅')
