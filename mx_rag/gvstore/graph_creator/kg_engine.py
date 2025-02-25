@@ -135,12 +135,14 @@ class KGEngine:
         graph_name=dict(validator=lambda x: isinstance(x, str), message="param must be instance of str"),
         question=dict(validator=lambda x: isinstance(x, str), message="param must be instance of str")
     )
-    def do_query(self, graph_name: str, question: str, **kwargs):
+    def retrival_kg_graph(self, graph_name: str, question: str, **kwargs):
         kwargs["lang"] = self.lang
         graphml_data_path = os.path.join(self.graphml_save_path, f"{graph_name}.graphml")
         FileCheck.check_path_is_exist_and_valid(graphml_data_path, True, True)
         graph_client = self._create_graph_client(graph_name, graphml_data_path, **kwargs)
-        retriever = GraphRetrieval(graph_name=graph_name, graph=graph_client)
+        top_k = kwargs.pop("top_k", 5)
+        k_hop = kwargs.pop("k_hop", 2)
+        retriever = GraphRetrieval(graph_name=graph_name, graph=graph_client, top_k=top_k, khop=k_hop)
         return retriever.invoke(question)
 
     def _create_graph_client(self, graph_name: str, graph_path: str, **kwargs):

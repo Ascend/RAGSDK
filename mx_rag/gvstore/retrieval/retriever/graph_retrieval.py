@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from typing import Union, List
+from typing import List
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.retrievers import BaseRetriever
@@ -13,8 +13,8 @@ from mx_rag.gvstore.graph_creator.graph_core import GraphNX
 class GraphRetrieval(BaseRetriever):
     graph_name: str
     graph: GraphNX
-    k: int = Field(default=5, ge=1, le=MAX_TOP_K)
-    khop: int = Field(default=2, ge=1, le=5)
+    top_k: int = Field(default=5, ge=1, le=MAX_TOP_K)
+    k_hop: int = Field(default=2, ge=1, le=5)
 
     class Config:
         arbitrary_types_allowed = True
@@ -37,5 +37,5 @@ class GraphRetrieval(BaseRetriever):
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List:
         keywords = [query] if isinstance(query, str) else query
-        retrieval_contexts = self.retrieval(keywords=keywords, k=self.k, khop=self.khop)
+        retrieval_contexts = self.retrieval(keywords=keywords, k=self.top_k, khop=self.k_hop)
         return retrieval_contexts
