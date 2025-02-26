@@ -80,7 +80,7 @@ class SparseEmbedding(Embeddings):
     def embed_documents(self,
                         texts: List[str],
                         batch_size: int = 32,
-                        max_length: int = 512) -> List[defaultdict]:
+                        max_length: int = 512) -> List[dict[int, float]]:
         result = self._encode(texts, batch_size, max_length)
         if len(result) == 0:
             raise ValueError("embedding documents text error")
@@ -92,7 +92,7 @@ class SparseEmbedding(Embeddings):
         max_length=dict(validator=lambda x: 1 <= x <= STR_MAX_LEN,
                         message=f"param value range [1, {STR_MAX_LEN}]")
     )
-    def embed_query(self, text: str, max_length: int = 512) -> defaultdict:
+    def embed_query(self, text: str, max_length: int = 512) -> dict[int, float]:
         embeddings = self.embed_documents([text], max_length=max_length)
         if not embeddings:
             raise ValueError("embedding query text failed")
@@ -101,13 +101,15 @@ class SparseEmbedding(Embeddings):
 
     def _process_token_weights(self, token_weights: np.ndarray, input_ids: list):
         # conver to dict
-        result = defaultdict(int)
+        result = {}
         unused_tokens = {self.tokenizer.cls_token_id, self.tokenizer.eos_token_id, self.tokenizer.pad_token_id,
                          self.tokenizer.unk_token_id}
         for w, idx in zip(token_weights, input_ids):
             if idx not in unused_tokens and w > 0:
                 idx = int(idx)
-                if w > result[idx]:
+                if idx not in result:
+                    result[idx] = w
+                elif w > result[idx]:
                     result[idx] = w
         return result
 
