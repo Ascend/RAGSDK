@@ -333,13 +333,10 @@ class KnowledgeDB(KnowledgeBase):
         self._knowledge_store.delete_knowledge(self.knowledge_name, self.user_id)
 
     def _check_store_accordance(self) -> None:
-        doc_chunks = self._document_store.get_all_index_id()
-        vec_ids = self._vector_store.get_all_ids()
-        if set(doc_chunks) != set(vec_ids):
-            logger.error(f"the Docstore has {len(doc_chunks)} chunks in {self._document_store.db_path},"
-                         f"but the VectorStore has {len(vec_ids)} vectors, that will cause some error,"
-                         "please ensure that the data of this two databases is consistent")
-            raise KnowledgeError("VectorStore is not accordance to Docstore !")
+        chunk_ids = set(self._document_store.get_all_index_id())
+        vec_ids = set(self._vector_store.get_all_ids())
+        if chunk_ids != vec_ids:
+            raise KnowledgeError("Vector store does not comply with the document store: different ids")
 
     def _storage_and_vector_delete(self, doc_name: str):
         document_id = self._knowledge_store.delete(self.knowledge_name, doc_name, self.user_id)
