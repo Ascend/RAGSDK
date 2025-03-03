@@ -236,6 +236,7 @@ class OpenGaussDB(VectorStore):
                 delete_count = session.query(self.vector_model) \
                     .filter(self.vector_model.id.in_(ids)) \
                     .delete(synchronize_session=False)
+                logger.info(f"Deleted {delete_count} vectors.")
                 return delete_count
         except SQLAlchemyError as e:
             raise StorageError(f"Delete failed: {e}") from e
