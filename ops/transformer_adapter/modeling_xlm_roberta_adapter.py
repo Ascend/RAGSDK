@@ -30,25 +30,28 @@ def new__init__(self, config: XLMRobertaConfig, add_pooling_layer: bool = True):
     self.max_seq_len = config.max_position_embeddings
     self.padding_idx = config.pad_token_id
     if self.boost_flag:
-        logger.info("enable xlmroberta modle boost")
+        logger.info("enable xlmroberta model boost")
         old_init(self, config, add_pooling_layer)
         self.init_ascend_operations_boost(config)
         self.layer_id_list = [torch.tensor([i], dtype=torch.int32).npu() for i in range(config.num_hidden_layers)]
     else:
-        logger.info("disenable xlmroberta modle boost")
+        logger.info("disenable xlmroberta model boost")
         old_init(self, config, add_pooling_layer)
 
 
 def forward_boost(
         self,
         input_ids: Optional[torch.Tensor] = None,
-        inputs_embeds: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         token_type_ids: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
+        inputs_embeds: Optional[torch.Tensor] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.Tensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
-        output_attentions: Optional[bool] = False,
+        use_cache: Optional[bool] = None,
+        output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
 ) -> Union[Tuple[torch.Tensor], BaseModelOutputWithPoolingAndCrossAttentions]:
@@ -60,7 +63,10 @@ def forward_boost(
                            position_ids=position_ids,
                            head_mask=head_mask,
                            inputs_embeds=inputs_embeds,
+                           encoder_hidden_states=encoder_hidden_states,
+                           encoder_attention_mask=encoder_attention_mask,
                            past_key_values=past_key_values,
+                           use_cache=use_cache,
                            output_attentions=output_attentions,
                            output_hidden_states=output_hidden_states,
                            return_dict=return_dict)
