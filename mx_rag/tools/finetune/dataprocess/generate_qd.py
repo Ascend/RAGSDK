@@ -36,8 +36,8 @@ GENERATE_QA_PROMPT = """阅读文章，生成一个相关的问题，例如：
                           f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]"),
     prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
-    question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100,
-                         message="param must meets: Type is int, length range (0, 100]")
+    question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 20,
+                         message="param must meets: Type is int, length range (0, 20]")
 )
 def generate_qa_embedding_pairs(llm: Text2TextLLM, doc_list: list[str], prompt: str, question_number: int = 1):
     """使用大模型生成问题对"""

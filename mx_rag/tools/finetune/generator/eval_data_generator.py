@@ -28,14 +28,15 @@ class EvalDataGenerator(BaseGenerator):
                                     f"str length range [1, {STR_MAX_LEN}]"),
         generate_qd_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
-        question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100,
-                             message="param must meets: Type is int, length range (0, 100]"),
+        question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 20,
+                             message="param must meets: Type is int, length range (0, 20]"),
 
     )
     def generate_evaluate_data(self,
                                split_doc_list: list[str],
                                generate_qd_prompt: str = GENERATE_QA_PROMPT,
-                               question_number: int = 10):
+                               question_number: int = 3,
+                               batch_size: int = 8):
         FileCheck.dir_check(self.dataset_path)
         evaluate_data_path = os.path.join(self.dataset_path, "evaluate_data.jsonl")
         if os.path.exists(evaluate_data_path):
@@ -44,7 +45,8 @@ class EvalDataGenerator(BaseGenerator):
 
         # 流程开始
         logger.info("step Generating rough problem documentation pairs")
-        query_list, doc_list = self._generate_coarsest_qd_pairs(split_doc_list, question_number, generate_qd_prompt)
+        query_list, doc_list = self._generate_coarsest_qd_pairs(split_doc_list, question_number,
+                                                                generate_qd_prompt, batch_size)
         logger.info("step Generated rough problem documentation pairs finished")
 
         evaluate_data = []

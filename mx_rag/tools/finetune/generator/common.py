@@ -94,7 +94,7 @@ class BaseGenerator:
                                     split_doc_list: list[str],
                                     question_number: int,
                                     prompt: str,
-                                    batch_size: int = 512):
+                                    batch_size):
         logger.info("query document pair generation")
 
         query_list = []
