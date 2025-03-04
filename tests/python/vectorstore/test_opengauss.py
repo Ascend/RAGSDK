@@ -1,157 +1,426 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import unittest
-from unittest.mock import patch, MagicMock, Mock
-
+from unittest.mock import Mock, MagicMock, patch
 import numpy as np
-from sqlalchemy.engine import Engine
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session
+from sqlalchemy.pool import Pool
+from sqlalchemy import text
 
-from mx_rag.storage.vectorstore import SearchMode
-from mx_rag.storage.vectorstore.opengauss import OpenGaussDB, _vector_model_factory
-
-
-class TestVectorModelFactory(unittest.TestCase):
-
-    def test_dense_model(self):
-        table_name = "dense_table"
-        model = _vector_model_factory(table_name, SearchMode.DENSE, dense_dim=128)
-        self.assertEqual(model.__tablename__, table_name)
-        self.assertTrue(hasattr(model, 'vector'))
-
-    def test_sparse_model(self):
-        table_name = "sparse_table"
-        model = _vector_model_factory(table_name, SearchMode.SPARSE, sparse_dim=128)
-        self.assertEqual(model.__tablename__, table_name)
-        self.assertTrue(hasattr(model, 'sparse_vector'))
-
-    def test_hybrid_model(self):
-        table_name = "hybrid_table"
-        model = _vector_model_factory(table_name, SearchMode.HYBRID, dense_dim=128, sparse_dim=128)
-        self.assertEqual(model.__tablename__, table_name)
-        self.assertTrue(hasattr(model, 'vector'))
-        self.assertTrue(hasattr(model, 'sparse_vector'))
+from mx_rag.storage.vectorstore.opengauss import (
+    OpenGaussDB,
+    SearchMode,
+    SimilarityStrategy,
+    OpenGaussError,
+    StorageError
+)
 
 
 class TestOpenGaussDB(unittest.TestCase):
-    @patch('sqlalchemy.create_engine')
-    def setUp(self, mock_create_engine):
-        # Mock the engine and connection
-        self.mock_engine = MagicMock(spec=Engine)
-        mock_create_engine.return_value = self.mock_engine  # Make create_engine return the mock_engine
+    def setUp(self):
+        """Set up test fixtures before each test method."""
+        # Create mock pool
+        self.mock_pool = Mock(spec=Pool)
+        self.mock_pool.size = Mock(return_value=8)
 
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
-    def test_create_success(self, mock_create_collection):
-        mock_create_collection.return_value = None  # Mock the create_collection method
+        # Create mock engine with proper attributes
+        self.mock_engine = Mock(spec=Engine)
+        self.mock_engine.pool = self.mock_pool
 
-        db_instance = OpenGaussDB.create(engine=self.mock_engine)
+        # Create a mock dialect with has_table method
+        self.mock_dialect = Mock()
+        self.mock_dialect.has_table.return_value = False
+        self.mock_engine.dialect = self.mock_dialect
 
-        self.assertIsNotNone(db_instance)
+        # Create a mock connection
+        self.mock_connection = Mock()
+        self.mock_engine.connect.return_value = self.mock_connection
 
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
-    def test_create_failure(self, mock_create_collection):
-        mock_create_collection.side_effect = Exception("Creation failed")
+        self.mock_session = MagicMock(spec=Session)
 
-        db_instance = OpenGaussDB.create(engine=self.mock_engine)
+        self.db = OpenGaussDB(
+            engine=self.mock_engine,
+            collection_name="test_collection",
+            search_mode=SearchMode.DENSE
+        )
 
-        self.assertIsNone(db_instance)
+    def test_init_validates_params(self):
+        """Test parameter validation during initialization."""
+        with self.assertRaises(ValueError):
+            OpenGaussDB(engine="not_an_engine")
 
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB._transaction')
-    def test_create_collection_with_error(self, mock_transaction):
-        mock_transaction.side_effect = Exception("Error during collection creation")
-        db_instance = OpenGaussDB.create(engine=self.mock_engine)
+        with self.assertRaises(ValueError):
+            OpenGaussDB(engine=Mock(spec=Engine), collection_name="a" * 2000)
 
-        with self.assertRaises(Exception):
-            db_instance.create_collection(dense_dim=128, sparse_dim=128)
+    def test_create_collection(self):
+        """Test collection creation with various parameters."""
+        # Test successful creation
+        with patch('mx_rag.storage.vectorstore.opengauss.Base.metadata.create_all'):
+            self.db.create_collection(dense_dim=128)
+            self.assertIsNotNone(self.db.vector_model)
 
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
-    @patch.object(OpenGaussDB, '_internal_add')
-    def test_add(self, mock_internal_add, mock_create_collection):
-        mock_create_collection.return_value = None
+        # Test missing dense_dim for DENSE mode
+        with self.assertRaises(OpenGaussError):
+            self.db.create_collection()
 
-        embeddings = np.random.rand(10, 128)
-        ids = list(range(10))
+    def test_add(self):
+        """Test adding dense vectors."""
+        self.db.create_collection(dense_dim=3)
+        embeddings = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+        ids = [1, 2]
 
-        db_instance = OpenGaussDB.create(engine=self.mock_engine)
-        db_instance.add(embeddings, ids)
+        with patch.object(self.db, '_internal_add') as mock_add:
+            self.db.add(embeddings, ids)
+            mock_add.assert_called_once_with(ids, embeddings)
 
-        mock_internal_add.assert_called_once_with(ids, embeddings)
+    def test_add_sparse(self):
+        """Test adding sparse vectors."""
+        db = OpenGaussDB(self.mock_engine, search_mode=SearchMode.SPARSE)
+        db.create_collection(sparse_dim=100)
+        sparse_embeddings = [
+            {1: 0.5, 2: 0.3},
+            {2: 0.7, 3: 0.2}
+        ]
+        ids = [1, 2]
 
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
-    @patch.object(OpenGaussDB, '_internal_add')
-    def test_add_sparse(self, mock_internal_add, mock_create_collection):
-        mock_create_collection.return_value = None
+        with patch.object(db, '_internal_add') as mock_add:
+            db.add_sparse(ids, sparse_embeddings)
+            mock_add.assert_called_once_with(ids, sparse=sparse_embeddings)
 
-        sparse_embeddings = [{i: np.random.rand()} for i in range(10)]
-        ids = list(range(10))
+    def test_delete(self):
+        """Test deleting vectors."""
+        self.db.create_collection(dense_dim=128)
+        with patch.object(self.db, '_transaction') as mock_transaction:
+            mock_transaction.return_value.__enter__.return_value = self.mock_session
+            self.mock_session.query().filter().delete.return_value = 2
 
-        db_instance = OpenGaussDB.create(engine=self.mock_engine, search_mode=SearchMode.SPARSE)
-        db_instance.add_sparse(ids, sparse_embeddings)
+            result = self.db.delete([1, 2])
+            self.assertEqual(result, 2)
 
-        mock_internal_add.assert_called_once_with(ids, sparse=sparse_embeddings)
+    def test_search(self):
+        """Test vector search functionality."""
+        self.db.create_collection(dense_dim=3)
+        query_vectors = [[1.0, 2.0, 3.0]]
 
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
-    @patch.object(OpenGaussDB, '_internal_add')
-    def test_add_dense_and_sparse(self, mock_internal_add, mock_create_collection):
-        mock_create_collection.return_value = None
+        with patch.object(self.db, '_parallel_search') as mock_search:
+            mock_search.return_value = ([0.9], [1])
+            scores, ids = self.db.search(query_vectors, k=1)
 
-        embeddings = np.random.rand(10, 128)
-        sparse_embeddings = [{i: np.random.rand()} for i in range(10)]
-        ids = list(range(10))
+            self.assertEqual(scores, [0.9])
+            self.assertEqual(ids, [1])
+            mock_search.assert_called_once_with(query_vectors, 1)
 
-        db_instance = OpenGaussDB.create(engine=self.mock_engine, search_mode=SearchMode.HYBRID, dense_dim=128)
-        db_instance.add_dense_and_sparse(ids, embeddings, sparse_embeddings)
+    def test_get_all_ids(self):
+        """Test retrieving all vector IDs."""
+        self.db.create_collection(dense_dim=128)
+        self.mock_session.query().all.return_value = [(1,), (2,), (3,)]
 
-        mock_internal_add.assert_called_once_with(ids, embeddings, sparse_embeddings)
+        with patch.object(self.db, '_transaction') as mock_transaction:
+            mock_transaction.return_value.__enter__.return_value = self.mock_session
+            ids = self.db.get_all_ids()
+            self.assertEqual(ids, [1, 2, 3])
 
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB._parallel_search')
-    def test_search(self, mock_parallel_search, mock_create_collection):
-        mock_create_collection.return_value = None
+    def test_similarity_strategy_setup(self):
+        """Test similarity strategy configuration."""
+        # Test default strategy
+        db = OpenGaussDB(self.mock_engine)
+        db.create_collection(dense_dim=128)
+        self.assertEqual(db.similarity["index"], "hnsw")
+        self.assertEqual(db.similarity["metric"], "vector_ip_ops")
 
-        db_instance = OpenGaussDB.create(engine=self.mock_engine)
+        # Test custom strategy
+        db = OpenGaussDB(self.mock_engine)
+        db.create_collection(dense_dim=128, similarity_strategy=SimilarityStrategy.FLAT_COS)
+        self.assertEqual(db.similarity["metric"], "vector_cosine_ops")
 
-        embeddings = np.random.rand(10, 128).tolist()
-        k = 3
+        # Test invalid strategy
+        with self.assertRaises(ValueError):
+            db = OpenGaussDB(self.mock_engine)
+            db.create_collection(dense_dim=128, similarity_strategy="invalid")
 
-        mock_parallel_search.return_value = ([0.9] * k, [list(range(k))] * 10)  # Mocked return
-
-        scores, ids = db_instance.search(embeddings, k)
-
-        self.assertEqual(len(scores), 3)
-        self.assertEqual(len(ids), 10)
-
-    @patch.object(OpenGaussDB, '_transaction', return_value=MagicMock())
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
-    def test_delete_success(self, mock_create_collection, mock_transaction):
-        mock_create_collection.return_value = None
-        instance = OpenGaussDB.create(engine=self.mock_engine)
-        instance.vector_model = _vector_model_factory(instance.table_name, instance.search_mode)
-
+    def test_drop_collection(self):
+        """Test collection dropping functionality."""
+        # Mock session and execution results
         mock_session = MagicMock()
-        mock_transaction.return_value.__enter__.return_value = mock_session
+        mock_session.execute.return_value.fetchall.return_value = [
+            ('index1',), ('index2',)  # Mock indexes found
+        ]
 
-        ids_to_delete = [1, 2, 3]
-        mock_session.query.return_value.filter.return_value.delete.return_value = len(ids_to_delete)
+        # Create mock metadata and table
+        mock_table = Mock()
+        mock_metadata = Mock()
+        mock_metadata.tables = {"test_collection": mock_table}
 
-        result = instance.delete(ids_to_delete)
+        # Mock the identifier preparer
+        mock_preparer = Mock()
+        mock_preparer.quote_identifier.return_value = '"test_collection"'
+        self.mock_engine.dialect.identifier_preparer = mock_preparer
 
-        self.assertEqual(result, len(ids_to_delete))
-        mock_session.query.assert_called_once_with(instance.vector_model)
+        with patch.object(self.db, '_transaction') as mock_transaction, \
+             patch('mx_rag.storage.vectorstore.opengauss.MetaData') as mock_metadata_class:
+            
+            # Set up the mock transaction to return our mock session
+            mock_transaction.return_value.__enter__.return_value = mock_session
+            
+            # Set up the mock metadata
+            mock_metadata_class.return_value = mock_metadata
 
-    @patch.object(OpenGaussDB, '_transaction', return_value=MagicMock())
-    @patch('mx_rag.storage.vectorstore.OpenGaussDB.create_collection')
-    def test_get_all_ids(self, mock_create_collection, mock_transaction):
-        mock_create_collection.return_value = None
-        instance = OpenGaussDB.create(engine=self.mock_engine, collection_name="test_table")
-        instance.vector_model = _vector_model_factory(instance.table_name, instance.search_mode)
+            # Call drop_collection
+            self.db.drop_collection()
 
+            # Verify that:
+            # 1. Table name was properly quoted
+            mock_preparer.quote_identifier.assert_called_once_with("test_collection")
+
+            # 2. Session queried for indexes with safe parameter binding
+            query_call = mock_session.execute.call_args_list[0]
+            self.assertIn('SELECT indexname', str(query_call[0][0]))
+            self.assertIn('FROM pg_indexes', str(query_call[0][0]))
+            self.assertEqual(query_call[0][1], {"table_name": '"test_collection"'})
+
+            # 3. Each index was dropped
+            drop_calls = mock_session.execute.call_args_list[1:]
+            self.assertIn('DROP INDEX IF EXISTS index1', str(drop_calls[0][0][0]))
+            self.assertIn('DROP INDEX IF EXISTS index2', str(drop_calls[1][0][0]))
+
+            # 4. Metadata was reflected
+            mock_metadata.reflect.assert_called_once_with(bind=self.mock_engine)
+
+            # 5. Table was dropped
+            mock_table.drop.assert_called_once_with(self.mock_engine, checkfirst=True)
+
+            # 6. Metadata was cleared
+            mock_metadata.clear.assert_called_once()
+
+    def test_drop_collection_invalid_table_name(self):
+        """Test drop_collection with invalid table name."""
+        # Create instance with invalid table name
+        with self.assertRaises(ValueError):
+            _ = OpenGaussDB(
+                engine=self.mock_engine,
+                collection_name="invalid;name",  # Invalid identifier
+                search_mode=SearchMode.DENSE
+            )
+
+    def test_add_dense_and_sparse(self):
+        """Test adding both dense and sparse vectors in hybrid mode."""
+        db = OpenGaussDB(self.mock_engine, search_mode=SearchMode.HYBRID)
+        db.create_collection(dense_dim=3, sparse_dim=100)
+
+        dense_embeddings = np.array([[1.0, 2.0, 3.0]])
+        sparse_embeddings = [{1: 0.5, 2: 0.3}]
+        ids = [1]
+
+        with patch.object(db, '_internal_add') as mock_add:
+            db.add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
+            mock_add.assert_called_once_with(ids, dense_embeddings, sparse_embeddings)
+
+    def test_invalid_search_modes(self):
+        """Test invalid search mode combinations."""
+        # Test adding dense vectors in SPARSE mode
+        db = OpenGaussDB(self.mock_engine, search_mode=SearchMode.SPARSE)
+        with self.assertRaises(ValueError):
+            db.add(np.array([[1.0, 2.0]]), [1])
+
+        # Test adding sparse vectors in DENSE mode
+        db = OpenGaussDB(self.mock_engine, search_mode=SearchMode.DENSE)
+        with self.assertRaises(ValueError):
+            db.add_sparse([1], [{1: 0.5}])
+
+    def test_create_class_method(self):
+        """Test the create class method."""
+        with patch.object(OpenGaussDB, 'create_collection') as mock_create:
+            instance = OpenGaussDB.create(
+                engine=self.mock_engine,
+                collection_name="test",
+                dense_dim=128,
+                similarity_strategy=SimilarityStrategy.FLAT_IP
+            )
+            self.assertIsInstance(instance, OpenGaussDB)
+            mock_create.assert_called_once()
+
+    def test_create_class_method_error(self):
+        """Test the create class method with missing required parameters."""
+        instance = OpenGaussDB.create()
+        self.assertIsNone(instance)
+
+    def test_parallel_search(self):
+        """Test the parallel search functionality."""
+        self.db.create_collection(dense_dim=3)
+        query_vectors = [[1.0, 2.0, 3.0]]
+
+        # Mock the _do_search method to return some results
+        with patch.object(self.db, '_do_search') as mock_do_search:
+            mock_do_search.return_value = ([Mock(id=1)], [0.9])
+
+            scores, ids = self.db._parallel_search(query_vectors, k=1)
+            self.assertEqual(len(scores), 1)
+            self.assertEqual(len(ids), 1)
+
+    def test_calculate_pool_size(self):
+        """Test the pool size calculation."""
+        with patch('multiprocessing.cpu_count', return_value=8):
+            pool_size = self.db._calculate_pool_size()
+            self.assertIsInstance(pool_size, int)
+            self.assertGreater(pool_size, 0)
+            # Verify that pool.size() was called
+            self.mock_pool.size.assert_called_once()
+
+    def test_parallel_search_with_pool_size(self):
+        """Test parallel search with specific pool size configuration."""
+        self.db.create_collection(dense_dim=3)
+        query_vectors = [[1.0, 2.0, 3.0]]
+
+        # Create a mock result that matches the expected structure
+        mock_result = Mock()
+        mock_result.id = 1
+        mock_results = ([mock_result], [0.9])  # Tuple of (results, scores)
+
+        # Mock ThreadPool
+        mock_pool = MagicMock()
+        mock_pool.__enter__.return_value = mock_pool
+        mock_pool.starmap.return_value = [mock_results]  # List of results for each query
+
+        with patch('mx_rag.storage.vectorstore.opengauss.ThreadPool', return_value=mock_pool) as mock_thread_pool:
+            with patch.object(self.db, '_do_search', return_value=mock_results):
+                scores, ids = self.db._parallel_search(query_vectors, k=1)
+
+                # Verify results
+                self.assertEqual(scores, [[-0.9]])  # Note: scores are scaled by similarity strategy
+                self.assertEqual(ids, [[1]])
+
+                # Verify pool was created with correct size
+                mock_thread_pool.assert_called_once()
+
+                # Verify starmap was called
+                mock_pool.starmap.assert_called_once()
+
+    def test_do_search(self):
+        """Test the individual search operation."""
+        self.db.create_collection(dense_dim=3)
+        query_vector = np.array([1.0, 2.0, 3.0])
+
+        # Mock the session query results
+        mock_result = Mock()
+        mock_result.id = 1
+
+        with patch.object(self.db, '_transaction') as mock_transaction:
+            mock_session = MagicMock()
+            mock_session.query.return_value.order_by.return_value.params.return_value.limit.\
+                return_value.all.return_value = [(mock_result, 0.9)]
+            mock_transaction.return_value.__enter__.return_value = mock_session
+
+            results, scores = self.db._do_search(query_vector, k=1, metric_func_op="<->")
+
+            self.assertEqual(len(results), 1)
+            self.assertEqual(len(scores), 1)
+            self.assertEqual(results[0].id, 1)
+            self.assertEqual(scores[0], 0.9)
+
+    def test_search_with_empty_vectors(self):
+        """Test search with empty input vectors."""
+        self.db.create_collection(dense_dim=3)
+
+        # Test with empty list
+        with self.assertRaises(ValueError):
+            _ = self.db.search([], k=1)
+
+    def test_search_with_multiple_vectors(self):
+        """Test search with multiple input vectors."""
+        self.db.create_collection(dense_dim=3)
+        query_vectors = [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0]
+        ]
+
+        # Mock the parallel search results
+        mock_results = [
+            ([Mock(id=1)], [0.9]),
+            ([Mock(id=2)], [0.8])
+        ]
+
+        with patch.object(self.db, '_do_search') as mock_do_search:
+            mock_do_search.side_effect = mock_results
+
+            with patch('multiprocessing.pool.ThreadPool') as mock_pool:
+                mock_pool.return_value.__enter__.return_value.starmap.return_value = mock_results
+
+                scores, ids = self.db.search(query_vectors, k=1)
+
+                self.assertEqual(len(scores), 2)
+                self.assertEqual(len(ids), 2)
+                # Verify scores are scaled according to similarity strategy
+                self.assertEqual(scores[0], [-0.9])
+                self.assertEqual(scores[1], [-0.8])
+
+    def test_search_with_invalid_k(self):
+        """Test search with invalid k parameter."""
+        self.db.create_collection(dense_dim=3)
+        query_vectors = [[1.0, 2.0, 3.0]]
+
+        with self.assertRaises(ValueError):
+            self.db.search(query_vectors, k=0)
+
+        with self.assertRaises(ValueError):
+            self.db.search(query_vectors, k=11000)
+
+    def test_transaction_context_manager(self):
+        """Test the transaction context manager."""
+        self.db.create_collection(dense_dim=3)
+
+        # Test successful transaction
         mock_session = MagicMock()
-        mock_transaction.return_value.__enter__.return_value = mock_session
 
-        mock_session.query.return_value.all.return_value = [(1,), (2,), (3,)]
-        res = instance.get_all_ids()
-        self.assertEqual(res, [1, 2, 3])
+        with patch.object(self.db, 'session_factory') as mock_session_factory:
+            # Set up the session factory to return our mock session
+            mock_session_factory.return_value = mock_session
+
+            # Use the transaction context manager
+            with self.db._transaction() as session:
+                # Just verify we got the same session back
+                self.assertIs(session, mock_session)
+
+            # Verify the session operations
+            mock_session.commit.assert_called_once()
+            mock_session.close.assert_called_once()
+
+        # Test failed transaction
+        mock_session = MagicMock()
+        mock_session.commit.side_effect = Exception("Database error")
+
+        with patch.object(self.db, 'session_factory') as mock_session_factory:
+            mock_session_factory.return_value = mock_session
+
+            with self.assertRaises(StorageError):
+                with self.db._transaction():
+                    pass  # The commit will fail
+
+            # Verify error handling
+            mock_session.rollback.assert_called_once()
+            mock_session.close.assert_called_once()
+
+    def test_prepare_insert_data(self):
+        """Test the preparation of insert data."""
+        self.db.create_collection(dense_dim=3, sparse_dim=100)
+
+        # Test dense data preparation
+        dense_data = np.array([[1.0, 2.0, 3.0]])
+        ids = [1]
+        result = self.db._prepare_insert_data(ids, dense=dense_data)
+        self.assertEqual(result[0]["id"], 1)
+        self.assertEqual(result[0]["vector"], [1.0, 2.0, 3.0])
+
+        # Test sparse data preparation
+        sparse_data = [{1: 0.5, 2: 0.3}]
+        result = self.db._prepare_insert_data(ids, sparse=sparse_data)
+        self.assertEqual(result[0]["id"], 1)
+        self.assertIn("sparse_vector", result[0])
+
+        # Test mismatched lengths
+        with self.assertRaises(ValueError):
+            self.db._prepare_insert_data([1, 2], dense=dense_data)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
