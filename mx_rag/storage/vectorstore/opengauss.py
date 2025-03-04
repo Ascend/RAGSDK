@@ -31,6 +31,7 @@ def _vector_model_factory(
     """Factory function to create vector table model based on search mode."""
     class BaseModel(Base):
         __abstract__ = True
+        __table_args__ = {'extend_existing': True}
         id = Column(BigInteger, primary_key=True, comment="向量ID")
 
     if search_mode == SearchMode.DENSE:
@@ -97,8 +98,9 @@ class OpenGaussDB(VectorStore):
 
     @validate_params(
         engine=dict(validator=lambda x: isinstance(x, Engine), message="param must be instance of Engine"),
-        collection_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_COLLECTION_NAME_LENGTH,
-                             message="param must be str and length range (0, 1024]"),
+        collection_name=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_COLLECTION_NAME_LENGTH and x.isidentifier(),
+            message="param must be str, length range (0, 1024] and valid identifier"),
         search_mode=dict(validator=lambda x: isinstance(x, SearchMode), message="param must be instance of SearchMode")
     )
     def __init__(
@@ -178,22 +180,50 @@ class OpenGaussDB(VectorStore):
 
         Handles potential exceptions and checks for table existence before dropping.
         """
-        table_name = self.table_name  # Store it for easier use and clarity
-        logger.info(f"Dropping table: {table_name}")
+        table_name = self.table_name
+        
+        # Validate table name to prevent SQL injection
+        if not table_name.isidentifier():
+            raise StorageError(f"Invalid table name: {table_name}")
+        
+        # Quote the table name properly using SQLAlchemy's quoting mechanism
+        quoted_table_name = self.engine.dialect.identifier_preparer.quote_identifier(table_name)
+        logger.info(f"Dropping table: {quoted_table_name}")
 
         try:
+            # Drop indexes first
+            with self._transaction() as session:
+                # Get all non-primary key indexes for this table using safe parameter binding
+                indexes = session.execute(text(
+                    """
+                    SELECT indexname 
+                    FROM pg_indexes 
+                    WHERE tablename = :table_name 
+                    AND indexname NOT LIKE '%_pkey'
+                    """
+                ), {"table_name": quoted_table_name}).fetchall()
+                
+                # Drop each index
+                for idx in indexes:
+                    index_name = idx[0]
+                    # Force drop the index and its dependencies
+                    session.execute(text(f"DROP INDEX IF EXISTS {index_name} CASCADE"))
+                    logger.info(f"Dropped index '{index_name}'")
+
+            # Then drop the table
             metadata = MetaData()
             metadata.reflect(bind=self.engine)
 
             if table_name in metadata.tables:
                 table = metadata.tables[table_name]
-                table.drop(self.engine)
+                table.drop(self.engine, checkfirst=True)
+                metadata.clear()
                 logger.info(f"Table '{table_name}' dropped successfully.")
             else:
                 logger.warning(f"Table '{table_name}' does not exist. Skipping drop.")
 
         except Exception as e:
-            logger.error(f"Error dropping table '{table_name}': {e}")
+            raise StorageError(f"Failed to drop collection: {str(e)}") from e
 
     @validate_params(
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="param requires to be np.ndarray"),
@@ -242,9 +272,34 @@ class OpenGaussDB(VectorStore):
             raise StorageError(f"Delete failed: {e}") from e
 
     @validate_params(
-        k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param length range (0, 10000]")
+        k={
+            "validator": lambda x: 0 < x <= MAX_TOP_K,
+            "message": "param length range (0, 10000]"
+        }
     )
     def search(self, embeddings: Union[List[List[float]], List[Dict[int, float]]], k: int = 3):
+        """
+        Searches for the k-nearest neighbors of the given embeddings.
+
+        Args:
+            embeddings: A list of dense vectors (list of lists) or sparse vectors (list of dictionaries).
+            k: The number of nearest neighbors to return.
+
+        Raises:
+            ValueError: If embeddings is not a non-empty list of vectors or sparse vectors.
+
+        Returns:
+            The result of the parallel search.
+        """
+        if not (
+                isinstance(embeddings, list)
+                and len(embeddings) > 0
+                and all(isinstance(e, (list, dict)) and len(e) > 0 for e in embeddings)
+        ):
+            raise ValueError(
+                "embeddings must be a non-empty list of vectors (list) or sparse vectors (dict)"
+            )
+
         return self._parallel_search(embeddings, k)
 
     def get_all_ids(self) -> List[int]:
@@ -332,6 +387,11 @@ class OpenGaussDB(VectorStore):
         """Create appropriate indexes for the table."""
         index_options = {**DEFAULT_INDEX_OPTIONS, **params.get("index_creation_with_options", {})}
 
+        with self._transaction() as session:
+            # First, ensure no stale indexes exist
+            session.execute(text(f"DROP INDEX IF EXISTS ix_dense_index CASCADE"))
+            session.execute(text(f"DROP INDEX IF EXISTS ix_sparse_index CASCADE"))
+
         if hasattr(self.vector_model, "vector"):
             Index(
                 "ix_dense_index",
@@ -352,11 +412,13 @@ class OpenGaussDB(VectorStore):
 
     def _do_search(
         self,
-        emb: Union[np.ndarray, Dict[int, float]],
+        emb: Union[List[float], Dict[int, float]],
         k: int,
         metric_func_op: str
     ) -> Tuple[List[Any], List[float]]:
         """Execute single search query."""
+        if isinstance(emb, list):
+            emb = np.array(emb)
         with self._transaction() as session:
             field, param_key, order_dir = self._get_search_params(emb)
             emb_str = self._serialize_embedding(emb)
