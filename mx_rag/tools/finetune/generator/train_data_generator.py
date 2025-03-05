@@ -137,7 +137,7 @@ class TrainDataGenerator(BaseGenerator):
 
         train_data = []
         for query, doc in zip(query_list, doc_list):
-            train_data.append({"anchor": query, "positive": doc})
+            train_data.append({"query": query, "corpus": doc})
 
         train_data_path = os.path.join(self.dataset_path, "train_data.jsonl")
         write_jsonl_to_file(train_data, train_data_path)
@@ -168,8 +168,8 @@ class TrainDataGenerator(BaseGenerator):
         if os.path.exists(rewrite_data_path):
             rewrite_data_list = read_jsonl_from_file(rewrite_data_path)
             for rewrite_data in rewrite_data_list:
-                query_list.append(rewrite_data["anchor"])
-                doc_list.append(rewrite_data["positive"])
+                query_list.append(rewrite_data["query"])
+                doc_list.append(rewrite_data["corpus"])
             if len(query_list) == len(preferred_query_list) * query_rewrite_number:
                 logger.info("rewrite query finished, skip rewrite query process")
                 return query_list, doc_list
@@ -213,7 +213,7 @@ class TrainDataGenerator(BaseGenerator):
             for query, doc in zip(new_query_list, chunk_doc_list):
                 if query != "":
                     query_list.append(query)
-                    temp_qd_pairs.append({"anchor": query, "positive": doc})
+                    temp_qd_pairs.append({"query": query, "corpus": doc})
             write_jsonl_to_file(temp_qd_pairs, rewrite_data_path, 'a')
             logger.info(f"The {count + 1} st time rewrite query success by chunk {batch_size}")
             count += 1

@@ -51,7 +51,7 @@ class EvalDataGenerator(BaseGenerator):
 
         evaluate_data = []
         for query, doc in zip(query_list, doc_list):
-            evaluate_data.append({"anchor": query, "positive": doc})
+            evaluate_data.append({"query": query, "corpus": doc})
 
         write_jsonl_to_file(evaluate_data, evaluate_data_path)
 
