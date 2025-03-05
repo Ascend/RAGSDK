@@ -32,15 +32,16 @@ class DataProcessConfig:
         prefered: (bool) QD对优选开关, 借助LLM进行评分筛选
         llm_threshold_score: (float) 优选筛选比例
         rewrite: (bool) 问题重写开关
-        query_rewrite_numer: (int) 问题重写的数量
+        query_rewrite_number: (int) 问题重写的数量
     """
+
     @validate_params(
         generate_qd_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
         llm_preferred_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                                   message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
-        question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100,
-                             message="param must meets: Type is int, length range (0, 100]"),
+        question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 20,
+                             message="param must meets: Type is int, length range (0, 20]"),
         featured=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         featured_percentage=dict(validator=lambda x: isinstance(x, float) and 0.0 < x < 1.0,
                                  message="param must meets: Type is float, value range (0.0, 1.0)"),
@@ -48,19 +49,19 @@ class DataProcessConfig:
         llm_threshold_score=dict(validator=lambda x: isinstance(x, float) and 0.0 < x < 1.0,
                                  message="param must meets: Type is float, value range (0.0, 1.0)"),
         rewrite=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
-        query_rewrite_numer=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100,
-                                 message="param must meets: Type is int, length range (0, 100]"),
+        query_rewrite_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 20,
+                                  message="param must meets: Type is int, length range (0, 20]"),
     )
     def __init__(self,
                  generate_qd_prompt: str = GENERATE_QA_PROMPT,
                  llm_preferred_prompt: str = SCORING_QD_PROMPT,
-                 question_number: int = 10,
+                 question_number: int = 3,
                  featured: bool = True,
                  featured_percentage: float = 0.8,
                  prefered: bool = True,
                  llm_threshold_score: float = 0.8,
                  rewrite: bool = True,
-                 query_rewrite_numer: int = 2):
+                 query_rewrite_number: int = 2):
         self.generate_qd_prompt = generate_qd_prompt
         self.llm_preferred_prompt = llm_preferred_prompt
         self.question_number = question_number
@@ -69,7 +70,7 @@ class DataProcessConfig:
         self.prefered = prefered
         self.llm_threshold_score = llm_threshold_score
         self.rewrite = rewrite
-        self.query_rewrite_numer = query_rewrite_numer
+        self.query_rewrite_number = query_rewrite_number
 
 
 class TrainDataGenerator(BaseGenerator):
@@ -87,13 +88,14 @@ class TrainDataGenerator(BaseGenerator):
     @validate_params(
         split_doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                             message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
-                            f"str length range [1, {STR_MAX_LEN}]"),
+                                    f"str length range [1, {STR_MAX_LEN}]"),
         data_process_config=dict(validator=lambda x: isinstance(x, DataProcessConfig),
                                  message="param must be instance of DataProcessConfig")
     )
     def generate_train_data(self,
                             split_doc_list: list[str],
-                            data_process_config: DataProcessConfig
+                            data_process_config: DataProcessConfig,
+                            batch_size: int = 8
                             ):
         FileCheck.dir_check(self.dataset_path)
         corpus_data_path = os.path.join(self.dataset_path, "train_data.jsonl")
@@ -104,7 +106,8 @@ class TrainDataGenerator(BaseGenerator):
         # 流程开始
         logger.info("step Generating rough problem documentation pairs")
         query_list, doc_list = self._generate_coarsest_qd_pairs(split_doc_list, data_process_config.question_number,
-                                                                data_process_config.generate_qd_prompt)
+                                                                data_process_config.generate_qd_prompt,
+                                                                batch_size)
         logger.info("step Generated rough problem documentation pairs finished")
 
         if data_process_config.featured:
@@ -120,19 +123,21 @@ class TrainDataGenerator(BaseGenerator):
             query_list, doc_list = self._prefer_qd_pair(query_list,
                                                         doc_list,
                                                         data_process_config.llm_threshold_score,
-                                                        data_process_config.llm_preferred_prompt)
+                                                        data_process_config.llm_preferred_prompt,
+                                                        batch_size)
             logger.info("step LLM optimizing query document pair finished")
 
         if data_process_config.rewrite:
             logger.info("step Enhancing query diversity and preserving training data")
             query_list, doc_list = self._rewrite_query(query_list,
                                                        doc_list,
-                                                       data_process_config.query_rewrite_numer)
+                                                       data_process_config.query_rewrite_number,
+                                                       batch_size)
             logger.info("step Enhancing query diversity and preserving training data finished")
 
         train_data = []
         for query, doc in zip(query_list, doc_list):
-            train_data.append({"anchor": query, "positive": doc})
+            train_data.append({"query": query, "corpus": doc})
 
         train_data_path = os.path.join(self.dataset_path, "train_data.jsonl")
         write_jsonl_to_file(train_data, train_data_path)
@@ -142,7 +147,8 @@ class TrainDataGenerator(BaseGenerator):
     def _rewrite_query(self,
                        preferred_query_list: list[str],
                        preferred_doc_list: list[str],
-                       query_rewrite_numer: int):
+                       query_rewrite_number: int,
+                       batch_size: int):
         if len(preferred_query_list) > MAX_DATASET_LEN or len(preferred_doc_list) > MAX_DATASET_LEN:
             logger.error(f"inputs len should not bigger than {MAX_DATASET_LEN}")
             return [], []
@@ -162,39 +168,39 @@ class TrainDataGenerator(BaseGenerator):
         if os.path.exists(rewrite_data_path):
             rewrite_data_list = read_jsonl_from_file(rewrite_data_path)
             for rewrite_data in rewrite_data_list:
-                query_list.append(rewrite_data["anchor"])
-                doc_list.append(rewrite_data["positive"])
-            if len(query_list) == len(preferred_query_list) * query_rewrite_numer:
+                query_list.append(rewrite_data["query"])
+                doc_list.append(rewrite_data["corpus"])
+            if len(query_list) == len(preferred_query_list) * query_rewrite_number:
                 logger.info("rewrite query finished, skip rewrite query process")
                 return query_list, doc_list
             else:
                 # 根据重写的长度计算还需要重写的数据量
                 if len(preferred_query_list) == 0:
                     per_rewrite_number = 0
-                    remain_number = query_rewrite_numer - 1
+                    remain_number = query_rewrite_number - 1
                 else:
                     rewritten_number = int(len(rewrite_data_list) / len(preferred_query_list))
                     per_rewrite_number = len(rewrite_data_list) % len(preferred_query_list)
-                    remain_number = query_rewrite_numer - rewritten_number - 1
+                    remain_number = query_rewrite_number - rewritten_number - 1
                 if remain_number >= 0:
                     logger.info("rewrite query not finished, continue to rewrite query process")
                     remain_queries = preferred_query_list[per_rewrite_number:] + preferred_query_list * remain_number
                     remain_docs = preferred_doc_list[per_rewrite_number:] + preferred_doc_list * remain_number
-                    new_query_list = self._rewrite(remain_queries, remain_docs, rewrite_data_path)
+                    new_query_list = self._rewrite(remain_queries, remain_docs, rewrite_data_path, batch_size)
                     query_list.extend(new_query_list)
                     doc_list.extend(remain_docs)
                 else:
                     logger.info('calculated based on parameters, do not need to rewrite the query')
         else:
-            for i in range(query_rewrite_numer):
+            for i in range(query_rewrite_number):
                 logger.info(f"The {i + 1}st times rewrite the query")
-                new_query_list = self._rewrite(preferred_query_list, preferred_doc_list, rewrite_data_path)
+                new_query_list = self._rewrite(preferred_query_list, preferred_doc_list, rewrite_data_path, batch_size)
                 query_list.extend(new_query_list)
                 doc_list.extend(preferred_doc_list)
 
         return query_list, doc_list
 
-    def _rewrite(self, preferred_query_list, preferred_doc_list, rewrite_data_path, batch_size: int = 512):
+    def _rewrite(self, preferred_query_list, preferred_doc_list, rewrite_data_path, batch_size):
         logger.info(f"rewrite query count: {len(preferred_query_list)}")
 
         query_list = []
@@ -207,7 +213,7 @@ class TrainDataGenerator(BaseGenerator):
             for query, doc in zip(new_query_list, chunk_doc_list):
                 if query != "":
                     query_list.append(query)
-                    temp_qd_pairs.append({"anchor": query, "positive": doc})
+                    temp_qd_pairs.append({"query": query, "corpus": doc})
             write_jsonl_to_file(temp_qd_pairs, rewrite_data_path, 'a')
             logger.info(f"The {count + 1} st time rewrite query success by chunk {batch_size}")
             count += 1

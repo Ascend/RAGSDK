@@ -17,11 +17,7 @@ A_FLAGS = os.O_RDWR | os.O_CREAT
 MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
 
 
-def write_jsonl_to_file(datas: list[dict], file: str, flag: str = 'w',
-                        line_limit: int = 10000, length_limit: int = 1024):
-    if len(datas) > line_limit:
-        raise Exception(f"datas len longer than {line_limit}, is {len(datas)}")
-
+def write_jsonl_to_file(datas: list[dict], file: str, flag: str = 'w'):
     if os.path.exists(file):
         SecFileCheck(file, MAX_FILE_SIZE).check()
     else:
@@ -33,7 +29,7 @@ def write_jsonl_to_file(datas: list[dict], file: str, flag: str = 'w',
         raise Exception(f"file '{file}' is not a jsonl file name")
 
     try:
-        _write_jsonl_file(datas, file, flag, length_limit)
+        _write_jsonl_file(datas, file, flag)
     except IOError as io_error:
         logger.error(f"write data to file failed, find IOError: {io_error}")
         raise Exception(f"write jsonl to file IO Error") from io_error
@@ -43,29 +39,23 @@ def write_jsonl_to_file(datas: list[dict], file: str, flag: str = 'w',
     logger.info(f"write data to file '{file_basename}' success")
 
 
-def _write_jsonl_file(datas, file, flag, length_limit):
+def _write_jsonl_file(datas, file, flag):
     flags = A_FLAGS if flag == 'a' else W_FLAGS
     with os.fdopen(os.open(file, flags, MODES), flag) as f:
         for data in datas:
             data_str = json.dumps(data, ensure_ascii=False)
-            if len(data_str) > length_limit:
-                logger.warning(f"data longer than {length_limit}, is {len(data_str)}")
-                continue
             f.write(data_str)
             f.write("\n")
 
 
 def read_jsonl_from_file(file: str,
-                         file_size: int = 100 * 1024 * 1024,
-                         line_limit: int = 10000,
-                         length_limit: int = 1024):
+                         file_size: int = 100 * 1024 * 1024 * 1024):
 
     SecFileCheck(file, file_size).check()
 
     datas = []
-    line_cnt = 0
     try:
-        datas = _read_jsonl_file(file, length_limit, line_cnt, line_limit)
+        datas = _read_jsonl_file(file)
     except json.JSONDecodeError as json_decode_e:
         logger.error(f"read data from file failed, find JSONDecodeError: {json_decode_e}")
     except Exception as e:
@@ -73,22 +63,14 @@ def read_jsonl_from_file(file: str,
     return datas
 
 
-def _read_jsonl_file(file, length_limit, line_cnt, line_limit):
+def _read_jsonl_file(file):
     datas = []
     with os.fdopen(os.open(file, R_FLAGS, MODES), 'r') as f:
-        while line_cnt < line_limit:
-            line_cnt += 1
-
-            line = f.readline()
-            if len(line) > length_limit:
-                logger.warning(f"data logger than {length_limit}, is {len(line)}")
-                continue
-            # 最后一行为空字符串
-            if line == "" or line.isspace():
-                break
+        line = f.readline()
+        while line:
             data = json.loads(line)
             datas.append(data)
 
-        if line_cnt >= line_limit:
-            logger.warning(f"read data more than {line_limit} lines")
+            line = f.readline()
+
     return datas
