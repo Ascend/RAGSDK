@@ -1,17 +1,17 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-
-import concurrent.futures
+import re
 from abc import ABC
 from collections import defaultdict
+import concurrent.futures
 from concurrent.futures import as_completed
-
-import networkx as nx
 from loguru import logger
+import networkx as nx
 from networkx import DiGraph
-
+from mx_rag.gvstore.graph_creator.entity_filter import EntityFilter
 from mx_rag.gvstore.graph_creator.lang import lang_dict, lang_zh
 from mx_rag.gvstore.graph_creator.llm_extract import Extractor
+from mx_rag.gvstore.util.utils import KgOprMode, GraphUpdatedData
 from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import validate_params, validata_list_str
 
@@ -55,13 +55,13 @@ class GraphCreation:
             if kwargs.get("lang") not in ["zh", "en"]:
                 raise ValueError(f"lang param error, value must be in [zh, en]")
         self.lang = kwargs.get("lang", "zh")
-        self.model = llm
+        self.llm = llm
         # 存储networkx图
         if graph is not None:
             self.graph = graph
         else:
             self.graph = DiGraph()
-
+        # 建图时id为current_id+1
         if current_id is not None:
             self.current_id = current_id
         else:
@@ -70,51 +70,147 @@ class GraphCreation:
         # 图信息存储
         self.node_id_map = {}
 
+        self.file_contents = {}
+
         # info抽取类
-        self.extractor = Extractor(llm=self.model, entity_types=entity_types, **kwargs)
+        self.extractor = Extractor(llm=self.llm, entity_types=entity_types, **kwargs)
         # info抽取结果存储
         self.entity_id_map = {}
         self.extract_workers = concurrent.futures.ThreadPoolExecutor(max_workers=thread_num,
                                                                      thread_name_prefix="extract_workers")
 
+    @staticmethod
+    def _diff_graph(opr_mode: KgOprMode, old_graph: DiGraph, new_graph: DiGraph):
+        update_data = GraphUpdatedData()
+        if opr_mode == KgOprMode.NEW:
+            new_nodes = set(new_graph.nodes()) - set(old_graph.nodes())
+            incremental_nodes = [new_graph.nodes[node] for node in new_nodes]
+            new_edges = set(new_graph.edges)
+            old_edges = set(old_graph.edges)
+            added_edges = [edge for edge in new_edges if edge not in old_edges]
+            incremental_edges = []
+            for edge in added_edges:
+                data = {"src": edge[0], "dst": edge[1], "name": new_graph.edges[edge]["name"]}
+                incremental_edges.append(data)
+            update_data.added_nodes = []
+            for node in incremental_nodes:
+                if "id" in node and "info" in node and "label" in node:
+                    update_data.added_nodes.append(node)
+            update_data.added_edges = incremental_edges
+        return update_data
+
     # 采用链式模式对txt、pdf、docx等文件通过大模型做图的三元组抽取并基于抽取的三元组信息构建图
-    def graph_create(self, graphml_save_path: str, parsed_file_contents: dict):
-        file_contents = parsed_file_contents
-        entity_map = {}
-        txt_graph_extract = TxtGraphExtract(file_contents, self.extractor, self.lang)
-        txt_graph_extract.handle_extract(self.graph, self.current_id, entity_map, self.extract_workers)
-        nx.write_graphml(self.graph, graphml_save_path)
+    def graph_create(self, graphml_save_path: str, parsed_file_contents: dict, **kwargs):
+        self.file_contents = parsed_file_contents
+        logger.info("Graph Process start.")
+        self._graph_process(graphml_save_path, {}, **kwargs)
+
+    def graph_update(self, graphml_save_path: str, parsed_file_contents: dict, opr_mode: KgOprMode, **kwargs):
+        self.file_contents = parsed_file_contents
+        entity_id_map = {}
+        for _, data in self.graph.nodes.data():
+            entity_id_map[data["info"]] = data["id"]
+        old_graph = nx.read_graphml(graphml_save_path)
+        self._graph_process(graphml_save_path, entity_id_map, **kwargs)
+        return self._diff_graph(opr_mode, old_graph, self.graph)
+
+    def _graph_process(self, graphml_save_path, entity_id_map, **kwargs):
+        kwargs.pop("lang")
+        txt_graph_extract = TxtGraphExtract(self.file_contents, self.extractor, self.lang, llm=self.llm, **kwargs)
+        logger.info("Graph extract start.")
+        txt_graph_extract.handle_extract(self.graph, self.current_id, entity_id_map, self.extract_workers)
+        try:
+            nx.write_graphml(self.graph, graphml_save_path)
+        except ValueError as e:
+            if str(e) != "All strings must be XML compatible: Unicode or ASCII, no NULL bytes or control characters":
+                raise e
+            # filter invalid xml data and write graph again in case of above exception
+            logger.error(str(e))
+            self._filter_graph()
+            nx.write_graphml(self.graph, graphml_save_path)
+        logger.info("Graph write into networkx done.")
+
+    def _filter_graph(self):
+        def _filter_xml_string(text):
+            return re.sub(u'[^\u0020-\uD7FF\u0009\u000A\u000D\uE000-\uFFFD\U00010000-\U0010FFFF]+', '', text)
+
+        for _, data in self.graph.nodes(data=True):
+            if "info" in data:
+                data["info"] = _filter_xml_string(data["info"])
+            if "entity_type" in data:
+                data["entity_type"] = _filter_xml_string(data["entity_type"])
+
+
+def _update_entity_info(target_graph, entity, entity_id_map, current_id):
+    if entity not in entity_id_map:
+        entity_id = current_id + 1
+        target_graph.add_node(entity_id, id=entity_id, label=ENTITY, info=str(entity))
+        entity_id_map[entity] = entity_id
+        # 更新current max id
+        current_id += 1
+    else:
+        entity_id = entity_id_map[entity]
+    return entity_id, current_id
 
 
 class GraphExtract(ABC):
 
-    def __init__(self, contexts: dict, extractor: Extractor, lang: str):
+    def __init__(self, contexts: dict, extractor: Extractor, lang: str, **kwargs):
         self.extractor = extractor
         self.contexts = contexts
         self.lang_dict = lang_dict.get(lang, lang_zh)
+        self.vector_db = kwargs.pop("vector_db", None)
+        # entity_filter_flag控制是否消歧
+        self.entity_filter_flag = kwargs.pop("entity_filter_flag", False)
+        self.llm = kwargs.pop("llm", None)
+        self.graph_name = kwargs.pop("graph_name", None)
+        self.entity_filter = EntityFilter(graph_name=self.graph_name, llm=self.llm, vector_db=self.vector_db)
+
+    def add_index(self, index_data: dict, partition_name: str):
+        if not self.entity_filter_flag:
+            return
+        id_list = []
+        data_list = []
+        for key, value in index_data.items():
+            id_list.append(key)
+            data_list.append(value)
+        self.vector_db.add_embedding(data_list, id_list, partition_name)
 
     def build_graph(self, target_graph: DiGraph, triplets_list: list,
                     entity_id_map: dict, current_id: int, chunk_id: int):
+        """
+
+        Args:
+            target_graph: DiGraph对象，临时存储图关系
+            triplets_list: 大模型抽取的三元组信息
+            entity_id_map: 实体和ID映射，例如{'小红':1}, 初始建图为空,
+            current_id: 建图当前的ID
+            chunk_id:
+
+        Returns:
+
+        """
+        if not triplets_list:
+            return current_id
+
+        def extract_head_tail(triplet_list):
+            result = []
+            for triplet in triplet_list:
+                if triplet:
+                    result.append(triplet[0])
+                    result.append(triplet[-1])
+            return list(set(result))
+
+        entity_list = extract_head_tail(triplets_list)
+        # 处理实体消岐逻辑
+        if self.entity_filter_flag:
+            entity_list = self.entity_filter.entity_disambiguation(triplets_list)
+
         # 存储头、尾实体节点（entity）、连边（relation）
         for triplet in triplets_list:
             head_entity, relation, tail_entity = triplet[0], triplet[1], triplet[2],
-            if head_entity not in entity_id_map:
-                head_entity_id = current_id + 1
-                target_graph.add_node(head_entity_id, id=head_entity_id, label=ENTITY, info=str(head_entity))
-                entity_id_map[head_entity] = head_entity_id
-                # 更新current max id
-                current_id += 1
-            else:
-                head_entity_id = entity_id_map[head_entity]
-
-            if tail_entity not in entity_id_map:
-                tail_entity_id = current_id + 1
-                target_graph.add_node(tail_entity_id, id=tail_entity_id, label=ENTITY, info=str(tail_entity))
-                entity_id_map[tail_entity] = tail_entity_id
-                # 更新current max id
-                current_id += 1
-            else:
-                tail_entity_id = entity_id_map[tail_entity]
+            head_entity_id, current_id = _update_entity_info(target_graph, head_entity, entity_id_map, current_id)
+            tail_entity_id, current_id = _update_entity_info(target_graph, tail_entity, entity_id_map, current_id)
             # head-tail连边、chunk-entity连边
             edge = target_graph.get_edge_data(head_entity_id, tail_entity_id)
             if edge is not None:
@@ -122,6 +218,12 @@ class GraphExtract(ABC):
             target_graph.add_edge(head_entity_id, tail_entity_id, name=str(relation))
             target_graph.add_edge(chunk_id, head_entity_id, name=self.lang_dict["include_entity"])
             target_graph.add_edge(chunk_id, tail_entity_id, name=self.lang_dict["include_entity"])
+
+        if self.entity_filter_flag:
+            # 节点数据写入向量数据库
+            id_list = [entity_id_map[entity] for entity in entity_list if entity in entity_id_map]
+            entity_list = [entity for entity in entity_list if entity in entity_id_map]
+            self.entity_filter.add_embedding(entity_list, id_list, partition_name="entity")
         return current_id
 
     def handle_extract(self, graph: DiGraph, current_id: int, entity_id_map: dict,
@@ -129,12 +231,21 @@ class GraphExtract(ABC):
         pass
 
     def parallel_extract(self, info: str, chunk_id: int):
+        """
+
+        Args:
+            info: 切分的chunk字符串
+            chunk_id: 对应的id
+
+        Returns:
+
+        """
         # chunk信息抽取
         summary, entity_schema_map, triplets_list, relations_list = self.extractor.extract(
             input_text_str=info)
         return summary, triplets_list, chunk_id
 
-    def _update_graph_after_tasks(self, all_task, graph, entity_id_map, current_id):
+    def _update_graph_after_tasks(self, all_task, graph, entity_id_map, current_id, chunk_index_data):
         for future in as_completed(all_task):
             try:
                 summary, triplets_list, chunk_id = future.result()
@@ -150,19 +261,22 @@ class GraphExtract(ABC):
                 graph.add_edge(chunk_id, summary_id, name=self.lang_dict[SUMMARY])
                 # 更新current max id
                 current_id = current_id + 1
-        return current_id
+                chunk_index_data[summary_id] = str(summary)
+        return current_id, chunk_index_data
 
 
 class TxtGraphExtract(GraphExtract):
     def handle_extract(self, graph, current_id, entity_id_map, threadpool):
         txt_files_contents = self.contexts
         node_id_map = defaultdict(lambda: None)
+        chunk_index_data = {}
         for file in txt_files_contents.keys():
             logger.info(f"processing file {file}...")
             chunks = txt_files_contents[file]
             # 创建txt文件节点
             file_id = current_id + 1
             graph.add_node(file_id, id=file_id, label=FILE, info=str(file))
+            chunk_index_data[file_id] = str(file)
             node_id_map[file] = file_id
             current_id = current_id + 1
             all_task = []
@@ -174,6 +288,7 @@ class TxtGraphExtract(GraphExtract):
                 chunk_id = current_id + 1
                 info = "\n".join(chunk["info"])
                 graph.add_node(chunk_id, id=chunk_id, label=TEXT, info=info)
+                chunk_index_data[chunk_id] = info
                 node_id_map[chunk_old_id] = chunk_id
                 current_id = current_id + 1
                 # file-chunk连边
@@ -187,4 +302,7 @@ class TxtGraphExtract(GraphExtract):
 
                 # chunk信息抽取
                 all_task.append(threadpool.submit(self.parallel_extract, info, chunk_id))
-            current_id = self._update_graph_after_tasks(all_task, graph, entity_id_map, current_id)
+            current_id, chunk_index_data = self._update_graph_after_tasks(all_task, graph, entity_id_map,
+                                                                          current_id, chunk_index_data)
+            # add chunk data into vector db
+            self.add_index(chunk_index_data, partition_name="text")

@@ -132,6 +132,39 @@ PROMPTS[
         output:
 """
 
+PROMPTS[
+    "KEYWORDS_EXTRACT"
+] = ("A question is provided below. Given the question, extract up to "
+     "keywords from the text. Focus on extracting the keywords that we can use "
+     "to best lookup answers to the question.\n"
+     "Generate as more as possible synonyms or alias of the keywords "
+     "considering possible cases of capitalization, pluralization, "
+     "common expressions, etc.\n"
+     "Avoid stopwords.\n"
+     "Provide the keywords and synonyms in comma-separated format."
+     "Formatted keywords and synonyms text should be separated by a semicolon.\n"
+     "---------------------\n"
+     "Example:\n"
+     "Text: Alice is Bob's mother.\n"
+     "Keywords:\nAlice,mother,Bob;mummy\n"
+     "Text: Philz is a coffee shop founded in Berkeley in 1982.\n"
+     "Keywords:\nPhilz,coffee shop,Berkeley,1982;coffee bar,coffee house\n"
+     "---------------------\n"
+     "Text: {text}\n"
+     "Keywords:\n")
+
+
+PROMPTS[
+    "SAME_ENTITY_CHECK"
+] = """
+    你是一个实体辨别专家，请判断以下两个输入数据是否为同一实体。
+    输入数据如下：
+    entity1: {entity1}
+    entity2: {entity2}
+    
+    请求回答"是"或者"不是"即可，不要给出任何解释
+"""
+
 
 PROMPTS[
     "GENERATOR"
@@ -144,58 +177,9 @@ PROMPTS[
         Answer: <|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
 PROMPTS[
-    "MULTIPLE_ROUNDS"
-] = """
-        请根据历史对话以及用户当前的问题，对用户当前的问题进行改写，并根据改写后的问题分解出子问题，以便于信息检索。
-    
-        生成格式如下：
-        {{
-        "new_question":改写后的问题,
-        "sub_questions":根据改写后的问题分解出的子问题,
-        }}
-            
-        历史对话如下：
-        {history}
-        
-        用户提问如下：
-        {question}
-    
-        要求：
-            1.根据历史对话将用户问题中的指代词进行替换，改写后的问题尽可能简洁。
-            2.根据改写后的问题分解出的子问题应尽可能少,不要进行联想。
-    
-        请开始
-"""
-
-PROMPTS[
-    "NOT_USING_RETRIEVAL"
-] = """
-    请根据已知信息，简洁和专业的来回答问题, 不允许在答案中添加编造成分，答案请使用中文。
-    
-    已知信息:
-    {context}
-    
-    问题:
-    {query}
-    
-    注意：
-    1.已知信息中可能会存在一些不相关的知识，请从相关性和可用性等多个维度对已知信息的内容进行分析，只保留最相关、最优质的内容；
-    
-    请给出问题的答案
-"""
-
-PROMPTS[
-    "RETRIEVAL_REWRITING"
-] = """
-    你是一个信息检索机器人，请提取用户问题中的关键词用于检索相关信息。
-
-    生成json格式如下：
-    {{
-    "keywords":["xxx", ... , "xxx"]
-    }}
-        
-    用户提问如下：
-    {question}
-
-    回答：
-"""
+    "GENERATOR"
+] = """<|begin_of_text|><|start_header_id|>system<|end_header_id|> You are an  assistant for question-answering 
+tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, 
+just say that you don't know. Use three sentences maximum and keep the answer as concise and accurate as possible. Do 
+NOT repeat the question or output any other words<|eot_id|><|start_header_id|>user<|end_header_id|> 
+Context: {context} Question: {question} Answer: <|eot_id|><|start_header_id|>assistant<|end_header_id|>"""

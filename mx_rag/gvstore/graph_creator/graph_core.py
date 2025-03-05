@@ -7,6 +7,7 @@ import networkx as nx
 from networkx import DiGraph
 
 from mx_rag.gvstore.graph_creator.lang import lang_dict, lang_zh
+from mx_rag.gvstore.util.utils import GraphUpdatedData
 from mx_rag.utils.common import GRAPH_FILE_LIMIT, MAX_NODE_MUM
 from mx_rag.utils.file_check import SecFileCheck
 
@@ -23,12 +24,19 @@ class GraphCore(ABC):
     def create_graph_index(self, **kwargs):
         pass
 
+    def update_graph_index(self, updated_data: dict, **kwargs):
+        pass
+
     @abstractmethod
-    def search_indexes(self, query: str, k: int, **kwargs):
+    def search_indexes(self, query: str, k: int):
         pass
 
     @abstractmethod
     def get_sub_graph(self, ids: list, nodes: list, level: int):
+        pass
+    
+    @abstractmethod
+    def get_nodes(self, keywords, **kwargs):
         pass
 
 
@@ -56,15 +64,22 @@ class GraphNX(GraphCore):
 
     # 创建索引，索引数据包括：从文本中抽取出来的三元组实体信息，以及文本的原始文本块、文件层级信息等
     def create_graph_index(self, **kwargs):
-        self.vector_db.initialize(self.graph_name, **kwargs)
-        self.vector_db.create_index(self.graph)
+        entity_filter_flag = kwargs.get("entity_filter_flag", False)
+        if not entity_filter_flag:
+            self.vector_db.create_index(self.graph)
+
+    # 更新图谱数据
+    def update_graph_index(self, updated_data: GraphUpdatedData, **kwargs):
+        entity_filter_flag = kwargs.get("entity_filter_flag", False)
+        if not entity_filter_flag:
+            self.vector_db.update_index(updated_data)
 
     # 根据问题做向量相似性检索
-    def search_indexes(self, query: str, k, **kwargs):
-        return self.vector_db.search_indexes(query, k, **kwargs)
+    def search_indexes(self, query: str, k: int):
+        return self.vector_db.search_indexes(query, k)
 
     # 图多跳处理
-    def get_sub_graph(self, ids, nodes, level):
+    def get_sub_graph(self, ids, nodes, level, **kwargs):
         seeds = set(ids)
         mem = set(nodes)
         # original contexts that contains expanded entities
@@ -81,6 +96,17 @@ class GraphNX(GraphCore):
             seeds = new_seeds
 
         return self._assemble_data(ids, list(context_ids), relation_datas)
+
+    # 实体消歧时获取相实体节点
+    def get_nodes(self, keywords, **kwargs):
+        ids = []
+        nodes = []
+        data_list = self.vector_db.query_embedding(self.graph_name, keywords, partition_names=["entity"])
+        for node_id, _, related_name, distance in data_list:
+            if distance >= 0.95:
+                ids.append(str(node_id))
+                nodes.append(related_name)
+        return ids, nodes
 
     # 组装图多跳后的结果，返回数据格式为：头节点 + 关系 + 尾节点
     def _assemble_data(self, ids: list, context_ids: list, relation_datas: list):

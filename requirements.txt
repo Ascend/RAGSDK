@@ -32,3 +32,4 @@ langchain_community==0.2.16
 opengauss-sqlalchemy==2.3.1
 psycopg2==2.9.9
 networkx==3.2.1
+nebula3-python==3.8.2
