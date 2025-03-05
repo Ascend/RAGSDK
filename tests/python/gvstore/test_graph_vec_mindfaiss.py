@@ -27,7 +27,7 @@ class PatchEmbedding():
 
 class PatchNodes():
     def data(self):
-        return [[0, {"id": 1, "info": "这是一个节点"}]]
+        return [[0, {"id": 1, "info": "这是一个节点", "label": "text"}]]
 
 
 class PatchGraph():

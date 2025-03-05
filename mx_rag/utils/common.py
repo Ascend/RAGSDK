@@ -202,7 +202,7 @@ def validata_list_document(texts, length_limit: List[int], content_limit: List[i
     Args:
         texts: 输入检索返回Document列表
         length_limit: 列表长度范围
-        str_limit: page_content长度范围
+        content_limit: page_content长度范围
 
     Returns:
 

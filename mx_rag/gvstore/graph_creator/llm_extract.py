@@ -6,7 +6,7 @@ import re
 
 from loguru import logger
 
-from mx_rag.gvstore.graph_creator.prompt_template import PROMPTS
+from mx_rag.gvstore.prompt.prompt_template import PROMPTS
 from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import validate_params
 
