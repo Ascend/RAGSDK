@@ -1,6 +1,7 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from abc import ABC, abstractmethod
+from typing import List
 
 from pydantic.v1 import BaseModel, Field, validator
 
@@ -38,4 +39,12 @@ class Docstore(ABC):
 
     @abstractmethod
     def add(self, documents, document_id):
+        pass
+
+    @abstractmethod
+    def get_all_chunk_id(self) -> List[int]:
+        pass
+
+    @abstractmethod
+    def get_all_document_id(self) -> List[int]:
         pass

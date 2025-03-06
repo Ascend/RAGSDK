@@ -43,7 +43,7 @@ class TestSQLiteStorage(unittest.TestCase):
         chunk = self.db.search(1)
         self.assertEqual(chunk.page_content, "Hello mxRAG")
         self.db.delete(1)
-        self.assertEqual(self.db.get_all_index_id(), [])
+        self.assertEqual(self.db.get_all_chunk_id(), [])
 
     def test_chunk_encrypt(self):
         def fack_encryt(value):

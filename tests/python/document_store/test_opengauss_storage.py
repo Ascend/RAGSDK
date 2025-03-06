@@ -70,14 +70,14 @@ class TestOpenGaussDocstore(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.docstore.search(-1)
 
-    def test_get_all_index_id(self):
+    def test_get_all_chunk_id(self):
         expected_ids = [1, 2, 3]
-        self.mock_helper.get_all_index_id.return_value = expected_ids
+        self.mock_helper.get_all_chunk_id.return_value = expected_ids
 
-        returned_ids = self.docstore.get_all_index_id()
+        returned_ids = self.docstore.get_all_chunk_id()
 
         self.assertEqual(returned_ids, expected_ids)
-        self.mock_helper.get_all_index_id.assert_called_once()
+        self.mock_helper.get_all_chunk_id.assert_called_once()
 
     def test_init_invalid_params(self):
         with self.assertRaises(ValueError):  # Invalid URL - string, not URL object
