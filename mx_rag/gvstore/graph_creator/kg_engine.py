@@ -23,7 +23,7 @@ from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker import Reranker
 from mx_rag.storage.vectorstore import MilvusDB, MindFAISS
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
-from mx_rag.utils.common import validate_params, TEXT_MAX_LEN
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, get_lang_param
 from mx_rag.utils.file_check import FileCheck
 
 GRAPHDB_TYPE_CLASS = \
@@ -33,6 +33,7 @@ GRAPHDB_TYPE_CLASS = \
     }
 
 MAX_GRAPH_NAME_LENGTH = 1024
+GRAPH_FILE_LIMIT = 100
 
 
 class KGEngineError(Exception):
@@ -80,24 +81,18 @@ class KGEngine:
         self.contents = None
         self.vector_db = vector_db
         self.rerank_model = rerank_model
-        if "lang" in kwargs:
-            if not isinstance(kwargs.get("lang"), str):
-                raise KeyError("lang param error, it should be str type")
-            if kwargs.get("lang") not in ["zh", "en"]:
-                raise ValueError(f"lang param error, value must be in [zh, en]")
-        self.lang = kwargs.get("lang", "zh")
+        self.lang = get_lang_param(kwargs)
         self.max_file_count = 100
         self.session = kwargs.get("nebula_session", None)
         if self.session and not isinstance(self.session, Session):
             raise ValueError("input parameter value error: nebula_session must be type Session")
 
     @validate_params(
-        file_list=dict(validator=lambda x: isinstance(x, list), message="param must be instance of list"),
+        file_list=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= GRAPH_FILE_LIMIT,
+                       message="file_list must be list, and length range (0, 100]"),
         loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng")
     )
     def upload_kg_files(self, file_list: list, loader_mng: LoaderMng):
-        if len(file_list) > self.max_file_count:
-            raise KGEngineError(f'files list length must less than {self.max_file_count}, upload kg files failed')
         txt_files_contents = {}
         for file in file_list:
             FileCheck.check_path_is_exist_and_valid(file)
@@ -158,7 +153,6 @@ class KGEngine:
         graph = networkx.read_graphml(graphml_data_path)
         current_node_id = len(graph.nodes.data())
         kwargs["lang"] = self.lang
-
         graph_creation = GraphCreation(llm=self.llm, graph=graph,
                                        current_id=current_node_id - 1, entity_types=entity_types, **kwargs)
         vec_db = self._create_vector_db()

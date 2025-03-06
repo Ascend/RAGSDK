@@ -8,7 +8,7 @@ from networkx import DiGraph
 
 from mx_rag.gvstore.graph_creator.lang import lang_dict, lang_zh
 from mx_rag.gvstore.util.utils import GraphUpdatedData
-from mx_rag.utils.common import GRAPH_FILE_LIMIT, MAX_NODE_MUM
+from mx_rag.utils.common import GRAPH_FILE_LIMIT, MAX_NODE_MUM, get_lang_param
 from mx_rag.utils.file_check import SecFileCheck
 
 
@@ -54,12 +54,7 @@ class GraphNX(GraphCore):
             self.graph = nx.read_graphml(graph_path)
         self.graph_path = graph_path
         self.graph_name = graph_name
-        if "lang" in kwargs:
-            if not isinstance(kwargs.get("lang"), str):
-                raise KeyError("lang param error, it should be str type")
-            if kwargs.get("lang") not in ["zh", "en"]:
-                raise ValueError(f"lang param error, value must be in [zh, en]")
-        lang = kwargs.get("lang", "zh")
+        lang = get_lang_param(kwargs)
         self.lang_dict = lang_dict.get(lang, lang_zh)
 
     # 创建索引，索引数据包括：从文本中抽取出来的三元组实体信息，以及文本的原始文本块、文件层级信息等
@@ -76,7 +71,8 @@ class GraphNX(GraphCore):
 
     # 根据问题做向量相似性检索
     def search_indexes(self, query: str, k: int):
-        return self.vector_db.search_indexes(query, k)
+        # 此处partition_names为空，使用默认值，milvus是text，ascendfaiss是text和summary
+        return self.vector_db.search_indexes(query, k, [])
 
     # 图多跳处理
     def get_sub_graph(self, ids, nodes, level, **kwargs):

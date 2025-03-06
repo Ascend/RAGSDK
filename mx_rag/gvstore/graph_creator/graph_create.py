@@ -13,7 +13,7 @@ from mx_rag.gvstore.graph_creator.lang import lang_dict, lang_zh
 from mx_rag.gvstore.graph_creator.llm_extract import Extractor
 from mx_rag.gvstore.util.utils import KgOprMode, GraphUpdatedData
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import validate_params, validata_list_str
+from mx_rag.utils.common import validate_params, validata_list_str, get_lang_param
 
 ENTITY = "entity"
 TEXT = "text"
@@ -46,15 +46,11 @@ class GraphCreation:
         param2_invalid = graph is not None and current_id is None
         if param1_invalid or param2_invalid:
             raise ValueError("input parameter value error: graph or current_id invalid")
-        if "thread_num" in kwargs and not isinstance(kwargs.get("thread_num"), int):
-            raise KeyError("thread_num param error, it should be integer type")
+        if ("thread_num" in kwargs and not isinstance(kwargs.get("thread_num"), int)
+                and not (0 < kwargs.get("thread_num") <= 20)):
+            raise KeyError("thread_num param error, it should be integer type, and range in [1, 20]")
         thread_num = kwargs.get("thread_num", 8)
-        if "lang" in kwargs:
-            if not isinstance(kwargs.get("lang"), str):
-                raise KeyError("lang param error, it should be str type")
-            if kwargs.get("lang") not in ["zh", "en"]:
-                raise ValueError(f"lang param error, value must be in [zh, en]")
-        self.lang = kwargs.get("lang", "zh")
+        self.lang = get_lang_param(kwargs)
         self.llm = llm
         # 存储networkx图
         if graph is not None:
