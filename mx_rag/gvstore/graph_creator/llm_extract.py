@@ -8,7 +8,7 @@ from loguru import logger
 
 from mx_rag.gvstore.prompt.prompt_template import PROMPTS
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, get_lang_param
 
 
 class Extractor:
@@ -20,12 +20,7 @@ class Extractor:
                  entity_types: list[str] = None,
                  **kwargs) -> None:
         self.model = llm
-        if "lang" in kwargs:
-            if not isinstance(kwargs.get("lang"), str):
-                raise KeyError("lang param error, it should be str type")
-            if kwargs.get("lang") not in ["zh", "en"]:
-                raise ValueError(f"lang param error, value must be in [zh, en]")
-        self.lang = kwargs.get("lang", "zh")
+        self.lang = get_lang_param(kwargs)
         if entity_types is None:
             self.entity_types = []
         else:

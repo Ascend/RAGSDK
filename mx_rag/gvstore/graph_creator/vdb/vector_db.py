@@ -35,7 +35,7 @@ class VectorDBBase(ABC):
         pass
 
     @abstractmethod
-    def search_indexes(self, query: str, k: int):
+    def search_indexes(self, query: str, k: int, partition_names: List[str]):
         pass
 
     @abstractmethod
@@ -117,8 +117,9 @@ class MilvusVecDB(VectorDBBase):
         node_list = [data for _, data in graph.nodes.data()]
         self._insert_data(node_list)
 
-    def search_indexes(self, query, k):
-        partition_names = ["text"]
+    def search_indexes(self, query, k, partition_names):
+        if not partition_names:
+            partition_names = ["text"]
         score_list, id_list, doc_list = \
             self.search_with_docs(np.array(self.embedding_model.embed_documents([query])), k, partition_names)
         return score_list, id_list, doc_list
@@ -243,6 +244,7 @@ class MilvusVecDB(VectorDBBase):
                                                    partition_name=partition_name)
 
     def _insert_data(self, nodes: list):
+        # milvus当前partition只分为两类
         partitions = ["text", "entity"]
         chunks = {}
         indexes = {}
@@ -257,7 +259,7 @@ class MilvusVecDB(VectorDBBase):
             node_info = data.get("info", None)
             if node_id is not None and node_info:
                 node_label = data.get("label", None)
-                if node_label and node_label in ["text", "table"]:
+                if node_label and node_label in ["text", "table", "summary"]:
                     indexes["text"].append(node_id)
                     chunks["text"].append(node_info)
                 else:
@@ -299,7 +301,8 @@ class GraphVecMindfaissDB(VectorDBBase):
         ids = []
         docs = []
         for entity in entity_list:
-            index, score, chunk = self.search_indexes(entity, 1)
+            partition_names = kwargs.get("partition_names")
+            index, score, chunk = self.search_indexes(entity, 1, partition_names)
             # 默认取top1
             scores.append(score[0])
             ids.append(index[0])
@@ -333,13 +336,16 @@ class GraphVecMindfaissDB(VectorDBBase):
                     searched_id.append(data.id)
             return [str(i) for i in searched_id], chunks
 
-    def search_indexes(self, query, k):
-        lables = ["text"]
+    def search_indexes(self, query, k, partition_names):
+        # ascendfaiss当前label类型有text、summary、file和entity
+        labels = partition_names
+        if not partition_names:
+            labels = ["text", "summary"]
         scores, ids = self.vec_store.search(np.array(self.embedding_model.embed_documents([query])), k)
         chunks = []
         with (self.session() as session):
             chunk_table = session.query(GraphChunkModel).filter(GraphChunkModel.id.in_(ids[0])
-                                                                ).filter(GraphChunkModel.label.in_(lables))
+                                                                ).filter(GraphChunkModel.label.in_(labels))
             if chunk_table.all():
                 for data in chunk_table.all():
                     chunks.append(data.chunk_content)

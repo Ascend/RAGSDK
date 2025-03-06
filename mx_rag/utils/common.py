@@ -407,3 +407,12 @@ def check_pathlib_path(path) -> bool:
     except Exception as e:
         logger.error(f"input path is illegal, exception: {str(e)}")
         return False
+
+
+def get_lang_param(input_param: dict) -> str:
+    if "lang" in input_param:
+        if not isinstance(input_param.get("lang"), str):
+            raise KeyError("lang param error, it should be str type")
+        if input_param.get("lang") not in ["zh", "en"]:
+            raise ValueError(f"lang param error, value must be in [zh, en]")
+    return input_param.get("lang", "zh")

@@ -56,7 +56,7 @@ class TestGvStore(unittest.TestCase):
         graph = PatchGraph()
         graph_vec_db.create_index(graph)
         graph_vec_db.get_data([0])
-        graph_vec_db.search_indexes("这是一个节点", k=3)
+        graph_vec_db.search_indexes("这是一个节点", 3, [])
 
 
 if __name__ == '__main__':

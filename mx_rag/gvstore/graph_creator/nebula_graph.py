@@ -76,8 +76,9 @@ class NebulaGraph(GraphCore):
         self.use_space(self.graph_name)
         self.add_nodes_and_edges(added_nodes, added_edges)
 
-    def search_indexes(self, query, k, **kwargs):
-        return self.vector_db.search_indexes(query, k, **kwargs)
+    def search_indexes(self, query, k):
+        # 此处partition_names为空，使用默认值，milvus是text，ascendfaiss是text和summary
+        return self.vector_db.search_indexes(query, k, [])
 
     def get_sub_graph(self, ids: list, nodes: list, level: int, **kwargs):
         if not nodes:
