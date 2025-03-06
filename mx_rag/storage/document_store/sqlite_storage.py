@@ -52,5 +52,8 @@ class SQLiteDocstore(Docstore):
     def search(self, chunk_id: int) -> Optional[MxDocument]:
         return self.doc_store.search(chunk_id)
 
-    def get_all_index_id(self) -> List[int]:
-        return self.doc_store.get_all_index_id()
+    def get_all_chunk_id(self) -> List[int]:
+        return self.doc_store.get_all_chunk_id()
+
+    def get_all_document_id(self) -> List[int]:
+        return self.doc_store.get_all_document_id()

@@ -82,10 +82,10 @@ class TestHelperDocStore(unittest.TestCase):
         retrieved_doc = self.docstore.search(999)  # Non-existent ID
         self.assertIsNone(retrieved_doc)
 
-    def test_get_all_index_id(self):
+    def test_get_all_chunk_id(self):
         doc_id = 1
         self.docstore.add(self.test_documents, doc_id)
-        ids = self.docstore.get_all_index_id()
+        ids = self.docstore.get_all_chunk_id()
         self.assertEqual(len(ids), len(self.test_documents))
 
     @patch("mx_rag.storage.document_store.helper_storage.logger")

@@ -146,11 +146,17 @@ class _DocStoreHelper(Docstore):
                 document_name=chunk.document_name
             )
 
-    def get_all_index_id(self) -> List[int]:
+    def get_all_chunk_id(self) -> List[int]:
         """获取所有chunk_id的生成器实现"""
         with self._transaction() as session:
             query = session.query(ChunkModel.chunk_id).yield_per(self.batch_size)
             return [chunk_id for (chunk_id,) in query]
+
+    def get_all_document_id(self) -> List[int]:
+        """获取所有document_id的生成器实现"""
+        with self._transaction() as session:
+            query = session.query(ChunkModel.document_id).yield_per(self.batch_size)
+            return [document_id for (document_id,) in query]
 
     @contextmanager
     def _transaction(self) -> Iterator[scoped_session]:

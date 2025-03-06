@@ -7,7 +7,7 @@ from pymilvus import MilvusClient, DataType
 from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import Docstore
 from mx_rag.storage.vectorstore import MilvusDB
-from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, KB
+from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, KB, MAX_PAGE_CONTENT
 
 
 class MilvusDocstore(Docstore):
@@ -91,15 +91,19 @@ class MilvusDocstore(Docstore):
             self.client.refresh_load(self.collection_name)
         return delete_count
 
-    def get_all_index_id(self):
-        res = self.client.query(self.collection_name, output_fields=["id"])
+    def get_all_chunk_id(self):
+        res = self.client.query(self.collection_name, filter="id == 0 or id != 0", output_fields=["id"])
         return [x.get("id") for x in res]
+
+    def get_all_document_id(self) -> List[int]:
+        res = self.client.query(self.collection_name, filter="id == 0 or id != 0", output_fields=["document_id"])
+        return [x.get("document_id") for x in res]
 
     def _create_collection(self):
         schema = MilvusClient.create_schema(auto_id=True, enable_dynamic_field=True)
         schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
         schema.add_field(field_name="document_id", datatype=DataType.INT64)
-        schema.add_field(field_name="page_content", datatype=DataType.VARCHAR, max_length=60 * KB)
+        schema.add_field(field_name="page_content", datatype=DataType.VARCHAR, max_length=MAX_PAGE_CONTENT)
         schema.add_field(field_name="document_name", datatype=DataType.VARCHAR, max_length=1024)
         schema.add_field(field_name="metadata", datatype=DataType.JSON)
         schema.add_field(field_name="sparse_vector", datatype=DataType.SPARSE_FLOAT_VECTOR)

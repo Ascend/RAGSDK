@@ -90,7 +90,9 @@ class TrainDataGenerator(BaseGenerator):
                             message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
                                     f"str length range [1, {STR_MAX_LEN}]"),
         data_process_config=dict(validator=lambda x: isinstance(x, DataProcessConfig),
-                                 message="param must be instance of DataProcessConfig")
+                                 message="param must be instance of DataProcessConfig"),
+        batch_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1024,
+                        message="param must meets: Type is int, length range (0, 1024]"),
     )
     def generate_train_data(self,
                             split_doc_list: list[str],

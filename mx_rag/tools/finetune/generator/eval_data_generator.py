@@ -30,6 +30,8 @@ class EvalDataGenerator(BaseGenerator):
                                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
         question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 20,
                              message="param must meets: Type is int, length range (0, 20]"),
+        batch_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1024,
+                        message="param must meets: Type is int, length range (0, 1024]"),
 
     )
     def generate_evaluate_data(self,

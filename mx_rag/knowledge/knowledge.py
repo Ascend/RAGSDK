@@ -333,7 +333,7 @@ class KnowledgeDB(KnowledgeBase):
         self._knowledge_store.delete_knowledge(self.knowledge_name, self.user_id)
 
     def _check_store_accordance(self) -> None:
-        chunk_ids = set(self._document_store.get_all_index_id())
+        chunk_ids = set(self._document_store.get_all_chunk_id())
         vec_ids = set(self._vector_store.get_all_ids())
         if chunk_ids != vec_ids:
             raise KnowledgeError("Vector store does not comply with the document store: different ids")
