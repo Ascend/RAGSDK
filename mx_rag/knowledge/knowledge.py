@@ -36,7 +36,7 @@ class KnowledgeModel(Base):
     member_id = Column(JSON, comment="成员id")
     create_time = Column(DateTime, comment="创建时间", default=datetime.datetime.utcnow)
     __table_args__ = (
-        UniqueConstraint('knowledge_name', 'user_id', 'member_id', name="knowledge_name"),
+        UniqueConstraint('knowledge_name', 'user_id', name="knowledge_name"),
         {"sqlite_autoincrement": True}
     )
 
@@ -91,9 +91,7 @@ class KnowledgeStore:
             try:
                 knowledge = session.query(KnowledgeModel
                                           ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
-                # print('5555555555555', knowledge.knowledge_name, knowledge.user_id)
                 if not knowledge:
-                    print('55555555555557')
                     knowledge_id = self.add_knowledge(knowledge_name, user_id)
                 knowledge_id = knowledge.knowledge_id if knowledge else knowledge_id
                 # 创建新的文档
@@ -164,11 +162,8 @@ class KnowledgeStore:
         with self.session() as session:
             knowledge = session.query(KnowledgeModel
                                       ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
-            # print('66666666666', knowledge.knowledge_name, knowledge.user_id)
             if knowledge:
-                print('77777777777777')
                 return session.query(DocumentModel).filter_by(knowledge_id=knowledge.knowledge_id).all()
-            print('8888888888888888888')
             return []
 
     @validate_params(
@@ -217,12 +212,10 @@ class KnowledgeStore:
             max_id = session.query(KnowledgeModel).with_entities(
                 func.max(KnowledgeModel.knowledge_id)).scalar() or 0
             knowledge_id = max_id + 1
-            print("22222222222222", knowledge_name, user_id, knowledge_id)
             knowledge_model = KnowledgeModel(knowledge_id=knowledge_id, member_id=member_id,
                                              knowledge_name=knowledge_name, user_id=user_id)
             session.add(knowledge_model)
             session.commit()
-            print("2222222222222211111111111", knowledge_id)
             return knowledge_id
 
     def add_member_id_to_knowledge(self, member_id, knowledge_name):
