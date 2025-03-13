@@ -4,7 +4,6 @@ import datetime
 import os
 import pathlib
 import re
-import threading
 from typing import List, Callable, Optional, NoReturn
 
 import numpy as np
@@ -82,7 +81,7 @@ class KnowledgeStore:
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
 
     )
-    def add(self, knowledge_name: str, doc_name: str, file_path: str, user_id: str):
+    def add_to_knowledge_table(self, knowledge_name: str, doc_name: str, file_path: str, user_id: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
@@ -121,7 +120,7 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def delete(self, knowledge_name: str, doc_name: str, user_id: str = "Default"):
+    def delete_from_knowledge_table(self, knowledge_name: str, doc_name: str, user_id: str = "Default"):
         with self.session() as session:
             try:
                 knowledge = session.query(KnowledgeModel
@@ -417,7 +416,7 @@ class KnowledgeDB(KnowledgeBase):
             raise KnowledgeError("Vector store does not comply with the document store: different ids")
 
     def _storage_and_vector_delete(self, doc_name: str):
-        document_id = self._knowledge_store.delete(self.knowledge_name, doc_name, self.user_id)
+        document_id = self._knowledge_store.delete_from_knowledge_table(self.knowledge_name, doc_name, self.user_id)
         if document_id is None:
             return
         ids = self._document_store.delete(document_id)
@@ -426,6 +425,6 @@ class KnowledgeDB(KnowledgeBase):
             logger.warning("the number of documents does not match the number of vectors")
 
     def _storage_and_vector_add(self, doc_name: str, file_path: str, documents: List, embeddings: List):
-        document_id = self._knowledge_store.add(self.knowledge_name, doc_name, file_path, self.user_id)
+        document_id = self._knowledge_store.add_to_knowledge_table(self.knowledge_name, doc_name, file_path, self.user_id)
         ids = self._document_store.add(documents, document_id)
         self._vector_store.add(np.array(embeddings), ids)
