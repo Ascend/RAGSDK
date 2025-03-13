@@ -9,7 +9,7 @@ from loguru import logger
 from pymilvus import MilvusClient, DataType
 from pymilvus.client.types import ExtraList
 
-from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy, SearchMode
+from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy, SearchMode, METRIC_TYPE
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.common import validata_list_str
 
@@ -51,27 +51,27 @@ class IndexParamsBuilder:
             params=params,
         )
 
-    def add_dense_index(self, similarity: Dict[str, Any], params: Dict[str, Any]):
+    def add_dense_index(self, index_type, metric_type, params: Dict[str, Any]):
         self.index_params.add_index(
             field_name="vector",
             index_name="dense_index",
-            index_type=similarity.get("index"),
-            metric_type=similarity.get("metric"),
+            index_type=index_type if index_type is not None else "FLAT",
+            metric_type=metric_type if metric_type is not None else "L2",
             params=params,
         )
 
     def build(self):
         return self.index_params
 
-    def prepare_index_params(self, similarity: Dict[str, Any], params: Dict[str, Any]):
+    def prepare_index_params(self, index_type, metric_type, params: Dict[str, Any]):
         # Build the index parameters based on search_mode
         if self.search_mode == SearchMode.DENSE:
-            self.add_dense_index(similarity, params)
+            self.add_dense_index(index_type, metric_type, params)
         elif self.search_mode == SearchMode.SPARSE:
             self.add_sparse_index(params)
         else:
             self.add_sparse_index(params.get("sparse", {}))
-            self.add_dense_index(similarity, params.get("dense", {}))
+            self.add_dense_index(index_type, metric_type, params.get("dense", {}))
 
         return self.build()
 
@@ -82,25 +82,10 @@ class MilvusDB(VectorStore):
     MAX_QUERY_LENGTH = 1000
     MAX_DICT_LENGTH = 100000
 
-    SIMILARITY_STRATEGY_MAP = {
-        SimilarityStrategy.FLAT_IP:
-            {
-                "index": "FLAT",
-                "metric": "IP",
-                "scale": lambda x: min(x, 1.0)
-            },
-        SimilarityStrategy.FLAT_L2:
-            {
-                "index": "FLAT",
-                "metric": "L2",
-                "scale": lambda x: max(1.0 - x / 2.0, 0.0),
-            },
-        SimilarityStrategy.FLAT_COS:
-            {
-                "index": "FLAT",
-                "metric": "COSINE",
-                "scale": lambda x: min(x, 1.0)
-            }
+    SCALE_MAP = {
+        "IP": lambda x: min(x, 1.0),
+        "L2": lambda x: max(1.0 - x / 2.0, 0.0),
+        "COSINE": lambda x: min(x, 1.0)
     }
 
     @validate_params(
@@ -110,15 +95,22 @@ class MilvusDB(VectorStore):
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
             message="param must be str and length range (0, 1024]"),
         search_mode=dict(validator=lambda x: isinstance(x, SearchMode),
-                         message="param must be instance of SearchMode")
+                         message="param must be instance of SearchMode"),
+        index_type=dict(validator=lambda x: x is None or isinstance(x, str),
+                        message="param must be none or instance of str"),
+        metric_type=dict(validator=lambda x: x is None or isinstance(x, str),
+                         message="param must be none or instance of str"),
     )
-    def __init__(self, client: MilvusClient, collection_name: str = "mxRag",
-                 search_mode: SearchMode = SearchMode.DENSE, auto_id=False):
+    def __init__(self, client: MilvusClient, collection_name: str = "rag_sdk",
+                 search_mode: SearchMode = SearchMode.DENSE, auto_id=False,
+                 index_type="FLAT", metric_type="L2"):
         super().__init__()
         self._client = client
         self._collection_name = collection_name
         self._search_mode = search_mode
         self._auto_id = auto_id
+        self._index_type = index_type
+        self._metric_type = metric_type
 
     @property
     def search_mode(self):
@@ -142,9 +134,14 @@ class MilvusDB(VectorStore):
         client = kwargs.pop("client")
         x_dim = kwargs.pop("x_dim", None)
 
-        ss = kwargs.pop("similarity_strategy", None)
-        if ss is not None and not isinstance(ss, SimilarityStrategy):
-            logger.error("param error: similarity_strategy must be SimilarityStrategy")
+        index_type = kwargs.pop("index_type", None)
+        if index_type is not None and index_type not in ("IVF_FLAT", "IVF_PQ", "HNSW"):
+            logger.error("param error: index_type must be one of [IVF_FLAT, IVF_PQ, HNSW]")
+            return None
+
+        metric_type = kwargs.pop("metric_type", None)
+        if metric_type is not None and metric_type not in ("IP", "L2", "COSINE"):
+            logger.error("param error: index_type must be one of [IP, L2, COSINE]")
             return None
 
         params = kwargs.pop("params", {})
@@ -156,10 +153,11 @@ class MilvusDB(VectorStore):
         search_mode = kwargs.pop("search_mode", SearchMode.DENSE)
         auto_id = kwargs.pop("auto_id", False)
 
-        milvus_db = MilvusDB(client, collection_name=collection_name, search_mode=search_mode, auto_id=auto_id)
+        milvus_db = MilvusDB(client, collection_name=collection_name, search_mode=search_mode,
+                             auto_id=auto_id, index_type=index_type, metric_type=metric_type)
 
         try:
-            milvus_db.create_collection(x_dim=x_dim, similarity_strategy=ss, params=params)
+            milvus_db.create_collection(x_dim=x_dim, params=params)
         except KeyError:
             logger.error("milvus create collection meet key error")
             milvus_db = None
@@ -177,18 +175,16 @@ class MilvusDB(VectorStore):
     @validate_params(
         x_dim=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
                    message="param value range (0, 1024 * 1024]"))
-    def create_collection(self, x_dim: Optional[int] = None,
-                          similarity_strategy: Optional[SimilarityStrategy] = None, params=None):
+    def create_collection(self, x_dim: Optional[int] = None, params=None):
         if (self.search_mode == SearchMode.DENSE or self.search_mode == SearchMode.HYBRID) and x_dim is None:
             raise MilvusError("x_dim can't be None in mode DENSE or HYBRID")
-        if similarity_strategy is None:
-            similarity_strategy = SimilarityStrategy.FLAT_IP
-        similarity = self.SIMILARITY_STRATEGY_MAP.get(similarity_strategy)
-        self.score_scale = similarity.get("scale")
+
+        metric_type = self._metric_type if not self._metric_type else "L2"
+        self.score_scale = self.SCALE_MAP.get(metric_type)
         if params is None:
             params = {}
         schema = self._create_schema(x_dim)
-        index_params = self._prepare_index_params(similarity, params)
+        index_params = self._prepare_index_params(params)
         self.client.create_collection(
             collection_name=self._collection_name,
             schema=schema,
@@ -305,9 +301,9 @@ class MilvusDB(VectorStore):
             return self._create_schema_sparse()
         return self._create_schema_hybrid(x_dim)
 
-    def _prepare_index_params(self, similarity, params):
+    def _prepare_index_params(self, params):
         builder = IndexParamsBuilder(self.client, self.search_mode)
-        return builder.prepare_index_params(similarity, params)
+        return builder.prepare_index_params(self._index_type, self._metric_type, params)
 
     def _init_insert_data(self, ids, docs, metadatas):
         data = [{"id": i} for i in ids]

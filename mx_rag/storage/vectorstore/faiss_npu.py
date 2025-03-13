@@ -14,7 +14,7 @@ from loguru import logger
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, \
-        MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024
+    MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024
 
 
 class MindFAISSError(Exception):
@@ -22,47 +22,41 @@ class MindFAISSError(Exception):
 
 
 class MindFAISS(VectorStore):
-    SIMILARITY_STRATEGY_MAP = {
-        SimilarityStrategy.FLAT_IP:
-            {
-                "index": ascendfaiss.AscendIndexFlat,
-                "metric": faiss.METRIC_INNER_PRODUCT,
-                "scale": lambda x: x if x <= 1.0 else 1.0
-            },
-        SimilarityStrategy.FLAT_L2:
-            {
-                "index": ascendfaiss.AscendIndexFlat,
-                "metric": faiss.METRIC_L2,
-                "scale": lambda x: (1.0 - x / 2.0) if x <= 2.0 else 0.0
-            },
-        # 归一化之后的COS距离 等于IP距离, 所以参数一致
-        SimilarityStrategy.FLAT_COS:
-            {
-                "index": ascendfaiss.AscendIndexFlat,
-                "metric": faiss.METRIC_INNER_PRODUCT,
-                "scale": lambda x: x if x <= 1.0 else 1.0
-            }
+    SCALE_MAP = {
+        "IP": lambda x: min(x, 1.0),
+        "L2": lambda x: max(1.0 - x / 2.0, 0.0),
+        "COSINE": lambda x: min(x, 1.0)
+    }
+
+    INDEX_STRATEGY_MAP = {
+        "IP": faiss.METRIC_INNER_PRODUCT,
+        "L2":  faiss.METRIC_L2,
+        "COSINE": faiss.METRIC_INNER_PRODUCT,
     }
 
     @validate_params(
         x_dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_VEC_DIM,
                    message="param must be int and value range (0, 1024 * 1024]"),
-        similarity_strategy=dict(
-            validator=lambda x: isinstance(x, SimilarityStrategy) and x in MindFAISS.SIMILARITY_STRATEGY_MAP,
-            message="param must be enum of SimilarityStrategy"),
         auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         load_local_index=dict(
-            validator=lambda x: isinstance(x, str) and len(x) <= MAX_PATH_LENGTH, message=STR_LENGTH_CHECK_1024)
+            validator=lambda x: isinstance(x, str) and len(x) <= MAX_PATH_LENGTH, message=STR_LENGTH_CHECK_1024),
+        index_type=dict(validator=lambda x: isinstance(x, str) and x in ("FLAT",),
+                        message="param must be str and in [FLAT]"),
+        metric_type=dict(validator=lambda x: isinstance(x, str) and x in ("IP", "L2", "COSINE"),
+                         message="param must be str and in [IP, L2, COSINE]"),
     )
     def __init__(
             self,
             x_dim: int,
-            similarity_strategy: SimilarityStrategy,
             devs: List[int],
             load_local_index: str,
+            index_type="FLAT",
+            metric_type="L2",
             auto_save: bool = True
     ):
         super().__init__()
+        self.index_type = index_type
+        self.metric_type = metric_type
         self.devs = devs
         self.device = ascendfaiss.IntVector()
         if not isinstance(devs, list) or not devs:
@@ -73,17 +67,17 @@ class MindFAISS(VectorStore):
             self.device.push_back(d)
         self.auto_save = auto_save
         self.load_local_index = load_local_index
-        similarity = self.SIMILARITY_STRATEGY_MAP.get(similarity_strategy, None)
-        if similarity is None:
-            raise MindFAISSError(f"Unsupported similarity strategy: {similarity_strategy}")
         FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
         FileCheck.check_filename_valid(self.load_local_index)
+
+        self.score_scale = self.SCALE_MAP.get(self.metric_type)
+
         if os.path.exists(self.load_local_index):
             logger.info(f"Loading index from local index file: '{self.load_local_index}'")
             try:
                 cpu_index = faiss.read_index(self.load_local_index)
                 self.index = ascendfaiss.index_cpu_to_ascend(self.device, cpu_index)
-                self.score_scale = similarity.get("scale", None)
+
             except FileCheckError as fc_error:
                 logger.error(f"Invalid local index file: {fc_error}")
                 raise MindFAISSError(f"Failed to load index: {fc_error}") from fc_error
@@ -92,12 +86,11 @@ class MindFAISS(VectorStore):
                 raise MindFAISSError(f"Failed to load index: {err}") from err
             return  # 成功加载本地索引
         try:
-            ascend_index_creator = similarity.get("index")
-            ascend_index_metrics = similarity.get("metric")
+            ascend_index_metrics = self.INDEX_STRATEGY_MAP.get(self.metric_type)
             config = ascendfaiss.AscendIndexFlatConfig(self.device)
             # 根据提供的策略创建索引
-            self.index = ascend_index_creator(x_dim, ascend_index_metrics, config)
-            self.score_scale = similarity.get("scale", None)
+            self.index = ascendfaiss.AscendIndexFlat(x_dim, ascend_index_metrics, config)
+
         except Exception as err:
             raise MindFAISSError(f"init index failed, {err}") from err
 
