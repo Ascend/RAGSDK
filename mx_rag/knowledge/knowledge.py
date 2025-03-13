@@ -285,13 +285,11 @@ class KnowledgeStore:
 
             if knowledge.member_id is None:
                 knowledge.member_id = []
-            print('aaaa111111111111', knowledge.member_id)
             members_deleted = False
             updated_member_id = knowledge.member_id.copy()
             for mid in member_id:
                 if mid in updated_member_id:
                     updated_member_id.remove(mid)
-                    print('aaaa111111111111', updated_member_id)
                     members_deleted = True
                     logger.info(f"successfully deleted member_id {member_id} from knowledge {knowledge_name}")
 
