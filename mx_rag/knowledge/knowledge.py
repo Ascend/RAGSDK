@@ -10,7 +10,7 @@ from typing import List, Callable, Optional, NoReturn
 import numpy as np
 import sqlalchemy
 from loguru import logger
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, UniqueConstraint, func
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, UniqueConstraint, func, JSON
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 
@@ -25,6 +25,7 @@ from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 Base = declarative_base()
 
 
+
 class KnowledgeModel(Base):
     __tablename__ = "knowledge_table"
 
@@ -32,9 +33,10 @@ class KnowledgeModel(Base):
     knowledge_id = Column(Integer, autoincrement=True, nullable=False)
     knowledge_name = Column(String, comment="知识库名称")
     user_id = Column(String, comment="用户id")
+    member_id = Column(JSON, comment="成员id")
     create_time = Column(DateTime, comment="创建时间", default=datetime.datetime.utcnow)
     __table_args__ = (
-        UniqueConstraint('knowledge_name', 'user_id', name="knowledge_name"),
+        UniqueConstraint('knowledge_name', 'user_id', 'member_id', name="knowledge_name"),
         {"sqlite_autoincrement": True}
     )
 
@@ -76,7 +78,7 @@ class KnowledgeStore:
                       message=STR_TYPE_CHECK_TIP_1024),
         file_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                        message=STR_TYPE_CHECK_TIP_1024),
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
+        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
 
     )
@@ -89,15 +91,11 @@ class KnowledgeStore:
             try:
                 knowledge = session.query(KnowledgeModel
                                           ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+                # print('5555555555555', knowledge.knowledge_name, knowledge.user_id)
                 if not knowledge:
-                    max_id = session.query(KnowledgeModel).with_entities(
-                        func.max(KnowledgeModel.knowledge_id)).scalar() or 0
-                    knowledge_id = max_id + 1
-                    knowledge_model = KnowledgeModel(knowledge_id=knowledge_id,
-                                                     knowledge_name=knowledge_name, user_id=user_id)
-                    session.add(knowledge_model)
-                    session.flush()
-                knowledge_id = knowledge.knowledge_id if knowledge else knowledge_model.knowledge_id
+                    print('55555555555557')
+                    knowledge_id = self.add_knowledge(knowledge_name, user_id)
+                knowledge_id = knowledge.knowledge_id if knowledge else knowledge_id
                 # 创建新的文档
                 document_model = DocumentModel(knowledge_id=knowledge_id, knowledge_name=knowledge_name,
                                                document_name=doc_name, document_file_path=file_path)
@@ -166,8 +164,11 @@ class KnowledgeStore:
         with self.session() as session:
             knowledge = session.query(KnowledgeModel
                                       ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+            # print('66666666666', knowledge.knowledge_name, knowledge.user_id)
             if knowledge:
+                print('77777777777777')
                 return session.query(DocumentModel).filter_by(knowledge_id=knowledge.knowledge_id).all()
+            print('8888888888888888888')
             return []
 
     @validate_params(
@@ -208,6 +209,110 @@ class KnowledgeStore:
             session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, user_id=user_id).delete()
             session.commit()
             logger.debug(f"success delete (knowledge_name={knowledge_name}, user_id={user_id}) in knowledge_table.")
+
+    def add_knowledge(self, knowledge_name, user_id, member_id=None):
+        if member_id is None:
+            member_id = []
+        with self.session() as session:
+            max_id = session.query(KnowledgeModel).with_entities(
+                func.max(KnowledgeModel.knowledge_id)).scalar() or 0
+            knowledge_id = max_id + 1
+            print("22222222222222", knowledge_name, user_id, knowledge_id)
+            knowledge_model = KnowledgeModel(knowledge_id=knowledge_id, member_id=member_id,
+                                             knowledge_name=knowledge_name, user_id=user_id)
+            session.add(knowledge_model)
+            session.commit()
+            print("2222222222222211111111111", knowledge_id)
+            return knowledge_id
+
+    def add_member_id_to_knowledge(self, member_id, knowledge_name):
+        if isinstance(member_id, str):
+            member_id = [member_id]
+        try:
+            with self.session() as session:
+                knowledge = session.query(KnowledgeModel
+                                          ).filter_by(knowledge_name=knowledge_name).first()
+                if not knowledge:
+                    raise KnowledgeError(f"(knowledge_name={knowledge_name}, member_id={member_id})"
+                                         f" does not exist in knowledge_table")
+                if knowledge.member_id is None:
+                    knowledge.member_id = []
+                new_members_added = False
+                updated_member_id = knowledge.member_id.copy()
+                for mid in member_id:
+                    if mid not in updated_member_id:
+                        updated_member_id.append(mid)
+                        new_members_added = True
+                        logger.info(f"successfully added member_id {mid} to knowledge {knowledge_name}")
+
+                if new_members_added:
+                    knowledge.member_id = updated_member_id
+                    session.commit()
+
+        except sqlalchemy.exc.IntegrityError as e:
+            logger.error(f"failed to add, the {member_id} to {knowledge_name} "
+                         f"have same member_id in {knowledge_name}")
+            raise KnowledgeError(f"failed to add {member_id} to {knowledge_name}") from e
+        except Exception as e:
+            raise KnowledgeError(f"failed to add {member_id} to {knowledge_name}") from e
+
+    @validate_params(
+        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'"),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024)
+    )
+    def delete_usr_id_from_knowledge(self, user_id, knowledge_name):
+        with self.session() as session:
+            knowledge = session.query(KnowledgeModel
+                                      ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+            if not knowledge:
+                raise KnowledgeError(f"(user_id={user_id}, knowledge_name={knowledge_name})"
+                                     f" does not exist in knowledge_table")
+
+            knowledges = session.query(KnowledgeModel
+                                       ).filter_by(knowledge_id=knowledge.knowledge_id).all()
+            if len(knowledges) == 1:
+                raise KnowledgeError(
+                    f"The knowledge {knowledge_name} now only belongs to user {user_id}, not support delete. "
+                    f"please use KnowledgeDB.delete_knowledge to clear, that operation will delete all documents "
+                    f"of {knowledge_name}, and the vector database.")
+            session.delete(knowledge)
+            session.commit()
+
+    def delete_member_from_knowledge(self, member_id, knowledge_name):
+        if isinstance(member_id, str):
+            member_id = [member_id]
+        with self.session() as session:
+            knowledge = session.query(KnowledgeModel
+                                      ).filter_by(knowledge_name=knowledge_name).first()
+            if not knowledge:
+                raise KnowledgeError(f"(member_id={member_id}, knowledge_name={knowledge_name}) "
+                                     f"does not exist in knowledge_table")
+
+            if knowledge.member_id is None:
+                knowledge.member_id = []
+            print('aaaa111111111111', knowledge.member_id)
+            members_deleted = False
+            updated_member_id = knowledge.member_id.copy()
+            for mid in member_id:
+                if mid in updated_member_id:
+                    updated_member_id.remove(mid)
+                    print('aaaa111111111111', updated_member_id)
+                    members_deleted = True
+                    logger.info(f"successfully deleted member_id {member_id} from knowledge {knowledge_name}")
+
+            if members_deleted:
+                knowledge.member_id = updated_member_id
+                session.commit()
+
+    def check_knowledge_exist(self, knowledge_name: str) -> bool:
+        return knowledge_name in self.get_all_knowledge_name()
+
+    def get_all_knowledge_name(self, user_id: str):
+        knowledge_list = self.get_all_knowledge_by_user_id(user_id)
+        knowledge_name_list = [knowledge.knowledge_name for knowledge in knowledge_list]
+        return knowledge_name_list
 
 
 def _check_metadatas(metadatas) -> bool:
@@ -314,24 +419,6 @@ class KnowledgeDB(KnowledgeBase):
     def check_document_exist(self, doc_name: str) -> bool:
         return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name, self.user_id)
 
-    def get_all_knowledge_name(self):
-        knowledge_list = self._knowledge_store.get_all_knowledge_by_user_id(self.user_id)
-        knowledge_name_list = [knowledge.knowledge_name for knowledge in knowledge_list]
-        return knowledge_name_list
-
-    @validate_params(
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
-                            message=STR_TYPE_CHECK_TIP_1024)
-    )
-    def check_knowledge_exist(self, knowledge_name: str) -> bool:
-        return knowledge_name in self.get_all_knowledge_name()
-
-    def delete_knowledge(self):
-        documents = [document.document_name for document in self.get_all_documents()]
-        for document in documents:
-            self._storage_and_vector_delete(document)
-        self._knowledge_store.delete_knowledge(self.knowledge_name, self.user_id)
-
     def _check_store_accordance(self) -> None:
         chunk_ids = set(self._document_store.get_all_chunk_id())
         vec_ids = set(self._vector_store.get_all_ids())
@@ -351,72 +438,3 @@ class KnowledgeDB(KnowledgeBase):
         document_id = self._knowledge_store.add(self.knowledge_name, doc_name, file_path, self.user_id)
         ids = self._document_store.add(documents, document_id)
         self._vector_store.add(np.array(embeddings), ids)
-
-
-class KnowledgeMgrStore:
-    FREE_SPACE_LIMIT = 200 * 1024 * 1024
-
-    @validate_params(
-        db_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
-                     message=STR_TYPE_CHECK_TIP_1024)
-    )
-    def __init__(self, db_path: str):
-        FileCheck.check_input_path_valid(db_path, check_blacklist=True)
-        FileCheck.check_filename_valid(db_path, MAX_SQLITE_FILE_NAME_LEN)
-        self.db_path = db_path
-        engine = create_engine(f"sqlite:///{db_path}")
-        self.session = scoped_session(sessionmaker(bind=engine))
-        Base.metadata.create_all(engine)
-        os.chmod(db_path, 0o600)
-
-    @validate_params(
-        user_id1=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'"),
-        user_id2=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'"),
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
-                            message=STR_TYPE_CHECK_TIP_1024)
-    )
-    def add_usr_id_to_knowledge(self, user_id1, user_id2, knowledge_name):
-        try:
-            with self.session() as session:
-                knowledge = session.query(KnowledgeModel
-                                          ).filter_by(knowledge_name=knowledge_name, user_id=user_id1).first()
-                if not knowledge:
-                    raise KnowledgeError(f"(user_id={user_id1}, knowledge_name={knowledge_name})"
-                                         f" does not exist in knowledge_table")
-
-                knowledge_model = KnowledgeModel(knowledge_name=knowledge_name, user_id=user_id2,
-                                                 knowledge_id=knowledge.knowledge_id)
-                session.add(knowledge_model)
-                session.commit()
-        except sqlalchemy.exc.IntegrityError as e:
-            logger.error(f"failed to add, the '{user_id1}' and '{user_id2}' "
-                         f"have same knowledge name '{knowledge_name}'")
-            raise KnowledgeError(f"failed to add '{knowledge_name}' to '{user_id2}'") from e
-        except Exception as e:
-            raise KnowledgeError(f"failed to add '{knowledge_name}' to '{user_id2}'") from e
-
-    @validate_params(
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'"),
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
-                            message=STR_TYPE_CHECK_TIP_1024)
-    )
-    def delete_usr_id_to_knowledge(self, user_id, knowledge_name):
-        with self.session() as session:
-            knowledge = session.query(KnowledgeModel
-                                      ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
-            if not knowledge:
-                raise KnowledgeError(f"(user_id={user_id}, knowledge_name={knowledge_name})"
-                                     f" does not exist in knowledge_table")
-
-            knowledges = session.query(KnowledgeModel
-                                       ).filter_by(knowledge_id=knowledge.knowledge_id).all()
-            if len(knowledges) == 1:
-                raise KnowledgeError(
-                    f"The knowledge {knowledge_name} now only belongs to user {user_id}, not support delete. "
-                    f"please use KnowledgeDB.delete_knowledge to clear, that operation will delete all documents "
-                    f"of {knowledge_name}, and the vector database.")
-            session.delete(knowledge)
-            session.commit()
