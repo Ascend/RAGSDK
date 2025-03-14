@@ -6,7 +6,7 @@ import numpy as np
 from pymilvus import MilvusClient
 
 from mx_rag.storage.vectorstore.milvus import MilvusError
-from mx_rag.storage.vectorstore.vectorstore import SimilarityStrategy, VectorStore, SearchMode
+from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
 from mx_rag.storage.vectorstore import MilvusDB
 
 
@@ -30,7 +30,6 @@ class TestMilvusDB(unittest.TestCase):
         self.dense_kwargs = dict(
             client=self.client,
             x_dim=1024,
-            similarity_strategy=SimilarityStrategy.FLAT_L2,
             collection_name="dense_collection"
         )
         self.sparse_kwargs = dict(

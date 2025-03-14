@@ -13,7 +13,6 @@ class TestMindFAISS(unittest.TestCase):
     def test_faiss(self):
         with patch("mx_rag.storage.vectorstore.faiss_npu.ascendfaiss") as ascendfaiss:
             with patch("mx_rag.storage.vectorstore.faiss_npu.faiss") as faiss:
-                from mx_rag.storage.vectorstore.vectorstore import SimilarityStrategy
 
                 total = np.random.random((3, 1024))
                 query = np.array([total[0]])
@@ -27,23 +26,23 @@ class TestMindFAISS(unittest.TestCase):
                 os.chmod = MagicMock()
 
                 with self.assertRaises(KeyError):
-                    index = MindFAISS.create(similarity_strategy=SimilarityStrategy.FLAT_L2, devs=[0],
+                    index = MindFAISS.create(devs=[0],
                                              load_local_index="./faiss.index")
                 with self.assertRaises(KeyError):
                     index = MindFAISS.create(x_dim=1024, devs=[0], load_local_index="./faiss.index")
                 with self.assertRaises(KeyError):
-                    index = MindFAISS.create(x_dim=1024, similarity_strategy=SimilarityStrategy.FLAT_L2,
+                    index = MindFAISS.create(x_dim=1024,
                                              load_local_index="./faiss.index")
                 with self.assertRaises(KeyError):
-                    index = MindFAISS.create(x_dim=1024, similarity_strategy=SimilarityStrategy.FLAT_L2, devs=[0])
+                    index = MindFAISS.create(x_dim=1024, devs=[0])
                 with self.assertRaises(MindFAISSError):
-                    index = MindFAISS(x_dim=1024, similarity_strategy=SimilarityStrategy.FLAT_L2, devs=0,
+                    index = MindFAISS(x_dim=1024, devs=0,
                                       load_local_index="./faiss.index")
                 with self.assertRaises(MindFAISSError):
-                    index = MindFAISS.create(x_dim=1024, similarity_strategy=SimilarityStrategy.FLAT_L2, devs=[0, 1],
+                    index = MindFAISS.create(x_dim=1024, devs=[0, 1],
                                              load_local_index="./faiss.index")
 
-                index = MindFAISS.create(x_dim=1024, similarity_strategy=SimilarityStrategy.FLAT_L2, devs=[0],
+                index = MindFAISS.create(x_dim=1024, devs=[0],
                                          load_local_index="./faiss.index")
 
                 index.search(query, k=1)

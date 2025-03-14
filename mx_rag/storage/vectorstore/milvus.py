@@ -9,7 +9,7 @@ from loguru import logger
 from pymilvus import MilvusClient, DataType
 from pymilvus.client.types import ExtraList
 
-from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy, SearchMode, METRIC_TYPE
+from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.common import validata_list_str
 
@@ -55,8 +55,8 @@ class IndexParamsBuilder:
         self.index_params.add_index(
             field_name="vector",
             index_name="dense_index",
-            index_type=index_type if index_type is not None else "FLAT",
-            metric_type=metric_type if metric_type is not None else "L2",
+            index_type=index_type,
+            metric_type=metric_type,
             params=params,
         )
 
@@ -96,14 +96,14 @@ class MilvusDB(VectorStore):
             message="param must be str and length range (0, 1024]"),
         search_mode=dict(validator=lambda x: isinstance(x, SearchMode),
                          message="param must be instance of SearchMode"),
-        index_type=dict(validator=lambda x: x is None or isinstance(x, str),
-                        message="param must be none or instance of str"),
-        metric_type=dict(validator=lambda x: x is None or isinstance(x, str),
-                         message="param must be none or instance of str"),
+        index_type=dict(validator=lambda x: isinstance(x, str) and x in ("IVF_FLAT", "IVF_PQ", "HNSW"),
+                        message="param must str and one of [IVF_FLAT, IVF_PQ, HNSW]"),
+        metric_type=dict(validator=lambda x: isinstance(x, str) and x in ("IP", "L2", "COSINE"),
+                         message="param must str and one of  [IP, L2, COSINE]"),
     )
     def __init__(self, client: MilvusClient, collection_name: str = "rag_sdk",
                  search_mode: SearchMode = SearchMode.DENSE, auto_id=False,
-                 index_type="FLAT", metric_type="L2"):
+                 index_type: str = "HNSW", metric_type: str = "IP"):
         super().__init__()
         self._client = client
         self._collection_name = collection_name
@@ -134,14 +134,14 @@ class MilvusDB(VectorStore):
         client = kwargs.pop("client")
         x_dim = kwargs.pop("x_dim", None)
 
-        index_type = kwargs.pop("index_type", None)
-        if index_type is not None and index_type not in ("IVF_FLAT", "IVF_PQ", "HNSW"):
+        index_type = kwargs.pop("index_type", "HNSW")
+        if index_type not in ("IVF_FLAT", "IVF_PQ", "HNSW"):
             logger.error("param error: index_type must be one of [IVF_FLAT, IVF_PQ, HNSW]")
             return None
 
-        metric_type = kwargs.pop("metric_type", None)
-        if metric_type is not None and metric_type not in ("IP", "L2", "COSINE"):
-            logger.error("param error: index_type must be one of [IP, L2, COSINE]")
+        metric_type = kwargs.pop("metric_type", "IP")
+        if metric_type not in ("IP", "L2", "COSINE"):
+            logger.error("param error: metric_type must be one of [IP, L2, COSINE]")
             return None
 
         params = kwargs.pop("params", {})

@@ -12,7 +12,7 @@ import numpy as np
 from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck, FileCheckError
-from mx_rag.storage.vectorstore.vectorstore import VectorStore, SimilarityStrategy
+from mx_rag.storage.vectorstore.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, \
     MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024
 
@@ -28,22 +28,27 @@ class MindFAISS(VectorStore):
         "COSINE": lambda x: min(x, 1.0)
     }
 
-    INDEX_STRATEGY_MAP = {
+    METRIC_MAP = {
         "IP": faiss.METRIC_INNER_PRODUCT,
         "L2":  faiss.METRIC_L2,
+        # 归一化之后的COS距离 等于IP距离, 所以参数一致
         "COSINE": faiss.METRIC_INNER_PRODUCT,
+    }
+
+    INDEX_MAP = {
+        "FLAT": ascendfaiss.AscendIndexFlat,
     }
 
     @validate_params(
         x_dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_VEC_DIM,
                    message="param must be int and value range (0, 1024 * 1024]"),
-        auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         load_local_index=dict(
             validator=lambda x: isinstance(x, str) and len(x) <= MAX_PATH_LENGTH, message=STR_LENGTH_CHECK_1024),
         index_type=dict(validator=lambda x: isinstance(x, str) and x in ("FLAT",),
                         message="param must be str and in [FLAT]"),
         metric_type=dict(validator=lambda x: isinstance(x, str) and x in ("IP", "L2", "COSINE"),
                          message="param must be str and in [IP, L2, COSINE]"),
+        auto_save=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
     )
     def __init__(
             self,
@@ -86,10 +91,11 @@ class MindFAISS(VectorStore):
                 raise MindFAISSError(f"Failed to load index: {err}") from err
             return  # 成功加载本地索引
         try:
-            ascend_index_metrics = self.INDEX_STRATEGY_MAP.get(self.metric_type)
+            ascend_index_creator = self.INDEX_MAP.get(self.index_type)
+            ascend_index_metrics = self.METRIC_MAP.get(self.metric_type)
             config = ascendfaiss.AscendIndexFlatConfig(self.device)
             # 根据提供的策略创建索引
-            self.index = ascendfaiss.AscendIndexFlat(x_dim, ascend_index_metrics, config)
+            self.index = ascend_index_creator(x_dim, ascend_index_metrics, config)
 
         except Exception as err:
             raise MindFAISSError(f"init index failed, {err}") from err
@@ -98,9 +104,6 @@ class MindFAISS(VectorStore):
     def create(**kwargs):
         if "x_dim" not in kwargs or not isinstance(kwargs.get("x_dim"), int):
             raise KeyError("x_dim param error. ")
-
-        if "similarity_strategy" not in kwargs or not isinstance(kwargs.get("similarity_strategy"), SimilarityStrategy):
-            raise KeyError("similarity_strategy param error. ")
 
         if "devs" not in kwargs or not isinstance(kwargs.get("devs"), List):
             raise KeyError("devs param error. ")
@@ -168,7 +171,7 @@ class MindFAISS(VectorStore):
         if embeddings.shape[0] != len(ids):
             raise MindFAISSError("Length of embeddings is not equal to number of ids")
         if len(ids) + self.index.ntotal >= self.MAX_VEC_NUM:
-            raise MindFAISSError(f"total num of ids/embeding is reach to limit {self.MAX_VEC_NUM}")
+            raise MindFAISSError(f"total num of ids/embedding is reach to limit {self.MAX_VEC_NUM}")
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
             logger.debug(f"success add {len(ids)} ids in MindFAISS.")

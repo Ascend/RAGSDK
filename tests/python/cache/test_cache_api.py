@@ -9,7 +9,6 @@ from gptcache import Cache
 
 from mx_rag.cache.cache_api.cache_init import _init_mxrag_cache
 from mx_rag.cache import CacheConfig, SimilarityCacheConfig
-from mx_rag.storage.vectorstore import SimilarityStrategy
 
 
 class TestCacheApi(unittest.TestCase):
@@ -46,7 +45,6 @@ class TestCacheApi(unittest.TestCase):
                 "vector_type": "npu_faiss_db",
                 "x_dim": dim,
                 "devs": [npu_dev],
-                "similarity_strategy": SimilarityStrategy.FLAT_L2
             },
             cache_config="sqlite",
             emb_config={

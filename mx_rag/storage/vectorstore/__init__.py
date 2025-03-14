@@ -4,7 +4,6 @@
 __all__ = [
     "MindFAISS",
     "VectorStore",
-    "SimilarityStrategy",
     "MilvusDB",
     "OpenGaussDB",
     "VectorStorageFactory",
@@ -12,7 +11,7 @@ __all__ = [
 ]
 
 from .faiss_npu import MindFAISS
-from .vectorstore import VectorStore, SimilarityStrategy, SearchMode
+from .vectorstore import VectorStore, SearchMode
 from .milvus import MilvusDB
 from .opengauss import OpenGaussDB
 from .vector_storage_factory import VectorStorageFactory

@@ -11,7 +11,6 @@ from sqlalchemy import text
 from mx_rag.storage.vectorstore.opengauss import (
     OpenGaussDB,
     SearchMode,
-    SimilarityStrategy,
     OpenGaussError,
     StorageError
 )
@@ -131,7 +130,7 @@ class TestOpenGaussDB(unittest.TestCase):
 
         # Test custom strategy
         db = OpenGaussDB(self.mock_engine)
-        db.create_collection(dense_dim=128, similarity_strategy=SimilarityStrategy.FLAT_COS)
+        db.create_collection(dense_dim=128)
         self.assertEqual(db.similarity["metric"], "vector_cosine_ops")
 
         # Test invalid strategy
@@ -235,7 +234,6 @@ class TestOpenGaussDB(unittest.TestCase):
                 engine=self.mock_engine,
                 collection_name="test",
                 dense_dim=128,
-                similarity_strategy=SimilarityStrategy.FLAT_IP
             )
             self.assertIsInstance(instance, OpenGaussDB)
             mock_create.assert_called_once()
