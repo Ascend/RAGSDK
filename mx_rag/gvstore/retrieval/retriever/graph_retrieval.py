@@ -31,7 +31,7 @@ class GraphRetriever(BaseRetriever):
 
     def graph_search(self, question, k, **kwargs):
         ids, docs = self.search_nodes(question, **kwargs)
-        return self.graph.get_sub_graph(ids, docs, k, **kwargs)
+        return self.graph.get_sub_graph(ids, docs, k)
 
     def search_nodes(self, question, **kwargs):
         # search entities by keywords

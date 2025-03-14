@@ -12,11 +12,11 @@ class KeywordsExtract:
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM")
     )
-    def __init__(self, llm: Text2TextLLM, **kwargs) -> None:
+    def __init__(self, llm: Text2TextLLM) -> None:
         self.llm = llm
         self.keyword_extract_prompt = PROMPTS["KEYWORDS_EXTRACT"]
 
-    def extract_keywords(self, question, **kwargs):
+    def extract_keywords(self, question):
         try:
             prompt = self.keyword_extract_prompt.format(text=question)
             result = self.llm.chat(prompt, llm_config=self.llm.llm_config)

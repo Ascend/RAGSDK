@@ -7,7 +7,7 @@ import networkx as nx
 from networkx import DiGraph
 
 from mx_rag.gvstore.graph_creator.lang import lang_dict, lang_zh
-from mx_rag.gvstore.util.utils import GraphUpdatedData
+from mx_rag.gvstore.util.utils import GraphUpdatedData, safe_read_graphml
 from mx_rag.utils.common import GRAPH_FILE_LIMIT, MAX_NODE_MUM, get_lang_param
 from mx_rag.utils.file_check import SecFileCheck
 
@@ -51,7 +51,7 @@ class GraphNX(GraphCore):
                 raise KeyError("graph param error, it should be DiGraph")
             self.graph = kwargs.get("graph")
         else:
-            self.graph = nx.read_graphml(graph_path)
+            self.graph = safe_read_graphml(graph_path)
         self.graph_path = graph_path
         self.graph_name = graph_name
         lang = get_lang_param(kwargs)
@@ -75,7 +75,7 @@ class GraphNX(GraphCore):
         return self.vector_db.search_indexes(query, k, [])
 
     # 图多跳处理
-    def get_sub_graph(self, ids, nodes, level, **kwargs):
+    def get_sub_graph(self, ids, nodes, level):
         seeds = set(ids)
         mem = set(nodes)
         # original contexts that contains expanded entities
