@@ -85,14 +85,11 @@ class KnowledgeStore:
             logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
         check_db_file_limit(self.db_path)
-        chunk = self.check_document_exist(knowledge_name, doc_name, user_id)
+        is_exist = self.check_document_exist(knowledge_name, doc_name, user_id)
         with self.session() as session:
             try:
-                if chunk:
-                    document_model = DocumentModel(knowledge_id=chunk.knowledge_id, knowledge_name=knowledge_name,
-                                                   document_name=doc_name)
-                    logger.debug(f"{doc_name} already exist in {knowledge_name}")
-                    return document_model.document_id
+                if is_exist:
+                    self.delete_doc_info(knowledge_name, doc_name, user_id)
 
                 knowledge = session.query(KnowledgeModel
                                           ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
@@ -193,7 +190,7 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def check_document_exist(self, knowledge_name: str, doc_name: str, user_id: str):
+    def check_document_exist(self, knowledge_name: str, doc_name: str, user_id: str) -> bool:
         with self.session() as session:
             # 同一个user_id下知识库名称不能重复
             knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
@@ -201,7 +198,7 @@ class KnowledgeStore:
                 return False
             chunk = session.query(DocumentModel).filter_by(
                 knowledge_id=knowledge.knowledge_id, document_name=doc_name).first()
-            return chunk
+            return chunk is not None
 
     @validate_params(
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
@@ -440,7 +437,7 @@ class KnowledgeDB(KnowledgeBase):
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def check_document_exist(self, doc_name: str) -> bool:
-        return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name, self.user_id) is not None
+        return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name, self.user_id)
 
     def _check_store_accordance(self) -> None:
         chunk_ids = set(self._document_store.get_all_chunk_id())
