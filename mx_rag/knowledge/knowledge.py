@@ -85,8 +85,15 @@ class KnowledgeStore:
             logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
         check_db_file_limit(self.db_path)
+        chunk = self.check_document_exist(knowledge_name, doc_name, user_id)
         with self.session() as session:
             try:
+                if chunk:
+                    document_model = DocumentModel(knowledge_id=chunk.knowledge_id, knowledge_name=knowledge_name,
+                                                   document_name=doc_name)
+                    logger.debug(f"{doc_name} already exist in {knowledge_name}")
+                    return document_model.document_id
+
                 knowledge = session.query(KnowledgeModel
                                           ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
                 if not knowledge:
@@ -156,7 +163,7 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def get_all(self, knowledge_name: str, user_id: str = None, member_id=None):
+    def get_all_documents_by_knowledge(self, knowledge_name: str, user_id: str = None, member_id=None):
         with self.session() as session:
             if user_id is not None:
                 knowledge = session.query(KnowledgeModel
@@ -186,7 +193,7 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def check_document_exist(self, knowledge_name: str, doc_name: str, user_id: str) -> bool:
+    def check_document_exist(self, knowledge_name: str, doc_name: str, user_id: str):
         with self.session() as session:
             # 同一个user_id下知识库名称不能重复
             knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
@@ -194,13 +201,13 @@ class KnowledgeStore:
                 return False
             chunk = session.query(DocumentModel).filter_by(
                 knowledge_id=knowledge.knowledge_id, document_name=doc_name).first()
-            return chunk is not None
+            return chunk
 
     @validate_params(
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def get_all_knowledge_by_id(self, user_id=None, member_id=None):
+    def get_all_knowledge_info(self, user_id=None, member_id=None):
         with self.session() as session:
             if user_id is not None:
                 knowledge_list = session.query(KnowledgeModel).filter_by(user_id=user_id).all()
@@ -324,7 +331,7 @@ class KnowledgeStore:
         return knowledge_name in self.get_all_knowledge_name(user_id, member_id)
 
     def get_all_knowledge_name(self, user_id: str, member_id: str = None) -> List[str]:
-        knowledge_list = self.get_all_knowledge_by_id(user_id, member_id)
+        knowledge_list = self.get_all_knowledge_info(user_id, member_id)
         knowledge_name_list = [knowledge.knowledge_name for knowledge in knowledge_list]
         return knowledge_name_list
 
@@ -391,7 +398,7 @@ class KnowledgeDB(KnowledgeBase):
 
     def get_all_documents(self):
         """获取当前已上传的所有文档"""
-        return self._knowledge_store.get_all(self.knowledge_name, self.user_id, self.member_id)
+        return self._knowledge_store.get_all_documents_by_knowledge(self.knowledge_name, self.user_id, self.member_id)
 
     @validate_params(
         file=dict(validator=lambda x: check_pathlib_path(x), message="param check failed, please see the log"),
@@ -433,7 +440,7 @@ class KnowledgeDB(KnowledgeBase):
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def check_document_exist(self, doc_name: str) -> bool:
-        return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name, self.user_id)
+        return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name, self.user_id) is not None
 
     def _check_store_accordance(self) -> None:
         chunk_ids = set(self._document_store.get_all_chunk_id())
