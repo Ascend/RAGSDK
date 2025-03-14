@@ -17,13 +17,13 @@ from mx_rag.gvstore.graph_creator.graph_create import GraphCreation
 from mx_rag.gvstore.graph_creator.nebula_graph import NebulaGraph
 from mx_rag.gvstore.graph_creator.vdb.vector_db import MilvusVecDB, GraphVecMindfaissDB
 from mx_rag.gvstore.retrieval.retriever.graph_retrieval import GraphRetriever
-from mx_rag.gvstore.util.utils import KgOprMode
+from mx_rag.gvstore.util.utils import KgOprMode, MAX_NAME_LENTH, check_graph_name
 from mx_rag.libs.glib.utils.file_utils import FileCreate
 from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker import Reranker
 from mx_rag.storage.vectorstore import MilvusDB, MindFAISS
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
-from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, get_lang_param
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, get_lang_param, validata_list_str
 from mx_rag.utils.file_check import FileCheck
 
 GRAPHDB_TYPE_CLASS = \
@@ -110,17 +110,19 @@ class KGEngine:
         return txt_files_contents
 
     @validate_params(
-        graph_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-                        message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]")
+        graph_name=dict(validator=lambda x: check_graph_name(x),
+                        message=f"param must be a str and its length meets (0, {MAX_NAME_LENTH}], "
+                                f"and only contains letters, _ and digits.")
     )
     def create_kg_graph(self, graph_name: str, **kwargs):
         if not self.contents:
             raise KGEngineError("please call upload_kg_files first")
         FileCheck.check_path_is_exist_and_valid(self.graphml_save_path, True, True)
         graphml_data_path = os.path.join(self.graphml_save_path, f"{graph_name}.graphml")
-        if "entity_types" in kwargs and not isinstance(kwargs.get("entity_types"), list):
-            raise KeyError("entity_types param error, it should be list[str] type")
-        entity_types = kwargs.pop("entity_types", None)
+        entity_types = kwargs.pop("entity_types", [])
+        if not validata_list_str(entity_types, [0, 1000], [1, 1000]):
+            raise KeyError("entity_types param error, it should be list[str], "
+                           "list length range [0, 1000], str length range [1, 1000]")
         kwargs["lang"] = self.lang
         graph_creation = GraphCreation(llm=self.llm, entity_types=entity_types, **kwargs)
         extract_graph_start_time = time.time()
@@ -137,8 +139,9 @@ class KGEngine:
         logger.info(f"Graph [{graph_name}] index takes:{index_end_time - index_start_time}")
 
     @validate_params(
-        graph_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-                        message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"),
+        graph_name=dict(validator=lambda x: check_graph_name(x),
+                        message=f"param must be a str and its length meets (0, {MAX_NAME_LENTH}], "
+                                f"and only contains letters, _ and digits."),
         opr_mode=dict(validator=lambda x: isinstance(x, KgOprMode),
                       message="param must be instance of KgOprMode")
     )
@@ -147,9 +150,10 @@ class KGEngine:
             raise KGEngineError("please call upload_kg_files first")
         FileCheck.check_path_is_exist_and_valid(self.graphml_save_path, True, True)
         graphml_data_path = os.path.join(self.graphml_save_path, f"{graph_name}.graphml")
-        if "entity_types" in kwargs and not isinstance(kwargs.get("entity_types"), list):
-            raise KeyError("entity_types param error, it should be list[str] type")
-        entity_types = kwargs.pop("entity_types", None)
+        entity_types = kwargs.pop("entity_types", [])
+        if not validata_list_str(entity_types, [0, 1000], [1, 1000]):
+            raise KeyError("entity_types param error, it should be list[str], "
+                           "list length range [0, 1000], str length range [1, 1000]")
         graph = networkx.read_graphml(graphml_data_path)
         current_node_id = len(graph.nodes.data())
         kwargs["lang"] = self.lang
@@ -168,8 +172,9 @@ class KGEngine:
         logger.info(f"Graph [{graph_name}] index takes:{index_end_time - index_start_time}")
 
     @validate_params(
-        graph_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-                        message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"),
+        graph_name=dict(validator=lambda x: check_graph_name(x),
+                        message=f"param must be a str and its length meets (0, {MAX_NAME_LENTH}], "
+                                f"and only contains letters, _ and digits."),
         question=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
                       message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]")
     )
@@ -178,8 +183,9 @@ class KGEngine:
         return retriever.invoke(question)
 
     @validate_params(
-        graph_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-                        message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]")
+        graph_name=dict(validator=lambda x: check_graph_name(x),
+                        message=f"param must be a str and its length meets (0, {MAX_NAME_LENTH}], "
+                                f"and only contains letters, _ and digits.")
     )
     def as_retriever(self, graph_name: str, **kwargs):
         kwargs["lang"] = self.lang
@@ -188,7 +194,7 @@ class KGEngine:
         graph_client = self._create_graph_client(graph_name, graphml_data_path, **kwargs)
         top_k = kwargs.pop("top_k", 5)
         k_hop = kwargs.pop("k_hop", 2)
-        retriever = GraphRetriever(graph_name=graph_name, graph=graph_client, top_k=top_k, khop=k_hop, llm=self.llm)
+        retriever = GraphRetriever(graph_name=graph_name, graph=graph_client, top_k=top_k, k_hop=k_hop, llm=self.llm)
         return retriever
 
     def _create_vector_db(self):

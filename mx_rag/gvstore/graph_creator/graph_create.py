@@ -8,12 +8,14 @@ from concurrent.futures import as_completed
 from loguru import logger
 import networkx as nx
 from networkx import DiGraph
+from tqdm import tqdm
+
 from mx_rag.gvstore.graph_creator.entity_filter import EntityFilter
 from mx_rag.gvstore.graph_creator.lang import lang_dict, lang_zh
 from mx_rag.gvstore.graph_creator.llm_extract import Extractor
-from mx_rag.gvstore.util.utils import KgOprMode, GraphUpdatedData
+from mx_rag.gvstore.util.utils import KgOprMode, GraphUpdatedData, safe_read_graphml
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import validate_params, validata_list_str, get_lang_param
+from mx_rag.utils.common import validate_params, get_lang_param
 
 ENTITY = "entity"
 TEXT = "text"
@@ -30,9 +32,7 @@ class GraphCreation:
         graph=dict(validator=lambda x: x is None or isinstance(x, DiGraph),
                    message="graph param must be None or instance of DiGraph"),
         current_id=dict(validator=lambda x: x is None or isinstance(x, int),
-                        message="current_id param must be None or int"),
-        entity_types=dict(validator=lambda x: x is None or validata_list_str(x, [1, 1000], [1, 1000]),
-                          message="entity_types param must be None or list[str]")
+                        message="current_id param must be None or int")
     )
     def __init__(self, llm: Text2TextLLM,
                  graph: DiGraph = None,
@@ -46,10 +46,9 @@ class GraphCreation:
         param2_invalid = graph is not None and current_id is None
         if param1_invalid or param2_invalid:
             raise ValueError("input parameter value error: graph or current_id invalid")
-        if ("thread_num" in kwargs and not isinstance(kwargs.get("thread_num"), int)
-                and not (0 < kwargs.get("thread_num") <= 20)):
-            raise KeyError("thread_num param error, it should be integer type, and range in [1, 20]")
         thread_num = kwargs.get("thread_num", 8)
+        if not (isinstance(thread_num, int) and 0 < thread_num <= 20):
+            raise KeyError("thread_num param error, it should be integer type, and range in [1, 20]")
         self.lang = get_lang_param(kwargs)
         self.llm = llm
         # 存储networkx图
@@ -99,22 +98,19 @@ class GraphCreation:
     def graph_create(self, graphml_save_path: str, parsed_file_contents: dict, **kwargs):
         self.file_contents = parsed_file_contents
         logger.info("Graph Process start.")
-        self._graph_process(graphml_save_path, {}, **kwargs)
+        self._graph_process(graphml_save_path, False, **kwargs)
 
     def graph_update(self, graphml_save_path: str, parsed_file_contents: dict, opr_mode: KgOprMode, **kwargs):
         self.file_contents = parsed_file_contents
-        entity_id_map = {}
-        for _, data in self.graph.nodes.data():
-            entity_id_map[data["info"]] = data["id"]
-        old_graph = nx.read_graphml(graphml_save_path)
-        self._graph_process(graphml_save_path, entity_id_map, **kwargs)
+        old_graph = safe_read_graphml(graphml_save_path)
+        self._graph_process(graphml_save_path, True, **kwargs)
         return self._diff_graph(opr_mode, old_graph, self.graph)
 
-    def _graph_process(self, graphml_save_path, entity_id_map, **kwargs):
+    def _graph_process(self, graphml_save_path, update_flag, **kwargs):
         kwargs.pop("lang")
         txt_graph_extract = TxtGraphExtract(self.file_contents, self.extractor, self.lang, llm=self.llm, **kwargs)
         logger.info("Graph extract start.")
-        txt_graph_extract.handle_extract(self.graph, self.current_id, entity_id_map, self.extract_workers)
+        txt_graph_extract.handle_extract(self.graph, self.current_id, update_flag, self.extract_workers)
         try:
             nx.write_graphml(self.graph, graphml_save_path)
         except ValueError as e:
@@ -188,20 +184,7 @@ class GraphExtract(ABC):
         """
         if not triplets_list:
             return current_id
-
-        def extract_head_tail(triplet_list):
-            result = []
-            for triplet in triplet_list:
-                if triplet:
-                    result.append(triplet[0])
-                    result.append(triplet[-1])
-            return list(set(result))
-
-        entity_list = extract_head_tail(triplets_list)
-        # 处理实体消岐逻辑
-        if self.entity_filter_flag:
-            entity_list = self.entity_filter.entity_disambiguation(triplets_list)
-
+        entity_list = self.entity_filter.entity_disambiguation(triplets_list, self.entity_filter_flag)
         # 存储头、尾实体节点（entity）、连边（relation）
         for triplet in triplets_list:
             head_entity, relation, tail_entity = triplet[0], triplet[1], triplet[2],
@@ -209,12 +192,13 @@ class GraphExtract(ABC):
             tail_entity_id, current_id = _update_entity_info(target_graph, tail_entity, entity_id_map, current_id)
             # head-tail连边、chunk-entity连边
             edge = target_graph.get_edge_data(head_entity_id, tail_entity_id)
+            # 考虑到本次的head和tail实体都检索到了已有实体，则先获取原有关系，并拼接增加本次关系
             if edge is not None:
                 relation = edge.get("name", "") + ", " + relation
             target_graph.add_edge(head_entity_id, tail_entity_id, name=str(relation))
             target_graph.add_edge(chunk_id, head_entity_id, name=self.lang_dict["include_entity"])
             target_graph.add_edge(chunk_id, tail_entity_id, name=self.lang_dict["include_entity"])
-
+        # 如果是消歧场景，entity_list是本次新增且无相似的实体列表，需要加入向量数据库。
         if self.entity_filter_flag:
             # 节点数据写入向量数据库
             id_list = [entity_id_map[entity] for entity in entity_list if entity in entity_id_map]
@@ -222,7 +206,7 @@ class GraphExtract(ABC):
             self.entity_filter.add_embedding(entity_list, id_list, partition_name="entity")
         return current_id
 
-    def handle_extract(self, graph: DiGraph, current_id: int, entity_id_map: dict,
+    def handle_extract(self, graph: DiGraph, current_id: int, update_flag: bool,
                        threadpool: concurrent.futures.ThreadPoolExecutor):
         pass
 
@@ -242,7 +226,8 @@ class GraphExtract(ABC):
         return summary, triplets_list, chunk_id
 
     def _update_graph_after_tasks(self, all_task, graph, entity_id_map, current_id, chunk_index_data):
-        for future in as_completed(all_task):
+
+        for future in tqdm(as_completed(all_task), total=len(all_task), desc="generating entities"):
             try:
                 summary, triplets_list, chunk_id = future.result()
             except Exception as e:
@@ -262,7 +247,12 @@ class GraphExtract(ABC):
 
 
 class TxtGraphExtract(GraphExtract):
-    def handle_extract(self, graph, current_id, entity_id_map, threadpool):
+    def handle_extract(self, graph, current_id, update_flag, threadpool):
+        entity_id_map = {}
+        # 如果是更新图，先从graph读取实体和id映射关系
+        if update_flag:
+            for _, data in graph.nodes.data():
+                entity_id_map[data["info"]] = data["id"]
         txt_files_contents = self.contexts
         node_id_map = defaultdict(lambda: None)
         chunk_index_data = {}
