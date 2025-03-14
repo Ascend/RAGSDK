@@ -81,7 +81,7 @@ class KnowledgeStore:
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
 
     )
-    def add_to_knowledge_table(self, knowledge_name: str, doc_name: str, file_path: str, user_id: str):
+    def add_doc_to_knowledge(self, knowledge_name: str, doc_name: str, file_path: str, user_id: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
@@ -157,10 +157,24 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def get_all(self, knowledge_name: str, user_id: str):
+    def get_all(self, knowledge_name: str, user_id: str = None, member_id=None):
         with self.session() as session:
-            knowledge = session.query(KnowledgeModel
-                                      ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+            if user_id is not None:
+                knowledge = session.query(KnowledgeModel
+                                          ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+            if knowledge is None:
+                logger.debug(f"(knowledge_name={knowledge_name}, user_id={user_id}) does not exist in knowledge_table")
+            if member_id is not None:
+                knowledge = session.query(KnowledgeModel
+                                          ).filter_by(knowledge_name=knowledge_name).first()
+                if knowledge and knowledge.member_id is not None and member_id not in knowledge.member_id:
+                    knowledge = None
+                    logger.debug(f"(knowledge_name={knowledge_name}, member_id={member_id}) "
+                                 f"does not exist in knowledge_table")
+                elif knowledge and knowledge.member_id is None:
+                    knowledge = None
+                    logger.debug(f"(knowledge_name={knowledge_name}, member_id={member_id}) "
+                                 f"does not exist in knowledge_table")
             if knowledge:
                 return session.query(DocumentModel).filter_by(knowledge_id=knowledge.knowledge_id).all()
             return []
@@ -187,9 +201,13 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def get_all_knowledge_by_user_id(self, user_id):
+    def get_all_knowledge_by_user_id(self, user_id=None, member_id=None):
         with self.session() as session:
-            knowledge_list = session.query(KnowledgeModel).filter_by(user_id=user_id).all()
+            if user_id is not None:
+                knowledge_list = session.query(KnowledgeModel).filter_by(user_id=user_id).all()
+            if member_id is not None:
+                knowledge_list = session.query(KnowledgeModel).filter(
+                    KnowledgeModel.member_id.contains([member_id])).all()
         return knowledge_list or []
 
     @validate_params(
@@ -217,13 +235,12 @@ class KnowledgeStore:
             session.commit()
             return knowledge_id
 
-    def add_member_id_to_knowledge(self, member_id, knowledge_name):
+    def add_member_id_to_knowledge(self, knowledge_name, member_id):
         if isinstance(member_id, str):
             member_id = [member_id]
         try:
             with self.session() as session:
-                knowledge = session.query(KnowledgeModel
-                                          ).filter_by(knowledge_name=knowledge_name).first()
+                knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name).first()
                 if not knowledge:
                     raise KnowledgeError(f"(knowledge_name={knowledge_name}, member_id={member_id})"
                                          f" does not exist in knowledge_table")
@@ -299,8 +316,8 @@ class KnowledgeStore:
     def check_knowledge_exist(self, knowledge_name: str) -> bool:
         return knowledge_name in self.get_all_knowledge_name()
 
-    def get_all_knowledge_name(self, user_id: str):
-        knowledge_list = self.get_all_knowledge_by_user_id(user_id)
+    def get_all_knowledge_name(self, user_id: str, member_id: str = None) -> List[str]:
+        knowledge_list = self.get_all_knowledge_by_user_id(user_id, member_id)
         knowledge_name_list = [knowledge.knowledge_name for knowledge in knowledge_list]
         return knowledge_name_list
 
@@ -347,6 +364,7 @@ class KnowledgeDB(KnowledgeBase):
             white_paths: List[str],
             max_file_count: int = 1000,
             user_id: str = "Default",
+            member_id: Optional[List[str]] = None,
             lock=None
     ):
         super().__init__(white_paths)
@@ -356,6 +374,7 @@ class KnowledgeDB(KnowledgeBase):
         self.max_file_count = max_file_count
         self.knowledge_name = knowledge_name
         self.user_id = user_id
+        self.member_id = member_id
         self.lock = lock
         if self.lock:
             with self.lock:
@@ -365,7 +384,7 @@ class KnowledgeDB(KnowledgeBase):
 
     def get_all_documents(self):
         """获取当前已上传的所有文档"""
-        return self._knowledge_store.get_all(self.knowledge_name, self.user_id)
+        return self._knowledge_store.get_all(self.knowledge_name, self.user_id, self.member_id)
 
     @validate_params(
         file=dict(validator=lambda x: check_pathlib_path(x), message="param check failed, please see the log"),
@@ -425,6 +444,6 @@ class KnowledgeDB(KnowledgeBase):
             logger.warning("the number of documents does not match the number of vectors")
 
     def _storage_and_vector_add(self, doc_name: str, file_path: str, documents: List, embeddings: List):
-        document_id = self._knowledge_store.add_to_knowledge_table(self.knowledge_name, doc_name, file_path, self.user_id)
+        document_id = self._knowledge_store.add_doc_to_knowledge(self.knowledge_name, doc_name, file_path, self.user_id)
         ids = self._document_store.add(documents, document_id)
         self._vector_store.add(np.array(embeddings), ids)
