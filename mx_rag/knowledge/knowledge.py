@@ -24,7 +24,6 @@ from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 Base = declarative_base()
 
 
-
 class KnowledgeModel(Base):
     __tablename__ = "knowledge_table"
 
@@ -81,7 +80,7 @@ class KnowledgeStore:
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
 
     )
-    def add_doc_to_knowledge(self, knowledge_name: str, doc_name: str, file_path: str, user_id: str):
+    def add_doc_info(self, knowledge_name: str, doc_name: str, file_path: str, user_id: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
@@ -120,7 +119,7 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def delete_from_knowledge_table(self, knowledge_name: str, doc_name: str, user_id: str = "Default"):
+    def delete_doc_info(self, knowledge_name: str, doc_name: str, user_id: str = "Default"):
         with self.session() as session:
             try:
                 knowledge = session.query(KnowledgeModel
@@ -201,7 +200,7 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
     )
-    def get_all_knowledge_by_user_id(self, user_id=None, member_id=None):
+    def get_all_knowledge_by_id(self, user_id=None, member_id=None):
         with self.session() as session:
             if user_id is not None:
                 knowledge_list = session.query(KnowledgeModel).filter_by(user_id=user_id).all()
@@ -225,7 +224,15 @@ class KnowledgeStore:
     def add_knowledge(self, knowledge_name, user_id, member_id=None):
         if member_id is None:
             member_id = []
+        is_exist = self.check_knowledge_exist(knowledge_name=knowledge_name, user_id=user_id)
+
         with self.session() as session:
+            if is_exist:
+                knowledge_model = KnowledgeModel(knowledge_name=knowledge_name, user_id=user_id)
+                logger.debug(f"(knowledge_name={knowledge_name}, user_id={user_id}) "
+                             f"already exist in knowledge_table")
+                return knowledge_model.knowledge_id
+
             max_id = session.query(KnowledgeModel).with_entities(
                 func.max(KnowledgeModel.knowledge_id)).scalar() or 0
             knowledge_id = max_id + 1
@@ -289,7 +296,7 @@ class KnowledgeStore:
             session.delete(knowledge)
             session.commit()
 
-    def delete_member_from_knowledge(self, member_id, knowledge_name):
+    def delete_member_from_knowledge(self, knowledge_name, member_id):
         if isinstance(member_id, str):
             member_id = [member_id]
         with self.session() as session:
@@ -313,11 +320,11 @@ class KnowledgeStore:
                 knowledge.member_id = updated_member_id
                 session.commit()
 
-    def check_knowledge_exist(self, knowledge_name: str) -> bool:
-        return knowledge_name in self.get_all_knowledge_name()
+    def check_knowledge_exist(self, knowledge_name: str, user_id: str, member_id: str = None) -> bool:
+        return knowledge_name in self.get_all_knowledge_name(user_id, member_id)
 
     def get_all_knowledge_name(self, user_id: str, member_id: str = None) -> List[str]:
-        knowledge_list = self.get_all_knowledge_by_user_id(user_id, member_id)
+        knowledge_list = self.get_all_knowledge_by_id(user_id, member_id)
         knowledge_name_list = [knowledge.knowledge_name for knowledge in knowledge_list]
         return knowledge_name_list
 
@@ -435,7 +442,7 @@ class KnowledgeDB(KnowledgeBase):
             raise KnowledgeError("Vector store does not comply with the document store: different ids")
 
     def _storage_and_vector_delete(self, doc_name: str):
-        document_id = self._knowledge_store.delete_from_knowledge_table(self.knowledge_name, doc_name, self.user_id)
+        document_id = self._knowledge_store.delete_doc_info(self.knowledge_name, doc_name, self.user_id)
         if document_id is None:
             return
         ids = self._document_store.delete(document_id)
@@ -444,6 +451,6 @@ class KnowledgeDB(KnowledgeBase):
             logger.warning("the number of documents does not match the number of vectors")
 
     def _storage_and_vector_add(self, doc_name: str, file_path: str, documents: List, embeddings: List):
-        document_id = self._knowledge_store.add_doc_to_knowledge(self.knowledge_name, doc_name, file_path, self.user_id)
+        document_id = self._knowledge_store.add_doc_info(self.knowledge_name, doc_name, file_path, self.user_id)
         ids = self._document_store.add(documents, document_id)
         self._vector_store.add(np.array(embeddings), ids)
