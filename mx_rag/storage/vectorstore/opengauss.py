@@ -84,7 +84,7 @@ class OpenGaussDB(VectorStore):
     SCALE_MAP = {
         "IP": lambda x: -x,  # 负内积
         "L2": lambda x: max(1.0 - x / 2.0, 0.0),
-        "COSINE": lambda x: -x
+        "COSINE": lambda x: max(1.0 - x / 2.0, 0.0),
     }
 
     METRIC_MAP = {
@@ -96,8 +96,6 @@ class OpenGaussDB(VectorStore):
     INDEX_MAP = {
         "HNSW": "hnsw",
         "IVFFLAT": "ivfflat",
-        "HNSWPQ": "hnswpq",
-        "IVFPQ": "ivfpq",
     }
 
     @validate_params(
@@ -107,7 +105,7 @@ class OpenGaussDB(VectorStore):
             message="param must be str, length range (0, 1024] and valid identifier"),
         search_mode=dict(validator=lambda x: isinstance(x, SearchMode), message="param must be instance of SearchMode"),
         index_type=dict(
-            validator=lambda x: isinstance(x, str) and x in ("HNSW", "IVFFLAT", "HNSWPQ", "IVFPQ"),
+            validator=lambda x: isinstance(x, str) and x in ("HNSW", "IVFFLAT"),
             message="param must be none or instance of str"),
         metric_type=dict(validator=lambda x: isinstance(x, str) and x in ("IP", "L2", "COSINE"),
                          message="param must be none or instance of str"),
@@ -128,6 +126,11 @@ class OpenGaussDB(VectorStore):
         self.vector_model: Optional[Any] = None
         self._index_type = index_type
         self._metric_type = metric_type
+
+        if search_mode == SearchMode.SPARSE and self._index_type != "HNSW" and self._metric_type != "IP":
+            logger.error("sparse vector only support index type: HNSW, metric type: IP")
+            raise ValueError("param index_type or metric_type invalid")
+
         self.session_factory = scoped_session(
             sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
         )
@@ -145,11 +148,6 @@ class OpenGaussDB(VectorStore):
                 search_mode=kwargs.pop("search_mode", SearchMode.DENSE),
                 index_type=kwargs.pop("index_type", "HNSW"),
                 metric_type=kwargs.pop("metric_type", "IP")
-            )
-            instance.create_collection(
-                dense_dim=kwargs.get("dense_dim"),
-                sparse_dim=kwargs.get("sparse_dim", 100000),
-                params=kwargs.get("params")
             )
             logger.info("Successfully create database instance")
             return instance
@@ -270,6 +268,10 @@ class OpenGaussDB(VectorStore):
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"))
     def delete(self, ids: List[int]):
+        if len(ids) == 0:
+            logger.warning("no id need be deleted")
+            return 0
+
         try:
             with self._transaction() as session:
                 delete_count = session.query(self.vector_model) \

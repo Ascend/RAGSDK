@@ -336,7 +336,7 @@ class KnowledgeDB(KnowledgeBase):
         chunk_ids = set(self._document_store.get_all_chunk_id())
         vec_ids = set(self._vector_store.get_all_ids())
         if chunk_ids != vec_ids:
-            raise KnowledgeError("Vector store does not comply with the document store: different ids")
+            logger.error("vector store does not consistent with the document store: different ids")
 
     def _storage_and_vector_delete(self, doc_name: str):
         document_id = self._knowledge_store.delete(self.knowledge_name, doc_name, self.user_id)

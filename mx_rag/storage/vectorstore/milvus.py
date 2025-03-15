@@ -96,8 +96,8 @@ class MilvusDB(VectorStore):
             message="param must be str and length range (0, 1024]"),
         search_mode=dict(validator=lambda x: isinstance(x, SearchMode),
                          message="param must be instance of SearchMode"),
-        index_type=dict(validator=lambda x: isinstance(x, str) and x in ("IVF_FLAT", "IVF_PQ", "HNSW"),
-                        message="param must str and one of [IVF_FLAT, IVF_PQ, HNSW]"),
+        index_type=dict(validator=lambda x: isinstance(x, str) and x in ("FLAT", "IVF_FLAT", "IVF_PQ", "HNSW"),
+                        message="param must str and one of [FLAT, IVF_FLAT, IVF_PQ, HNSW]"),
         metric_type=dict(validator=lambda x: isinstance(x, str) and x in ("IP", "L2", "COSINE"),
                          message="param must str and one of  [IP, L2, COSINE]"),
     )
@@ -134,12 +134,12 @@ class MilvusDB(VectorStore):
         client = kwargs.pop("client")
         x_dim = kwargs.pop("x_dim", None)
 
-        index_type = kwargs.pop("index_type", "HNSW")
-        if index_type not in ("IVF_FLAT", "IVF_PQ", "HNSW"):
-            logger.error("param error: index_type must be one of [IVF_FLAT, IVF_PQ, HNSW]")
+        index_type = kwargs.pop("index_type", "FLAT")
+        if index_type not in ("FLAT", "IVF_FLAT", "IVF_PQ", "HNSW"):
+            logger.error("param error: index_type must be one of [FLAT, IVF_FLAT, IVF_PQ, HNSW]")
             return None
 
-        metric_type = kwargs.pop("metric_type", "IP")
+        metric_type = kwargs.pop("metric_type", "L2")
         if metric_type not in ("IP", "L2", "COSINE"):
             logger.error("param error: metric_type must be one of [IP, L2, COSINE]")
             return None
@@ -199,6 +199,10 @@ class MilvusDB(VectorStore):
     @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
                               message="param must be List[int]"))
     def delete(self, ids: List[int]):
+        if len(ids) == 0:
+            logger.warning("no id need be deleted")
+            return 0
+
         self._validate_collection_existence()
         if len(ids) >= self.MAX_VEC_NUM:
             raise MilvusError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
