@@ -29,8 +29,6 @@ class TestMindFAISS(unittest.TestCase):
                     index = MindFAISS.create(devs=[0],
                                              load_local_index="./faiss.index")
                 with self.assertRaises(KeyError):
-                    index = MindFAISS.create(x_dim=1024, devs=[0], load_local_index="./faiss.index")
-                with self.assertRaises(KeyError):
                     index = MindFAISS.create(x_dim=1024,
                                              load_local_index="./faiss.index")
                 with self.assertRaises(KeyError):

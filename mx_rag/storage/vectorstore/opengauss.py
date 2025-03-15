@@ -127,10 +127,6 @@ class OpenGaussDB(VectorStore):
         self._index_type = index_type
         self._metric_type = metric_type
 
-        if search_mode == SearchMode.SPARSE and self._index_type != "HNSW" and self._metric_type != "IP":
-            logger.error("sparse vector only support index type: HNSW, metric type: IP")
-            raise ValueError("param index_type or metric_type invalid")
-
         self.session_factory = scoped_session(
             sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
         )
@@ -148,6 +144,11 @@ class OpenGaussDB(VectorStore):
                 search_mode=kwargs.pop("search_mode", SearchMode.DENSE),
                 index_type=kwargs.pop("index_type", "HNSW"),
                 metric_type=kwargs.pop("metric_type", "IP")
+            )
+            instance.create_collection(
+                dense_dim=kwargs.get("dense_dim"),
+                sparse_dim=kwargs.get("sparse_dim", 100000),
+                params=kwargs.get("params")
             )
             logger.info("Successfully create database instance")
             return instance

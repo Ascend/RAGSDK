@@ -69,7 +69,6 @@ class TestMilvusDB(unittest.TestCase):
         self.assertIsNone(milvus_db)
 
     def test_create_no_similarity_strategy(self):
-        del self.dense_kwargs['similarity_strategy']
         milvus_db = MilvusDB.create(**self.dense_kwargs)
         self.assertIsNotNone(milvus_db)
 

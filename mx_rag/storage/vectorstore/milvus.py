@@ -103,7 +103,7 @@ class MilvusDB(VectorStore):
     )
     def __init__(self, client: MilvusClient, collection_name: str = "rag_sdk",
                  search_mode: SearchMode = SearchMode.DENSE, auto_id=False,
-                 index_type: str = "HNSW", metric_type: str = "IP"):
+                 index_type: str = "FLAT", metric_type: str = "L2"):
         super().__init__()
         self._client = client
         self._collection_name = collection_name
@@ -179,8 +179,7 @@ class MilvusDB(VectorStore):
         if (self.search_mode == SearchMode.DENSE or self.search_mode == SearchMode.HYBRID) and x_dim is None:
             raise MilvusError("x_dim can't be None in mode DENSE or HYBRID")
 
-        metric_type = self._metric_type if not self._metric_type else "L2"
-        self.score_scale = self.SCALE_MAP.get(metric_type)
+        self.score_scale = self.SCALE_MAP.get(self._metric_type)
         if params is None:
             params = {}
         schema = self._create_schema(x_dim)

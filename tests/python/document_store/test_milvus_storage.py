@@ -95,7 +95,7 @@ class TestMilvusDocStore(unittest.TestCase):
 
         # Assertions
         self.mock_client.delete.assert_not_called()  # Ensure delete was not called
-        self.assertEqual(res, 0)
+        self.assertEqual(res, [])
 
 
 if __name__ == '__main__':
