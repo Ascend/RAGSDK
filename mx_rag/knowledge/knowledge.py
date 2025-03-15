@@ -34,7 +34,7 @@ class KnowledgeModel(Base):
     role = Column(Enum("admin", "member"), comment="用户角色，admin: 管理员, member: 仅查询")
     create_time = Column(DateTime, comment="创建时间", default=datetime.datetime.utcnow)
     __table_args__ = (
-        UniqueConstraint('id', 'user_id', name="knowledge_name"),
+        UniqueConstraint('knowledge_name', 'user_id', 'role', name="knowledge_name"),
         {"sqlite_autoincrement": True}
     )
 
@@ -223,6 +223,8 @@ class KnowledgeStore:
             return knowledge_id
 
     def add_usr_id_to_knowledge(self, knowledge_name, user_id, role):
+        if role not in ['admin', 'member']:
+            raise KnowledgeError(f"role={role} is not admin or member, can not add knowledge")
         try:
             with self.session() as session:
                 knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name).first()
@@ -246,7 +248,7 @@ class KnowledgeStore:
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024)
     )
-    def delete_usr_id_from_knowledge(self, knowledge_name, user_id, role):
+    def delete_usr_id_from_knowledge(self, knowledge_name, user_id, role, force=False):
         with self.session() as session:
             knowledge = session.query(KnowledgeModel
                                       ).filter_by(knowledge_name=knowledge_name, user_id=user_id, role=role).first()
@@ -255,10 +257,10 @@ class KnowledgeStore:
                                      f" does not exist in knowledge_table")
             knowledges = session.query(KnowledgeModel
                                        ).filter_by(knowledge_id=knowledge.knowledge_id, role='admin').all()
-            if len(knowledges) == 1:
+            if len(knowledges) == 1 and not force:
                 raise KnowledgeError(
                     f"The knowledge {knowledge_name} now only belongs to user {user_id}, not support delete. "
-                    f"please use KnowledgeStore.delete_knowledge to clear, that operation will delete all documents "
+                    f"please use KnowledgeDB.delete_all to clear, that operation will delete all documents "
                     f"of {knowledge_name}, and the vector database.")
 
             session.delete(knowledge)
@@ -273,6 +275,13 @@ class KnowledgeStore:
         knowledge_list = self.get_all_knowledge_info(user_id)
         knowledge_name_list = [knowledge.knowledge_name for knowledge in knowledge_list]
         return knowledge_name_list
+
+    def get_all_usr_role_by_knowledge(self, knowledge_name: str) -> dict:
+        with self.session() as session:
+            knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name)
+            if not knowledge:
+                return {}
+            return {knowledge.user_id: knowledge.role for knowledge in knowledge.all()}
 
 
 def _check_metadatas(metadatas) -> bool:
@@ -377,13 +386,7 @@ class KnowledgeDB(KnowledgeBase):
         else:
             self._storage_and_vector_delete(doc_name)
 
-    @validate_params(
-        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
-                            message=STR_TYPE_CHECK_TIP_1024),
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
-    )
-    def delete_all_with_knowledge(self):
+    def delete_all(self):
         if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.user_id):
             raise KnowledgeError(f"(user_id={self.user_id}) is not admin, can not delete knowledge")
 
@@ -391,7 +394,9 @@ class KnowledgeDB(KnowledgeBase):
                      self._knowledge_store.get_all_documents_by_knowledge(self.knowledge_name, self.user_id)]
         for document in documents:
             self._storage_and_vector_delete(document)
-        self._knowledge_store.delete_usr_id_from_knowledge(self.knowledge_name, self.user_id, 'admin')
+        user_role = self._knowledge_store.get_all_usr_role_by_knowledge(self.knowledge_name)
+        for user_id, role in user_role.items():
+            self._knowledge_store.delete_usr_id_from_knowledge(self.knowledge_name, user_id, role, True)
     @validate_params(
         doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024)
