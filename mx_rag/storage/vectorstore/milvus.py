@@ -112,6 +112,9 @@ class MilvusDB(VectorStore):
         self._index_type = index_type
         self._metric_type = metric_type
 
+        if self.search_mode == SearchMode.SPARSE and (self._index_type != "HNSW" or self._metric_type != "IP"):
+            raise ValueError("sparse vector index_type only support HNSW, metric_type only support IP")
+
     @property
     def search_mode(self):
         return self._search_mode

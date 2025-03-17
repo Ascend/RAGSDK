@@ -35,7 +35,9 @@ class TestMilvusDB(unittest.TestCase):
         self.sparse_kwargs = dict(
             client=self.client,
             collection_name="sparse_collection",
-            search_mode=SearchMode.SPARSE
+            search_mode=SearchMode.SPARSE,
+            index_type="HNSW",
+            metric_type="IP"
         )
         self.hybrid_kwargs = dict(
             client=self.client,
@@ -177,7 +179,8 @@ class TestMilvusDB(unittest.TestCase):
 
     def test_drop_collection(self):
         self.create_milvus_db_dense().drop_collection()
-        self.create_milvus_db_dense().client.drop_collection.assert_called_once_with(self.create_milvus_db_dense()._collection_name)
+        self.create_milvus_db_dense().client.drop_collection.assert_called_once_with(
+            self.create_milvus_db_dense()._collection_name)
 
         with self.assertRaises(MilvusError):
             self.client.has_collection.return_value = False

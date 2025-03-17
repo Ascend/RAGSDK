@@ -56,19 +56,6 @@ def _vector_model_factory(
     return HybridModel
 
 
-def _metric_to_func_op(metric):
-    metric_map = {
-        "vector_l2_ops": "<->",  # 欧几里得距离L2
-        "vector_ip_ops": "<#>",  # 负内积
-        "vector_cosine_ops": "<=>",  # 余弦距离
-        "sparsevec_ip_ops": "<#>"  # 负内积
-    }
-    op = metric_map.get(metric, None)
-    if op is None:
-        raise OpenGaussError(f"not supported metric: {metric}")
-    return op
-
-
 def _serialize_sparse(emb: Dict[int, float], dim: int) -> str:
     """Serialize sparse vector to database format."""
     return f'{{{",".join(f"{k}:{v}" for k, v in emb.items())}}}/{dim}'
@@ -87,10 +74,22 @@ class OpenGaussDB(VectorStore):
         "COSINE": lambda x: max(1.0 - x / 2.0, 0.0),
     }
 
-    METRIC_MAP = {
+    DENSE_METRIC_MAP = {
         "IP": "vector_ip_ops",
         "L2": "vector_l2_ops",
         "COSINE": "vector_cosine_ops",
+    }
+
+    SPARSE_METRIC_MAP = {
+        "IP": "sparsevec_ip_ops",
+        "L2": "sparsevec_l2_ops",
+        "COSINE": "sparsevec_cosine_ops",
+    }
+
+    METRIC_OP_MAP = {
+        "L2": "<->",  # 欧几里得距离L2
+        "IP": "<#>",  # 负内积
+        "COSINE": "<=>",  # 余弦距离
     }
 
     INDEX_MAP = {
@@ -126,6 +125,8 @@ class OpenGaussDB(VectorStore):
         self.vector_model: Optional[Any] = None
         self._index_type = index_type
         self._metric_type = metric_type
+        if self.search_mode == SearchMode.SPARSE and self._index_type != "HNSW":
+            raise ValueError("sparse vector index_type only support HNSW")
 
         self.session_factory = scoped_session(
             sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
@@ -393,7 +394,7 @@ class OpenGaussDB(VectorStore):
                 self.vector_model.vector,
                 opengauss_using=self.INDEX_MAP.get(self._index_type),
                 opengauss_with=index_options,
-                opengauss_ops={'vector': self.METRIC_MAP.get(self._metric_type)}
+                opengauss_ops={'vector': self.DENSE_METRIC_MAP.get(self._metric_type)}
             ).create(self.engine)
 
         if hasattr(self.vector_model, "sparse_vector"):
@@ -402,7 +403,7 @@ class OpenGaussDB(VectorStore):
                 self.vector_model.sparse_vector,
                 opengauss_using="hnsw",
                 opengauss_with=index_options,
-                opengauss_ops={'sparse_vector': "sparsevec_ip_ops"}
+                opengauss_ops={'sparse_vector': self.SPARSE_METRIC_MAP.get(self._metric_type)}
             ).create(self.engine)
 
     def _do_search(
@@ -421,7 +422,7 @@ class OpenGaussDB(VectorStore):
             query = session.query(
                 self.vector_model,
                 text(f"{field} {metric_func_op} :{param_key} AS score")
-            ).order_by(text(f"score {order_dir}")).params(**{param_key: emb_str}).limit(k)
+            ).order_by(text(f"score")).params(**{param_key: emb_str}).limit(k)
 
             results = query.all()
             return [item[0] for item in results], [item[1] for item in results]
@@ -452,13 +453,11 @@ class OpenGaussDB(VectorStore):
             k: int = 3
     ) -> Tuple[List[List[float]], List[List[int]]]:
         """Execute parallel searches using thread pool."""
-        metric_type = "sparsevec_ip_ops" if self.search_mode == SearchMode.SPARSE \
-            else self.METRIC_MAP.get(self._metric_type)
-
-        metric_func_op = _metric_to_func_op(metric_type)
         pool_size = self._calculate_pool_size()
 
-        score_scale = self.SCALE_MAP.get("IP" if self.search_mode == SearchMode.SPARSE else self._metric_type)
+        score_scale = self.SCALE_MAP.get(self._metric_type)
+        metric_func_op = self.METRIC_OP_MAP.get(self._metric_type)
+
         try:
             with ThreadPool(pool_size) as pool:
                 results = pool.starmap(
