@@ -85,14 +85,14 @@ class KnowledgeStore:
             logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
         check_db_file_limit(self.db_path)
-        if not self.check_usr_role_is_admin(knowledge_name, user_id):
-            raise KnowledgeError(f"(user_id={user_id}) is not admin, can not add document")
         with self.session() as session:
             try:
                 knowledge = session.query(KnowledgeModel
                                           ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
                 if not knowledge:
                     knowledge_id = self.add_knowledge(knowledge_name, user_id)
+                if not self.check_usr_role_is_admin(knowledge_name, user_id):
+                    raise KnowledgeError(f"(user_id={user_id}) is not admin, can not add document")
                 knowledge_id = knowledge.knowledge_id if knowledge else knowledge_id
                 # 创建新的文档
                 document_model = DocumentModel(knowledge_id=knowledge_id, knowledge_name=knowledge_name,
@@ -388,8 +388,6 @@ class KnowledgeDB(KnowledgeBase):
     )
     def add_file(self, file: pathlib.Path, texts: List[str], embed_func: Callable[[List[str]], List[List[float]]],
                  metadatas: Optional[List[dict]]) -> NoReturn:
-        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.user_id):
-            raise KnowledgeError(f"(user_id={self.user_id}) is not admin, can not delete knowledge")
 
         embeddings = embed_func(texts)
         if not isinstance(embeddings, List):
@@ -409,8 +407,6 @@ class KnowledgeDB(KnowledgeBase):
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def delete_file(self, doc_name: str):
-        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.user_id):
-            raise KnowledgeError(f"(user_id={self.user_id}) is not admin, can not delete knowledge")
         if self.lock:
             with self.lock:
                 self._storage_and_vector_delete(doc_name)
@@ -418,10 +414,8 @@ class KnowledgeDB(KnowledgeBase):
             self._storage_and_vector_delete(doc_name)
 
     def delete_all(self):
-        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.user_id):
-            raise KnowledgeError(f"(user_id={self.user_id}) is not admin, can not delete knowledge")
-
-        documents = [doc.document_name for doc in self._knowledge_store.get_all_documents(self.knowledge_name, self.user_id)]
+        documents = [doc.document_name
+                     for doc in self._knowledge_store.get_all_documents(self.knowledge_name, self.user_id)]
         for document in documents:
             self._storage_and_vector_delete(document)
         user_role = self._knowledge_store.get_all_usr_role_by_knowledge(self.knowledge_name)

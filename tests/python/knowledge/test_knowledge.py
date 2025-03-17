@@ -12,7 +12,9 @@ from mx_rag.knowledge.base_knowledge import KnowledgeError
 from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
-
+import sys
+# 在import mx_rag或mx_rag的子模块后增加：
+sys.tracebacklimit = 1000
 SQL_PATH = "./sql.db"
 
 
@@ -43,22 +45,24 @@ class TestKnowledge(unittest.TestCase):
                            embed_func=embed_func)
         self.assertEqual(knowledge.get_all_documents()[0].knowledge_name, "test_knowledge")
         self.assertEqual(knowledge.get_all_documents()[0].document_name, "test.md")
-        knowledge_store.add_usr_id_to_knowledge("Default", "user123", "test_knowledge")
+        knowledge_store.add_usr_id_to_knowledge("test_knowledge", "user123", "admin")
         knowledge_db_mock.return_value = None
         knowledge_db1 = KnowledgeDB(KnowledgeStore(SQL_PATH), db, vector_store, "test_knowledge",
                                     white_paths=[top_path, ], user_id="user123")
         self.assertEqual(knowledge_db1.get_all_documents()[0].knowledge_name, "test_knowledge")
         self.assertEqual(knowledge_db1.get_all_documents()[0].document_name, "test.md")
-        self.assertEqual(knowledge_store.get_all_knowledge_name(), ["test_knowledge"])
+        self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), ["test_knowledge"])
         # 删除文档后, 只剩下空的knowledge
         knowledge.delete_file("test.md")
-        self.assertEqual(knowledge_store.get_all_knowledge_name(), ["test_knowledge"])
-        self.assertEqual(knowledge_store.get_all_knowledge_name(), ["test_knowledge"])
+        self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), ["test_knowledge"])
         self.assertEqual(knowledge.get_all_documents(), [])
+        self.assertEqual(knowledge_store.get_all_usr_role_by_knowledge("test_knowledge"), {'Default': 'admin', 'user123': 'admin'})
         # 多个usr_id对knowledge关系删除
-        knowledge_store.delete_usr_id_from_knowledge("Default", "test_knowledge")
+        knowledge_store.delete_usr_id_from_knowledge("test_knowledge", "Default", 'admin')
         # user_id和knowledge1对1时，不允许删除关系，使用delete_knowledge删除
         with self.assertRaises(KnowledgeError):
-            knowledge_store.delete_usr_id_from_knowledge("user123", "test_knowledge")
+            knowledge_store.delete_usr_id_from_knowledge("test_knowledge", "user123", 'admin')
         knowledge_db1.delete_all()
-        self.assertEqual(knowledge_store.get_all_knowledge_name(), [])
+        self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), [])
+if __name__ == '__main__':
+    unittest.main()
