@@ -30,11 +30,11 @@ class KnowledgeModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     knowledge_id = Column(Integer, autoincrement=True, nullable=False)
     knowledge_name = Column(String, comment="知识库名称")
-    user_id = Column(String, comment="用户id")
+    uuid = Column(String, comment="用户id")
     role = Column(Enum("admin", "member"), comment="用户角色，admin: 管理员, member: 仅查询")
     create_time = Column(DateTime, comment="创建时间", default=datetime.datetime.utcnow)
     __table_args__ = (
-        UniqueConstraint('knowledge_name', 'user_id', 'role', name="knowledge_name"),
+        UniqueConstraint('knowledge_name', 'uuid', 'role', name="knowledge_name"),
         {"sqlite_autoincrement": True}
     )
 
@@ -76,23 +76,23 @@ class KnowledgeStore:
                       message=STR_TYPE_CHECK_TIP_1024),
         file_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                        message=STR_TYPE_CHECK_TIP_1024),
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'")
 
     )
-    def add_doc_info(self, knowledge_name: str, doc_name: str, file_path: str, user_id: str):
+    def add_doc_info(self, knowledge_name: str, doc_name: str, file_path: str, uuid: str):
         if check_disk_free_space(os.path.dirname(self.db_path), self.FREE_SPACE_LIMIT):
             logger.error("Insufficient remaining space. Please clear disk space.")
             raise KnowledgeError("Insufficient remaining space, please clear disk space")
         check_db_file_limit(self.db_path)
-        if not self.check_usr_role_is_admin(knowledge_name, user_id):
-            raise KnowledgeError(f"(user_id={user_id}) is not admin, can not add document")
+        if not self.check_usr_role_is_admin(knowledge_name, uuid):
+            raise KnowledgeError(f"(uuid={uuid}) is not admin, can not add document")
         with self.session() as session:
             try:
                 knowledge = session.query(KnowledgeModel
-                                          ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+                                          ).filter_by(knowledge_name=knowledge_name, uuid=uuid).first()
                 if not knowledge:
-                    knowledge_id = self.add_knowledge(knowledge_name, user_id)
+                    knowledge_id = self.add_knowledge(knowledge_name, uuid)
                 knowledge_id = knowledge.knowledge_id if knowledge else knowledge_id
                 # 创建新的文档
                 document_model = DocumentModel(knowledge_id=knowledge_id, knowledge_name=knowledge_name,
@@ -100,7 +100,7 @@ class KnowledgeStore:
                 session.add(document_model)
                 session.commit()
                 logger.debug(f"success add (knowledge_name={knowledge_name}, "
-                             f"doc_name={doc_name}, user_id={user_id}) in knowledge_table.")
+                             f"doc_name={doc_name}, uuid={uuid}) in knowledge_table.")
                 return document_model.document_id
             except SQLAlchemyError as db_err:
                 session.rollback()
@@ -118,16 +118,16 @@ class KnowledgeStore:
                             message=STR_TYPE_CHECK_TIP_1024),
         doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024),
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'")
     )
-    def delete_doc_info(self, knowledge_name: str, doc_name: str, user_id: str = "Default"):
-        if not self.check_usr_role_is_admin(knowledge_name, user_id):
-            raise KnowledgeError(f"(user_id={user_id}) is not admin, can not delete document")
+    def delete_doc_info(self, knowledge_name: str, doc_name: str, uuid: str = "Default"):
+        if not self.check_usr_role_is_admin(knowledge_name, uuid):
+            raise KnowledgeError(f"(uuid={uuid}) is not admin, can not delete document")
         with self.session() as session:
             try:
                 knowledge = session.query(KnowledgeModel
-                                          ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+                                          ).filter_by(knowledge_name=knowledge_name, uuid=uuid).first()
                 if not knowledge:
                     logger.debug(f"{knowledge_name} does not exist in knowledge_table, no need delete.")
                     return None
@@ -141,7 +141,7 @@ class KnowledgeStore:
                     session.delete(doc_to_delete)
                     session.commit()
                     logger.debug(f"success delete (knowledge_name={knowledge_name}, "
-                                 f"document_name={doc_name}, user_id={user_id}) in document_table.")
+                                 f"document_name={doc_name}, uuid={uuid}) in document_table.")
                 return doc_to_delete.document_id
             except SQLAlchemyError as db_err:
                 session.rollback()
@@ -157,15 +157,15 @@ class KnowledgeStore:
     @validate_params(
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024),
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'")
     )
-    def get_all_documents_by_knowledge(self, knowledge_name: str, user_id: str):
+    def get_all_documents_by_knowledge(self, knowledge_name: str, uuid: str):
         with self.session() as session:
             knowledge = session.query(KnowledgeModel
-                                      ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+                                      ).filter_by(knowledge_name=knowledge_name, uuid=uuid).first()
             if knowledge is None:
-                logger.debug(f"(knowledge_name={knowledge_name}, user_id={user_id}) does not exist in knowledge_table")
+                logger.debug(f"(knowledge_name={knowledge_name}, uuid={uuid}) does not exist in knowledge_table")
 
             if knowledge:
                 return session.query(DocumentModel).filter_by(knowledge_id=knowledge.knowledge_id).all()
@@ -176,39 +176,50 @@ class KnowledgeStore:
                             message=STR_TYPE_CHECK_TIP_1024),
         doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024),
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'")
     )
-    def check_document_exist(self, knowledge_name: str, doc_name: str, user_id: str) -> bool:
+    def check_document_exist(self, knowledge_name: str, doc_name: str, uuid: str) -> bool:
         with self.session() as session:
-            # 同一个user_id下知识库名称不能重复
-            knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+            # 同一个uuid下知识库名称不能重复
+            knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, uuid=uuid).first()
             if not knowledge:
                 return False
             chunk = session.query(DocumentModel).filter_by(
                 knowledge_id=knowledge.knowledge_id, document_name=doc_name).first()
             return chunk is not None
 
-    def check_usr_role_is_admin(self, knowledge_name: str, user_id: str) -> bool:
+    @validate_params(
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'"),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024)
+    )
+    def check_usr_role_is_admin(self, knowledge_name: str, uuid: str) -> bool:
         with self.session() as session:
-            knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
+            knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, uuid=uuid).first()
             if not knowledge:
-                raise KnowledgeError(f"(user_id={user_id}) does not exist in knowledge_table {knowledge_name}")
+                raise KnowledgeError(f"(uuid={uuid}) does not exist in knowledge_table {knowledge_name}")
             return knowledge.role == 'admin'
 
     @validate_params(
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'")
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'")
     )
-    def get_all_knowledge_info(self, user_id):
+    def get_all_knowledge_info(self, uuid):
         with self.session() as session:
-            knowledge_list = session.query(KnowledgeModel).filter_by(user_id=user_id).all()
+            knowledge_list = session.query(KnowledgeModel).filter_by(uuid=uuid).all()
         return knowledge_list or []
 
-    def add_knowledge(self, knowledge_name, user_id, role='admin'):
-        if role != 'admin':
-            raise KnowledgeError(f"(user_id={user_id}, role={role}) is not admin, can not add knowledge")
-
+    @validate_params(
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'"),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024),
+        role=dict(validator=lambda x: isinstance(x, str) and x in ['admin'],
+                  message="param must be  meets: Type is str, and only admin can add knowledge")
+    )
+    def add_knowledge(self, knowledge_name, uuid, role='admin'):
         with self.session() as session:
             knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name).first()
             if knowledge:
@@ -217,71 +228,91 @@ class KnowledgeStore:
                 func.max(KnowledgeModel.knowledge_id)).scalar() or 0
             knowledge_id = max_id + 1
             knowledge_model = KnowledgeModel(knowledge_id=knowledge_id, knowledge_name=knowledge_name,
-                                             user_id=user_id, role=role)
+                                             uuid=uuid, role=role)
             session.add(knowledge_model)
             session.commit()
             return knowledge_id
 
-    def add_usr_id_to_knowledge(self, knowledge_name, user_id, role):
-        if role not in ['admin', 'member']:
-            raise KnowledgeError(f"role={role} is not admin or member, can not add knowledge")
+    @validate_params(
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'"),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024),
+        role=dict(validator=lambda x: isinstance(x, str) and x in ['admin', 'member'],
+                  message="param must be  meets: Type is str, one of ['admin', 'member']")
+    )
+    def add_usr_id_to_knowledge(self, knowledge_name, uuid, role):
         try:
             with self.session() as session:
                 knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name).first()
                 if not knowledge:
                     raise KnowledgeError(f"knowledge_name={knowledge_name} does not exist in knowledge_table")
                 knowledge_model = KnowledgeModel(knowledge_id=knowledge.knowledge_id, knowledge_name=knowledge_name,
-                                                 user_id=user_id, role=role)
+                                                 uuid=uuid, role=role)
                 session.add(knowledge_model)
                 session.commit()
 
         except sqlalchemy.exc.IntegrityError as e:
-            logger.error(f"failed to add, the {user_id} to {knowledge_name} "
-                         f"have same user_id in {knowledge_name}")
-            raise KnowledgeError(f"failed to add {user_id} to {knowledge_name}") from e
+            logger.error(f"failed to add, the {uuid} to {knowledge_name} "
+                         f"have same uuid in {knowledge_name}")
+            raise KnowledgeError(f"failed to add {uuid} to {knowledge_name}") from e
         except Exception as e:
-            raise KnowledgeError(f"failed to add {user_id} to {knowledge_name}") from e
+            raise KnowledgeError(f"failed to add {uuid} to {knowledge_name}") from e
 
     @validate_params(
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'"),
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'"),
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024)
     )
-    def delete_usr_id_from_knowledge(self, knowledge_name, user_id, role, force=False):
+    def delete_usr_id_from_knowledge(self, knowledge_name, uuid, role, force=False):
         with self.session() as session:
             knowledge = session.query(KnowledgeModel
-                                      ).filter_by(knowledge_name=knowledge_name, user_id=user_id, role=role).first()
+                                      ).filter_by(knowledge_name=knowledge_name, uuid=uuid, role=role).first()
             if not knowledge:
-                raise KnowledgeError(f"(user_id={user_id}, role={role}, knowledge_name={knowledge_name})"
+                raise KnowledgeError(f"(uuid={uuid}, role={role}, knowledge_name={knowledge_name})"
                                      f" does not exist in knowledge_table")
             knowledges = session.query(KnowledgeModel
                                        ).filter_by(knowledge_id=knowledge.knowledge_id, role='admin').all()
             if len(knowledges) == 1 and not force:
                 raise KnowledgeError(
-                    f"The knowledge {knowledge_name} now only belongs to user {user_id}, not support delete. "
+                    f"The knowledge {knowledge_name} now only belongs to user {uuid}, not support delete. "
                     f"please use KnowledgeDB.delete_all to clear, that operation will delete all documents "
                     f"of {knowledge_name}, and the vector database.")
 
             session.delete(knowledge)
             session.commit()
-            logger.debug(f"success delete (knowledge_name={knowledge_name}, user_id={user_id}), "
+            logger.debug(f"success delete (knowledge_name={knowledge_name}, uuid={uuid}), "
                          f"role={role} in knowledge_table.")
 
-    def check_knowledge_exist(self, knowledge_name: str, user_id: str) -> bool:
-        return knowledge_name in self.get_all_knowledge_name(user_id)
+    @validate_params(
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'"),
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024)
+    )
+    def check_knowledge_exist(self, knowledge_name: str, uuid: str) -> bool:
+        return knowledge_name in self.get_all_knowledge_name(uuid)
 
-    def get_all_knowledge_name(self, user_id: str) -> List[str]:
-        knowledge_list = self.get_all_knowledge_info(user_id)
+    @validate_params(
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'")
+    )
+    def get_all_knowledge_name(self, uuid: str) -> List[str]:
+        knowledge_list = self.get_all_knowledge_info(uuid)
         knowledge_name_list = [knowledge.knowledge_name for knowledge in knowledge_list]
         return knowledge_name_list
 
+    @validate_params(
+        knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
+                            message=STR_TYPE_CHECK_TIP_1024)
+    )
     def get_all_usr_role_by_knowledge(self, knowledge_name: str) -> dict:
         with self.session() as session:
             knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name)
             if not knowledge:
                 return {}
-            return {knowledge.user_id: knowledge.role for knowledge in knowledge.all()}
+            return {knowledge.uuid: knowledge.role for knowledge in knowledge.all()}
 
 
 def _check_metadatas(metadatas) -> bool:
@@ -312,8 +343,8 @@ class KnowledgeDB(KnowledgeBase):
                             message=STR_TYPE_CHECK_TIP_1024),
         max_file_count=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= FILE_COUNT_MAX,
                             message=f"param value range must be [1, {FILE_COUNT_MAX}]"),
-        user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,16}$', x)),
-                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,16}$'"),
+        uuid=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_]{6,64}$', x)),
+                     message="param must meets: Type is str, match '^[a-zA-Z0-9_]{6,64}$'"),
         lock=dict(validator=lambda x: x is None or validate_lock(x),
                   message="param must be one of None, multiprocessing.Lock(), threading.Lock()")
     )
@@ -325,7 +356,7 @@ class KnowledgeDB(KnowledgeBase):
             knowledge_name: str,
             white_paths: List[str],
             max_file_count: int = 1000,
-            user_id: str = "Default",
+            uuid: str = "Default",
             lock=None
     ):
         super().__init__(white_paths)
@@ -334,7 +365,7 @@ class KnowledgeDB(KnowledgeBase):
         self._document_store = chunk_store
         self.max_file_count = max_file_count
         self.knowledge_name = knowledge_name
-        self.user_id = user_id
+        self.uuid = uuid
         self.lock = lock
         if self.lock:
             with self.lock:
@@ -344,7 +375,7 @@ class KnowledgeDB(KnowledgeBase):
 
     def get_all_documents(self):
         """获取当前已上传的所有文档"""
-        return self._knowledge_store.get_all_documents_by_knowledge(self.knowledge_name, self.user_id)
+        return self._knowledge_store.get_all_documents_by_knowledge(self.knowledge_name, self.uuid)
 
     @validate_params(
         file=dict(validator=lambda x: check_pathlib_path(x), message="param check failed, please see the log"),
@@ -357,8 +388,8 @@ class KnowledgeDB(KnowledgeBase):
     )
     def add_file(self, file: pathlib.Path, texts: List[str], embed_func: Callable[[List[str]], List[List[float]]],
                  metadatas: Optional[List[dict]]) -> NoReturn:
-        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.user_id):
-            raise KnowledgeError(f"(user_id={self.user_id}) is not admin, can not delete knowledge")
+        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.uuid):
+            raise KnowledgeError(f"(uuid={self.uuid}) is not admin, can not delete knowledge")
 
         embeddings = embed_func(texts)
         if not isinstance(embeddings, List):
@@ -378,8 +409,8 @@ class KnowledgeDB(KnowledgeBase):
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def delete_file(self, doc_name: str):
-        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.user_id):
-            raise KnowledgeError(f"(user_id={self.user_id}) is not admin, can not delete knowledge")
+        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.uuid):
+            raise KnowledgeError(f"(uuid={self.uuid}) is not admin, can not delete knowledge")
         if self.lock:
             with self.lock:
                 self._storage_and_vector_delete(doc_name)
@@ -387,22 +418,23 @@ class KnowledgeDB(KnowledgeBase):
             self._storage_and_vector_delete(doc_name)
 
     def delete_all(self):
-        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.user_id):
-            raise KnowledgeError(f"(user_id={self.user_id}) is not admin, can not delete knowledge")
+        if not self._knowledge_store.check_usr_role_is_admin(self.knowledge_name, self.uuid):
+            raise KnowledgeError(f"(uuid={self.uuid}) is not admin, can not delete knowledge")
 
         documents = [document.document_name for document in
-                     self._knowledge_store.get_all_documents_by_knowledge(self.knowledge_name, self.user_id)]
+                     self._knowledge_store.get_all_documents_by_knowledge(self.knowledge_name, self.uuid)]
         for document in documents:
             self._storage_and_vector_delete(document)
         user_role = self._knowledge_store.get_all_usr_role_by_knowledge(self.knowledge_name)
-        for user_id, role in user_role.items():
-            self._knowledge_store.delete_usr_id_from_knowledge(self.knowledge_name, user_id, role, True)
+        for uuid, role in user_role.items():
+            self._knowledge_store.delete_usr_id_from_knowledge(self.knowledge_name, uuid, role, True)
+
     @validate_params(
         doc_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                       message=STR_TYPE_CHECK_TIP_1024)
     )
     def check_document_exist(self, doc_name: str) -> bool:
-        return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name, self.user_id)
+        return self._knowledge_store.check_document_exist(self.knowledge_name, doc_name, self.uuid)
 
     def _check_store_accordance(self) -> None:
         chunk_ids = set(self._document_store.get_all_chunk_id())
@@ -411,7 +443,7 @@ class KnowledgeDB(KnowledgeBase):
             raise KnowledgeError("Vector store does not comply with the document store: different ids")
 
     def _storage_and_vector_delete(self, doc_name: str):
-        document_id = self._knowledge_store.delete_doc_info(self.knowledge_name, doc_name, self.user_id)
+        document_id = self._knowledge_store.delete_doc_info(self.knowledge_name, doc_name, self.uuid)
         if document_id is None:
             return
         ids = self._document_store.delete(document_id)
@@ -420,6 +452,6 @@ class KnowledgeDB(KnowledgeBase):
             logger.warning("the number of documents does not match the number of vectors")
 
     def _storage_and_vector_add(self, doc_name: str, file_path: str, documents: List, embeddings: List):
-        document_id = self._knowledge_store.add_doc_info(self.knowledge_name, doc_name, file_path, self.user_id)
+        document_id = self._knowledge_store.add_doc_info(self.knowledge_name, doc_name, file_path, self.uuid)
         ids = self._document_store.add(documents, document_id)
         self._vector_store.add(np.array(embeddings), ids)
