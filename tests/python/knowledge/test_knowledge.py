@@ -12,9 +12,7 @@ from mx_rag.knowledge.base_knowledge import KnowledgeError
 from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
-import sys
-# 在import mx_rag或mx_rag的子模块后增加：
-sys.tracebacklimit = 1000
+
 SQL_PATH = "./sql.db"
 
 
