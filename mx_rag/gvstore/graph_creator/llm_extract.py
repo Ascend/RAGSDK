@@ -49,7 +49,7 @@ class Extractor:
             if pattern_text and pattern_text[0]:
                 return ast.literal_eval(pattern_text[0])
         except Exception as e:
-            logger.error(f"解析LLM抽取triplets结果失败: {e}")
+            logger.warning(f"解析LLM抽取triplets结果失败: {e}")
             if str(e).startswith("malformed node or string on line"):
                 dict_result = json.loads(result)
                 return dict_result

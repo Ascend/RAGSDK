@@ -4,15 +4,13 @@ import unittest
 from paddle.base import libpaddle
 from langchain_community.document_loaders import TextLoader
 from unittest.mock import patch
-
-import networkx as nx
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from mx_rag.document import LoaderMng
 from mx_rag.document.loader import DocxLoader, PdfLoader
 from mx_rag.embedding.local import TextEmbedding
 from mx_rag.gvstore.graph_creator.kg_engine import KGEngine
-from mx_rag.gvstore.util.utils import KgOprMode
+from mx_rag.gvstore.util.utils import KgOprMode, safe_read_graphml
 from mx_rag.libs.glib.utils.file_utils import FileCreate, FileCheck
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.reranker.local import LocalReranker
@@ -21,12 +19,14 @@ from mx_rag.utils import ClientParam
 
 
 class TestKGCreateCase(unittest.TestCase):
-    current_dir = os.path.dirname(os.path.realpath(__file__))
-    data_dir = os.path.realpath(os.path.join(current_dir, "../../data"))
-    file_list = [os.path.join(data_dir, "test.txt"),
-                 os.path.join(data_dir, "demo.docx"),
-                 os.path.join(data_dir, "test_cn.pdf")]
-    work_dir = os.path.join(current_dir, "tmp")
+    def setUp(self):
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        data_dir = os.path.realpath(os.path.join(current_dir, "../../data"))
+        self.data_dir = data_dir
+        self.file_list = [os.path.join(data_dir, "test.txt"),
+                     os.path.join(data_dir, "demo.docx"),
+                     os.path.join(data_dir, "test_cn.pdf")]
+        self.work_dir = os.path.join(current_dir, "tmp")
 
     @patch("mx_rag.llm.Text2TextLLM.chat")
     @patch("mx_rag.storage.vectorstore.MilvusDB", spec=MilvusDB)
@@ -68,7 +68,7 @@ class TestKGCreateCase(unittest.TestCase):
             kg_creation.create_kg_graph(graph_name, x_dim=x_dim, similarity_strategy=strategy)
             graph_path = os.path.join(self.work_dir, f"{graph_name}.graphml")
             FileCheck.check_input_path_valid(graph_path)
-            graph = nx.read_graphml(graph_path)
+            graph = safe_read_graphml(graph_path)
 
             self.assertEqual(len(graph.nodes.data()), 106)
             self.assertEqual(len(graph.edges.data()), 453)
@@ -85,7 +85,7 @@ class TestKGCreateCase(unittest.TestCase):
             kg_creation.update_kg_graph(graph_name, KgOprMode.NEW)
             graph_path = os.path.join(self.work_dir, f"{graph_name}.graphml")
             FileCheck.check_input_path_valid(graph_path)
-            graph = nx.read_graphml(graph_path)
+            graph = safe_read_graphml(graph_path)
             self.assertEqual(len(graph.nodes.data()), 112)
             self.assertEqual(len(graph.edges.data()), 462)
 
@@ -109,6 +109,7 @@ class TestKGCreateCase(unittest.TestCase):
         test_kg_update(self)
         test_kg_query(self)
 
+    def tearDown(self):
         shutil.rmtree(self.work_dir)
 
 

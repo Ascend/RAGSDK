@@ -23,7 +23,7 @@ from mx_rag.storage.vectorstore import SimilarityStrategy
 class VectorDBBase(ABC):
 
     @abstractmethod
-    def initialize(self, collection_name="", **kwargs):
+    def initialize(self, collection_name, **kwargs):
         pass
 
     @abstractmethod
@@ -293,7 +293,7 @@ class GraphVecMindfaissDB(VectorDBBase):
         self.vec_store = mind_faiss
         self.chunk_size = 1024
 
-    def initialize(self, collection_name="", **kwargs):
+    def initialize(self, collection_name, **kwargs):
         self._check_store_accordance()
 
     def query_embedding(self, collection_name, entity_list: list, **kwargs):
@@ -317,12 +317,11 @@ class GraphVecMindfaissDB(VectorDBBase):
         ids = []
         labels = []
         for _, data in graph.nodes.data():
-            if "id" in data and "info" in data and data["info"]:
-                index = data['id']
-                ids.append(index)
-                info = data['info']
-                chunks.append(info)
-                labels.append(data['label'])
+            index = data['id']
+            ids.append(index)
+            info = data['info']
+            chunks.append(info)
+            labels.append(data['label'])
         self._add_index(ids, chunks, labels)
 
     def get_data(self, ids: list, **kwargs):
