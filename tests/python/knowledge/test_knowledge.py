@@ -54,7 +54,8 @@ class TestKnowledge(unittest.TestCase):
         knowledge.delete_file("test.md")
         self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), ["test_knowledge"])
         self.assertEqual(knowledge.get_all_documents(), [])
-        self.assertEqual(knowledge_store.get_all_usr_role_by_knowledge("test_knowledge"), {'Default': 'admin', 'user123': 'admin'})
+        self.assertEqual(knowledge_store.get_all_usr_role_by_knowledge("test_knowledge"),
+                         {'Default': 'admin', 'user123': 'admin'})
         # 多个usr_id对knowledge关系删除
         knowledge_store.delete_usr_id_from_knowledge("test_knowledge", "Default", 'admin')
         # user_id和knowledge1对1时，不允许删除关系，使用delete_knowledge删除
