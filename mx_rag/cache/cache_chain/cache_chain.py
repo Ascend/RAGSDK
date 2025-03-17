@@ -57,11 +57,15 @@ class CacheChainChat(Chain):
             ans: 用户答案
         """
         cache_ans = self._cache.search(query=text)
+        # 缓存存入为什么格式返回什么格式，可能不是json格式的
         if cache_ans is not None:
-            answer = json.loads(cache_ans)
-            if answer.get("query"):
-                answer["query"] = text
-            return self._convert_data_to_user(answer)
+            try:
+                answer = json.loads(cache_ans)
+                if answer.get("query"):
+                    answer["query"] = text
+                return self._convert_data_to_user(answer)
+            except Exception:
+                return cache_ans
 
         ans = self._chain.query(text, llm_config)
 
