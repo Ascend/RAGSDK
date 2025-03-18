@@ -194,7 +194,9 @@ class KGEngine:
         graph_client = self._create_graph_client(graph_name, graphml_data_path, **kwargs)
         top_k = kwargs.pop("top_k", 5)
         k_hop = kwargs.pop("k_hop", 2)
-        retriever = GraphRetriever(graph_name=graph_name, graph=graph_client, top_k=top_k, k_hop=k_hop, llm=self.llm)
+        keyword_extract = kwargs.pop("keyword_extract", True)
+        retriever = GraphRetriever(graph_name=graph_name, graph=graph_client, top_k=top_k, k_hop=k_hop, llm=self.llm,
+                                   keyword_extract=keyword_extract)
         return retriever
 
     def _create_vector_db(self):

@@ -79,7 +79,7 @@ class TestGvCreation(unittest.TestCase):
     def test_filter_graph_node(self):
         _, _, info = filter_graph_node(0, "text", "an American writer")
         self.assertEqual(info, "an American writer")
-        self.assertEqual(filter_graph_node("1", "text", "an American writer"), (None, None, None))
+        self.assertEqual(filter_graph_node("1", "text", "an American writer"), ('1', 'text', 'an American writer'))
         self.assertEqual(filter_graph_node(1, "person", "an American writer"), (None, None, None))
         _, _, info = filter_graph_node(1, "entity", "an American writer\\")
         self.assertEqual(info, "an American writer")
@@ -89,6 +89,6 @@ class TestGvCreation(unittest.TestCase):
         self.assertEqual(name, "belong to")
         _, _, name = filter_graph_edge(0, 1, "belong to\\\\")
         self.assertEqual(name, "belong to")
-        self.assertEqual(filter_graph_edge("0", 1, "belong to"), (None, None, None))
+        self.assertEqual(filter_graph_edge("0", 1, "belong to"), ('0', '1', 'belong to'))
         llm_mock = MagicMock(spec=Text2TextLLM)
         print(isinstance(llm_mock, Text2TextLLM))
