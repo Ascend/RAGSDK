@@ -59,6 +59,7 @@ class ParallelText2TextChain(SingleText2TextChain):
         # 执行检索
         q_docs = self._retrieve_process(question)
 
+        prefill_is_done = False
         # 检测prefill是否完成
         with self.lock:
             prefill_is_done = True if self.prefill_done.value == 1 else False
