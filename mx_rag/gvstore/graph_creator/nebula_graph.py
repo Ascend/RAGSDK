@@ -90,7 +90,7 @@ class NebulaGraph(GraphCore):
             edge_result.extend(edges)
         return list(set(edge_result))
 
-    def get_nodes(self, keywords, **kwargs):
+    def get_nodes(self, keywords):
         self._use_space(self.graph_name)
         return self._search_nodes(keywords)
 

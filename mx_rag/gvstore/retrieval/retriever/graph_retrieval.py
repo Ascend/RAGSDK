@@ -23,36 +23,37 @@ class GraphRetriever(BaseRetriever):
     top_k: int = Field(default=5, ge=1, le=MAX_TOP_K)
     k_hop: int = Field(default=2, ge=1, le=5)
     llm: Text2TextLLM
+    keyword_extract: bool = True
 
     # 图及索引导入
 
     class Config:
         arbitrary_types_allowed = True
 
-    def graph_search(self, question, k, **kwargs):
-        ids, docs = self.search_nodes(question, **kwargs)
+    def graph_search(self, question, k):
+        ids, docs = self.search_nodes(question)
         return self.graph.get_sub_graph(ids, docs, k)
 
-    def search_nodes(self, question, **kwargs):
+    def search_nodes(self, question):
         # search entities by keywords
         ids = []
         docs = []
-        keyword_extract_flag = kwargs.get("keyword_extract", True)
-        if keyword_extract_flag:
-            keyword_extract = KeywordsExtract(self.llm)
-            extracted_keywords = keyword_extract.extract_keywords(question)
-            if extracted_keywords and extracted_keywords[0] != question:
-                ids, docs = self.graph.get_nodes(extracted_keywords, **kwargs)
+        keyword_extract_instance = KeywordsExtract(self.llm)
+        extracted_keywords = keyword_extract_instance.extract_keywords(question)
+        if extracted_keywords and extracted_keywords[0] != question:
+            ids, docs = self.graph.get_nodes(extracted_keywords)
         return ids, docs
 
     # 根据问题召回相关原始文本块、图的实体节点，以及通过图算法召回相关多跳节点
-    def retrieval(self, keywords: list, k: int, **kwargs):
+    def retrieval(self, keywords: list):
         query_workers = concurrent.futures.ThreadPoolExecutor(max_workers=1,
                                                               thread_name_prefix="query_workers")
-        all_tasks = [query_workers.submit(self.graph_search, keywords[0], self.k_hop, **kwargs)]
+        all_tasks = []
+        if self.keyword_extract:
+            all_tasks = [query_workers.submit(self.graph_search, keywords[0], self.k_hop)]
         results = []
         for keyword in keywords:
-            scores, ids, docs = self.graph.search_indexes(keyword, k)
+            scores, ids, docs = self.graph.search_indexes(keyword, self.top_k)
             results.extend(docs)
         for future in as_completed(all_tasks):
             try:
@@ -69,5 +70,5 @@ class GraphRetriever(BaseRetriever):
     )
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List:
-        retrieval_contexts = self.retrieval(keywords=[query], k=self.top_k, khop=self.k_hop)
+        retrieval_contexts = self.retrieval(keywords=[query])
         return retrieval_contexts
