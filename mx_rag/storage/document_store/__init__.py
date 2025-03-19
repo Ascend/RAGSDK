@@ -6,10 +6,12 @@ __all__ = [
     "OpenGaussDocstore",
     "MilvusDocstore",
     "Docstore",
-    "MxDocument"
+    "MxDocument",
+    "ChunkModel"
 ]
 
 from .base_storage import Docstore, MxDocument
+from .models import ChunkModel
 from .sqlite_storage import SQLiteDocstore
 from .milvus_storage import MilvusDocstore
 from .opengauss_storage import OpenGaussDocstore
