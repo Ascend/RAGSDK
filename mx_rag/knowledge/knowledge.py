@@ -18,7 +18,7 @@ from mx_rag.storage.document_store import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, MAX_SQLITE_FILE_NAME_LEN, \
     check_db_file_limit, validata_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_sequence, STR_MAX_LEN, \
-    check_pathlib_path, validate_lock
+    check_pathlib_path, validate_lock, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 Base = declarative_base()
@@ -263,7 +263,10 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_-]{6,64}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_-]{6,64}$'"),
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
-                            message=STR_TYPE_CHECK_TIP_1024)
+                            message=STR_TYPE_CHECK_TIP_1024),
+        role=dict(validator=lambda x: isinstance(x, str) and x in ['admin', 'member'],
+                  message="param must be  meets: Type is str, one of ['admin', 'member']"),
+        force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def delete_usr_id_from_knowledge(self, knowledge_name, user_id, role, force=False):
         with self.session() as session:
