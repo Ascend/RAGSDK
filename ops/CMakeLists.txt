@@ -27,10 +27,8 @@ option(TORCH_HIGHER_THAN_PTA6 "TORCH_HIGHER_THAN_PTA6" ON)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CMAKE_SKIP_RPATH TRUE)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion-null")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe -fstack-protector-strong")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -fno-common")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 -O2")
 
 if(USE_OPTIMIZE)
@@ -42,14 +40,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic -fpie -Wl,--build-id=none")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-common")
 
-IF(CMAKE_BUILD_TYPE STREQUAL "Release")
-    ADD_LINK_OPTIONS(-s)
-ELSE()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing -g")
-ENDIF()
-
 set(LD_FLAGS_GLOBAL "-shared -rdynamic -ldl -Wl,-z,relro \
-    -Wl,-z,now -Wl,-z,noexecstack -Wl,--build-id=none")
+    -Wl,-z,now -Wl,-z,noexecstack -s -Wl,--build-id=none")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} \
     ${LD_FLAGS_GLOBAL} -fexceptions")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LD_FLAGS_GLOBAL} \

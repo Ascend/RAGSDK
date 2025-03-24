@@ -6,14 +6,13 @@ set -e
 
 warn() { echo >&2 -e "\033[1;31m[WARN ][Depend  ] $1\033[1;37m" ; }
 ARCH=$(uname -m)
-PY310_VER=py$(python3.10 -c "import platform; print(platform.python_version().replace('.','')[0:3])")
 PY311_VER=py$(python3.11 -c "import platform; print(platform.python_version().replace('.','')[0:3])")
 CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 SO_OUTPUT_DIR="${ROOT_PATH}"/mx_rag/lib
 TRANSFOMER_ADAPTER_OUTPUT_DIR="${ROOT_PATH}"/ops/transformer_adapter/output
 
-export CFLAGS="-fstack-protector-strong -fPIC -D_FORTIFY_SOURCE=2 -O2 -ftrapv"
+export CFLAGS="-fstack-protector-strong -fPIC -D_FORTIFY_SOURCE=2 -O2 -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -s -std=c11 -ftrapv -Wall -Wextra -Werror -fno-common"
 export LDFLAGS="-Wl,-z,relro,-z,now,-z,noexecstack -s"
 
 function clean()

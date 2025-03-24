@@ -42,23 +42,24 @@ def check_entity_validity(entity_name: str):
 
 
 def filter_graph_node(node_id, label, info: str):
-    if not (isinstance(node_id, int) and label in LABEL_TYPE):
+    if not (str(node_id).isdigit() and label in LABEL_TYPE):
         return None, None, None
     # 不能以\结尾
     while info.endswith("\\"):
         info = info[:-1]
     info = info.replace('\n', '\\n').replace('"', ' ')
-    return node_id, label, info
+    return str(node_id), label, info
 
 
 def filter_graph_edge(src, dst, name: str):
-    if not (isinstance(src, int) and isinstance(dst, int)):
+    # src和dst读取至文件则是字符串类型，更新时来自变量是int类型
+    if not (str(src).isdigit() and str(dst).isdigit()):
         return None, None, None
     # 不能以\结尾
     while name.endswith("\\"):
         name = name[:-1]
     name = name.replace('\n', '\\n').replace('"', ' ')
-    return src, dst, name
+    return str(src), str(dst), name
 
 
 def safe_read_graphml(path):

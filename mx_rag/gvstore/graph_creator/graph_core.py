@@ -36,7 +36,7 @@ class GraphCore(ABC):
         pass
     
     @abstractmethod
-    def get_nodes(self, keywords, **kwargs):
+    def get_nodes(self, keywords):
         pass
 
 
@@ -94,7 +94,7 @@ class GraphNX(GraphCore):
         return self._assemble_data(ids, list(context_ids), relation_datas)
 
     # 实体消歧时获取相实体节点
-    def get_nodes(self, keywords, **kwargs):
+    def get_nodes(self, keywords):
         ids = []
         nodes = []
         data_list = self.vector_db.query_embedding(self.graph_name, keywords, partition_names=["entity"])
