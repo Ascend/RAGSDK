@@ -121,7 +121,7 @@ class KnowledgeStore:
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_-]{6,64}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_-]{6,64}$'")
     )
-    def delete_doc_info(self, knowledge_name: str, doc_name: str, user_id: str = "Default"):
+    def delete_doc_info(self, knowledge_name: str, doc_name: str, user_id: str):
         if not self.check_usr_role_is_admin(knowledge_name, user_id):
             raise KnowledgeError(f"(user_id={user_id}) is not admin, can not delete document")
         with self.session() as session:
