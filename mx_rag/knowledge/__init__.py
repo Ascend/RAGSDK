@@ -1,6 +1,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 __all__ = [
     "KnowledgeDB",
+    "KnowledgeStore",
     "upload_dir",
     "upload_files",
     "delete_files",

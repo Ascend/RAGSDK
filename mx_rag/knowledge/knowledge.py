@@ -28,7 +28,7 @@ class KnowledgeModel(Base):
     __tablename__ = "knowledge_table"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    knowledge_id = Column(Integer, autoincrement=True, nullable=False)
+    knowledge_id = Column(Integer, nullable=False)
     knowledge_name = Column(String, comment="知识库名称")
     user_id = Column(String, comment="用户id")
     role = Column(Enum("admin", "member"), comment="用户角色，admin: 管理员, member: 仅查询")
