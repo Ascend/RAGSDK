@@ -273,7 +273,7 @@ class KnowledgeStore:
                 raise KnowledgeError(f"(user_id={user_id}, role={role}, knowledge_name={knowledge_name})"
                                      f" does not exist in knowledge_table")
             knowledges = session.query(KnowledgeModel
-                                       ).filter_by(knowledge_id=knowledge.knowledge_id, role='admin').all()
+                                       ).filter_by(knowledge_id=knowledge.knowledge_id).all()
             if len(knowledges) == 1 and not force:
                 raise KnowledgeError(
                     f"The knowledge {knowledge_name} now only belongs to user {user_id}, not support delete. "
