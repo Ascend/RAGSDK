@@ -160,3 +160,7 @@ class TestHandler(unittest.TestCase):
         delete_files(self.knowledge_db, ['test.pdf'])
         res = self.knowledge_db.check_document_exist('test.pdf')
         self.assertEqual(res, False)
+
+
+if __name__ == '__main__':
+    unittest.main()

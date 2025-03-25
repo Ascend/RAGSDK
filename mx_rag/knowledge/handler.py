@@ -62,9 +62,9 @@ def upload_files(
             knowledge.add_file(file_obj, texts, embed_func, meta_data)
         except Exception as err:
             # 当添加文档失败时，删除已添加的部分文档做回滚，捕获异常是为了正常回滚
+            fail_files.append(file)
             try:
                 knowledge.delete_file(file_obj.name)
-                fail_files.append(file)
             except Exception as e:
                 logger.warning(f"exception encountered while rollback, {e}")
             logger.error(f"add '{file}' failed, {err}")
