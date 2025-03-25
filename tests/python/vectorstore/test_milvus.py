@@ -6,7 +6,7 @@ import numpy as np
 from pymilvus import MilvusClient
 
 from mx_rag.storage.vectorstore.milvus import MilvusError
-from mx_rag.storage.vectorstore.vectorstore import SimilarityStrategy, VectorStore, SearchMode
+from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
 from mx_rag.storage.vectorstore import MilvusDB
 
 
@@ -30,13 +30,14 @@ class TestMilvusDB(unittest.TestCase):
         self.dense_kwargs = dict(
             client=self.client,
             x_dim=1024,
-            similarity_strategy=SimilarityStrategy.FLAT_L2,
             collection_name="dense_collection"
         )
         self.sparse_kwargs = dict(
             client=self.client,
             collection_name="sparse_collection",
-            search_mode=SearchMode.SPARSE
+            search_mode=SearchMode.SPARSE,
+            index_type="HNSW",
+            metric_type="IP"
         )
         self.hybrid_kwargs = dict(
             client=self.client,
@@ -70,7 +71,6 @@ class TestMilvusDB(unittest.TestCase):
         self.assertIsNone(milvus_db)
 
     def test_create_no_similarity_strategy(self):
-        del self.dense_kwargs['similarity_strategy']
         milvus_db = MilvusDB.create(**self.dense_kwargs)
         self.assertIsNotNone(milvus_db)
 
@@ -179,7 +179,8 @@ class TestMilvusDB(unittest.TestCase):
 
     def test_drop_collection(self):
         self.create_milvus_db_dense().drop_collection()
-        self.create_milvus_db_dense().client.drop_collection.assert_called_once_with(self.create_milvus_db_dense()._collection_name)
+        self.create_milvus_db_dense().client.drop_collection.assert_called_once_with(
+            self.create_milvus_db_dense()._collection_name)
 
         with self.assertRaises(MilvusError):
             self.client.has_collection.return_value = False

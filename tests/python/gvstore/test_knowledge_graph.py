@@ -14,7 +14,7 @@ from mx_rag.gvstore.util.utils import KgOprMode, safe_read_graphml
 from mx_rag.libs.glib.utils.file_utils import FileCreate, FileCheck
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.reranker.local import LocalReranker
-from mx_rag.storage.vectorstore import SimilarityStrategy, MilvusDB
+from mx_rag.storage.vectorstore import MilvusDB
 from mx_rag.utils import ClientParam
 
 
@@ -59,13 +59,12 @@ class TestKGCreateCase(unittest.TestCase):
             result = kg_creation.upload_kg_files(self.file_list, loader_mng)
             self.assertTrue(result)
             x_dim = 1024
-            strategy = SimilarityStrategy.FLAT_IP
             llm_chat.return_value = "{'Triplets': [['小明', '和', '小红'], ['小明', '去看', '电影'], " \
                                     "['小明', '找', '小花'], ['小花', '去', '图书馆']], " \
                                     "'Entity': {'小明': '人', '小红': '人', '电影': '娱乐', '饭': '食物', '小花': '人', '图书馆': '场所'}, " \
                                     "'Summary': '小明与朋友看电影、吃饭、去图书馆。'}"
             emb.embed_documents.side_effect = side_effect
-            kg_creation.create_kg_graph(graph_name, x_dim=x_dim, similarity_strategy=strategy)
+            kg_creation.create_kg_graph(graph_name, x_dim=x_dim)
             graph_path = os.path.join(self.work_dir, f"{graph_name}.graphml")
             FileCheck.check_input_path_valid(graph_path)
             graph = safe_read_graphml(graph_path)

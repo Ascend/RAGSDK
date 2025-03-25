@@ -10,15 +10,9 @@ from loguru import logger
 
 
 class SearchMode(Enum):
-    DENSE = 0   # dense search
+    DENSE = 0  # dense search
     SPARSE = 1  # sparse search
     HYBRID = 2  # hybrid search
-
-
-class SimilarityStrategy(Enum):
-    FLAT_L2 = 0
-    FLAT_IP = 1
-    FLAT_COS = 2
 
 
 class VectorStore(ABC):

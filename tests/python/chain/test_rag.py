@@ -16,7 +16,7 @@ from mx_rag.llm import Text2TextLLM
 from mx_rag.retrievers import Retriever, MultiQueryRetriever
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.llm.llm_parameter import LLMParameterConfig
-from mx_rag.storage.vectorstore.faiss_npu import MindFAISS, SimilarityStrategy
+from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 
 
 class MyTestCase(unittest.TestCase):
@@ -40,7 +40,7 @@ class MyTestCase(unittest.TestCase):
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
-        index = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+        index = MindFAISS(x_dim=1024, devs=[0],
                           load_local_index="./faiss.index")
         vector_store = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
         vector_store.add_file("test_file.txt", ["this is a test"], metadatas=[{"filepath": "xxx.file"}],
@@ -90,7 +90,7 @@ class MyTestCase(unittest.TestCase):
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
         os.system = MagicMock(return_value=0)
-        vector_store = MindFAISS(x_dim=1024, devs=[0], similarity_strategy=SimilarityStrategy.FLAT_L2,
+        vector_store = MindFAISS(x_dim=1024, devs=[0],
                                  load_local_index="./faiss.index")
         vector_store.similarity_search = MagicMock(
             return_value=[[(Document(page_content="this is a test", document_name="test.txt"), 0.5)]])

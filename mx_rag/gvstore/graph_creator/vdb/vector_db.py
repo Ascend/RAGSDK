@@ -17,7 +17,6 @@ from mx_rag.gvstore.util.utils import GraphUpdatedData
 from mx_rag.utils.common import check_db_file_limit, MIN_SQLITE_FREE_SPACE
 from mx_rag.utils.file_check import check_disk_free_space
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
-from mx_rag.storage.vectorstore import SimilarityStrategy
 
 
 class VectorDBBase(ABC):
@@ -82,25 +81,22 @@ class MilvusVecDB(VectorDBBase):
     def initialize(self, collection_name: str, **kwargs):
         if "x_dim" in kwargs and not isinstance(kwargs.get("x_dim"), int):
             raise KeyError("x_dim param error, it should be integer type")
-        if "similarity_strategy" in kwargs and not isinstance(kwargs.get("similarity_strategy"), SimilarityStrategy):
-            raise KeyError("similarity_strategy parameter error, it should be SimilarityStrategy type")
         if "param" in kwargs and not isinstance(kwargs.get("param"), dict):
             raise KeyError("param param error, it should be valid dict type")
         if "force" in kwargs and not isinstance(kwargs.get("force"), bool):
             raise KeyError("param force error, it should be bool type")
         x_dim = kwargs.get("x_dim", 1024)
-        similar_strategy = kwargs.get("similarity_strategy", SimilarityStrategy.FLAT_IP)
         param = kwargs.get("param", None)
         self.milvus_db.set_collection_name(collection_name)
         force = kwargs.get("force", False)
         has_collection_flag = self.milvus_db.has_collection(collection_name)
         if not has_collection_flag:
-            self.milvus_db.create_collection(x_dim, similar_strategy, param)
+            self.milvus_db.create_collection(x_dim, param)
         if has_collection_flag:
             if force:
                 logger.warning(f"force overwrite collection {collection_name} in milvus.")
                 self.milvus_db.drop_collection()
-                self.milvus_db.create_collection(x_dim, similar_strategy, param)
+                self.milvus_db.create_collection(x_dim, param)
             else:
                 logger.warning(f"collection {collection_name} in milvus already exists.")
 
