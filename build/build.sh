@@ -12,8 +12,8 @@ ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 SO_OUTPUT_DIR="${ROOT_PATH}"/mx_rag/lib
 TRANSFOMER_ADAPTER_OUTPUT_DIR="${ROOT_PATH}"/ops/transformer_adapter/output
 
-export CFLAGS="-fstack-protector-strong -fPIC -D_FORTIFY_SOURCE=2 -O2 -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -s -std=c11 -ftrapv -Wall -Wextra -Werror -fno-common"
-export LDFLAGS="-Wl,-z,relro,-z,now,-z,noexecstack -s"
+export CFLAGS="-fstack-protector-strong -fPIC -fPIE -O2 -std=c11 -ftrapv -Wall -Wextra -Werror -fno-common"
+export LDFLAGS="-s -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack"
 
 function clean()
 {
