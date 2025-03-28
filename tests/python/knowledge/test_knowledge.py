@@ -49,7 +49,8 @@ class TestKnowledge(unittest.TestCase):
         with self.assertRaises(KnowledgeError):
             knowledge_store.add_usr_id_to_knowledge("test_knowledge", "user124", "admin")
 
-        knowledge = KnowledgeDB(knowledge_store, db, vector_store, "test_knowledge", white_paths=[top_path, ])
+        knowledge = KnowledgeDB(knowledge_store, db, vector_store, "test_knowledge",
+                                white_paths=[top_path, ], user_id='user123')
         knowledge.add_file(pathlib.Path(self.test_file), ["this is a test"], metadatas=[{"filepath": "xxx.file"}],
                            embed_func=embed_func)
         with self.assertRaises(KnowledgeError):
