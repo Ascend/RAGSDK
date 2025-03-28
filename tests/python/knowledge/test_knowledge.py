@@ -38,29 +38,49 @@ class TestKnowledge(unittest.TestCase):
         vector_store = MagicMock(spec=MindFAISS)
         vector_store.add = MagicMock(return_value=None)
         knowledge_store = KnowledgeStore(SQL_PATH)
+        knowledge_store.add_knowledge("test_knowledge", "user123", "admin")
+        with self.assertRaises(KnowledgeError):
+            knowledge_store.add_knowledge("test_knowledge", "user123", 'admin')
+        self.assertEqual(knowledge_store.check_knowledge_exist("test_knowledge", "user123"), True)
+        knowledge_store.add_usr_id_to_knowledge("test_knowledge", "user124", "admin")
+
+        with self.assertRaises(KnowledgeError):
+            knowledge_store.add_usr_id_to_knowledge("test_knowledge001", "user124", "admin")
+        with self.assertRaises(KnowledgeError):
+            knowledge_store.add_usr_id_to_knowledge("test_knowledge", "user124", "admin")
+
         knowledge = KnowledgeDB(knowledge_store, db, vector_store, "test_knowledge", white_paths=[top_path, ])
         knowledge.add_file(pathlib.Path(self.test_file), ["this is a test"], metadatas=[{"filepath": "xxx.file"}],
                            embed_func=embed_func)
+        with self.assertRaises(KnowledgeError):
+            knowledge.add_file(pathlib.Path(self.test_file), ["this is a test"],
+                               metadatas=[{"filepath": "xxx.file"}, {"filepath": "yyy.file"}], embed_func=embed_func)
+
         self.assertEqual(knowledge.get_all_documents()[0].knowledge_name, "test_knowledge")
         self.assertEqual(knowledge.get_all_documents()[0].document_name, "test.md")
-        knowledge_store.add_usr_id_to_knowledge("test_knowledge", "user123", "admin")
+
         knowledge_db_mock.return_value = None
         knowledge_db1 = KnowledgeDB(KnowledgeStore(SQL_PATH), db, vector_store, "test_knowledge",
                                     white_paths=[top_path, ], user_id="user123")
         self.assertEqual(knowledge_db1.get_all_documents()[0].knowledge_name, "test_knowledge")
         self.assertEqual(knowledge_db1.get_all_documents()[0].document_name, "test.md")
         self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), ["test_knowledge"])
+
         # 删除文档后, 只剩下空的knowledge
         knowledge.delete_file("test.md")
         self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), ["test_knowledge"])
         self.assertEqual(knowledge.get_all_documents(), [])
         self.assertEqual(knowledge_store.get_all_usr_role_by_knowledge("test_knowledge"),
                          {'Default': 'admin', 'user123': 'admin'})
+        self.assertEqual(knowledge_store.get_all_usr_role_by_knowledge("test_knowledge001"), {})
         # 多个usr_id对knowledge关系删除
         knowledge_store.delete_usr_id_from_knowledge("test_knowledge", "Default", 'admin')
         # user_id和knowledge1对1时，不允许删除关系，使用delete_knowledge删除
         with self.assertRaises(KnowledgeError):
             knowledge_store.delete_usr_id_from_knowledge("test_knowledge", "user123", 'admin')
+        with self.assertRaises(KnowledgeError):
+            knowledge_store.delete_usr_id_from_knowledge("test_knowledge001", "user123", 'admin')
+
         knowledge_db1.delete_all()
         self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), [])
 if __name__ == '__main__':
