@@ -37,8 +37,9 @@ class MyTestCase(unittest.TestCase):
         os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, devs=[0],
                           load_local_index="./faiss.index")
-
-        knowledge_db = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
+        knowledge_store = KnowledgeStore("./sql.db")
+        knowledge_store.add_knowledge(knowledge_name='test', user_id='Default')
+        knowledge_db = KnowledgeDB(knowledge_store, db, index, "test", white_paths=["/home"], user_id='Default')
         knowledge_db.add_file("test_file.txt", ["this is a test"], embed_func=emb.embed_documents)
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="chatglm2-6b-quant", base_url="http://71.14.88.12:7890")
