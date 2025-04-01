@@ -34,7 +34,7 @@ class KnowledgeModel(Base):
     role = Column(Enum("admin", "member"), comment="用户角色，admin: 管理员, member: 仅查询")
     create_time = Column(DateTime, comment="创建时间", default=datetime.datetime.utcnow)
     __table_args__ = (
-        UniqueConstraint('knowledge_name', 'user_id', 'role', name="knowledge_name"),
+        UniqueConstraint('knowledge_name', 'user_id', name="knowledge_name"),
         {"sqlite_autoincrement": True}
     )
 
@@ -89,11 +89,13 @@ class KnowledgeStore:
             try:
                 knowledge = session.query(KnowledgeModel
                                           ).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
-                if not knowledge:
-                    knowledge_id = self.add_knowledge(knowledge_name, user_id)
+                if knowledge is None:
+                    raise KnowledgeError(f"knowledge_name={knowledge_name}, user_id={user_id} does not exist in "
+                                         f"knowledge_table, please use add_knowledge or add_usr_id_to_knowledge"
+                                         f" function to add them")
                 if not self.check_usr_role_is_admin(knowledge_name, user_id):
                     raise KnowledgeError(f"(user_id={user_id}) is not admin, can not add document")
-                knowledge_id = knowledge.knowledge_id if knowledge else knowledge_id
+                knowledge_id = knowledge.knowledge_id
                 # 创建新的文档
                 document_model = DocumentModel(knowledge_id=knowledge_id, knowledge_name=knowledge_name,
                                                document_name=doc_name, document_file_path=file_path)
@@ -111,7 +113,7 @@ class KnowledgeStore:
                     "due to a database error: {db_err}") from db_err
             except Exception as err:
                 session.rollback()
-                raise KnowledgeError(f"add chunk failed") from err
+                raise KnowledgeError(f"add chunk failed, {err}") from err
 
     @validate_params(
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
@@ -223,7 +225,10 @@ class KnowledgeStore:
         with self.session() as session:
             knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name).first()
             if knowledge:
-                raise KnowledgeError(f"knowledge_name={knowledge_name} already exist in knowledge_table")
+                logger.debug(f"knowledge={knowledge_name} already in knowledge_table, now add user_id={user_id} "
+                             f"to knowledge={knowledge_name}")
+                self.add_usr_id_to_knowledge(knowledge_name, user_id, role)
+                return knowledge.knowledge_id
             max_id = session.query(KnowledgeModel).with_entities(
                 func.max(KnowledgeModel.knowledge_id)).scalar() or 0
             knowledge_id = max_id + 1
@@ -244,18 +249,19 @@ class KnowledgeStore:
     def add_usr_id_to_knowledge(self, knowledge_name, user_id, role):
         try:
             with self.session() as session:
-                knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name).first()
+                knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name)
                 if not knowledge:
                     raise KnowledgeError(f"knowledge_name={knowledge_name} does not exist in knowledge_table")
-                knowledge_model = KnowledgeModel(knowledge_id=knowledge.knowledge_id, knowledge_name=knowledge_name,
-                                                 user_id=user_id, role=role)
+                user_id_in_knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name,
+                                                                               user_id=user_id).first()
+                if user_id_in_knowledge:
+                    logger.debug(f"user_id={user_id} already in knowledge_table")
+                    return
+                knowledge_model = KnowledgeModel(knowledge_id=knowledge.first().knowledge_id,
+                                                 knowledge_name=knowledge_name, user_id=user_id, role=role)
                 session.add(knowledge_model)
                 session.commit()
 
-        except sqlalchemy.exc.IntegrityError as e:
-            logger.error(f"failed to add, the {user_id} to {knowledge_name} "
-                         f"have same user_id in {knowledge_name}")
-            raise KnowledgeError(f"failed to add {user_id} to {knowledge_name}") from e
         except Exception as e:
             raise KnowledgeError(f"failed to add {user_id} to {knowledge_name}") from e
 
@@ -358,8 +364,8 @@ class KnowledgeDB(KnowledgeBase):
             vector_store: VectorStore,
             knowledge_name: str,
             white_paths: List[str],
+            user_id: str,
             max_file_count: int = 1000,
-            user_id: str = "Default",
             lock=None
     ):
         super().__init__(white_paths)

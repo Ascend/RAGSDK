@@ -48,7 +48,9 @@ class MyTestCase(unittest.TestCase):
         os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, devs=[0],
                           load_local_index="./faiss.index")
-        knowledge_db = KnowledgeDB(KnowledgeStore("./sql.db"), db, index, "test", white_paths=["/home"])
+        knowledge_store = KnowledgeStore("./sql.db")
+        knowledge_store.add_knowledge(knowledge_name='test', user_id='Default')
+        knowledge_db = KnowledgeDB(knowledge_store, db, index, "test", white_paths=["/home"], user_id='Default')
         knowledge_db.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_documents)
         logger.info("create MindFAISS done")
         r = Retriever(vector_store=index, document_store=db, score_threshold=0.5, embed_func=emb.embed_documents)

@@ -60,8 +60,9 @@ class TestHandler(unittest.TestCase):
         vector_store.add = MagicMock(return_value=None)
         chunk_store = SQLiteDocstore(db_path=SQL_PATH)
         knowledge_store = KnowledgeStore(db_path=SQL_PATH)
+        knowledge_store.add_knowledge(knowledge_name, 'Default')
         return KnowledgeDB(knowledge_store=knowledge_store, chunk_store=chunk_store, vector_store=vector_store,
-                           knowledge_name=knowledge_name, white_paths=[self.white_paths])
+                           knowledge_name=knowledge_name, white_paths=[self.white_paths], user_id='Default')
 
     def test_upload_with_invalid_knowledge(self):
         self.common_params['knowledge'] = None
@@ -91,7 +92,7 @@ class TestHandler(unittest.TestCase):
             delete_files(self.knowledge_db, 'test123.pdf')
 
     def test_with_too_many_files(self):
-        knowledge_db = self.create_knowledge_db()
+        knowledge_db = self.create_knowledge_db(knowledge_name='test002')
         knowledge_db.max_file_count = 1
         self.common_params['knowledge'] = knowledge_db
         with self.assertRaises(FileHandlerError):
