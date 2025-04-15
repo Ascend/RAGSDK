@@ -226,6 +226,3 @@ class KGEngine:
         kwargs["vector_db"] = vec_db
         graph = graph_client(graph_path, graph_name, **kwargs)
         return graph
-
-    def retrieval_kg_graph(self, GRAPH_NAME, param):
-        pass
