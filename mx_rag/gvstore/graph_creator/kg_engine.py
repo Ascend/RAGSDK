@@ -178,7 +178,7 @@ class KGEngine:
         question=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
                       message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]")
     )
-    def retrival_kg_graph(self, graph_name: str, question: str, **kwargs):
+    def retrieval_kg_graph(self, graph_name: str, question: str, **kwargs):
         retriever = self.as_retriever(graph_name, **kwargs)
         return retriever.invoke(question)
 
@@ -226,3 +226,6 @@ class KGEngine:
         kwargs["vector_db"] = vec_db
         graph = graph_client(graph_path, graph_name, **kwargs)
         return graph
+
+    def retrieval_kg_graph(self, GRAPH_NAME, param):
+        pass

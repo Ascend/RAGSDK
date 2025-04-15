@@ -24,19 +24,19 @@ class DataProcessConfig:
         DataProcessConfig 微调合成数据生成配置
 
     Attributes:
-        generate_qd_prompt: (str) 自动生成QD对的LLM所用Prompt
+        generate_qa_prompt: (str) 自动生成QD对的LLM所用Prompt
         llm_preferred_prompt: (str) 通过LLM优选QD对的Prompt
         question_number: (int) 针对每个原始doc生成的query问题数
         featured: (bool) QD对精选开关, 借助BM25和reranker融合排序筛选
         featured_percentage: (float) 精选筛选比例
-        prefered: (bool) QD对优选开关, 借助LLM进行评分筛选
+        preferred: (bool) QD对优选开关, 借助LLM进行评分筛选
         llm_threshold_score: (float) 优选筛选比例
         rewrite: (bool) 问题重写开关
         query_rewrite_number: (int) 问题重写的数量
     """
 
     @validate_params(
-        generate_qd_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
+        generate_qa_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
         llm_preferred_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                                   message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
@@ -45,7 +45,7 @@ class DataProcessConfig:
         featured=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         featured_percentage=dict(validator=lambda x: isinstance(x, float) and 0.0 < x < 1.0,
                                  message="param must meets: Type is float, value range (0.0, 1.0)"),
-        prefered=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        preferred=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         llm_threshold_score=dict(validator=lambda x: isinstance(x, float) and 0.0 < x < 1.0,
                                  message="param must meets: Type is float, value range (0.0, 1.0)"),
         rewrite=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
@@ -53,21 +53,21 @@ class DataProcessConfig:
                                   message="param must meets: Type is int, length range (0, 20]"),
     )
     def __init__(self,
-                 generate_qd_prompt: str = GENERATE_QA_PROMPT,
+                 generate_qa_prompt: str = GENERATE_QA_PROMPT,
                  llm_preferred_prompt: str = SCORING_QD_PROMPT,
                  question_number: int = 3,
                  featured: bool = True,
                  featured_percentage: float = 0.8,
-                 prefered: bool = True,
+                 preferred: bool = True,
                  llm_threshold_score: float = 0.8,
                  rewrite: bool = True,
                  query_rewrite_number: int = 2):
-        self.generate_qd_prompt = generate_qd_prompt
+        self.generate_qa_prompt = generate_qa_prompt
         self.llm_preferred_prompt = llm_preferred_prompt
         self.question_number = question_number
         self.featured = featured
         self.featured_percentage = featured_percentage
-        self.prefered = prefered
+        self.preferred = preferred
         self.llm_threshold_score = llm_threshold_score
         self.rewrite = rewrite
         self.query_rewrite_number = query_rewrite_number
@@ -108,7 +108,7 @@ class TrainDataGenerator(BaseGenerator):
         # 流程开始
         logger.info("step Generating rough problem documentation pairs")
         query_list, doc_list = self._generate_coarsest_qd_pairs(split_doc_list, data_process_config.question_number,
-                                                                data_process_config.generate_qd_prompt,
+                                                                data_process_config.generate_qa_prompt,
                                                                 batch_size)
         logger.info("step Generated rough problem documentation pairs finished")
 
@@ -120,7 +120,7 @@ class TrainDataGenerator(BaseGenerator):
                                                          data_process_config.featured_percentage)
             logger.info("step bm25+reranker selection finished")
 
-        if data_process_config.prefered:
+        if data_process_config.preferred:
             logger.info("step LLM optimizing query document pair")
             query_list, doc_list = self._prefer_qd_pair(query_list,
                                                         doc_list,

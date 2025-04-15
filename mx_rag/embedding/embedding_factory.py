@@ -22,7 +22,7 @@ class EmbeddingFactory(ABC):
     """
     NPU_SUPPORT_EMB: Dict[str, Callable[[Dict[str, Any]], Embeddings]] = {
         "local_text_embedding": TextEmbedding.create,
-        "local_imags_embedding": ImageEmbedding.create,
+        "local_images_embedding": ImageEmbedding.create,
         "tei_embedding": TEIEmbedding.create
     }
 
