@@ -6,7 +6,7 @@ from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker import Reranker
-from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QA_PROMPT
+from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QD_PROMPT
 from mx_rag.tools.finetune.dataprocess.improve_query import improve_query
 from mx_rag.tools.finetune.dataprocess.llm_preferred import SCORING_QD_PROMPT
 from mx_rag.tools.finetune.generator.common import BaseGenerator
@@ -24,7 +24,7 @@ class DataProcessConfig:
         DataProcessConfig 微调合成数据生成配置
 
     Attributes:
-        generate_qa_prompt: (str) 自动生成QD对的LLM所用Prompt
+        generate_qd_prompt: (str) 自动生成QD对的LLM所用Prompt
         llm_preferred_prompt: (str) 通过LLM优选QD对的Prompt
         question_number: (int) 针对每个原始doc生成的query问题数
         featured: (bool) QD对精选开关, 借助BM25和reranker融合排序筛选
@@ -36,7 +36,7 @@ class DataProcessConfig:
     """
 
     @validate_params(
-        generate_qa_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
+        generate_qd_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
         llm_preferred_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                                   message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
@@ -53,7 +53,7 @@ class DataProcessConfig:
                                   message="param must meets: Type is int, length range (0, 20]"),
     )
     def __init__(self,
-                 generate_qa_prompt: str = GENERATE_QA_PROMPT,
+                 generate_qd_prompt: str = GENERATE_QD_PROMPT,
                  llm_preferred_prompt: str = SCORING_QD_PROMPT,
                  question_number: int = 3,
                  featured: bool = True,
@@ -62,7 +62,7 @@ class DataProcessConfig:
                  llm_threshold_score: float = 0.8,
                  rewrite: bool = True,
                  query_rewrite_number: int = 2):
-        self.generate_qa_prompt = generate_qa_prompt
+        self.generate_qd_prompt = generate_qd_prompt
         self.llm_preferred_prompt = llm_preferred_prompt
         self.question_number = question_number
         self.featured = featured
@@ -108,7 +108,7 @@ class TrainDataGenerator(BaseGenerator):
         # 流程开始
         logger.info("step Generating rough problem documentation pairs")
         query_list, doc_list = self._generate_coarsest_qd_pairs(split_doc_list, data_process_config.question_number,
-                                                                data_process_config.generate_qa_prompt,
+                                                                data_process_config.generate_qd_prompt,
                                                                 batch_size)
         logger.info("step Generated rough problem documentation pairs finished")
 

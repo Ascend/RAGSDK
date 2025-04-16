@@ -13,7 +13,7 @@ from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN, MAX_PROMPT_LENGTH
 
 MAX_TOKENS = 512
-GENERATE_QA_PROMPT = """阅读文章，生成一个相关的问题，例如：
+GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
 文章：气候变化对海洋生态系统造成了严重的影响，其中包括海洋温度上升、海平面上升、酸化等问题。这些变化对海洋生物种群分布、生态圈的稳定性以及渔业等方面都产生了深远影响。在全球变暖的背景下，保护海洋生态系统已经成为当务之急。 
 问题：气候变化对海洋生态系统的影响主要体现在哪些方面？
 文章：零售业是人工智能应用的另一个重要领域。通过数据分析和机器学习算法，零售商可以更好地了解消费者的购买行为、趋势和偏好。人工智能技术可以帮助零售商优化库存管理、推荐系统、市场营销等方面的工作，提高销售额和客户满意度。
@@ -65,11 +65,11 @@ def multi_processing(llm, prompt, doc_list, question_number):
 
 
 def make_request(llm, prompt_template, question_number, doc_content):
-    generate_qa_prompt = PromptTemplate(
+    generate_qd_prompt = PromptTemplate(
         input_variables=["doc", "question_number"],
         template=prompt_template,
     )
-    prompt = generate_qa_prompt.format(
+    prompt = generate_qd_prompt.format(
         doc=doc_content,
         question_number=question_number
     )

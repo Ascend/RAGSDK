@@ -5,7 +5,7 @@ import os
 from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
-from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QA_PROMPT
+from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QD_PROMPT
 from mx_rag.tools.finetune.generator.common import BaseGenerator
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import write_jsonl_to_file
@@ -26,7 +26,7 @@ class EvalDataGenerator(BaseGenerator):
         split_doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                             message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
                                     f"str length range [1, {STR_MAX_LEN}]"),
-        generate_qa_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
+        generate_qd_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,
                                 message=f"param must be a str and its length meets (0, {MAX_PROMPT_LENGTH}]"),
         question_number=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 20,
                              message="param must meets: Type is int, length range (0, 20]"),
@@ -36,7 +36,7 @@ class EvalDataGenerator(BaseGenerator):
     )
     def generate_evaluate_data(self,
                                split_doc_list: list[str],
-                               generate_qa_prompt: str = GENERATE_QA_PROMPT,
+                               generate_qd_prompt: str = GENERATE_QD_PROMPT,
                                question_number: int = 3,
                                batch_size: int = 8):
         FileCheck.dir_check(self.dataset_path)
@@ -48,7 +48,7 @@ class EvalDataGenerator(BaseGenerator):
         # 流程开始
         logger.info("step Generating rough problem documentation pairs")
         query_list, doc_list = self._generate_coarsest_qd_pairs(split_doc_list, question_number,
-                                                                generate_qa_prompt, batch_size)
+                                                                generate_qd_prompt, batch_size)
         logger.info("step Generated rough problem documentation pairs finished")
 
         evaluate_data = []
