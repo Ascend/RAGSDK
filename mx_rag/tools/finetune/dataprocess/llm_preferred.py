@@ -58,7 +58,7 @@ def llm_preferred(llm: Text2TextLLM, query_list: list[str], doc_list: list[str],
 
 
 def multi_processing(llm, query_list, doc_list, prompt):
-    logger.info('start to multi process LLM prefered')
+    logger.info('start to multi process LLM preferred')
 
     # 使用 zip 函数结合列表参数
     params = zip(query_list, doc_list)
@@ -77,7 +77,7 @@ def multi_processing(llm, query_list, doc_list, prompt):
             except ValueError as e:
                 logger.error(f"Value error: {e}")
         score_list.append(score)
-    logger.info('end to multi process LLM prefered')
+    logger.info('end to multi process LLM preferred')
     return score_list
 
 

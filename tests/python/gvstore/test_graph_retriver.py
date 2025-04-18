@@ -64,5 +64,5 @@ class TestGvRetriever(unittest.TestCase):
         self.assertTrue(isinstance(retriever, GraphRetriever))
         # 无法mock覆盖到GraphRetriever里的方法，和pydantic有关
         graph_retriever.retrieval.return_value = []
-        self.assertEqual(self.kg_creation.retrival_kg_graph(GRAPH_NAME, "测试问题？"), ["test.txt"])
+        self.assertEqual(self.kg_creation.retrieval_kg_graph(GRAPH_NAME, "测试问题？"), ["test.txt"])
 

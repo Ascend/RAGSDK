@@ -5,7 +5,7 @@ import os
 from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
-from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QA_PROMPT
+from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QD_PROMPT
 from mx_rag.tools.finetune.generator.common import BaseGenerator
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import write_jsonl_to_file
@@ -36,7 +36,7 @@ class EvalDataGenerator(BaseGenerator):
     )
     def generate_evaluate_data(self,
                                split_doc_list: list[str],
-                               generate_qd_prompt: str = GENERATE_QA_PROMPT,
+                               generate_qd_prompt: str = GENERATE_QD_PROMPT,
                                question_number: int = 3,
                                batch_size: int = 8):
         FileCheck.dir_check(self.dataset_path)

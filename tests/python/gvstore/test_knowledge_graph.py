@@ -101,7 +101,7 @@ class TestKGCreateCase(unittest.TestCase):
             get_data_by_ids.return_value = [1, 2], ["小明和小红去看电影", "小明去找小花一块去图书馆"]
             rerank.return_value = [0.1, 0.2, 0.3]
             rerank_top_k.rerank_top_k = ["小明和小红去看电影", "小明去找小花一块去图书馆"]
-            context = kg_creation.retrival_kg_graph(graph_name, question, top_k=retrieval_k, k_hop=k_hop)
+            context = kg_creation.retrieval_kg_graph(graph_name, question, top_k=retrieval_k, k_hop=k_hop)
             self.assertTrue("小明去找小花一块去图书馆" in context)
 
         test_kg_create(self)

@@ -6,7 +6,7 @@ from loguru import logger
 
 from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker import Reranker
-from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QA_PROMPT
+from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QD_PROMPT
 from mx_rag.tools.finetune.dataprocess.improve_query import improve_query
 from mx_rag.tools.finetune.dataprocess.llm_preferred import SCORING_QD_PROMPT
 from mx_rag.tools.finetune.generator.common import BaseGenerator
@@ -29,7 +29,7 @@ class DataProcessConfig:
         question_number: (int) 针对每个原始doc生成的query问题数
         featured: (bool) QD对精选开关, 借助BM25和reranker融合排序筛选
         featured_percentage: (float) 精选筛选比例
-        prefered: (bool) QD对优选开关, 借助LLM进行评分筛选
+        preferred: (bool) QD对优选开关, 借助LLM进行评分筛选
         llm_threshold_score: (float) 优选筛选比例
         rewrite: (bool) 问题重写开关
         query_rewrite_number: (int) 问题重写的数量
@@ -45,7 +45,7 @@ class DataProcessConfig:
         featured=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         featured_percentage=dict(validator=lambda x: isinstance(x, float) and 0.0 < x < 1.0,
                                  message="param must meets: Type is float, value range (0.0, 1.0)"),
-        prefered=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        preferred=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         llm_threshold_score=dict(validator=lambda x: isinstance(x, float) and 0.0 < x < 1.0,
                                  message="param must meets: Type is float, value range (0.0, 1.0)"),
         rewrite=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
@@ -53,12 +53,12 @@ class DataProcessConfig:
                                   message="param must meets: Type is int, length range (0, 20]"),
     )
     def __init__(self,
-                 generate_qd_prompt: str = GENERATE_QA_PROMPT,
+                 generate_qd_prompt: str = GENERATE_QD_PROMPT,
                  llm_preferred_prompt: str = SCORING_QD_PROMPT,
                  question_number: int = 3,
                  featured: bool = True,
                  featured_percentage: float = 0.8,
-                 prefered: bool = True,
+                 preferred: bool = True,
                  llm_threshold_score: float = 0.8,
                  rewrite: bool = True,
                  query_rewrite_number: int = 2):
@@ -67,7 +67,7 @@ class DataProcessConfig:
         self.question_number = question_number
         self.featured = featured
         self.featured_percentage = featured_percentage
-        self.prefered = prefered
+        self.preferred = preferred
         self.llm_threshold_score = llm_threshold_score
         self.rewrite = rewrite
         self.query_rewrite_number = query_rewrite_number
@@ -120,7 +120,7 @@ class TrainDataGenerator(BaseGenerator):
                                                          data_process_config.featured_percentage)
             logger.info("step bm25+reranker selection finished")
 
-        if data_process_config.prefered:
+        if data_process_config.preferred:
             logger.info("step LLM optimizing query document pair")
             query_list, doc_list = self._prefer_qd_pair(query_list,
                                                         doc_list,
