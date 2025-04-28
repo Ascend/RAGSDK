@@ -4,7 +4,7 @@ from typing import Optional, List, Any, Dict
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from pydantic import Field, BaseModel, ValidationError, field_validator, ConfigDict
 
-from mx_rag.utils.common import validate_params, validata_list_str
+from mx_rag.utils.common import validate_params, validate_list_str
 
 
 class Person():
@@ -27,7 +27,7 @@ class Person():
     @validate_params(
         param1=dict(validator=lambda x: 0.0 < x < 1.0),
     )
-    def validata_call_back_fun(self, param1: float, func, *args):
+    def validate_call_back_fun(self, param1: float, func, *args):
         func(*args)
 
     @validate_params(
@@ -104,7 +104,7 @@ def non_class_funciton2(param1: int, param2: int, param3: List[dict]):
 
 
 @validate_params(
-    param1={"validator": lambda x: validata_list_str(x, [1, 3], [5, 10]),
+    param1={"validator": lambda x: validate_list_str(x, [1, 3], [5, 10]),
             "message": "param type is not List[str] or length of list not in [1, 3] "
                        "or length of str in list not in [5, 10]"}
 )
@@ -130,9 +130,9 @@ class TestValidateParams(unittest.TestCase):
         person = Person(18, 140, 2)
         person.call_back_fun(non_class_funciton, "world!", param2=3, param3=5)
         person.call_back_fun(non_class_funciton, param1="world!", param2=3, param3=5)
-        person.validata_call_back_fun(0.5, non_class_funciton, "world!", 5)
+        person.validate_call_back_fun(0.5, non_class_funciton, "world!", 5)
         with self.assertRaises(ValueError):
-            person.validata_call_back_fun(1.1, non_class_funciton, "world!", 5)
+            person.validate_call_back_fun(1.1, non_class_funciton, "world!", 5)
 
     def test_default_parm_validation(self):
         non_class_funciton1(1, 2)
@@ -191,7 +191,7 @@ class TestValidateParams(unittest.TestCase):
         except Exception as e:
             self.assertTrue(str(e).find("lambda x: all(len(item) > 1 for item in x)") > -1)
 
-    def test_validata_list_str(self):
+    def test_validate_list_str(self):
         non_class_funciton3(["hello!", "world!", "beautiful"])
         with self.assertRaises(ValueError):
             non_class_funciton3([123, "world!", "beautiful"])

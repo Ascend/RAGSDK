@@ -21,9 +21,9 @@ INT_32_MAX = 2 ** 31 - 1
 MAX_DEVICE_ID = 63
 MAX_TOP_K = 10000
 MAX_QUERY_LENGTH = 128 * 1024 * 1024
-EMBBEDDING_TEXT_COUNT = 1000 * 1000
-EMBBEDDING_IMG_COUNT = 1000
-IMG_EMBBEDDING_TEXT_LEN = 256
+EMBEDDING_TEXT_COUNT = 1000 * 1000
+EMBEDDING_IMG_COUNT = 1000
+IMG_EMBEDDING_TEXT_LEN = 256
 MAX_FILE_SIZE = 100 * 1024 * 1024
 TEXT_MAX_LEN = 1000 * 1000
 STR_MAX_LEN = 128 * 1024 * 1024
@@ -196,7 +196,7 @@ class ParseCertInfo:
         }
 
 
-def validata_list_document(texts, length_limit: List[int], content_limit: List[int]):
+def validate_list_document(texts, length_limit: List[int], content_limit: List[int]):
     """
     用于List[Document]类型的数据校验
     Args:
@@ -227,7 +227,7 @@ def validata_list_document(texts, length_limit: List[int], content_limit: List[i
     return True
 
 
-def validata_list_str(texts, length_limit: List[int], str_limit: List[int]):
+def validate_list_str(texts, length_limit: List[int], str_limit: List[int]):
     """
     用于List[str]类型的数据校验
     Args:
@@ -258,7 +258,7 @@ def validata_list_str(texts, length_limit: List[int], str_limit: List[int]):
     return True
 
 
-def validata_list_list_str(texts,
+def validate_list_list_str(texts,
                            length_limit: List[int],
                            inner_length_limit: List[int],
                            str_limit: List[int]):
@@ -285,7 +285,7 @@ def validata_list_list_str(texts,
         logger.error(f"The List[List[str]] length not in [{min_length_limit}, {max_length_limit}]")
         return False
     for text in texts:
-        res = validata_list_str(text, inner_length_limit, str_limit)
+        res = validate_list_str(text, inner_length_limit, str_limit)
         if not res:
             return False
     return True

@@ -7,7 +7,7 @@ from typing import List
 import numpy as np
 from langchain_core.documents import Document
 
-from mx_rag.utils.common import (validate_params, validata_list_document, TEXT_MAX_LEN, STR_MAX_LEN, validata_list_str)
+from mx_rag.utils.common import (validate_params, validate_list_document, TEXT_MAX_LEN, STR_MAX_LEN, validate_list_str)
 
 
 class Reranker(ABC):
@@ -29,9 +29,9 @@ class Reranker(ABC):
                      scores: np.ndarray) -> List:
         check_objs_flag = False
         if len(objs) > 0:
-            if isinstance(objs[0], str) and validata_list_str(objs, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]):
+            if isinstance(objs[0], str) and validate_list_str(objs, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]):
                 check_objs_flag = True
-            if isinstance(objs[0], Document) and validata_list_document(objs, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]):
+            if isinstance(objs[0], Document) and validate_list_document(objs, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]):
                 check_objs_flag = True
         if not check_objs_flag:
             raise ValueError(f"param objs of function rerank_top_k must meets: Type is List[Document] or List[str], "

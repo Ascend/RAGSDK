@@ -10,7 +10,7 @@ from tqdm import tqdm
 from loguru import logger
 
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
-from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN, MAX_PROMPT_LENGTH
+from mx_rag.utils.common import validate_params, validate_list_str, TEXT_MAX_LEN, STR_MAX_LEN, MAX_PROMPT_LENGTH
 
 MAX_TOKENS = 512
 GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
@@ -31,7 +31,7 @@ GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
 
 @validate_params(
     llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
-    doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+    doc_list=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                   message="param must meets: Type is List[str], "
                           f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]"),
     prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,

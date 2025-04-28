@@ -5,7 +5,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from langchain_text_splitters.base import TextSplitter
 from loguru import logger
 
-from mx_rag.utils.common import (validata_list_str, validate_params, NO_SPLIT_FILE_TYPE,
+from mx_rag.utils.common import (validate_list_str, validate_params, NO_SPLIT_FILE_TYPE,
                                  FILE_TYPE_COUNT, validate_sequence)
 
 
@@ -37,7 +37,7 @@ class LoaderMng:
         loader_class=dict(validator=lambda x: issubclass(x, BaseLoader),
                           message="param must be a subclass of BaseLoader in "
                                   "langchain_community.document_loaders.base"),
-        file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
+        file_types=dict(validator=lambda x: validate_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]"),
         loader_params=dict(validator=lambda x: (isinstance(x, Dict) and validate_sequence(x)) or x is None,
@@ -57,7 +57,7 @@ class LoaderMng:
     @validate_params(
         splitter_class=dict(validator=lambda x: issubclass(x, TextSplitter),
                             message="param must be a subclass of TextSplitter in langchain_text_splitters.base"),
-        file_types=dict(validator=lambda x: validata_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
+        file_types=dict(validator=lambda x: validate_list_str(x, [1, FILE_TYPE_COUNT], [1, FILE_TYPE_COUNT]),
                         message="param must meets: Type is List[str], "
                                 "list length range [1, 32], str length range [1, 32]")
     )

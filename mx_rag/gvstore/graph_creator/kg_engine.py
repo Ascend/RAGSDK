@@ -23,7 +23,7 @@ from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker import Reranker
 from mx_rag.storage.vectorstore import MilvusDB, MindFAISS
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
-from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, get_lang_param, validata_list_str
+from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, get_lang_param, validate_list_str
 from mx_rag.utils.file_check import FileCheck
 
 GRAPHDB_TYPE_CLASS = \
@@ -120,7 +120,7 @@ class KGEngine:
         FileCheck.check_path_is_exist_and_valid(self.graphml_save_path, True, True)
         graphml_data_path = os.path.join(self.graphml_save_path, f"{graph_name}.graphml")
         entity_types = kwargs.pop("entity_types", [])
-        if not validata_list_str(entity_types, [0, 1000], [1, 1000]):
+        if not validate_list_str(entity_types, [0, 1000], [1, 1000]):
             raise KeyError("entity_types param error, it should be list[str], "
                            "list length range [0, 1000], str length range [1, 1000]")
         kwargs["lang"] = self.lang
@@ -151,7 +151,7 @@ class KGEngine:
         FileCheck.check_path_is_exist_and_valid(self.graphml_save_path, True, True)
         graphml_data_path = os.path.join(self.graphml_save_path, f"{graph_name}.graphml")
         entity_types = kwargs.pop("entity_types", [])
-        if not validata_list_str(entity_types, [0, 1000], [1, 1000]):
+        if not validate_list_str(entity_types, [0, 1000], [1, 1000]):
             raise KeyError("entity_types param error, it should be list[str], "
                            "list length range [0, 1000], str length range [1, 1000]")
         graph = networkx.read_graphml(graphml_data_path)

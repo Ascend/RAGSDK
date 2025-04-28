@@ -9,7 +9,7 @@ from mx_rag.tools.finetune.dataprocess.generate_qd import GENERATE_QD_PROMPT
 from mx_rag.tools.finetune.generator.common import BaseGenerator
 from mx_rag.utils.file_check import FileCheck
 from mx_rag.utils.file_operate import write_jsonl_to_file
-from mx_rag.utils.common import (validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN,
+from mx_rag.utils.common import (validate_params, validate_list_str, TEXT_MAX_LEN, STR_MAX_LEN,
                                  MAX_PATH_LENGTH, MAX_PROMPT_LENGTH)
 
 
@@ -23,7 +23,7 @@ class EvalDataGenerator(BaseGenerator):
         super().__init__(llm, dataset_path)
 
     @validate_params(
-        split_doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+        split_doc_list=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                             message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
                                     f"str length range [1, {STR_MAX_LEN}]"),
         generate_qd_prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,

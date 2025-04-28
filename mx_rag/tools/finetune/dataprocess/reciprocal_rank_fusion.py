@@ -3,14 +3,14 @@
 
 # Reciprocal Rank Fusion(RRF)
 # 倒数排序融合（RRF）是一种将具有不同相关性指标的多个结果集组合成单个结果集的方法
-from mx_rag.utils.common import validate_params, validata_list_list_str, TEXT_MAX_LEN, STR_MAX_LEN
+from mx_rag.utils.common import validate_params, validate_list_list_str, TEXT_MAX_LEN, STR_MAX_LEN
 
 MAX_FUSION_LISTS = 10
 
 
 @validate_params(
     rank_lists=dict(
-        validator=lambda x: validata_list_list_str(x, [1, TEXT_MAX_LEN], [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+        validator=lambda x: validate_list_list_str(x, [1, TEXT_MAX_LEN], [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
         message="param must meets: Type is list[list[str]], "
                 f"list length range [1, {TEXT_MAX_LEN}], inner list length range [1, {TEXT_MAX_LEN}], "
                 f"str length range [1, {STR_MAX_LEN}]"

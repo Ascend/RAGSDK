@@ -9,7 +9,7 @@ from loguru import logger
 from langchain.prompts import PromptTemplate
 
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
-from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN, MAX_PROMPT_LENGTH
+from mx_rag.utils.common import validate_params, validate_list_str, TEXT_MAX_LEN, STR_MAX_LEN, MAX_PROMPT_LENGTH
 
 MAX_TOKENS = 512
 SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关性。相关性评分应该在0到1之间，其中1表示非常相关，0表示不相关。评分应该基于文档内容回答问题的直接程度。
@@ -37,10 +37,10 @@ SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关
 
 @validate_params(
     llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
-    query_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+    query_list=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                     message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
                             f"str length range [1, {STR_MAX_LEN}]"),
-    doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+    doc_list=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                   message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
                           f"str length range [1, {STR_MAX_LEN}]"),
     prompt=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PROMPT_LENGTH,

@@ -3,7 +3,7 @@ import unittest
 
 from loguru import logger
 from langchain_core.documents import Document
-from mx_rag.utils.common import validate_sequence, validata_list_list_str, validata_list_document, check_header
+from mx_rag.utils.common import validate_sequence, validate_list_list_str, validate_list_document, check_header
 
 
 class TestCommon(unittest.TestCase):
@@ -62,32 +62,32 @@ class TestCommon(unittest.TestCase):
             self.assertTrue(res3.find("2th layer param length") > -1)
             fd.close()
 
-    def test_validata_list_list_str(self):
-        res = validata_list_list_str('x', [1, 10], [1, 10], [1, 10])
+    def test_validate_list_list_str(self):
+        res = validate_list_list_str('x', [1, 10], [1, 10], [1, 10])
         self.assertFalse(res)
 
-        res = validata_list_list_str(['x'], [1, 2, 10], [1, 10], [1, 10])
+        res = validate_list_list_str(['x'], [1, 2, 10], [1, 10], [1, 10])
         self.assertFalse(res)
 
-        res = validata_list_list_str(['x']*11, [1, 10], [1, 10], [1, 10])
+        res = validate_list_list_str(['x'] * 11, [1, 10], [1, 10], [1, 10])
         self.assertFalse(res)
 
-        res = validata_list_list_str([['x'*11]], [1, 10], [1, 10], [1, 10])
+        res = validate_list_list_str([['x' * 11]], [1, 10], [1, 10], [1, 10])
         self.assertFalse(res)
 
-        res = validata_list_list_str([['x']], [1, 10], [1, 10], [1, 10])
+        res = validate_list_list_str([['x']], [1, 10], [1, 10], [1, 10])
         self.assertTrue(res)
 
-    def test_validata_list_document(self):
-        self.assertFalse(validata_list_document('x', [1, 10], [1, 10]))
-        self.assertFalse(validata_list_document(['x'] * 11, [1, 10], [1, 10]))
-        self.assertFalse(validata_list_document(['x'], [1, 10], [1, 10]))
+    def test_validate_list_document(self):
+        self.assertFalse(validate_list_document('x', [1, 10], [1, 10]))
+        self.assertFalse(validate_list_document(['x'] * 11, [1, 10], [1, 10]))
+        self.assertFalse(validate_list_document(['x'], [1, 10], [1, 10]))
 
         data1 = Document(page_content='one_text' * 10, metadata={"source": 'file_path'})
-        self.assertFalse(validata_list_document([data1], [1, 10], [1, 10]))
+        self.assertFalse(validate_list_document([data1], [1, 10], [1, 10]))
 
         data = Document(page_content='one_text', metadata={"source": 'file_path'})
-        self.assertTrue(validata_list_document([data], [1, 10], [1, 10]))
+        self.assertTrue(validate_list_document([data], [1, 10], [1, 10]))
 
     def test_check_header(self):
         self.assertFalse(check_header('test'))

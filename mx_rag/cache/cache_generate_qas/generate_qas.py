@@ -7,7 +7,7 @@ from loguru import logger
 from transformers import PreTrainedTokenizerBase
 
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import validate_params, validata_list_str, MB
+from mx_rag.utils.common import validate_params, validate_list_str, MB
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 DEFAULT_LLM_TIMEOUT = 10 * 60
@@ -69,10 +69,10 @@ class QAGenerationConfig:
     """
 
     @validate_params(
-        titles=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, 100]),
+        titles=dict(validator=lambda x: validate_list_str(x, [1, 10000], [1, 100]),
                     message="param must meets: Type is List[str], "
                             "list length range [1, 10000], str length range [1, 100]"),
-        contents=dict(validator=lambda x: validata_list_str(x, [1, 10000], [1, MB]),
+        contents=dict(validator=lambda x: validate_list_str(x, [1, 10000], [1, MB]),
                       message="param must meets: Type is List[str], "
                               f"list length range [1, 10000], str length range [1, {MB}]"),
         tokenizer=dict(validator=lambda x: isinstance(x, PreTrainedTokenizerBase),

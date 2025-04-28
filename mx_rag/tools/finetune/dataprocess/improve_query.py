@@ -9,14 +9,14 @@ from loguru import logger
 
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.tools.finetune.instruction.rule_driven_complex_instruction import RuleComplexInstructionRewriter
-from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN
+from mx_rag.utils.common import validate_params, validate_list_str, TEXT_MAX_LEN, STR_MAX_LEN
 
 MAX_TOKENS = 512
 
 
 @validate_params(
     llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
-    old_query_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+    old_query_list=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                         message="param must meets: Type is List[str], "
                                 f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]")
 )
