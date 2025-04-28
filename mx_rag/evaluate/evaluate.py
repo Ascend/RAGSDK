@@ -30,7 +30,7 @@ from ragas.metrics.critique import (
 )
 
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
-from mx_rag.utils.common import validate_params, validata_list_str, validata_list_list_str, TEXT_MAX_LEN, MB
+from mx_rag.utils.common import validate_params, validate_list_str, validate_list_list_str, TEXT_MAX_LEN, MB
 from mx_rag.embedding.local import TextEmbedding
 from mx_rag.embedding.service import TEIEmbedding
 
@@ -88,11 +88,11 @@ class Evaluate:
     @classmethod
     def _check_datasets(cls, datasets: Dict[str, Any]) -> bool:
         check_attribute = {
-            "question" : lambda x: validata_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
-            "answer" : lambda x: validata_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
+            "question" : lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
+            "answer" : lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
             "contexts":
-                lambda x: validata_list_list_str(x, [1, cls.MAX_LIST_LEN], [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
-            "ground_truth": lambda x: validata_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN])
+                lambda x: validate_list_list_str(x, [1, cls.MAX_LIST_LEN], [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
+            "ground_truth": lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN])
         }
 
         if not (isinstance(datasets, Dict) and all(isinstance(key, str) for key in datasets)):
@@ -107,7 +107,7 @@ class Evaluate:
 
 
     @validate_params(
-        metrics_name=dict(validator=lambda x: validata_list_str(x, [1, len(Evaluate.RAG_TEST_METRIC)], [1, 50]),
+        metrics_name=dict(validator=lambda x: validate_list_str(x, [1, len(Evaluate.RAG_TEST_METRIC)], [1, 50]),
                           message="param must meets: Type is List[str], list length range [1, 14], "
                                   "str length range [1, 50]"),
         datasets=dict(

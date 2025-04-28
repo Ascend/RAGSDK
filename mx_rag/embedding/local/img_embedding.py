@@ -18,8 +18,8 @@ try:
 except ImportError:
     BICUBIC = Image.BICUBIC
 
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBBEDDING_TEXT_COUNT, \
-    IMG_EMBBEDDING_TEXT_LEN, validata_list_str, MB, GB, EMBBEDDING_IMG_COUNT
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBEDDING_TEXT_COUNT, \
+    IMG_EMBEDDING_TEXT_LEN, validate_list_str, MB, GB, EMBEDDING_IMG_COUNT
 from mx_rag.utils.file_check import SecFileCheck, SecDirCheck, safetensors_check
 
 try:
@@ -109,7 +109,7 @@ class ImageEmbedding(Embeddings):
         return ImageEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, IMG_EMBBEDDING_TEXT_LEN]),
+        texts=dict(validator=lambda x: validate_list_str(x, [1, EMBEDDING_TEXT_COUNT], [1, IMG_EMBEDDING_TEXT_LEN]),
                    message="param must meets: Type is List[str], "
                            "list length range [1, 1000 * 1000], str length range [1, 256]"))
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
@@ -122,8 +122,8 @@ class ImageEmbedding(Embeddings):
         return text_features.cpu().numpy().tolist()
 
     @validate_params(
-        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= IMG_EMBBEDDING_TEXT_LEN,
-                   message=f"param must be str, and length range [1, {IMG_EMBBEDDING_TEXT_LEN}]"))
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= IMG_EMBEDDING_TEXT_LEN,
+                  message=f"param must be str, and length range [1, {IMG_EMBEDDING_TEXT_LEN}]"))
     def embed_query(self, text: str) -> List[float]:
         embeddings = self.embed_documents([text])
         if not embeddings:
@@ -133,8 +133,8 @@ class ImageEmbedding(Embeddings):
 
     @validate_params(
         images=dict(
-            validator=lambda x: (isinstance(x, list) and validata_list_str(x, [1, EMBBEDDING_IMG_COUNT], [1, 10*MB])),
-            message=f"param must meets: Type is List[str], list length range [1, {EMBBEDDING_IMG_COUNT}],"
+            validator=lambda x: (isinstance(x, list) and validate_list_str(x, [1, EMBEDDING_IMG_COUNT], [1, 10 * MB])),
+            message=f"param must meets: Type is List[str], list length range [1, {EMBEDDING_IMG_COUNT}],"
                     f" str length range [1, {10 * MB}]"))
     def embed_images(self, images: List[str]) -> List[List[float]]:
         image_features = []

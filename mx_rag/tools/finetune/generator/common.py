@@ -14,7 +14,7 @@ from mx_rag.tools.finetune.dataprocess.generate_qd import generate_qa_embedding_
 from mx_rag.tools.finetune.dataprocess.llm_preferred import llm_preferred
 from mx_rag.tools.finetune.dataprocess.reciprocal_rank_fusion import reciprocal_rank_fusion
 from mx_rag.tools.finetune.dataprocess.reranker_featured import reranker_featured
-from mx_rag.utils.common import validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN, validate_params, MAX_PATH_LENGTH, \
+from mx_rag.utils.common import validate_list_str, TEXT_MAX_LEN, STR_MAX_LEN, validate_params, MAX_PATH_LENGTH, \
     CALLABLE_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.file_operate import read_jsonl_from_file, write_jsonl_to_file
@@ -62,7 +62,7 @@ class BaseGenerator:
         def execute_callback(split_texts: List[str]):
             if isinstance(filter_func, Callable):
                 filter_texts = filter_func(split_texts)
-                if not validata_list_str(filter_texts, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]):
+                if not validate_list_str(filter_texts, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]):
                     logger.error(f"The return value of the callback method is not List[str], use raw doc slice")
                     return split_texts
                 else:

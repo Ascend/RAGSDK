@@ -17,7 +17,7 @@ from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage.document_store import Docstore, MxDocument
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, MAX_SQLITE_FILE_NAME_LEN, \
-    check_db_file_limit, validata_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_sequence, STR_MAX_LEN, \
+    check_db_file_limit, validate_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_sequence, STR_MAX_LEN, \
     check_pathlib_path, validate_lock, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
@@ -388,7 +388,7 @@ class KnowledgeDB(KnowledgeBase):
 
     @validate_params(
         file=dict(validator=lambda x: check_pathlib_path(x), message="param check failed, please see the log"),
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+        texts=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], "
                            f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]"),
         metadatas=dict(validator=lambda x: _check_metadatas(x),

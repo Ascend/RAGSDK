@@ -10,13 +10,13 @@ from loguru import logger
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import (
     MAX_URL_LENGTH,
-    EMBBEDDING_IMG_COUNT,
-    EMBBEDDING_TEXT_COUNT,
+    EMBEDDING_IMG_COUNT,
+    EMBEDDING_TEXT_COUNT,
     STR_MAX_LEN,
     MAX_BATCH_SIZE,
     MB
 )
-from mx_rag.utils.common import validate_params, validata_list_str
+from mx_rag.utils.common import validate_params, validate_list_str
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -63,8 +63,8 @@ class CLIPEmbedding(Embeddings):
 
     @validate_params(
         texts=dict(
-            validator=lambda x: validata_list_str(x, [1, EMBBEDDING_TEXT_COUNT], [1, STR_MAX_LEN]),
-            message=f"param must meets: Type is List[str], list length range [1, {EMBBEDDING_TEXT_COUNT}], "
+            validator=lambda x: validate_list_str(x, [1, EMBEDDING_TEXT_COUNT], [1, STR_MAX_LEN]),
+            message=f"param must meets: Type is List[str], list length range [1, {EMBEDDING_TEXT_COUNT}], "
                     f"str length range [1, {STR_MAX_LEN}]"),
         batch_size=dict(
             validator=lambda x: 1 <= x <= MAX_BATCH_SIZE, message=f"param value range [1, {MAX_BATCH_SIZE}]"))
@@ -83,8 +83,8 @@ class CLIPEmbedding(Embeddings):
 
     @validate_params(
         images=dict(
-            validator=lambda x: validata_list_str(x, [1, EMBBEDDING_IMG_COUNT], [1, 10 * MB]),
-            message=f"param must meets: Type is List[str], list length range [1, {EMBBEDDING_IMG_COUNT}],"
+            validator=lambda x: validate_list_str(x, [1, EMBEDDING_IMG_COUNT], [1, 10 * MB]),
+            message=f"param must meets: Type is List[str], list length range [1, {EMBEDDING_IMG_COUNT}],"
                     f" str length range [1, {10 * MB}]"),
         batch_size=dict(
             validator=lambda x: 1 <= x <= MAX_BATCH_SIZE, message=f"param value range [1, {MAX_BATCH_SIZE}]"))

@@ -10,7 +10,7 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import AutoTokenizer, is_torch_npu_available, AutoModel
 
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, TEXT_MAX_LEN, validata_list_str, \
+from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, TEXT_MAX_LEN, validate_list_str, \
     BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, GB
 from mx_rag.utils.file_check import SecDirCheck, safetensors_check
 
@@ -69,7 +69,7 @@ class SparseEmbedding(Embeddings):
         return SparseEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+        texts=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
                            "str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,

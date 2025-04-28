@@ -11,7 +11,7 @@ from pymilvus.client.types import ExtraList
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP
-from mx_rag.utils.common import validata_list_str
+from mx_rag.utils.common import validate_list_str
 
 
 class MilvusError(Exception):
@@ -347,7 +347,7 @@ class MilvusDB(VectorStore):
             )
 
     def _validate_docs(self, data):
-        ret = validata_list_str(
+        ret = validate_list_str(
             data,
             [1, self.MAX_SEARCH_BATCH],
             [1, self.MAX_QUERY_LENGTH]

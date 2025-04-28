@@ -10,7 +10,7 @@ import numpy as np
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import validate_params, MAX_TOP_K, MAX_QUERY_LENGTH, TEXT_MAX_LEN, \
-    validata_list_str, STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
+    validate_list_str, STR_MAX_LEN, MAX_URL_LENGTH, MAX_BATCH_SIZE
 from mx_rag.utils.file_check import FileCheckError, PathNotFileException
 from mx_rag.utils.url import RequestUtils
 
@@ -74,7 +74,7 @@ class TEIReranker(Reranker):
     @validate_params(
         query=dict(validator=lambda x: 1 <= len(x) <= MAX_QUERY_LENGTH,
                    message="param length range [1, 128 * 1024 * 1024]"),
-        texts=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+        texts=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], "
                            "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,

@@ -5,16 +5,16 @@ from loguru import logger
 from tqdm import tqdm
 
 from mx_rag.reranker import Reranker
-from mx_rag.utils.common import validate_params, validata_list_str, TEXT_MAX_LEN, STR_MAX_LEN
+from mx_rag.utils.common import validate_params, validate_list_str, TEXT_MAX_LEN, STR_MAX_LEN
 
 
 @validate_params(
     reranker=dict(validator=lambda x: isinstance(x, Reranker),
                   message="param must be instance of Reranker"),
-    query_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+    query_list=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                     message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
                             f"str length range [1, {STR_MAX_LEN}]"),
-    doc_list=dict(validator=lambda x: validata_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+    doc_list=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                   message=f"param must meets: Type is List[str], list length range [1, {TEXT_MAX_LEN}], "
                           f"str length range [1, {STR_MAX_LEN}]")
 )
