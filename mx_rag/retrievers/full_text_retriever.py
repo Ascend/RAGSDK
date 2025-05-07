@@ -1,0 +1,37 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+from typing import List, Union
+from loguru import logger
+
+from langchain_core.pydantic_v1 import Field
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever
+
+from mx_rag.utils.common import TEXT_MAX_LEN, validate_params, MAX_TOP_K
+from mx_rag.storage.document_store import MilvusDocstore, OpenGaussDocstore
+
+
+class FullTextRetriever(BaseRetriever):
+    document_store: Union[MilvusDocstore, OpenGaussDocstore]
+    k: int = Field(default=1, ge=1, le=MAX_TOP_K)
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    @validate_params(
+        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+                   message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]")
+    )
+    def _get_relevant_documents(self, query: str, *,
+                                run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
+
+        docs = self.document_store.full_text_search(query, top_k=self.k)
+        result = []
+        for doc in docs:
+            result.append(Document(page_content=doc.page_content, metadata=doc.metadata))
+
+        if not result:
+            logger.warning("no relevant documents found!!!")
+
+        return result

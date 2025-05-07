@@ -84,7 +84,7 @@ class MilvusDocstore(Docstore):
         return result
 
     @validate_params(
-        text=dict(
+        query=dict(
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
             message=f"param must be str and length range (0, {TEXT_MAX_LEN}]"),
         top_k=dict(
@@ -92,14 +92,17 @@ class MilvusDocstore(Docstore):
             message="param must be int and must in range (0, 100]"),
         drop_ratio_search=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1,
                                message="param must be range of [0, 1]"))
-    def full_text_search(self, text: str, top_k: int = 3, drop_ratio_search: float = 0.2) -> List[MxDocument]:
+    def full_text_search(self, query: str, top_k: int = 3, drop_ratio_search: float = 0.2) -> List[MxDocument]:
+        if not self._enable_bm25:
+            logger.error("MilvusDocstore full_text_search failed due to enable_bm25 is False")
+            return []
         search_params = {
             # Proportion of small vector values to ignore during the search
             'params': {'drop_ratio_search': drop_ratio_search},
         }
         res = self.client.search(
             collection_name=self.collection_name,
-            data=[text],
+            data=[query],
             anns_field='sparse_vector',
             limit=top_k,
             search_params=search_params,

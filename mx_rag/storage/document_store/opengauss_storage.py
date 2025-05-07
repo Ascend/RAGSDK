@@ -1,22 +1,43 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+import re
 from typing import List, Optional, Callable
-from sqlalchemy import Engine
+from loguru import logger
+from sqlalchemy import Engine, Index, select, func, bindparam, text, inspect
 
+from mx_rag.storage.document_store.models import ChunkModel
 from mx_rag.storage.document_store.base_storage import MxDocument, Docstore
 from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
-from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM
+from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, TEXT_MAX_LEN, MAX_TOP_K
 
 
 class OpenGaussDocstore(Docstore):
     @validate_params(
         engine=dict(validator=lambda x: isinstance(x, Engine), message="Param must be a Engine"),
         encrypt_fn=dict(validator=lambda x: x is None or callable(x), message="Param must be a callable or None"),
-        decrypt_fn=dict(validator=lambda x: x is None or callable(x), message="Param must be a callable or None")
-    )
-    def __init__(self, engine: Engine, encrypt_fn: Callable = None, decrypt_fn: Callable = None):
+        decrypt_fn=dict(validator=lambda x: x is None or callable(x), message="Param must be a callable or None"),
+        enable_bm25=dict(validator=lambda x: isinstance(x, bool), message="Param must be a bool"),
+        index_name=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_-]{6,64}$', x)),
+                        message="Param must meets: Type is str, match '^[a-zA-Z0-9_-]{6,64}$'"))
+    def __init__(self, engine: Engine, encrypt_fn: Callable = None, decrypt_fn: Callable = None, enable_bm25=True,
+                 index_name: str = "chunks_content_bm25"):
         super().__init__()
         self.doc_store = _DocStoreHelper(engine, encrypt_fn, decrypt_fn)
+        self.engine = engine
+        self.index_name = "idx_" + index_name
+        self.index = None
+        self._enable_bm25 = enable_bm25
+        if enable_bm25:
+            self.index = Index(index_name, ChunkModel.chunk_content, opengauss_using="bm25")
+            if not any(index['name'] == index_name for index in inspect(engine).get_indexes(ChunkModel.__tablename__)):
+                self.index.create(engine)
+
+    def drop(self):
+        ids = set(self.get_all_document_id())
+        for idx in ids:
+            self.delete(idx)
+        if self.index:
+            self.index.drop(self.engine)
 
     @validate_params(documents=dict(
         validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
@@ -37,3 +58,46 @@ class OpenGaussDocstore(Docstore):
 
     def get_all_document_id(self) -> List[int]:
         return self.doc_store.get_all_document_id()
+
+    @validate_params(
+        query=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+            message=f"param must be str and length range (0, {TEXT_MAX_LEN}]"),
+        top_k=dict(
+            validator=lambda x: 0 < x <= MAX_TOP_K,
+            message="param must be int and must in range (0, 10000]"))
+    def full_text_search(self, query: str, top_k: int = 3) -> List[MxDocument]:
+        if not self._enable_bm25:
+            logger.error("OpenGaussDocstore full_text_search failed due to enable_bm25 is False")
+            return []
+        data = select(
+            ChunkModel.chunk_content,
+            (ChunkModel.chunk_content.op("<&>")(func.cast(text(":question_query"),
+                                                ChunkModel.chunk_content.type))).label("score")
+        ).order_by(
+            text("score DESC")
+        ).limit(bindparam("top_k"))
+        params = {
+            'question_query': query,
+            'top_k': top_k
+        }
+        with self.doc_store.get_transaction() as session:
+            try:
+                session.execute(text("SET enable_indexscan = on"))
+                session.execute(text("SET enable_seqscan = off"))
+                result = session.execute(data, params).fetchall()
+            except Exception as e:
+                logger.error(f"openGauss full text search failed!! :{e}")
+                return []
+        final_results = []
+        for item in result:
+            if len(item) < 2:
+                logger.warning(f"full_text_search: parse OpenGauss result failed, length of item less 2({len(item)})")
+                continue
+            final_results.append(MxDocument(
+                page_content=item[0],
+                metadata={"score": item[1]},
+                document_name=""
+            ))
+
+        return final_results
