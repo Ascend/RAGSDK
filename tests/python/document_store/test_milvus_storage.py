@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 from pymilvus import MilvusClient
 
 from mx_rag.storage.document_store import MilvusDocstore, MxDocument
-from mx_rag.storage.vectorstore import MilvusDB
 
 
 class TestMilvusDocStore(unittest.TestCase):
@@ -136,12 +135,21 @@ class TestMilvusDocStore(unittest.TestCase):
         self.assertEqual(res1, [])
 
     def test_full_text_search(self):
-        self.mock_client.get.return_value = [
-            {"id": 1, "page_content": "Some content here.",
-             "document_name": "Test Document", "metadata": self.mock_document.metadata}]
-        result = self.store_bm25.search("here")
-        self.assertIsInstance(result, MxDocument)  # Ensure result is an MxDocument instance
-        self.assertEqual(result.page_content, "Some content here.")  # Check content is correct
+        self.mock_client.search.return_value = [[
+            {
+                "distance": 0.1,
+                "entity":{
+                    "metadata": {
+                        "score": 0.1
+                    },
+                    "page_content": "Some content here.",
+                    "document_name": "test.doc"
+                }
+            }
+        ]]
+        result = self.store_bm25.full_text_search("here")
+        self.assertIsInstance(result[0], MxDocument)  # Ensure result is an MxDocument instance
+        self.assertEqual(result[0].page_content, "Some content here.")  # Check content is correct
 
 if __name__ == '__main__':
     unittest.main()

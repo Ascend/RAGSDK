@@ -20,7 +20,7 @@ class TestOpenGaussDocstore(unittest.TestCase):
         mock_create_engine.return_value = self.mock_engine  # Make create_engine return the mock_engine
         self.mock_helper = MagicMock(spec=_DocStoreHelper)  # mock HelperDocStore
         MockDocStoreHelper.return_value = self.mock_helper
-        self.docstore = OpenGaussDocstore(self.mock_engine)
+        self.docstore = OpenGaussDocstore(engine=self.mock_engine, enable_bm25=False)
         self.test_documents = [
             MxDocument(page_content="content1", document_name="test1.docx", metadata={"key": "value1"}),
             MxDocument(page_content="content2", document_name="test1.docx", metadata={"key": "value2"}),
@@ -93,6 +93,9 @@ class TestOpenGaussDocstore(unittest.TestCase):
                 self.mock_engine, decrypt_fn=123
             )  # Invalid decrypt_fn
 
+    def test_full_text_search(self):
+        res = self.docstore.full_text_search("test") # 数据库底层行为无法模拟，暂时预留此用例
+        self.assertEqual(res, [])
 
 if __name__ == "__main__":
     unittest.main()

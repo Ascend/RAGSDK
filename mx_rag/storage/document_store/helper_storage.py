@@ -172,6 +172,9 @@ class _DocStoreHelper(Docstore):
         finally:
             session.close()
 
+    def get_transaction(self):
+        return self._transaction()
+
     def _init_db(self):
         """初始化数据库表结构"""
         try:
