@@ -5,6 +5,7 @@ MXRAGCache 配置功能类
 提供对外的配置参数，CacheConfig继承子gptCache的Config类，默认为memory_cache
 SimilarityCacheConfig 继承CacheConfig提供 语义相似cache
 """
+import os
 from enum import Enum
 from typing import Dict, Any
 
@@ -46,6 +47,7 @@ class CacheConfig:
         data_save_folder: (str) 缓存数据存储路径
     """
     DEFAULT_SAVE_FOLDER = "/home/HwHiAiUser/Ascend/mxRag/cache_save_folder"
+    DEFAULT_SAVE_FOLDER = os.path.realpath(DEFAULT_SAVE_FOLDER)
 
     @validate_params(
         cache_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100000,
