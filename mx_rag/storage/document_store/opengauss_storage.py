@@ -31,6 +31,8 @@ class OpenGaussDocstore(Docstore):
             self.index = Index(index_name, ChunkModel.chunk_content, opengauss_using="bm25")
             if not any(index['name'] == index_name for index in inspect(engine).get_indexes(ChunkModel.__tablename__)):
                 self.index.create(engine)
+            else:
+                logger.warning(f"OpenGauss Index {index_name} already exists")
 
     def drop(self):
         ids = set(self.get_all_document_id())

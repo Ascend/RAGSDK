@@ -31,7 +31,10 @@ class MilvusDocstore(Docstore):
         self._enable_bm25 = enable_bm25
         self.bm25_k1 = bm25_k1
         self.bm25_b = bm25_b
-        self._create_collection()
+        if not self._client.has_collection(self._collection_name):
+            self._create_collection()
+        else:
+            logger.warning(f"Collection {self._collection_name} already exists")
 
     @property
     def client(self):
