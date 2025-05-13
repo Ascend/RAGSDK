@@ -9,7 +9,6 @@ import os
 from enum import Enum
 from typing import Dict, Any
 
-from mx_rag.utils.file_check import SecDirCheck
 from mx_rag.utils.common import validate_params, \
     validate_sequence, validate_lock, MB, GB, BOOL_TYPE_CHECK_TIP, DICT_TYPE_CHECK_TIP
 
@@ -89,7 +88,6 @@ class CacheConfig:
         self.similarity_threshold = similarity_threshold
         self.disable_report = disable_report
         self.lock = lock
-        SecDirCheck(self.data_save_folder, 100 * GB).check()
 
 
 class SimilarityCacheConfig(CacheConfig):

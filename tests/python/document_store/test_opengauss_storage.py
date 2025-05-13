@@ -96,6 +96,7 @@ class TestOpenGaussDocstore(unittest.TestCase):
     def test_full_text_search(self):
         res = self.docstore.full_text_search("test") # 数据库底层行为无法模拟，暂时预留此用例
         self.assertEqual(res, [])
+        self.docstore.drop()
 
 if __name__ == "__main__":
     unittest.main()

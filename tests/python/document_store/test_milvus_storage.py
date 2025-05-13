@@ -16,7 +16,7 @@ class TestMilvusDocStore(unittest.TestCase):
         # Create instance of MilvusDocStore
         self.store = MilvusDocstore(self.mock_client, enable_bm25=False)
         self.store_bm25 = MilvusDocstore(self.mock_client, collection_name="doc_store_bm25")
-
+        self.mock_client.has_collection.return_value = False
         self.mock_document = MagicMock(MxDocument)
         self.mock_document.metadata = {"chunk_id": 1, "document_id": 123, "document_name": "Test Document"}
         self.mock_document.page_content = "Some content here."
@@ -42,6 +42,12 @@ class TestMilvusDocStore(unittest.TestCase):
 
         # Assertions
         self.assertEqual(result, [1])  # Check if the returned chunk_id is correct
+        self.mock_client.query.return_value = [{"document_id": 123}]
+        ids = self.store.get_all_document_id()
+        self.assertEqual(ids, [123])
+        self.mock_client.query.return_value = [{"id": 123}]
+        ids = self.store.get_all_chunk_id()
+        self.assertEqual(ids, [123])
         self.mock_client.insert.assert_called_once()  # Ensure insert was called
         self.mock_client.refresh_load.assert_called_once()  # Ensure refresh_load was called
 
@@ -135,6 +141,8 @@ class TestMilvusDocStore(unittest.TestCase):
         self.assertEqual(res1, [])
 
     def test_full_text_search(self):
+        self.mock_client.has_collection.return_value = False
+        self.store._create_collection()
         self.mock_client.search.return_value = [[
             {
                 "distance": 0.1,
