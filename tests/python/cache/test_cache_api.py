@@ -16,8 +16,6 @@ class TestCacheApi(unittest.TestCase):
 
     def test_init_memory_api(self):
         data_save_folder = os.path.join(TestCacheApi.current_dir, "cache_save_folder")
-        if not os.path.exists(data_save_folder):
-            os.mkdir(data_save_folder)
         cache_config: CacheConfig = CacheConfig(
             cache_size=100,
             data_save_folder=data_save_folder
