@@ -15,7 +15,8 @@ from loguru import logger
 
 from mx_rag.cache.cache_api.cache_init import _get_data_save_file
 from mx_rag.cache import CacheConfig, SimilarityCacheConfig
-from mx_rag.utils.common import validate_params, TEXT_MAX_LEN, MAX_QUERY_LENGTH, STR_TYPE_CHECK_TIP
+from mx_rag.utils.file_check import SecFileCheck
+from mx_rag.utils.common import validate_params, GB, TEXT_MAX_LEN, MAX_QUERY_LENGTH, STR_TYPE_CHECK_TIP
 
 
 def _default_dump(data: Any) -> str:
@@ -161,7 +162,8 @@ class MxRAGCache:
 
         def llm_handle(*llm_args, **llm_kwargs):
             return answer
-
+        if os.path.exists(self.__cache_obj.data_manager.data_path):
+            SecFileCheck(self.__cache_obj.data_manager.data_path, 100 * GB).check()
         adapt(
             llm_handle,
             _cache_data_converter,
@@ -181,7 +183,8 @@ class MxRAGCache:
         """
         if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
-
+        if os.path.exists(self.__cache_obj.data_manager.data_path):
+            SecFileCheck(self.__cache_obj.data_manager.data_path, 100 * GB).check()
         self.__cache_obj.flush()
         self._verbose_log("Flush!")
 

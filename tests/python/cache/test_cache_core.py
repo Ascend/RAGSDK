@@ -15,6 +15,8 @@ class TestCacheCore(unittest.TestCase):
     def clear_cache_file(self):
         if os.path.exists(self.data_save_folder):
             shutil.rmtree(self.data_save_folder)
+        if not os.path.exists(self.data_save_folder):
+            os.mkdir(self.data_save_folder)
 
     def test_core_init(self):
         config = CacheConfig(cache_size=100, data_save_folder=self.data_save_folder)
@@ -23,7 +25,6 @@ class TestCacheCore(unittest.TestCase):
 
     def test_cache_update(self):
         self.clear_cache_file()
-
         config = CacheConfig(cache_size=100, data_save_folder=self.data_save_folder)
 
         mxrag_cache = MxRAGCache("test_cache", config)
