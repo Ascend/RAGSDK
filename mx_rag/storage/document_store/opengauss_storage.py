@@ -74,6 +74,8 @@ class OpenGaussDocstore(Docstore):
             return []
         data = select(
             ChunkModel.chunk_content,
+            ChunkModel.chunk_metadata,
+            ChunkModel.document_name,
             (ChunkModel.chunk_content.op("<&>")(func.cast(text(":question_query"),
                                                 ChunkModel.chunk_content.type))).label("score")
         ).order_by(
@@ -93,13 +95,14 @@ class OpenGaussDocstore(Docstore):
                 return []
         final_results = []
         for item in result:
-            if len(item) < 2:
-                logger.warning(f"full_text_search: parse OpenGauss result failed, length of item less 2({len(item)})")
+            if len(item) < 4:
+                logger.warning(f"full_text_search: parse OpenGauss result failed, length of item less 4({len(item)})")
                 continue
+            item[1]["score"] = item[3]
             final_results.append(MxDocument(
                 page_content=item[0],
-                metadata={"score": item[1]},
-                document_name=""
+                metadata=item[1],
+                document_name=item[2]
             ))
 
         return final_results
