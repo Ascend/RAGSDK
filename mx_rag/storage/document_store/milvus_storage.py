@@ -8,7 +8,7 @@ from pymilvus import MilvusClient, DataType, Function, FunctionType
 from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import Docstore
 from mx_rag.storage.vectorstore import MilvusDB
-from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, KB, TEXT_MAX_LEN
+from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, KB, TEXT_MAX_LEN, MAX_TOP_K
 
 
 class MilvusDocstore(Docstore):
@@ -67,7 +67,7 @@ class MilvusDocstore(Docstore):
         logger.info(f"Successfully added {res['insert_count']} documents")
         return list(res["ids"])
 
-    def search(self, chunk_id) -> Union[MxDocument, None]:
+    def search(self, chunk_id: int) -> Union[MxDocument, None]:
         res = self.client.get(
             collection_name=self.collection_name,
             ids=chunk_id,
@@ -88,10 +88,10 @@ class MilvusDocstore(Docstore):
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
             message=f"param must be str and length range (0, {TEXT_MAX_LEN}]"),
         top_k=dict(
-            validator=lambda x: 0 < x <= 100,
-            message="param must be int and must in range (0, 100]"),
-        drop_ratio_search=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1,
-                               message="param must be range of [0, 1]"))
+            validator=lambda x: 0 < x <= MAX_TOP_K,
+            message="param must be int and must in range (0, 10000]"),
+        drop_ratio_search=dict(validator=lambda x: isinstance(x, float) and 0 <= x < 1,
+                               message="param must be range of [0, 1)"))
     def full_text_search(self, query: str, top_k: int = 3, drop_ratio_search: float = 0.2) -> List[MxDocument]:
         if not self._enable_bm25:
             logger.error("MilvusDocstore full_text_search failed due to enable_bm25 is False")
@@ -133,7 +133,7 @@ class MilvusDocstore(Docstore):
             logger.error(f"exception occurred while full text search: {e}")
             return []
 
-    def delete(self, document_id):
+    def delete(self, document_id: int):
         """
         Delete all chunks having document_id `document_id`.
         Args:
