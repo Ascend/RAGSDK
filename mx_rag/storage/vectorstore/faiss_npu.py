@@ -30,7 +30,7 @@ class MindFAISS(VectorStore):
 
     METRIC_MAP = {
         "IP": faiss.METRIC_INNER_PRODUCT,
-        "L2":  faiss.METRIC_L2,
+        "L2": faiss.METRIC_L2,
         # 归一化之后的COS距离 等于IP距离, 所以参数一致
         "COSINE": faiss.METRIC_INNER_PRODUCT,
     }

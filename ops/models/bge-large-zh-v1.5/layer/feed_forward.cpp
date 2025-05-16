@@ -45,8 +45,8 @@ atb::Status FeedForwardLayer(const FeedForwardParam &param, atb::Operation **ope
         newShape.dimNum = 2; // 2 表示dim 维度为2
         size_t newShapeDimIndex = 0;
         size_t oldShapeDimIndex = 0;
-        newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex] * oldShape.dims[oldShapeDimIndex+1];
-        oldShapeDimIndex+=2; // 2 表示dim 维度为2
+        newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex] * oldShape.dims[oldShapeDimIndex + 1];
+        oldShapeDimIndex += 2; // 2 表示dim 维度为2
         newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex++];
     };
 

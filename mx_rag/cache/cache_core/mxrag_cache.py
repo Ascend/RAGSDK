@@ -32,10 +32,12 @@ class MxRAGCache:
     cache_limit: int = TEXT_MAX_LEN
 
     # 最大级联个数
-    cache_join_size_limit : int = 6
+    cache_join_size_limit: int = 6
 
     # 当前级联个数
-    current_join_size : int = 0
+    current_join_size: int = 0
+
+    # 是否输出详细日志
     verbose: bool = False
 
     @validate_params(
@@ -225,7 +227,7 @@ class MxRAGCache:
             raise OverflowError(
                 f"the number of cache join deepth cannot be greater than {MxRAGCache.cache_join_size_limit}")
 
-        loop_cnt : int = 0
+        loop_cnt: int = 0
         next_cache_obj = next_cache.get_obj()
         while next_cache_obj is not None:
             if loop_cnt >= MxRAGCache.cache_join_size_limit:
