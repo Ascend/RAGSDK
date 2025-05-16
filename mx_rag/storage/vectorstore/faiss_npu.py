@@ -60,45 +60,25 @@ class MindFAISS(VectorStore):
             auto_save: bool = True
     ):
         super().__init__()
+        if not isinstance(devs, list) or not devs or len(devs) != 1:
+            raise MindFAISSError("param devs must be a non-empty list with exactly one device")
         self.index_type = index_type
         self.metric_type = metric_type
         self.devs = devs
         self.device = ascendfaiss.IntVector()
-        if not isinstance(devs, list) or not devs:
-            raise MindFAISSError("param devs need list type")
-        if len(devs) != 1:
-            raise MindFAISSError("currently only supports to set one device")
-        for d in devs:
-            self.device.push_back(d)
+        self.device.push_back(devs[0])
+        # Ensure using the same device by torch_npu and index sdk
+        try:
+            import torch_npu
+            torch_npu.npu.set_device(devs[0])
+        except ImportError:
+            pass
         self.auto_save = auto_save
         self.load_local_index = load_local_index
         FileCheck.check_input_path_valid(self.load_local_index, check_blacklist=True)
         FileCheck.check_filename_valid(self.load_local_index)
-
         self.score_scale = self.SCALE_MAP.get(self.metric_type)
-
-        if os.path.exists(self.load_local_index):
-            logger.info(f"Loading index from local index file: '{self.load_local_index}'")
-            try:
-                cpu_index = faiss.read_index(self.load_local_index)
-                self.index = ascendfaiss.index_cpu_to_ascend(self.device, cpu_index)
-
-            except FileCheckError as fc_error:
-                logger.error(f"Invalid local index file: {fc_error}")
-                raise MindFAISSError(f"Failed to load index: {fc_error}") from fc_error
-            except Exception as err:
-                logger.error(f"Unexpected error during index loading: {err}")
-                raise MindFAISSError(f"Failed to load index: {err}") from err
-            return  # 成功加载本地索引
-        try:
-            ascend_index_creator = self.INDEX_MAP.get(self.index_type)
-            ascend_index_metrics = self.METRIC_MAP.get(self.metric_type)
-            config = ascendfaiss.AscendIndexFlatConfig(self.device)
-            # 根据提供的策略创建索引
-            self.index = ascend_index_creator(x_dim, ascend_index_metrics, config)
-
-        except Exception as err:
-            raise MindFAISSError(f"init index failed, {err}") from err
+        self._create_index(x_dim)
 
     @staticmethod
     def create(**kwargs):
@@ -198,3 +178,28 @@ class MindFAISS(VectorStore):
             self.index.getIdxMap(dev, dev_ids)
             ids.extend([dev_ids.at(i) for i in range(dev_ids.size())])
         return ids
+
+    def _create_index(self, x_dim):
+        """Create or load a FAISS index on Ascend device."""
+        try:
+            if os.path.exists(self.load_local_index):
+                logger.info(f"Loading index from local index file: '{self.load_local_index}'")
+                cpu_index = faiss.read_index(self.load_local_index)
+                self.index = ascendfaiss.index_cpu_to_ascend(self.device, cpu_index)
+                return
+            index_creator = self.INDEX_MAP.get(self.index_type)
+            if not index_creator:
+                raise MindFAISSError(f"Unsupported index_type: {self.index_type}")
+            metric = self.METRIC_MAP.get(self.metric_type)
+            if metric is None:
+                raise MindFAISSError(f"Unsupported metric_type: {self.metric_type}")
+            config = ascendfaiss.AscendIndexFlatConfig(self.device)
+            self.index = index_creator(x_dim, metric, config)
+        except FileCheckError as fc_error:
+            logger.error(f"Invalid local index file '{self.load_local_index}': {fc_error}")
+            raise MindFAISSError(f"Failed to load index: {fc_error}") from fc_error
+        except Exception as err:
+            if "index: 1016" in str(err):
+                logger.error("The operators are not compiled, please compile first")
+            logger.error(f"Exception in _create_index: {err}")
+            raise MindFAISSError(f"Failed to create or load index: {err}") from err
