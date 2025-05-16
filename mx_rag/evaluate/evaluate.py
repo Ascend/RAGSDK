@@ -52,10 +52,10 @@ class Evaluate:
         "conciseness": conciseness,
     }
 
-    MAX_PROMPT_FILE_NUM:int = 30
-    PROMPT_FILE_SUFFIX:str = ".json"
-    PROMPT_FILE_MAX_SIZE:int = 1 * MB
-    MAX_LIST_LEN:int = 128
+    MAX_PROMPT_FILE_NUM: int = 30
+    PROMPT_FILE_SUFFIX: str = ".json"
+    PROMPT_FILE_MAX_SIZE: int = 1 * MB
+    MAX_LIST_LEN: int = 128
 
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, LLM), message="param must be instance of LLM"),
@@ -88,8 +88,8 @@ class Evaluate:
     @classmethod
     def _check_datasets(cls, datasets: Dict[str, Any]) -> bool:
         check_attribute = {
-            "question" : lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
-            "answer" : lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
+            "question": lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
+            "answer": lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
             "contexts":
                 lambda x: validate_list_list_str(x, [1, cls.MAX_LIST_LEN], [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
             "ground_truth": lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN])
@@ -211,7 +211,7 @@ class Evaluate:
         except Exception:
             logger.error("adapt to local fatal error")
 
-    def _metric_local_adapt(self, metric, language: str, cache_dir :str):
+    def _metric_local_adapt(self, metric, language: str, cache_dir: str):
         _exclude_adapt_metric: list[str] = [
             "context_entity_recall",
             "answer_similarity"

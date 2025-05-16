@@ -45,7 +45,7 @@ static const uint64_t IN_TENSOR_COUNT = 20;
 static const uint64_t OUT_TENSOR_COUNT = 1;
 static const uint64_t INTERMEDIATE_TENSOR_COUNT = 10;
 static const uint64_t NODE_COUNT = 11;
-size_t reshape_seqLen ;
+size_t reshape_seqLen;
 
 void AddQLinearNode(atb::GraphParam& opGraph, size_t& nodeId)
 {
@@ -58,9 +58,9 @@ void AddQLinearNode(atb::GraphParam& opGraph, size_t& nodeId)
         newShape.dimNum = 2; // 2 表示输出的维度
         size_t newShapeDimIndex = 0;
         size_t oldShapeDimIndex = 0;
-        reshape_seqLen = oldShape.dims[oldShapeDimIndex+1];
-        newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex] * oldShape.dims[oldShapeDimIndex+1];
-        oldShapeDimIndex+=2; // 2 表示输出的维度偏移
+        reshape_seqLen = oldShape.dims[oldShapeDimIndex + 1];
+        newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex] * oldShape.dims[oldShapeDimIndex + 1];
+        oldShapeDimIndex += 2; // 2 表示输出的维度偏移
         newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex++];
     };
 }
@@ -76,8 +76,8 @@ void AddKLinearNode(atb::GraphParam& opGraph, size_t& nodeId)
         newShape.dimNum = 2; // 2 表示输出的维度
         size_t newShapeDimIndex = 0;
         size_t oldShapeDimIndex = 0;
-        newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex] * oldShape.dims[oldShapeDimIndex+1];
-        oldShapeDimIndex+=2; // 2 表示输出的维度偏移
+        newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex] * oldShape.dims[oldShapeDimIndex + 1];
+        oldShapeDimIndex += 2; // 2 表示输出的维度偏移
         newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex++];
     };
 }
@@ -93,8 +93,8 @@ void AddVLinearNode(atb::GraphParam& opGraph, size_t& nodeId)
         newShape.dimNum = 2; // 2 表示输出的维度
         size_t newShapeDimIndex = 0;
         size_t oldShapeDimIndex = 0;
-        newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex] * oldShape.dims[oldShapeDimIndex+1];
-        oldShapeDimIndex+=2; // 2 表示输出的维度偏移
+        newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex] * oldShape.dims[oldShapeDimIndex + 1];
+        oldShapeDimIndex += 2; // 2 表示输出的维度偏移
         newShape.dims[newShapeDimIndex++] = oldShape.dims[oldShapeDimIndex++];
     };
 }
