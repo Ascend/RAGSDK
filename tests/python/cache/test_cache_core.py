@@ -5,7 +5,7 @@ import shutil
 import unittest
 
 from mx_rag.cache import MxRAGCache
-from mx_rag.cache import CacheConfig
+from mx_rag.cache import CacheConfig, SimilarityCacheConfig
 
 
 class TestCacheCore(unittest.TestCase):
@@ -59,6 +59,20 @@ class TestCacheCore(unittest.TestCase):
         answer = mxrag_cache.search("hello world")
         self.assertEqual(answer, "yes i am")
         mxrag_cache.flush()
+        file_dir = os.path.dirname(mxrag_cache.data_save_path["txt_file"])
+        sql_file = os.path.join(file_dir + "/sql.db")
+        import sqlite3
+        conn = sqlite3.connect(sql_file)
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE
+            )
+        ''')
+        conn.commit()
+        mxrag_cache.data_save_path["sql_file"] = sql_file
         mxrag_cache.clear()
         mxrag_cache_new = MxRAGCache("test_cache", config)
         answer = mxrag_cache_new.search("hello world")
