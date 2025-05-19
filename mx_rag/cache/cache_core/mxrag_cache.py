@@ -8,6 +8,7 @@ MXRAGCache 核心功能类
 3、缓存的级联功能(join)
 """
 import os
+import re
 from typing import Any
 
 from gptcache.core import Cache
@@ -98,6 +99,8 @@ class MxRAGCache:
             tables = curses.fetchall()
             for table in tables:
                 table_name = table[0]
+                if not re.match(r'^[a-zA-Z0-9_]+$', table_name):
+                    raise ValueError("clear MxRAGCache data failed !! Invalid table name")
                 curses.execute(f"DELETE FROM {table_name};")
                 conn.commit()
             conn.commit()
