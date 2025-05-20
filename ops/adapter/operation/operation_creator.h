@@ -8,6 +8,8 @@
 #include "atb/infer_op_params.h"
 #include "atb/operation.h"
 
-atb::Operation *CreateOperation(const std::string &opName, const std::string &param);
+namespace atb_speed {
+    atb::Operation *CreateOperation(const std::string &opName, const std::string &param);
+} /* namespace atb */
 
 #endif

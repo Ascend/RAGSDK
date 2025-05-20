@@ -16,7 +16,7 @@ namespace common {
 class AclNNOperation : public atb::Operation {
 public:
     explicit AclNNOperation(const std::string &opName);
-    virtual ~AclNNOperation();
+    ~AclNNOperation() override;
     std::string GetName() const override;
     atb::Status Setup(const atb::VariantPack &variantPack, uint64_t &workspaceSize, atb::Context *context) override;
     atb::Status Execute(const atb::VariantPack &variantPack, uint8_t *workspace, uint64_t workspaceSize,

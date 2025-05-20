@@ -50,7 +50,7 @@ namespace atb_speed::common {
     protected:
         int SetAclNNWorkspaceExecutor() override;
         int ExecuteAclNNOp(uint8_t *workspace, aclrtStream &stream) override;
-        atb::Status CreateAclNNVariantPack(const atb::VariantPack &variantPack);
+        atb::Status CreateAclNNVariantPack(const atb::VariantPack &variantPack) override;
         atb::Status CreateAclNNInTensorVariantPack(const atb::VariantPack &variantPack);
         atb::Status CreateAclNNOutTensorVariantPack(const atb::VariantPack &variantPack);
         virtual std::shared_ptr<AclNNTensor> CreateTensor(atb::Tensor atbTensor, size_t tensorIdx);

@@ -11,12 +11,13 @@
 #include "atb/operation.h"
 #include "atb_speed/base/hosttensor_binder.h"
 
+namespace atb_speed {
 class OperationTorch : public torch::CustomClassHolder {
 public:
     using Task = std::function<int()>;
     using RunTaskFunc = std::function<void(const std::string &taskName, Task task)>;
     explicit OperationTorch(std::string opName);
-    ~OperationTorch();
+    ~OperationTorch() override;
     void SetName(std::string name);
     void SetParam(std::string param);
     std::vector<torch::Tensor> ExecuteWithParam(std::vector<torch::Tensor> atInTensors, std::string varaintPackParam);
@@ -54,4 +55,5 @@ private:
     void *workspace_ = nullptr;
     RunTaskFunc runTaskFunc_ = nullptr;
 };
+}
 #endif

@@ -20,6 +20,7 @@
 #include "adapter/workspace/workspace.h"
 #include "operation_creator.h"
 
+namespace atb_speed {
 static uint64_t GetNewOpId()
 {
     static uint64_t opId = 0;
@@ -35,7 +36,7 @@ OperationTorch::OperationTorch(std::string opName) : opName_(opName), name_(opNa
     isTaskQueueEnable_ = true;
     ATB_LOG(INFO) << "OperationTorch::OperationTorch, TASK_QUEUE_ENABLE:" << isTaskQueueEnable_ << ", opName:" <<
         opName << ", opId:" << opId_;
-    context_ = atb_speed::ContextFactory::GetAtbContext(Utils::GetCurrentStream());
+    context_ = atb_speed::ContextFactory::GetAtbContext(atb_speed::Utils::GetCurrentStream());
 }
 
 OperationTorch::~OperationTorch()
@@ -79,11 +80,11 @@ std::vector<torch::Tensor> OperationTorch::ExecuteWithParam(std::vector<torch::T
         ss << name_ << " execute fail, operation is null. 详细信息见Ascend官方文档，请开启日志进一步定位问题。" << std::endl;
         throw std::runtime_error(ss.str());
     }
-    Utils::ContiguousAtTensor(atInTensors);
+    atb_speed::Utils::ContiguousAtTensor(atInTensors);
 
     std::vector<torch::Tensor> atOutTensors;
     CreateAtOutTensors(atInTensors, atOutTensors);
-    Utils::ContiguousAtTensor(atOutTensors);
+    atb_speed::Utils::ContiguousAtTensor(atOutTensors);
 
     ExecuteOutImpl(atInTensors, atOutTensors, varaintPackParam);
     return atOutTensors;
@@ -102,8 +103,8 @@ void OperationTorch::ExecuteOutWithParam(std::vector<torch::Tensor> atInTensors,
         return;
     }
 
-    Utils::ContiguousAtTensor(atInTensors);
-    Utils::ContiguousAtTensor(atOutTensors);
+    atb_speed::Utils::ContiguousAtTensor(atInTensors);
+    atb_speed::Utils::ContiguousAtTensor(atOutTensors);
     ExecuteOutImpl(atInTensors, atOutTensors, varaintPackParam);
 }
 
@@ -116,11 +117,11 @@ std::vector<torch::Tensor> OperationTorch::Execute(std::vector<torch::Tensor> at
         ss << name_ << " execute fail, operation is null. 详细信息见Ascend官方文档，请开启日志进一步定位问题。" << std::endl;
         throw std::runtime_error(ss.str());
     }
-    Utils::ContiguousAtTensor(atInTensors);
+    atb_speed::Utils::ContiguousAtTensor(atInTensors);
 
     std::vector<torch::Tensor> atOutTensors;
     CreateAtOutTensors(atInTensors, atOutTensors);
-    Utils::ContiguousAtTensor(atOutTensors);
+    atb_speed::Utils::ContiguousAtTensor(atOutTensors);
 
     ExecuteOutImpl(atInTensors, atOutTensors);
     return atOutTensors;
@@ -134,8 +135,8 @@ void OperationTorch::ExecuteOut(std::vector<torch::Tensor> atInTensors, std::vec
         return;
     }
 
-    Utils::ContiguousAtTensor(atInTensors);
-    Utils::ContiguousAtTensor(atOutTensors);
+    atb_speed::Utils::ContiguousAtTensor(atInTensors);
+    atb_speed::Utils::ContiguousAtTensor(atOutTensors);
     ExecuteOutImpl(atInTensors, atOutTensors);
 }
 
@@ -217,7 +218,7 @@ void OperationTorch::CreateAtOutTensors(const std::vector<torch::Tensor> &atInTe
     atb::SVector<atb::TensorDesc> inTensorDescs;
     for (size_t i = 0; i < atInTensors.size(); ++i) {
         auto &atInTensor = atInTensors.at(i);
-        atb::Tensor inTensor = Utils::AtTensor2Tensor(atInTensor);
+        atb::Tensor inTensor = atb_speed::Utils::AtTensor2Tensor(atInTensor);
         if (atb_speed::GetSingleton<atb_speed::Config>().IsConvertNCHWToND()) {
             if (inTensor.desc.format == ACL_FORMAT_NCHW) {
                 inTensor.desc.format = ACL_FORMAT_ND;
@@ -235,7 +236,7 @@ void OperationTorch::CreateAtOutTensors(const std::vector<torch::Tensor> &atInTe
         ATB_LOG(INFO) << name_ <<" infer shape outTensorDescs[" << i
                       <<"]:" << atb_speed::TensorUtil::TensorDescToString(outTensorDescs.at(i));
         atb_speed::Timer timer;
-        at::Tensor newTensor = Utils::CreateAtTensorFromTensorDesc(outTensorDescs.at(i));
+        at::Tensor newTensor = atb_speed::Utils::CreateAtTensorFromTensorDesc(outTensorDescs.at(i));
         atb_speed::GetSingleton<atb_speed::Statistic>().createTensorTime += timer.ElapsedMicroSecond();
         atOutTensors.at(i) = newTensor;
     }
@@ -249,11 +250,11 @@ void OperationTorch::BuildVariantPack(std::vector<torch::Tensor> &atInTensors, s
         ATB_LOG(INFO) << name_ <<" execute start, atInTensors[" << i << "].options:" << atInTensors.at(i).options()
                       <<", data:" << atInTensors.at(i).data_ptr()
                       <<", storage_offset:" << atInTensors.at(i).storage_offset()
-                      <<", format:" << Utils::GetTensorNpuFormat(atInTensors.at(i));
+                      <<", format:" << atb_speed::Utils::GetTensorNpuFormat(atInTensors.at(i));
         if (atb_speed::GetSingleton<atb_speed::Config>().IsTorchTensorFormatCast()) {
-            atInTensors.at(i) = Utils::NpuFormatCast(atInTensors.at(i));
+            atInTensors.at(i) = atb_speed::Utils::NpuFormatCast(atInTensors.at(i));
         }
-        variantPack.inTensors.at(i) = Utils::AtTensor2Tensor(atInTensors.at(i));
+        variantPack.inTensors.at(i) = atb_speed::Utils::AtTensor2Tensor(atInTensors.at(i));
         if (atb_speed::GetSingleton<atb_speed::Config>().IsConvertNCHWToND() &&
             variantPack.inTensors.at(i).desc.format == ACL_FORMAT_NCHW) {
             variantPack.inTensors.at(i).desc.format = ACL_FORMAT_ND;
@@ -265,8 +266,8 @@ void OperationTorch::BuildVariantPack(std::vector<torch::Tensor> &atInTensors, s
         ATB_LOG(INFO) << name_ <<"execute start, atOutTensors[" << i << "].options:" << atOutTensors.at(i).options()
                       <<", data:" << atOutTensors.at(i).data_ptr()
                       <<", storage_offset:" << atOutTensors.at(i).storage_offset()
-                      <<", format:" << Utils::GetTensorNpuFormat(atOutTensors.at(i));
-        variantPack.outTensors.at(i) = Utils::AtTensor2Tensor(atOutTensors.at(i));
+                      <<", format:" << atb_speed::Utils::GetTensorNpuFormat(atOutTensors.at(i));
+        variantPack.outTensors.at(i) = atb_speed::Utils::AtTensor2Tensor(atOutTensors.at(i));
         if (atb_speed::GetSingleton<atb_speed::Config>().IsConvertNCHWToND() &&
             variantPack.outTensors.at(i).desc.format == ACL_FORMAT_NCHW) {
             variantPack.outTensors.at(i).desc.format = ACL_FORMAT_ND;
@@ -303,4 +304,5 @@ TORCH_LIBRARY(OperationTorch, m)
         .def("execute_with_param", &OperationTorch::ExecuteWithParam)
         .def("execute_out_with_param", &OperationTorch::ExecuteOutWithParam);
     ;
+}
 }

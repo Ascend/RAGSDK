@@ -14,11 +14,11 @@
 #include "atb_speed/base/model.h"
 #include "atb_speed/utils/timer.h"
 
-
+namespace atb_speed {
 class ModelTorch : public torch::CustomClassHolder {
 public:
     explicit ModelTorch(std::string modelName);
-    ~ModelTorch();
+    ~ModelTorch() override;
     int64_t SetParam(std::string param);
     int64_t SetWeight(std::vector<torch::Tensor> atWeightTensors);
     int64_t SetKVCache(std::vector<torch::Tensor> atKCacheTensors, std::vector<torch::Tensor> atVCacheTensors);
@@ -44,5 +44,5 @@ private:
     std::vector<torch::Tensor> atInternalTensors_;
     const size_t maxParamLength_ = 20000;
 };
-
+}
 #endif

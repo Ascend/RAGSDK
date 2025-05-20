@@ -117,7 +117,7 @@ protected:
     Graph graph_;
 
     uint64_t executeCount_ = 0;
-    atb::Context *context_;
+    atb::Context *context_ = nullptr;
     Timer timer_;
 
     bool isUsePlanExecuteAsync_ = false;
