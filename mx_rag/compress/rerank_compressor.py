@@ -2,29 +2,29 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 
 from typing import List, Callable
-
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters.base import TextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from mx_rag.compress import PromptCompressor
 from mx_rag.reranker import Reranker
 from mx_rag.utils.common import validate_params, \
     BOOL_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_QUERY_LENGTH, \
-    STR_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP
+    STR_TYPE_CHECK_TIP
 
 
 class RerankCompressor(PromptCompressor):
     @validate_params(
         reranker=dict(validator=lambda x: isinstance(x, Reranker),
                       message="param must be instance of Reranker"),
-        splitter_func=dict(validator=lambda x: isinstance(x, Callable) or x is None,
-                           message="param must be Callable[[str], List[str]] function or None"),
+        splitter=dict(validator=lambda x: isinstance(x, TextSplitter) or x is None,
+                      message="param must be instance of LangChain's TextSplitter or None"),
     )
     def __init__(self,
                  reranker: Reranker,
-                 splitter_func: Callable[[str], List[str]] = None
+                 splitter: Callable[[str], List[str]] = None
                  ):
         self.reranker = reranker
-        self.splitter_func = splitter_func
+        self.splitter = splitter
 
     @staticmethod
     def _ranked_texts(sentences_list, sorted_idx, target_rate, context_reorder):
@@ -48,17 +48,6 @@ class RerankCompressor(PromptCompressor):
         compressed_text = ''.join([sentences_list[i] for i in reserved_ctx_ids])
         return compressed_text
 
-    @staticmethod
-    def _split_text(text: str) -> List[str]:
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=512,
-            chunk_overlap=0,
-            separators=["\n", ""],
-            keep_separator=True
-        )
-        sentences_list = text_splitter.split_text(text=text)
-        return sentences_list
-
     @validate_params(
         context=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PAGE_CONTENT,
                      message=f"param must be str, and length range [1, {MAX_PAGE_CONTENT}]"),
@@ -73,10 +62,16 @@ class RerankCompressor(PromptCompressor):
                        question: str,
                        target_rate: float = 0.6,
                        context_reorder: bool = False):
-        if self.splitter_func is None:
-            self.splitter_func = self._split_text
+        if self.splitter is None:
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=512,
+                chunk_overlap=0,
+                separators=["\n", ""],
+                keep_separator=True
+            )
+            self.splitter = text_splitter
         # 文本切分
-        sentences_list = self.splitter_func(context)
+        sentences_list = self.splitter.split_text(text=context)
         # 句子排序
         ranker_result = self.reranker.rerank(query=question, texts=sentences_list)
         sorted_idx = sorted(enumerate(ranker_result), key=lambda x: x[1], reverse=True)

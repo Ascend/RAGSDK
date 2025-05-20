@@ -4,8 +4,9 @@
 
 import unittest
 import random
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
 import torch
+from langchain_core.embeddings import Embeddings
 
 from mx_rag.compress import ClusterCompressor
 
@@ -19,12 +20,12 @@ class ClusterCompressorTestCase(unittest.TestCase):
                       0.3835, 0.4226, 0.4028, 0.445, 0.4233]
         similarity = torch.Tensor(similarity)
         mock_get_similarity.return_value = similarity
-        mock_embed_func = Mock()
-        mock_embed_func.return_value = [[random.random() for _ in range(4)] for _ in range(16)]
+        mock_embed = MagicMock(spec=Embeddings)
+        mock_embed.embed_documents.return_value = [[random.random() for _ in range(4)] for _ in range(16)]
         mock_cluster_func = Mock()
         mock_cluster_func.return_value = [-1, 0, -1, 0, -1, -1, 1, -1, -1, 0, 0, 1, -1, -1, -1]
 
-        compressor = ClusterCompressor(mock_embed_func, mock_cluster_func)
+        compressor = ClusterCompressor(mock_cluster_func, mock_embed)
         context = """近平指出，巴林是中国在海湾地区的好朋友、好伙伴。两国虽然国情不同，但始终以诚相待、友好相处。近年来，在我们共同引领下，中巴关系平稳健康发展。今年是中巴建交35周年，双方一致同意将中巴关系提升为全面战
         略伙伴关系，这是中巴关系史上新的里程碑。中方愿同巴方一道，发展好中巴全面战略伙伴关系，更好造福两国人民。
         习近平强调，中方坚定支持巴方维护国家主权、安全、稳定，支持巴方走独立自主发展道路，支持巴林“2030经济发展愿景”和多元化发展战略，愿同巴方加强能源、投资、交通、新能源、数字经济等领域合作，推动高质量共建“一带
@@ -43,28 +44,28 @@ class ClusterCompressorTestCase(unittest.TestCase):
     def test_init_fail(self):
         with self.assertRaises(ValueError):
             mock_cluster_func = Mock()
-            ClusterCompressor(embed_func="", cluster_func=mock_cluster_func)
+            ClusterCompressor(embed="", cluster_func=mock_cluster_func)
 
         with self.assertRaises(ValueError):
-            mock_embed_func = Mock()
-            ClusterCompressor(embed_func=mock_embed_func, cluster_func="")
-
-        with self.assertRaises(ValueError):
-            mock_embed_func = Mock()
-            mock_cluster_func = Mock()
-            ClusterCompressor(embed_func=mock_embed_func, cluster_func=mock_cluster_func, dev_id=-1)
+            mock_embed_func = MagicMock(spec=Embeddings)
+            ClusterCompressor(embed=mock_embed_func, cluster_func="")
 
         with self.assertRaises(ValueError):
             mock_embed_func = Mock()
             mock_cluster_func = Mock()
-            ClusterCompressor(embed_func=mock_embed_func, cluster_func=mock_cluster_func, splitter_func=123)
+            ClusterCompressor(embed=mock_embed_func, cluster_func=mock_cluster_func, dev_id=-1)
+
+        with self.assertRaises(ValueError):
+            mock_embed_func = Mock()
+            mock_cluster_func = Mock()
+            ClusterCompressor(embed=mock_embed_func, cluster_func=mock_cluster_func, splitter=123)
 
     def test_compress_texts_fail(self):
-        mock_embed_func = Mock()
-        mock_embed_func.return_value = [[random.random() for _ in range(4)] for _ in range(16)]
+        mock_embed = MagicMock(spec=Embeddings)
+        mock_embed.embed_documents.return_value = [[random.random() for _ in range(4)] for _ in range(16)]
         mock_cluster_func = Mock()
         mock_cluster_func.return_value = [-1, 0, -1, 0, -1, -1, 1, -1, -1, 0, 0, 1, -1, -1, -1]
-        compressor = ClusterCompressor(mock_embed_func, mock_cluster_func)
+        compressor = ClusterCompressor(mock_cluster_func, mock_embed)
         context = "近平指出，巴林是中国在海湾地区的好朋友、好伙伴。"
         question = "请给上述内容起一个标题？"
         with self.assertRaises(ValueError):

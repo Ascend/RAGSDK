@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 
-import os
-import shutil
 import unittest
 from unittest.mock import MagicMock
 
@@ -40,7 +38,7 @@ class RerankCompressorTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             mock_reranker = MagicMock(spec=Reranker)
-            RerankCompressor(reranker=mock_reranker, splitter_func="")
+            RerankCompressor(reranker=mock_reranker, splitter="")
 
     def test_compress_texts_fail(self):
         mock_reranker = MagicMock(spec=Reranker)
