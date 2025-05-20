@@ -40,7 +40,7 @@ class RerankCompressorTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             mock_reranker = MagicMock(spec=Reranker)
-            RerankCompressor(reranker=mock_reranker, spliter_func="")
+            RerankCompressor(reranker=mock_reranker, splitter_func="")
 
     def test_compress_texts_fail(self):
         mock_reranker = MagicMock(spec=Reranker)

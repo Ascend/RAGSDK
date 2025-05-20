@@ -16,15 +16,15 @@ class RerankCompressor(PromptCompressor):
     @validate_params(
         reranker=dict(validator=lambda x: isinstance(x, Reranker),
                       message="param must be instance of Reranker"),
-        spliter_func=dict(validator=lambda x: isinstance(x, Callable) or x is None,
-                          message="param must be Callable[[str], List[str]] function or None"),
+        splitter_func=dict(validator=lambda x: isinstance(x, Callable) or x is None,
+                           message="param must be Callable[[str], List[str]] function or None"),
     )
     def __init__(self,
                  reranker: Reranker,
-                 spliter_func: Callable[[str], List[str]] = None
+                 splitter_func: Callable[[str], List[str]] = None
                  ):
         self.reranker = reranker
-        self.spliter_func = spliter_func
+        self.splitter_func = splitter_func
 
     @staticmethod
     def _ranked_texts(sentences_list, sorted_idx, target_rate, context_reorder):
@@ -73,10 +73,10 @@ class RerankCompressor(PromptCompressor):
                        question: str,
                        target_rate: float = 0.6,
                        context_reorder: bool = False):
-        if self.spliter_func is None:
-            self.spliter_func = self._split_text
+        if self.splitter_func is None:
+            self.splitter_func = self._split_text
         # 文本切分
-        sentences_list = self.spliter_func(context)
+        sentences_list = self.splitter_func(context)
         # 句子排序
         ranker_result = self.reranker.rerank(query=question, texts=sentences_list)
         sorted_idx = sorted(enumerate(ranker_result), key=lambda x: x[1], reverse=True)
