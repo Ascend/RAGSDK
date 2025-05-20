@@ -99,9 +99,8 @@ class MxRAGCache:
             tables = curses.fetchall()
             for table in tables:
                 table_name = table[0]
-                if not re.match(r'^[a-zA-Z0-9_]+$', table_name):
-                    raise ValueError("clear MxRAGCache data failed !! Invalid table name")
-                curses.execute(f"DELETE FROM {table_name};")
+                safe_table_name = conn.execute("SELECT quote(?)", (table_name,)).fetchone()[0]
+                curses.execute(f"DELETE FROM {safe_table_name};")
                 conn.commit()
             conn.commit()
 
