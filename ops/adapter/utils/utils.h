@@ -10,6 +10,7 @@
 #include <torch/torch.h>
 #include "atb/operation.h"
 
+namespace atb_speed {
 class Utils {
 public:
     static void *GetCurrentStream();
@@ -23,5 +24,6 @@ public:
     static void ContiguousAtTensor(std::vector<torch::Tensor> &atTensors);
     static void ContiguousAtTensor(torch::Tensor &atTensor);
 };
+} // namespace atb_speed
 
 #endif

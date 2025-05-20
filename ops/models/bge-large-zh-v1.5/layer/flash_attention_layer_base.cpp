@@ -45,7 +45,7 @@ static const uint64_t IN_TENSOR_COUNT = 20;
 static const uint64_t OUT_TENSOR_COUNT = 1;
 static const uint64_t INTERMEDIATE_TENSOR_COUNT = 10;
 static const uint64_t NODE_COUNT = 11;
-size_t reshape_seqLen;
+int64_t reshape_seqLen;
 
 void AddQLinearNode(atb::GraphParam& opGraph, size_t& nodeId)
 {

@@ -10,8 +10,10 @@
 #include "atb_speed/log.h"
 #include "atb_speed/utils/operation_factory.h"
 
-using OperationCreateFunc = std::function<atb::Operation *(const nlohmann::json &paramJson)>;
 
+namespace atb_speed {
+
+using OperationCreateFunc = std::function<atb::Operation *(const nlohmann::json &paramJson)>;
 
 std::map<std::string, OperationCreateFunc> g_funcMap = {
 
@@ -40,3 +42,4 @@ atb::Operation *CreateOperation(const std::string &opName, const std::string &pa
     }
     return nullptr;
 }
+} /* namespace atb */

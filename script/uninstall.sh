@@ -71,10 +71,10 @@ function log() {
 get_run_path() {
   run_path=$(pwd)
   cd ..
-  if [[ "$run_path" =~ '/mxRag' ]];then
+  if [[ "$run_path" =~ /mxRag ]];then
     suffix='mxRag'
   else
-    echo "Directory mxRag does not exist in path[$(pwd)], exiting!"
+    echo "Directory mxRag does not exist in path[$run_path], exiting!"
     exit 1
   fi
   del_path=$(pwd)/"$suffix"

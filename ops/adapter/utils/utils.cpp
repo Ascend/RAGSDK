@@ -24,6 +24,8 @@
 #include "atb_speed/utils/config.h"
 #include "atb_speed/utils/tensor_util.h"
 
+namespace atb_speed {
+
 void *Utils::GetCurrentStream()
 {
     int32_t devId = 0;
@@ -166,4 +168,5 @@ void Utils::ContiguousAtTensor(torch::Tensor &atTensor)
     if (!atTensor.is_contiguous()) {
         atTensor = atTensor.contiguous();
     }
+}
 }

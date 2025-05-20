@@ -7,7 +7,7 @@
 #include <cstring>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <iostream>
 namespace atb_speed {
 constexpr size_t MAX_PATH_LEN = 256;
 
@@ -81,7 +81,7 @@ std::string FileSystem::BaseName(const std::string &filePath)
 
 std::string FileSystem::DirName(const std::string &path)
 {
-    int32_t idx = path.size() - 1;
+    int32_t idx = static_cast<int32_t>(path.size()) - 1;
     while (idx >= 0 && path[idx] == '/') {
         idx--;
     }
@@ -100,8 +100,55 @@ std::string FileSystem::DirName(const std::string &path)
     return path.substr(0, idx + 1);
 }
 
+bool FileSystem::IsPathValid(const std::string& path)
+{
+    struct stat buf;
+
+    // 检查路径本身是否是符号链接
+    if (lstat(path.c_str(), &buf) == -1) {
+        // 如果路径不存在或无权限访问，返回true
+        return true;
+    }
+
+    if (S_ISLNK(buf.st_mode)) {
+        return false;
+    }
+
+    // 分解路径，检查父目录中的每一部分
+    std::vector<std::string> parts;
+    size_t pos = 0;
+    size_t last = 0;
+    while ((pos = path.find('/', last)) != std::string::npos) {
+        if (pos != last) {
+            std::string part = path.substr(last, pos - last);
+            parts.push_back(part);
+        }
+        last = pos + 1;
+    }
+
+    std::string currentPath = "/";
+    for (const std::string& part : parts) {
+        currentPath += part + "/";
+        if (lstat(currentPath.c_str(), &buf) == -1) {
+            // 如果某部分不存在或无权限访问，跳过
+            continue;
+        }
+        if (S_ISLNK(buf.st_mode)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
 bool FileSystem::ReadFile(const std::string &filePath, char *buffer, uint64_t bufferSize)
 {
+    if (!IsPathValid(filePath)) {
+        std::cout<< "path:"<<filePath<< " is invalid";
+        return false;
+    }
+
     std::ifstream fd(filePath.c_str(), std::ios::binary);
     if (!fd.is_open()) {
         return false;
@@ -110,16 +157,6 @@ bool FileSystem::ReadFile(const std::string &filePath, char *buffer, uint64_t bu
     return true;
 }
 
-bool FileSystem::WriteFile(const void *codeBuf, uint64_t codeLen, const std::string &filePath)
-{
-    std::ofstream fd(filePath.c_str(), std::ios::binary);
-    if (!fd) {
-        return false;
-    }
-
-    fd.write((const char *)codeBuf, codeLen);
-    return true;
-}
 
 void FileSystem::DeleteFile(const std::string &filePath) { remove(filePath.c_str()); }
 
@@ -137,8 +174,8 @@ bool FileSystem::MakeDir(const std::string &dirPath, int mode)
 
 bool FileSystem::Makedirs(const std::string &dirPath, const mode_t mode)
 {
-    int32_t offset = 0;
-    int32_t pathLen = dirPath.size();
+    size_t offset = 0;
+    size_t pathLen = dirPath.size();
     do {
         const char *str = strchr(dirPath.c_str() + offset, '/');
         offset = (str == nullptr) ? pathLen : str - dirPath.c_str() + 1;

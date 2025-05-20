@@ -21,6 +21,7 @@
 #include "adapter/workspace/workspace.h"
 #include "atb_speed/utils/model_factory.h"
 
+namespace atb_speed {
 void *ModelTorch::GetWorkSpace(const uint64_t bufferSize)
 {
     void *workspace = nullptr;
@@ -32,9 +33,9 @@ void *ModelTorch::GetWorkSpace(const uint64_t bufferSize)
 
 atb::Tensor ModelTorch::CreateInternalTensorFromDesc(const atb::TensorDesc &tensorDesc)
 {
-    torch::Tensor newAtTensor = Utils::CreateAtTensorFromTensorDesc(tensorDesc);
+    torch::Tensor newAtTensor = atb_speed::Utils::CreateAtTensorFromTensorDesc(tensorDesc);
     atInternalTensors_.push_back(newAtTensor);
-    return Utils::AtTensor2Tensor(newAtTensor);
+    return atb_speed::Utils::AtTensor2Tensor(newAtTensor);
 }
 
 void ModelTorch::RunTask(std::string taskName, std::function<int()> task)
@@ -59,7 +60,7 @@ static uint64_t GetNewModelId()
 ModelTorch::ModelTorch(std::string modelName) : modelName_(modelName)
 {
     modelId_ = GetNewModelId();
-    context_ = atb_speed::ContextFactory::GetAtbContext(Utils::GetCurrentStream());
+    context_ = atb_speed::ContextFactory::GetAtbContext(atb_speed::Utils::GetCurrentStream());
     ATB_LOG(INFO) << "ModelTorch new modelName:" << modelName_ << ", modelId:" << modelId_;
 }
 
@@ -109,7 +110,7 @@ int64_t ModelTorch::SetWeight(std::vector<torch::Tensor> atWeightTensors)
         const torch::Tensor &atTensor = atWeightTensors.at(i);
         ATB_LOG(INFO) << "ModelTorch atWeightTensors[" << i << "]"
                       << " data:" << atTensor.data_ptr() << ", storage_offset:" << atTensor.storage_offset()
-                      << ", format:" << Utils::GetTensorNpuFormat(atTensor) << ", shape:" << atTensor.sizes()
+                      << ", format:" << atb_speed::Utils::GetTensorNpuFormat(atTensor) << ", shape:" << atTensor.sizes()
                       << ", options:" << atTensor.options();
     }
     std::vector<atb::Tensor> weigthTensors;
@@ -125,12 +126,14 @@ int64_t ModelTorch::SetKVCache(std::vector<torch::Tensor> atKCacheTensors, std::
         const torch::Tensor &atkTensor = atKCacheTensors.at(i);
         ATB_LOG(INFO) << "ModelTorch atKCacheTensors[" << i << "]"
                       << " data:" << atkTensor.data_ptr() << ", storage_offset:" << atkTensor.storage_offset()
-                      << ", format:" << Utils::GetTensorNpuFormat(atkTensor) << ", shape:" << atkTensor.sizes()
+                      << ", format:" << atb_speed::Utils::GetTensorNpuFormat(atkTensor)
+                      << ", shape:" << atkTensor.sizes()
                       << ", options:" << atkTensor.options();
         const torch::Tensor &atvTensor = atVCacheTensors.at(i);
         ATB_LOG(INFO) << "ModelTorch atVCacheTensors[" << i << "]"
                       << " data:" << atvTensor.data_ptr() << ", storage_offset:" << atvTensor.storage_offset()
-                      << ", format:" << Utils::GetTensorNpuFormat(atvTensor) << ", shape:" << atvTensor.sizes()
+                      << ", format:" << atb_speed::Utils::GetTensorNpuFormat(atvTensor)
+                      << ", shape:" << atvTensor.sizes()
                       << ", options:" << atvTensor.options();
     }
 
@@ -161,7 +164,7 @@ std::vector<torch::Tensor> ModelTorch::Execute(std::vector<torch::Tensor> atInTe
     for (size_t i = 0; i < atInTensors.size(); ++i) {
         const torch::Tensor &atTensor = atInTensors.at(i);
         ATB_LOG(INFO) << "ModelTorch atInTensors[" << i << "]"<< " data:" << atTensor.data_ptr() << ", storage_offset:"
-                      << atTensor.storage_offset() << ", format:" << Utils::GetTensorNpuFormat(atTensor)
+                      << atTensor.storage_offset() << ", format:" << atb_speed::Utils::GetTensorNpuFormat(atTensor)
                       << ", shape:" << atTensor.sizes() << ", options:" << atTensor.options();
     }
 
@@ -187,7 +190,7 @@ std::vector<torch::Tensor> ModelTorch::Execute(std::vector<torch::Tensor> atInTe
         ATB_LOG(INFO) << "ModelTorch outTensorDescs[" << i
                       << "]:" << atb_speed::TensorUtil::TensorDescToString(outTensorDescs.at(i));
         atb_speed::Timer timer;
-        atOutTensors.at(i) = Utils::CreateAtTensorFromTensorDesc(outTensorDescs.at(i));
+        atOutTensors.at(i) = atb_speed::Utils::CreateAtTensorFromTensorDesc(outTensorDescs.at(i));
         atb_speed::GetSingleton<atb_speed::Statistic>().createTensorTime += timer.ElapsedMicroSecond();
         atb_speed::GetSingleton<atb_speed::Statistic>().mallocTorchTensorSize +=
             atb::Utils::GetTensorSize(outTensorDescs.at(i));
@@ -236,8 +239,8 @@ int64_t ModelTorch::ExecuteOutImpl(std::vector<atb::Tensor> &inTensors, std::vec
 int64_t ModelTorch::AtTensor2Tensor(std::vector<torch::Tensor> &atTensors, std::vector<atb::Tensor> &opsTensors) const
 {
     for (auto &atTensor : atTensors) {
-        Utils::ContiguousAtTensor(atTensor);
-        atb::Tensor tensor = Utils::AtTensor2Tensor(atTensor);
+        atb_speed::Utils::ContiguousAtTensor(atTensor);
+        atb::Tensor tensor = atb_speed::Utils::AtTensor2Tensor(atTensor);
         opsTensors.push_back(tensor);
     }
     return atb::NO_ERROR;
@@ -258,4 +261,5 @@ TORCH_LIBRARY(ModelTorch, m)
         .def("set_kv_cache", &ModelTorch::SetKVCache)
         .def("execute", &ModelTorch::Execute)
         .def("execute_out", &ModelTorch::ExecuteOut);
+}
 }

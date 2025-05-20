@@ -8,6 +8,9 @@
 #include <iostream>
 #include "atb_speed/log/log_entity.h"
 
+
+namespace atb_speed {
+    
 template<typename T>
 inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
 {
@@ -17,7 +20,6 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<T>& vec)
     return os;
 }
 
-namespace atb_speed {
 class LogStream {
 public:
     LogStream(const char *filePath, int line, const char *funcName, LogLevel level);

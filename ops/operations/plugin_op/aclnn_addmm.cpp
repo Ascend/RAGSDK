@@ -68,7 +68,7 @@ namespace atb_speed {
             aclnnVariantPack.aclInTensors.resize(GetInputNum());
             for (size_t i = 0; i < aclnnVariantPack.aclInTensors.size(); ++i) {
                 std::shared_ptr<AclNNTensor> aclnnTensor = std::make_shared<AclNNTensor>();
-                aclnnTensor->tensorIdx = i;
+                aclnnTensor->tensorIdx = static_cast<int>(i);
                 aclnnTensor->needUpdateTensorDataPtr = true;
                 aclnnTensor->atbTensor = variantPack.inTensors.at(i);
                 atb::Tensor squeezedAtbTensor = variantPack.inTensors.at(i);
@@ -98,7 +98,7 @@ namespace atb_speed {
             aclnnVariantPack.aclOutTensors.resize(GetOutputNum());
             for (size_t i = 0; i < aclnnVariantPack.aclOutTensors.size(); ++i) {
                 std::shared_ptr<AclNNTensor> aclnnTensor = std::make_shared<AclNNTensor>();
-                aclnnTensor->tensorIdx = i;
+                aclnnTensor->tensorIdx = static_cast<int>(i);
                 aclnnTensor->needUpdateTensorDataPtr = true;
                 aclnnTensor->atbTensor = variantPack.outTensors.at(i);
                 atb::Tensor squeezedAtbTensor = variantPack.outTensors.at(i);

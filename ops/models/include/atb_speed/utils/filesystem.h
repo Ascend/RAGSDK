@@ -18,8 +18,8 @@ public:
     static int64_t FileSize(const std::string &filePath);
     static std::string BaseName(const std::string &filePath);
     static std::string DirName(const std::string &path);
+    static bool IsPathValid(const std::string &filePath);
     static bool ReadFile(const std::string &filePath, char *buffer, uint64_t bufferSize);
-    static bool WriteFile(const void *codeBuf, uint64_t codeLen, const std::string &filePath);
     static void DeleteFile(const std::string &filePath);
     static bool Rename(const std::string &filePath, const std::string &newFilePath);
     static bool MakeDir(const std::string &dirPath, int mode);

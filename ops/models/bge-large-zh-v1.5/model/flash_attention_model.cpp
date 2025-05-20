@@ -279,7 +279,7 @@ int64_t FlashAttentionModel::BuildGraph()
     const int nodeSize = param_.layerNum + OPERATION_COUNT_BEFORE_LAYER + OPERATION_COUNT_AFTER_LAYER;
     graph_.nodes.resize(nodeSize);
 
-    const int internalTensorSize = graph_.nodes.size() - 1;
+    const size_t internalTensorSize = graph_.nodes.size() - 1;
     graph_.internalTensors.resize(internalTensorSize);
 
     int nodeId = 0;

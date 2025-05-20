@@ -22,7 +22,7 @@ public:
         void FromString(const std::string &param);
     };
     explicit FlashAttentionModel(const std::string &param);
-    ~FlashAttentionModel();
+    ~FlashAttentionModel() override;
     uint32_t GetInputNum() const override;
     uint32_t GetOutputNum() const override;
     atb::Status InferShape(const std::vector<atb::TensorDesc> &inTensorDescs,
