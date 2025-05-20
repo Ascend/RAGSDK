@@ -4,6 +4,7 @@ import re
 from typing import List, Callable
 from langchain_text_splitters.base import TextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.embeddings import Embeddings
 import torch
 import numpy as np
 import torch.nn.functional as F
@@ -17,20 +18,20 @@ class ClusterCompressor(PromptCompressor):
     @validate_params(
         dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
                     message="param must be int and value range [0, 63]"),
-        embed_func=dict(validator=lambda x: isinstance(x, Callable),
-                        message="param must be Callable[[List[str]], List[List[float]]] function"),
+        embed=dict(validator=lambda x: isinstance(x, Embeddings),
+                   message="param must be instance of LangChain's Embeddings"),
         cluster_func=dict(validator=lambda x: isinstance(x, Callable),
                           message="param must be Callable[[List[List[float]]], List[int]] function"),
         splitter=dict(validator=lambda x: isinstance(x, TextSplitter) or x is None,
-                      message="param must be instance of LangChain's TextSplitter  or None"),
+                      message="param must be instance of LangChain's TextSplitter or None"),
     )
     def __init__(self,
-                 embed_func: Callable[[List[str]], List[List[float]]],
                  cluster_func: Callable[[List[List[float]]], List[int]],
+                 embed: Embeddings,
                  splitter: TextSplitter = None,
                  dev_id: int = 0,
                  ):
-        self.embed_func = embed_func
+        self.embed = embed
         self.cluster_func = cluster_func
         self.splitter = splitter
         self.dev_id = dev_id
@@ -83,7 +84,7 @@ class ClusterCompressor(PromptCompressor):
             return context
         # 文本embedding
         sentences_with_question = sentences + [question]
-        sentences_embedding_with_question = self.embed_func(sentences_with_question)
+        sentences_embedding_with_question = self.embed.embed_documents(sentences_with_question)
         sentences_embedding = sentences_embedding_with_question[:-1]
         question_embedding = sentences_embedding_with_question[-1]
         # 计算余弦相似度
