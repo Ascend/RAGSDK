@@ -9,7 +9,7 @@ from mx_rag.compress import PromptCompressor
 from mx_rag.reranker import Reranker
 from mx_rag.utils.common import validate_params, \
     BOOL_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_QUERY_LENGTH, \
-    STR_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP
+    STR_TYPE_CHECK_TIP
 
 
 class RerankCompressor(PromptCompressor):

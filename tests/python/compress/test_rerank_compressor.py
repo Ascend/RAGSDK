@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 
-import os
-import shutil
 import unittest
 from unittest.mock import MagicMock
 
