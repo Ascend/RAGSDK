@@ -57,7 +57,7 @@ class ClusterCompressorTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             mock_embed_func = Mock()
             mock_cluster_func = Mock()
-            ClusterCompressor(embed_func=mock_embed_func, cluster_func=mock_cluster_func, splitter_func=123)
+            ClusterCompressor(embed_func=mock_embed_func, cluster_func=mock_cluster_func, splitter=123)
 
     def test_compress_texts_fail(self):
         mock_embed_func = Mock()
