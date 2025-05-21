@@ -94,11 +94,8 @@ class MilvusDocstore(Docstore):
             validator=lambda x: 0 < x <= MAX_TOP_K,
             message="param must be int and must in range (0, 10000]"),
         drop_ratio_search=dict(validator=lambda x: isinstance(x, float) and 0 <= x < 1,
-                               message="param must be range of [0, 1)"),
-        filter_dict=dict(validator=lambda x: x is None or isinstance(x, dict),
-                         message="param filter_dict must be None or dict"))
-    def full_text_search(self, query: str, top_k: int = 3,
-                         drop_ratio_search: float = 0.2, filter_dict=None) -> List[MxDocument]:
+                               message="param must be range of [0, 1)"))
+    def full_text_search(self, query: str, top_k: int = 3, drop_ratio_search: float = 0.2) -> List[MxDocument]:
         if not self._enable_bm25:
             logger.error("MilvusDocstore full_text_search failed due to enable_bm25 is False")
             return []
@@ -106,12 +103,15 @@ class MilvusDocstore(Docstore):
             # Proportion of small vector values to ignore during the search
             'params': {'drop_ratio_search': drop_ratio_search},
         }
-        doc_filter = filter_dict.get("document_id", []) if filter_dict else []
-        if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
-            raise ValueError("value of 'document_id' in filter_dict must be List[int]")
-        if len(doc_filter) > MAX_CHUNKS_NUM:
-            raise ValueError(f"length of 'document_id' in filter_dict is too large ( > {MAX_CHUNKS_NUM})")
-        res = self._do_bm25_search(query, top_k, search_params, doc_filter)
+        res = self.client.search(
+            collection_name=self.collection_name,
+            data=[query],
+            anns_field='sparse_vector',
+            limit=top_k,
+            search_params=search_params,
+            output_fields=["page_content", "metadata", "document_name"]
+        )
+
         result = []
         if not res:
             return []
@@ -163,20 +163,6 @@ class MilvusDocstore(Docstore):
     def get_all_document_id(self) -> List[int]:
         res = self.client.query(self.collection_name, filter="id == 0 or id != 0", output_fields=["document_id"])
         return [x.get("document_id") for x in res]
-
-    def _do_bm25_search(self, query, top_k, search_params, doc_filter):
-        search_kwargs = {
-            "collection_name": self.collection_name,
-            "data": [query],
-            "anns_field": 'sparse_vector',
-            "limit": top_k,
-            "search_params": search_params,
-            "output_fields": ["page_content", "metadata", "document_name"]
-        }
-        if doc_filter:
-            search_kwargs["filter"] = "document_id IN {document_list}"
-            search_kwargs["filter_params"] = {"document_list": doc_filter}
-        return self.client.search(**search_kwargs)
 
     def _create_collection(self):
         schema = MilvusClient.create_schema(auto_id=True, enable_dynamic_field=True)

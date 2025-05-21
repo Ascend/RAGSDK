@@ -1,7 +1,7 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 import re
-from typing import List, Optional, Callable, Any
+from typing import List, Optional, Callable
 from loguru import logger
 from sqlalchemy import Engine, Index, select, func, bindparam, text, inspect
 
@@ -67,22 +67,20 @@ class OpenGaussDocstore(Docstore):
             message=f"param must be str and length range (0, {TEXT_MAX_LEN}]"),
         top_k=dict(
             validator=lambda x: 0 < x <= MAX_TOP_K,
-            message="param must be int and must in range (0, 10000]"),
-        filter_dict=dict(validator=lambda x: x is None or isinstance(x, dict),
-                         message="param filter_dict must be None or dict"))
-    def full_text_search(self, query: str, top_k: int = 3, filter_dict: dict = None) -> List[MxDocument]:
+            message="param must be int and must in range (0, 10000]"))
+    def full_text_search(self, query: str, top_k: int = 3) -> List[MxDocument]:
         if not self._enable_bm25:
             logger.error("OpenGaussDocstore full_text_search failed due to enable_bm25 is False")
             return []
-        doc_filter = filter_dict.get("document_id", []) if filter_dict else []
-        if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
-            raise ValueError("value of 'document_id' in filter_dict must be List[int]")
-        if len(doc_filter) > MAX_CHUNKS_NUM:
-            raise ValueError(f"length of 'document_id' in filter_dict is too large ( > {MAX_CHUNKS_NUM})")
-        if not doc_filter:
-            data = self._do_bm25_search()
-        else:
-            data = self._do_bm25_search_with_filter(doc_filter)
+        data = select(
+            ChunkModel.chunk_content,
+            ChunkModel.chunk_metadata,
+            ChunkModel.document_name,
+            (ChunkModel.chunk_content.op("<&>")(func.cast(text(":question_query"),
+                                                ChunkModel.chunk_content.type))).label("score")
+        ).order_by(
+            text("score DESC")
+        ).limit(bindparam("top_k"))
         params = {
             'question_query': query,
             'top_k': top_k
@@ -106,30 +104,5 @@ class OpenGaussDocstore(Docstore):
                 metadata=item[1],
                 document_name=item[2]
             ))
+
         return final_results
-
-    def _do_bm25_search(self):
-        data = select(
-            ChunkModel.chunk_content,
-            ChunkModel.chunk_metadata,
-            ChunkModel.document_name,
-            (ChunkModel.chunk_content.op("<&>")(func.cast(text(":question_query"),
-                                                          ChunkModel.chunk_content.type))).label("score")
-        ).order_by(
-            text("score DESC")
-        ).limit(bindparam("top_k"))
-        return data
-
-    def _do_bm25_search_with_filter(self, doc_filter: list):
-        data = select(
-            ChunkModel.chunk_content,
-            ChunkModel.chunk_metadata,
-            ChunkModel.document_name,
-            (ChunkModel.chunk_content.op("<&>")(func.cast(text(":question_query"),
-                                                          ChunkModel.chunk_content.type))).label("score")
-        ).filter(
-            ChunkModel.document_id.in_(doc_filter)
-        ).order_by(
-            text("score DESC")
-        ).limit(bindparam("top_k"))
-        return data

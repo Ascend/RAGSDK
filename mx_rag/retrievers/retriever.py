@@ -21,7 +21,6 @@ class Retriever(BaseRetriever):
     embed_func: Callable[[List[str]], Union[List[List[float]], List[Dict[int, float]]]]
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
     score_threshold: float = Field(default=None, ge=0.0, le=1.0)
-    filter_dict: dict = {}
 
     class Config:
         arbitrary_types_allowed = True
@@ -37,11 +36,11 @@ class Retriever(BaseRetriever):
             embeddings = np.array(embeddings)
 
         if self.score_threshold is None:
-            scores, indices = self.vector_store.search(embeddings, k=self.k, filter_dict=self.filter_dict)[:2]
+            scores, indices = self.vector_store.search(embeddings, k=self.k)[:2]
         else:
             scores, indices = self.vector_store.search_with_threshold(embeddings, k=self.k,
-                                                                      threshold=self.score_threshold,
-                                                                      filter_dict=self.filter_dict)
+                                                                      threshold=self.score_threshold)
+
         result = []
         for score, idx in zip(scores[0], indices[0]):
             if idx < 0:
@@ -50,10 +49,8 @@ class Retriever(BaseRetriever):
             doc = self.document_store.search(idx)
             if doc:
                 result.append((doc, score))
-        return self._post_process_result(result)
 
-    def set_filter(self, filter_dict: dict):
-        self.filter_dict = filter_dict
+        return self._post_process_result(result)
 
     def _post_process_result(self, result: List[tuple]):
         docs = []
@@ -61,6 +58,8 @@ class Retriever(BaseRetriever):
             metadata = doc.metadata
             metadata.update({'score': score})
             docs.append(Document(page_content=doc.page_content, metadata=doc.metadata))
+
         if not docs:
             logger.warning("no relevant documents found!!!")
+
         return docs[:self.k]
