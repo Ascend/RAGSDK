@@ -15,7 +15,6 @@ from mx_rag.storage.document_store import MilvusDocstore, OpenGaussDocstore
 class FullTextRetriever(BaseRetriever):
     document_store: Union[MilvusDocstore, OpenGaussDocstore]
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
-    filter_dict: dict = {}
 
     class Config:
         arbitrary_types_allowed = True
@@ -27,7 +26,7 @@ class FullTextRetriever(BaseRetriever):
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
 
-        docs = self.document_store.full_text_search(query, top_k=self.k, filter_dict=self.filter_dict)
+        docs = self.document_store.full_text_search(query, top_k=self.k)
         result = []
         for doc in docs:
             result.append(Document(page_content=doc.page_content, metadata=doc.metadata))
@@ -36,6 +35,3 @@ class FullTextRetriever(BaseRetriever):
             logger.warning("no relevant documents found!!!")
 
         return result
-
-    def set_filter(self, filter_dict: dict):
-        self.filter_dict = filter_dict

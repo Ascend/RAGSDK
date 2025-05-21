@@ -456,4 +456,4 @@ class KnowledgeDB(KnowledgeBase):
     def _storage_and_vector_add(self, doc_name: str, file_path: str, documents: List, embeddings: List):
         document_id = self._knowledge_store.add_doc_info(self.knowledge_name, doc_name, file_path, self.user_id)
         ids = self._document_store.add(documents, document_id)
-        self._vector_store.add(np.array(embeddings), ids, document_id)
+        self._vector_store.add(np.array(embeddings), ids)
