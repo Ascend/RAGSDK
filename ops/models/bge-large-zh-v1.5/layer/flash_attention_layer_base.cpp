@@ -278,7 +278,7 @@ atb::Status FlashAttentionLayer(const FlashAttentionLayerParam &param, atb::Oper
     opGraph.name = GetFuncNameAndNameSpace(__PRETTY_FUNCTION__);
 
     size_t nodeId = 0;
-    atb::Status atbStatus;
+    atb::Status status;
     // atb::Node &qLinearNode = opGraph.nodes.at(nodeId++);
     AddQLinearNode(opGraph, nodeId);
     // atb::Node &kLinearNode = opGraph.nodes.at(nodeId++);
@@ -289,24 +289,24 @@ atb::Status FlashAttentionLayer(const FlashAttentionLayerParam &param, atb::Oper
     
     // atb::Node &selfAttentionKvCacheNode = opGraph.nodes.at(nodeId++);
     // attention
-    atbStatus = AddSelfAttentionKvCacheNode(opGraph, nodeId, param);
-    if (atbStatus != atb::NO_ERROR) {
-        return atbStatus;
+    status = AddSelfAttentionKvCacheNode(opGraph, nodeId, param);
+    if (status != atb::NO_ERROR) {
+        return status;
     }
     // atb::Node &selfOutLinearNode = opGraph.nodes.at(nodeId++);
     AddSelfOutLinearNode(opGraph, nodeId);
 
     // atb::Node &selfResidualAddNode = opGraph.nodes.at(nodeId++);
     // hiddenStates + afterDense
-    atbStatus = AddSelfResidualAddNode(opGraph, nodeId);
-    if (atbStatus != atb::NO_ERROR) {
-        return atbStatus;
+    status = AddSelfResidualAddNode(opGraph, nodeId);
+    if (status != atb::NO_ERROR) {
+        return status;
     }
     // atb::Node &selfNormNode = opGraph.nodes.at(nodeId++);
     // layerNorm
-    atbStatus = AddSelfNormNode(opGraph, nodeId, param);
-    if (atbStatus != atb::NO_ERROR) {
-        return atbStatus;
+    status = AddSelfNormNode(opGraph, nodeId, param);
+    if (status != atb::NO_ERROR) {
+        return status;
     }
 
     // atb::Node &feedNode = opGraph.nodes.at(nodeId++);
@@ -318,15 +318,15 @@ atb::Status FlashAttentionLayer(const FlashAttentionLayerParam &param, atb::Oper
 
     // atb::Node &afterDenseAddNode = opGraph.nodes.at(nodeId++);
     // add
-    atbStatus = AddAfterDenseAddNode(opGraph, nodeId);
-    if (atbStatus != atb::NO_ERROR) {
-        return atbStatus;
+    status = AddAfterDenseAddNode(opGraph, nodeId);
+    if (status != atb::NO_ERROR) {
+        return status;
     }
     // atb::Node &layerNormNode = opGraph.nodes.at(nodeId++);
     // layerNorm
-    atbStatus = AddLayerNormNode(opGraph, nodeId, param);
-    if (atbStatus != atb::NO_ERROR) {
-        return atbStatus;
+    status = AddLayerNormNode(opGraph, nodeId, param);
+    if (status != atb::NO_ERROR) {
+        return status;
     }
     opGraph.inferShapeFunc = [=](const atb::SVector<atb::TensorDesc> &inTensorDescs,
         atb::SVector<atb::TensorDesc> &outTensorDescs) {

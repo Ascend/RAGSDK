@@ -18,7 +18,8 @@ public:
     static int64_t FileSize(const std::string &filePath);
     static std::string BaseName(const std::string &filePath);
     static std::string DirName(const std::string &path);
-    static bool IsPathValid(const std::string &filePath);
+    static bool IsOwnerSame(const std::string& path);
+    static bool IsPathValid(const std::string& path);
     static bool ReadFile(const std::string &filePath, char *buffer, uint64_t bufferSize);
     static void DeleteFile(const std::string &filePath);
     static bool Rename(const std::string &filePath, const std::string &newFilePath);
