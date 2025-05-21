@@ -5,12 +5,13 @@
 #ifndef ATB_SPEED_CONTEXT_FACTORY_H
 #define ATB_SPEED_CONTEXT_FACTORY_H
 #include <memory>
+#include <acl/acl.h>
 #include <atb/context.h>
 
 namespace atb_speed {
 class ContextFactory {
 public:
-    static std::shared_ptr<atb::Context> GetAtbContext(void *stream);
+    static std::shared_ptr<atb::Context> GetAtbContext(aclrtStream stream);
     static void FreeAtbContext();
 };
 }

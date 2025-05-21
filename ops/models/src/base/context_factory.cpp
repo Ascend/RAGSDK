@@ -3,6 +3,7 @@
 */
 #include "atb_speed/base/context_factory.h"
 #include <thread>
+#include <acl/acl.h>
 #include "atb_speed/log.h"
 #include "atb_speed/utils/singleton.h"
 #include "atb_speed/utils/config.h"
@@ -10,7 +11,7 @@
 namespace atb_speed {
 thread_local std::shared_ptr<atb::Context> g_localContext;
 
-std::shared_ptr<atb::Context> ContextFactory::GetAtbContext(void *stream)
+std::shared_ptr<atb::Context> ContextFactory::GetAtbContext(aclrtStream stream)
 {
     if (g_localContext) {
     ATB_LOG(INFO) << "ContextFactory return localContext";

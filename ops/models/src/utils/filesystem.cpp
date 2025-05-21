@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <iostream>
+#include <unistd.h>
 namespace atb_speed {
 constexpr size_t MAX_PATH_LEN = 256;
 
@@ -100,9 +101,31 @@ std::string FileSystem::DirName(const std::string &path)
     return path.substr(0, idx + 1);
 }
 
+bool FileSystem::IsOwnerSame(const std::string& path)
+{
+    struct stat file_info;
+
+    // 获取文件信息
+    if (stat(path.c_str(), &file_info) != 0) {
+        std::cout<< "stat file:"<< path << " failed";
+        return false;
+    }
+
+    // 校验文件owner
+    if (file_info.st_uid != geteuid()) {
+        std::cout<< "file:"<< path << " uid is not same with euid";
+        return false;
+    }
+    return true;
+}
+
 bool FileSystem::IsPathValid(const std::string& path)
 {
     struct stat buf;
+
+    if (!IsOwnerSame(path)) {
+        return false;
+    }
 
     // 检查路径本身是否是符号链接
     if (lstat(path.c_str(), &buf) == -1) {
@@ -149,14 +172,13 @@ bool FileSystem::ReadFile(const std::string &filePath, char *buffer, uint64_t bu
         return false;
     }
 
-    std::ifstream fd(filePath.c_str(), std::ios::binary);
+    std::ifstream fd(filePath, std::ios::binary);
     if (!fd.is_open()) {
         return false;
     }
     fd.read(buffer, bufferSize);
     return true;
 }
-
 
 void FileSystem::DeleteFile(const std::string &filePath) { remove(filePath.c_str()); }
 

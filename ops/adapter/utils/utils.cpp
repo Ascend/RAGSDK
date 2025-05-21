@@ -26,7 +26,7 @@
 
 namespace atb_speed {
 
-void *Utils::GetCurrentStream()
+aclrtStream Utils::GetCurrentStream()
 {
     int32_t devId = 0;
     aclrtGetDevice(&devId);

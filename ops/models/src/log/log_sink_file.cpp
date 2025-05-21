@@ -64,7 +64,7 @@ void LogSinkFile::LogImpl(const LogEntity &logEntity)
         filePath << fileDir_ << std::string("atb_speed_") << std::to_string(syscall(SYS_gettid)) << "_" << curTime_ <<
             "_" <<fileCount_ << ".log";
 
-        if (!FileSystem::IsPathValid(std::string(filePath.str()))) {
+        if (!FileSystem::IsPathValid(filePath.str())) {
             std::cout<< "path:"<<filePath.str()<< " is invalid";
             return;
         }
