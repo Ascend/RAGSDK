@@ -138,9 +138,11 @@ class MindFAISS(VectorStore):
     @validate_params(
         k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param value range (0, 10000]"),
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
-    def search(self, embeddings: np.ndarray, k: int = 3):
+    def search(self, embeddings: np.ndarray, k: int = 3, filter_dict=None):
         if len(embeddings.shape) != 2:
             raise MindFAISSError("shape of embedding must equal to 2")
+        if filter_dict:
+            logger.warning("filter_dict is not None, MindFAISS does not support filter search!)")
         if embeddings.shape[0] >= self.MAX_SEARCH_BATCH:
             raise MindFAISSError(f"num of embeddings must less {self.MAX_SEARCH_BATCH}")
         scores, indices = self.index.search(embeddings, k)
@@ -149,7 +151,7 @@ class MindFAISS(VectorStore):
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
-    def add(self, embeddings: np.ndarray, ids: List[int]):
+    def add(self, embeddings: np.ndarray, ids: List[int], document_id=0):
         if len(embeddings.shape) != 2:
             raise MindFAISSError("shape of embedding must equal to 2")
         if embeddings.shape[0] != len(ids):

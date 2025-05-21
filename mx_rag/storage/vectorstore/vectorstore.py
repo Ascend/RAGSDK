@@ -27,7 +27,7 @@ class VectorStore(ABC):
         pass
 
     @abstractmethod
-    def search(self, embeddings, k):
+    def search(self, embeddings, k, filter_dict=None):
         pass
 
     @abstractmethod
@@ -47,10 +47,11 @@ class VectorStore(ABC):
         pass
 
     def search_with_threshold(self, embeddings: Union[np.ndarray, List[Dict[int, float]]],
-                              k: int = 3, threshold: float = 0.1):
+                              k: int = 3, threshold: float = 0.1, filter_dict=None):
         """
         根据阈值进行查找 过滤调不满足的分数
         Args:
+            filter_dict: 检索的过滤条件
             embeddings: 词嵌入之后的查询
             k: top_k个结果
             threshold: 阈值
@@ -58,9 +59,10 @@ class VectorStore(ABC):
         Returns: 通过search过滤之后的分数
 
         """
-        scores, indices = self.search(embeddings, k)[:2]
+        scores, indices = self.search(embeddings, k, filter_dict=filter_dict)[:2]
 
-        logger.info(f"Filter is [>={threshold}]")
+
+        logger.info(f"threshold is [>={threshold}]")
 
         filter_score = []
         filter_indices = []
