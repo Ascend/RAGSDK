@@ -25,7 +25,8 @@ def _vector_model_factory(
         table_name: str,
         search_mode: SearchMode,
         dense_dim: Optional[int] = None,
-        sparse_dim: Optional[int] = None
+        sparse_dim: Optional[int] = None,
+        document_id: Optional[int] = None
 ) -> Any:
     """Factory function to create vector table model based on search mode."""
 
@@ -33,6 +34,7 @@ def _vector_model_factory(
         __abstract__ = True
         __table_args__ = {'extend_existing': True}
         id = Column(BigInteger, primary_key=True, comment="向量ID")
+        document_id = Column(BigInteger, comment="文档ID")
 
     if search_mode == SearchMode.DENSE:
         class DenseModel(BaseModel):
@@ -125,6 +127,7 @@ class OpenGaussDB(VectorStore):
         self.vector_model: Optional[Any] = None
         self._index_type = index_type
         self._metric_type = metric_type
+        self._filter_dict = None
         if self.search_mode == SearchMode.SPARSE and self._index_type != "HNSW":
             raise ValueError("sparse vector index_type only support HNSW")
 
@@ -238,20 +241,20 @@ class OpenGaussDB(VectorStore):
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="param requires to be np.ndarray"),
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
     )
-    def add(self, embeddings: np.ndarray, ids: List[int]):
+    def add(self, embeddings: np.ndarray, ids: List[int], document_id: int = 0):
         if self.search_mode != SearchMode.DENSE:
             raise ValueError("Add requires DENSE mode")
-        self._internal_add(ids, embeddings)
+        self._internal_add(ids, embeddings, document_id=document_id)
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
         sparse_embeddings=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, dict) for it in x),
                                message="param requires to be a list of dicts")
     )
-    def add_sparse(self, ids: List[int], sparse_embeddings: List[Dict[int, float]]):
+    def add_sparse(self, ids: List[int], sparse_embeddings: List[Dict[int, float]], document_id: int = 0):
         if self.search_mode != SearchMode.SPARSE:
             raise ValueError("Add sparse requires SPARSE mode")
-        self._internal_add(ids, sparse=sparse_embeddings)
+        self._internal_add(ids, sparse=sparse_embeddings, document_id=document_id)
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
@@ -262,10 +265,11 @@ class OpenGaussDB(VectorStore):
     )
     def add_dense_and_sparse(self, ids: List[int],
                              dense_embeddings: np.ndarray,
-                             sparse_embeddings: List[Dict[int, float]]):
+                             sparse_embeddings: List[Dict[int, float]],
+                             document_id: int = 0):
         if self.search_mode != SearchMode.HYBRID:
             raise ValueError("Adding dense and sparse requires HYBRID mode")
-        self._internal_add(ids, dense_embeddings, sparse_embeddings)
+        self._internal_add(ids, dense_embeddings, sparse_embeddings, document_id)
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"))
@@ -288,9 +292,11 @@ class OpenGaussDB(VectorStore):
         k={
             "validator": lambda x: 0 < x <= MAX_TOP_K,
             "message": "param length range (0, 10000]"
-        }
+        },
+        filter_dict=dict(validator=lambda x: isinstance(x, dict) or x is None, message="param must be dict")
     )
-    def search(self, embeddings: Union[List[List[float]], List[Dict[int, float]]], k: int = 3):
+    def search(self, embeddings: Union[List[List[float]], List[Dict[int, float]]],
+               k: int = 3, filter_dict = None):
         """
         Searches for the k-nearest neighbors of the given embeddings.
 
@@ -312,7 +318,7 @@ class OpenGaussDB(VectorStore):
             raise ValueError(
                 "embeddings must be a non-empty list of vectors (list) or sparse vectors (dict)"
             )
-
+        self._filter_dict = filter_dict
         return self._parallel_search(embeddings, k)
 
     def get_all_ids(self) -> List[int]:
@@ -343,20 +349,22 @@ class OpenGaussDB(VectorStore):
             self,
             ids: List[int],
             dense: Optional[np.ndarray] = None,
-            sparse: Optional[List[Dict[int, float]]] = None
+            sparse: Optional[List[Dict[int, float]]] = None,
+            document_id = 0
     ) -> None:
         """Unified method for adding embeddings."""
-        data = self._prepare_insert_data(ids, dense, sparse)
+        data = self._prepare_insert_data(ids, dense, sparse, document_id=document_id)
         self._bulk_insert(data)
 
     def _prepare_insert_data(
             self,
             ids: List[int],
             dense: Optional[np.ndarray] = None,
-            sparse: Optional[List[Dict[int, float]]] = None
+            sparse: Optional[List[Dict[int, float]]] = None,
+            document_id = None
     ) -> List[Dict]:
         """Prepare data for bulk insertion."""
-        data = [{"id": id_} for id_ in ids]
+        data = [{"id": id_, "document_id": document_id } for id_ in ids]
         if dense is not None:
             if len(ids) != len(dense):
                 raise ValueError("Input lengths mismatch")
@@ -374,6 +382,7 @@ class OpenGaussDB(VectorStore):
         try:
             with self._transaction() as session:
                 session.bulk_insert_mappings(self.vector_model, data)
+                session.commit()
                 logger.info(f"Inserted {len(data)} vectors")
         except SQLAlchemyError as e:
             logger.error(f"Insert failed: {str(e)}")
@@ -406,6 +415,18 @@ class OpenGaussDB(VectorStore):
                 opengauss_ops={'sparse_vector': self.SPARSE_METRIC_MAP.get(self._metric_type)}
             ).create(self.engine)
 
+    def _get_doc_filter(self):
+        if self._filter_dict:
+            doc_filter = self._filter_dict.get("document_id", [])
+            if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
+                raise ValueError("value of 'document_id' in filter_dict must be List[int]")
+            doc_filter = list(set(doc_filter)) # 去重
+            max_ids_len = len(self.get_all_ids())
+            if len(doc_filter) > max_ids_len:
+                raise ValueError(f"length of 'document_id' in filter_dict over length of ids({max_ids_len})")
+            return doc_filter
+        return []
+
     def _do_search(
             self,
             emb: Union[List[float], Dict[int, float]],
@@ -415,14 +436,22 @@ class OpenGaussDB(VectorStore):
         """Execute single search query."""
         if isinstance(emb, list):
             emb = np.array(emb)
-        with self._transaction() as session:
+        doc_filter = self._get_doc_filter()
+        with (self._transaction() as session):
             field, param_key, order_dir = self._get_search_params(emb)
             emb_str = self._serialize_embedding(emb)
-
-            query = session.query(
-                self.vector_model,
-                text(f"{field} {metric_func_op} :{param_key} AS score")
-            ).order_by(text(f"score")).params(**{param_key: emb_str}).limit(k)
+            if doc_filter:
+                query = session.query(
+                    self.vector_model,
+                    text(f"{field} {metric_func_op} :{param_key} AS score")
+                ).filter(
+                    self.vector_model.document_id.in_(doc_filter)
+                ).order_by(text(f"score")).params(**{param_key: emb_str}).limit(k)
+            else:
+                query = session.query(
+                    self.vector_model,
+                    text(f"{field} {metric_func_op} :{param_key} AS score")
+                ).order_by(text(f"score")).params(**{param_key: emb_str}).limit(k)
 
             results = query.all()
             return [item[0] for item in results], [item[1] for item in results]
@@ -450,7 +479,8 @@ class OpenGaussDB(VectorStore):
     def _parallel_search(
             self,
             embeddings: Union[List[List[float]], List[Dict[int, float]]],
-            k: int = 3
+            k: int = 3,
+            filter_dict=None
     ) -> Tuple[List[List[float]], List[List[int]]]:
         """Execute parallel searches using thread pool."""
         pool_size = self._calculate_pool_size()
