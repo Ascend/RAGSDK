@@ -182,10 +182,6 @@ class TestMilvusDB(unittest.TestCase):
         self.create_milvus_db_dense().client.drop_collection.assert_called_once_with(
             self.create_milvus_db_dense()._collection_name)
 
-        with self.assertRaises(MilvusError):
-            self.client.has_collection.return_value = False
-            self.create_milvus_db_dense().drop_collection()
-
     def test_search(self):
         with patch('mx_rag.storage.vectorstore.vectorstore.VectorStore._score_scale') as mock_score_scale:
             mock_score_scale.return_value = [1, 2, 3]

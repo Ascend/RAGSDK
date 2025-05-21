@@ -70,8 +70,8 @@ class TestOpenGaussDB(unittest.TestCase):
         ids = [1, 2]
 
         with patch.object(self.db, '_internal_add') as mock_add:
-            self.db.add(embeddings, ids)
-            mock_add.assert_called_once_with(ids, embeddings)
+            self.db.add(embeddings, ids, document_id=0)
+            mock_add.assert_called_once_with(ids, embeddings, document_id=0)
 
     def test_add_sparse(self):
         """Test adding sparse vectors."""
@@ -85,7 +85,7 @@ class TestOpenGaussDB(unittest.TestCase):
 
         with patch.object(db, '_internal_add') as mock_add:
             db.add_sparse(ids, sparse_embeddings)
-            mock_add.assert_called_once_with(ids, sparse=sparse_embeddings)
+            mock_add.assert_called_once_with(ids, sparse=sparse_embeddings, document_id=0)
 
     def test_delete(self):
         """Test deleting vectors."""
@@ -194,8 +194,8 @@ class TestOpenGaussDB(unittest.TestCase):
         ids = [1]
 
         with patch.object(db, '_internal_add') as mock_add:
-            db.add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
-            mock_add.assert_called_once_with(ids, dense_embeddings, sparse_embeddings)
+            db.add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, document_id=0)
+            mock_add.assert_called_once_with(ids, dense_embeddings, sparse_embeddings, 0)
 
     def test_invalid_search_modes(self):
         """Test invalid search mode combinations."""
