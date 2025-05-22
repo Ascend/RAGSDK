@@ -1,9 +1,8 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-import operator
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 
 import numpy as np
 from loguru import logger
@@ -31,7 +30,7 @@ class VectorStore(ABC):
         pass
 
     @abstractmethod
-    def add(self, embeddings, ids):
+    def add(self, embeddings, ids, document_id):
         pass
 
     @abstractmethod
@@ -44,6 +43,11 @@ class VectorStore(ABC):
 
     @abstractmethod
     def get_all_ids(self):
+        pass
+
+    @abstractmethod
+    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+               sparse: Optional[List[Dict[int, float]]] = None):
         pass
 
     def search_with_threshold(self, embeddings: Union[np.ndarray, List[Dict[int, float]]],

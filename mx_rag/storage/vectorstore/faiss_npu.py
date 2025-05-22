@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import os
-import operator
-from typing import List
+from typing import List, Optional, Dict
 
 import ascendfaiss
 import faiss
@@ -14,7 +13,7 @@ from loguru import logger
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, \
-    MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024
+    MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024, _check_sparse_and_dense
 
 
 class MindFAISSError(Exception):
@@ -152,12 +151,7 @@ class MindFAISS(VectorStore):
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
     def add(self, embeddings: np.ndarray, ids: List[int], document_id=0):
-        if len(embeddings.shape) != 2:
-            raise MindFAISSError("shape of embedding must equal to 2")
-        if embeddings.shape[0] != len(ids):
-            raise MindFAISSError("Length of embeddings is not equal to number of ids")
-        if len(ids) + self.index.ntotal >= self.MAX_VEC_NUM:
-            raise MindFAISSError(f"total num of ids/embedding is reach to limit {self.MAX_VEC_NUM}")
+        self._check_embeddings(embeddings, ids)
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
             logger.debug(f"success add {len(ids)} ids in MindFAISS.")
@@ -180,6 +174,20 @@ class MindFAISS(VectorStore):
             self.index.getIdxMap(dev, dev_ids)
             ids.extend([dev_ids.at(i) for i in range(dev_ids.size())])
         return ids
+
+    @validate_params(
+        vec_ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="vec_ids must be List[int]"),
+        dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
+                   message="dense must be Optional[np.ndarray]")
+    )
+    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+               sparse: Optional[List[Dict[int, float]]] = None):
+        if sparse is not None:
+            logger.warning("MindFAISS not support update sparse vector")
+        if dense is None:
+            raise MindFAISSError("dense vector must be passed in MindFAISS update")
+        _check_sparse_and_dense(vec_ids, dense, sparse)
+        self.add(dense, vec_ids)
 
     def _create_index(self, x_dim):
         """Create or load a FAISS index on Ascend device."""
@@ -205,3 +213,11 @@ class MindFAISS(VectorStore):
                 logger.error("The operators are not compiled, please compile first")
             logger.error(f"Exception in _create_index: {err}")
             raise MindFAISSError(f"Failed to create or load index: {err}") from err
+
+    def _check_embeddings(self, embeddings, ids):
+        if len(embeddings.shape) != 2:
+            raise MindFAISSError("shape of embedding must equal to 2")
+        if embeddings.shape[0] != len(ids):
+            raise MindFAISSError("Length of embeddings is not equal to number of ids")
+        if len(ids) + self.index.ntotal >= self.MAX_VEC_NUM:
+            raise MindFAISSError(f"total num of ids/embedding is reach to limit {self.MAX_VEC_NUM}")

@@ -9,7 +9,7 @@ from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import StorageError, Docstore
 from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, MAX_SQLITE_FILE_NAME_LEN, \
-    check_db_file_limit
+    check_db_file_limit, validate_list_str, TEXT_MAX_LEN, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 
@@ -57,3 +57,17 @@ class SQLiteDocstore(Docstore):
 
     def get_all_document_id(self) -> List[int]:
         return self.doc_store.get_all_document_id()
+
+    @validate_params(document_id=dict(validator=lambda x: x >= 0, message=f"document_id must >= 0"))
+    def search_by_document_id(self, document_id: int):
+        return self.doc_store.search_by_document_id(document_id)
+
+    @validate_params(
+        chunk_ids=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM,
+                       message=f"param value range (0, {MAX_CHUNKS_NUM}]"),
+        texts=dict(validator=lambda x: validate_list_str(x, [1, MAX_CHUNKS_NUM], [1, STR_MAX_LEN]),
+                   message="param must meets: Type is List[str], "
+                           f"list length range [1, {MAX_CHUNKS_NUM}], str length range [1, {STR_MAX_LEN}]"),
+    )
+    def update(self, chunk_ids: List[int], texts: List[str]):
+        self.doc_store.update(chunk_ids, texts)

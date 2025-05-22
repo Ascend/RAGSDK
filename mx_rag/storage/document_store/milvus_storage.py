@@ -8,7 +8,8 @@ from pymilvus import MilvusClient, DataType, Function, FunctionType
 from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import Docstore
 from mx_rag.storage.vectorstore import MilvusDB
-from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, KB, TEXT_MAX_LEN, MAX_TOP_K
+from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, KB, TEXT_MAX_LEN, MAX_TOP_K, validate_list_str, \
+    STR_MAX_LEN
 
 
 class MilvusDocstore(Docstore):
@@ -163,6 +164,43 @@ class MilvusDocstore(Docstore):
     def get_all_document_id(self) -> List[int]:
         res = self.client.query(self.collection_name, filter="id == 0 or id != 0", output_fields=["document_id"])
         return [x.get("document_id") for x in res]
+
+    @validate_params(document_id=dict(validator=lambda x: x >= 0, message=f"document_id must >= 0"))
+    def search_by_document_id(self, document_id: int):
+        outputs = self.client.query(
+            collection_name=self.collection_name,
+            filter=f"document_id == {document_id}",
+            output_fields=["page_content", "metadata", "document_name"]
+        )
+        results = [MxDocument(
+            page_content=output["page_content"],
+            metadata=output["metadata"],
+            document_name=output["document_name"]
+        ) for output in outputs]
+        return results
+
+    @validate_params(
+        chunk_ids=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM,
+                       message=f"param value range (0, {MAX_CHUNKS_NUM}]"),
+        texts=dict(validator=lambda x: validate_list_str(x, [1, MAX_CHUNKS_NUM], [1, STR_MAX_LEN]),
+                   message="param must meets: Type is List[str], "
+                           f"list length range [1, {MAX_CHUNKS_NUM}], str length range [1, {STR_MAX_LEN}]"),
+    )
+    def update(self, chunk_ids: List[int], texts: List[str]):
+        if len(chunk_ids) != len(texts):
+            raise ValueError("chunk_ids and texts length not the same while calling update function.")
+        responses = self.client.get(
+            collection_name=self.collection_name,
+            ids=chunk_ids
+        )
+        data = []
+        for response, text in zip(responses, texts):
+            response["page_content"] = text
+            data.append(response)
+        if data:
+            self.client.upsert(collection_name=self.collection_name, data=data)
+            self.client.refresh_load(collection_name=self.collection_name)
+            logger.info(f"Successfully updated chunk ids {chunk_ids}")
 
     def _do_bm25_search(self, query, top_k, search_params, doc_filter):
         search_kwargs = {

@@ -1,9 +1,11 @@
 import os
 import unittest
 
+import numpy as np
 from loguru import logger
 from langchain_core.documents import Document
-from mx_rag.utils.common import validate_sequence, validate_list_list_str, validate_list_document, check_header
+from mx_rag.utils.common import validate_sequence, validate_list_list_str, validate_list_document, check_header, \
+    check_embed_func, _check_sparse_embedding, _check_sparse_and_dense
 
 
 class TestCommon(unittest.TestCase):
@@ -99,4 +101,26 @@ class TestCommon(unittest.TestCase):
         self.assertFalse(check_header({'test': '1\n'}))
         self.assertTrue(check_header({'test': '1'}))
 
+    def test_check_embed_func(self):
+        def test_fun():
+            return "test"
 
+        self.assertTrue(check_embed_func(test_fun))
+        self.assertTrue(check_embed_func({'dense': test_fun, 'sparse': None}))
+        self.assertTrue(check_embed_func({'dense': None, 'sparse': test_fun}))
+        self.assertTrue(check_embed_func({'dense': test_fun, 'sparse': test_fun}))
+        self.assertFalse(check_embed_func({'dense': None, 'sparse': None}))
+        self.assertFalse(check_embed_func({'dense': None, 'ss': test_fun}))
+        self.assertFalse(check_embed_func({'dense': None}))
+
+    def test_check_sparse_embedding(self):
+        self.assertTrue(_check_sparse_embedding([{1: 0.1, 2: 0.2}]))
+        self.assertFalse(_check_sparse_embedding([{1: "0.1", 2: 0.2}]))
+        self.assertFalse(_check_sparse_embedding([{1: "0.1", 2: 0.2}, [0.1, 0.2]]))
+
+    def test_check_sparse_and_dense(self):
+        dense = np.array([[0.1, 0.2], [0.3, 0.4]])
+        sparse = [{1: 0.1, 2: 0.2}, {3: 0.3, 4: 0.4}]
+        _check_sparse_and_dense([1, 2], dense, sparse)
+        with self.assertRaises(ValueError):
+            _check_sparse_and_dense([1, 2, 3], dense, sparse)

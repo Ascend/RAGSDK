@@ -98,5 +98,17 @@ class TestOpenGaussDocstore(unittest.TestCase):
         self.assertEqual(res, [])
         self.docstore.drop()
 
+    def test_search_by_document_id(self):
+        self.mock_helper.search_by_document_id.return_value = self.test_documents
+        res = self.docstore.search_by_document_id(1)
+        self.assertEqual(res[0].page_content, "content1")
+        self.mock_helper.search_by_document_id.assert_called_once()
+
+    def test_update(self):
+        self.mock_helper.update.return_value = None
+        self.docstore.update([1, 2], ["test1", "test2"])
+        self.mock_helper.update.assert_called_once()
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 from mx_rag.storage.vectorstore import VectorStore, SearchMode
 from mx_rag.storage.document_store.base_storage import StorageError
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, _check_sparse_embedding, _check_sparse_and_dense
 from mx_rag.utils.common import MAX_COLLECTION_NAME_LENGTH, MAX_TOP_K
 
 DEFAULT_INDEX_OPTIONS = {'m': 16, 'ef_construction': 200}
@@ -248,8 +248,8 @@ class OpenGaussDB(VectorStore):
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
-        sparse_embeddings=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, dict) for it in x),
-                               message="param requires to be a list of dicts")
+        sparse_embeddings=dict(validator=lambda x: _check_sparse_embedding(x),
+                               message="param requires to be List[Dict[int, float]]")
     )
     def add_sparse(self, ids: List[int], sparse_embeddings: List[Dict[int, float]], document_id: int = 0):
         if self.search_mode != SearchMode.SPARSE:
@@ -260,8 +260,8 @@ class OpenGaussDB(VectorStore):
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
         dense_embeddings=dict(validator=lambda x: isinstance(x, np.ndarray),
                               message="param requires to be np.ndarray"),
-        sparse_embeddings=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, dict) for it in x),
-                               message="param requires to be a list of dicts")
+        sparse_embeddings=dict(validator=lambda x: _check_sparse_embedding(x),
+                               message="param requires to be List[Dict[int, float]]")
     )
     def add_dense_and_sparse(self, ids: List[int],
                              dense_embeddings: np.ndarray,
@@ -330,6 +330,40 @@ class OpenGaussDB(VectorStore):
 
         except SQLAlchemyError as e:
             raise OpenGaussError("Failed to get all ids") from e
+
+    @validate_params(
+        vec_ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="vec_ids must be List[int]"),
+        dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
+                   message="dense must be Optional[np.ndarray]"),
+        sparse=dict(validator=lambda x: x is None or _check_sparse_embedding(x),
+                    message="sparse must to be Optional[List[Dict[int, float]]]")
+    )
+    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+               sparse: Optional[List[Dict[int, float]]] = None):
+        _check_sparse_and_dense(vec_ids, dense, sparse)
+        if dense is None:
+            dense = [None] * len(vec_ids)
+        if sparse is None:
+            sparse = [None] * len(vec_ids)
+        updates = self._get_vec_by_id(vec_ids)
+        if len(vec_ids) != len(updates):
+            queried_ids = [u.get("id") for u in updates]
+            raise OpenGaussError(f"the input id {set(vec_ids) - set(queried_ids)} in vec_ids not exists in openGauss")
+        # 根据传入数据刷新数据
+        for update in updates:
+            vec_id = vec_ids.index(update.get("id"))
+            dense_vector = dense[vec_id]
+            sparse_vector = sparse[vec_id]
+            if dense_vector is not None:
+                update["vector"] = dense_vector
+            if sparse_vector is not None:
+                update["sparse_vector"] = SparseVector(sparse_vector, self.sparse_dim)
+        try:
+            with self._transaction() as session:
+                session.bulk_update_mappings(self.vector_model, updates)
+            logger.info(f"Successfully updated chunk ids {vec_ids}")
+        except SQLAlchemyError as e:
+            raise OpenGaussError("Failed to update") from e
 
     @contextmanager
     def _transaction(self) -> Iterator[Any]:
@@ -508,3 +542,19 @@ class OpenGaussDB(VectorStore):
             self.engine.pool.size(),
             max(4, cpu_count - 4)
         )
+
+    def _get_vec_by_id(self, vec_ids: List[int]):
+        try:
+            with self._transaction() as session:
+                vectors = session.query(self.vector_model).filter(self.vector_model.id.in_(vec_ids)).all()
+        except SQLAlchemyError as e:
+            raise OpenGaussError("Failed to get all ids") from e
+        results = []
+        for vector in vectors:
+            item = {"id": vector.id}
+            if hasattr(vector, "vector"):
+                item["vector"] = vector.vector
+            if hasattr(vector, "sparse_vector"):
+                item["sparse_vector"] = vector.sparse_vector
+            results.append(item)
+        return results

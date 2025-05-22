@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import numpy as np
 from pymilvus import MilvusClient
+from pymilvus.client.types import ExtraList
 
 from mx_rag.storage.vectorstore.milvus import MilvusError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
@@ -205,6 +206,51 @@ class TestMilvusDB(unittest.TestCase):
         with self.assertRaises(MilvusError):
             self.client.has_collection.return_value = False
             self.create_milvus_db_dense().search(np.array([[1, 2]]))
+
+    @patch("mx_rag.storage.vectorstore.milvus.MilvusDB.client")
+    def test_update(self, client_mocker):
+        client_mocker.get.return_value = [{"id": 1, "vector": self.dense_vecs[0], "sparse_vector": self.sparse_vecs[0]},
+                                          {"id": 2, "vector": self.dense_vecs[0], "sparse_vector": self.sparse_vecs[0]}]
+        self.create_milvus_db_dense().update(self.ids, self.dense_vecs, self.sparse_vecs)
+
+    @patch("pymilvus.orm.connections.Connections")
+    def test_set_collection_name(self, connection_mocker):
+        db = self.create_milvus_db_dense()
+        db.set_collection_name("hello")
+        self.assertEqual("hello", db.collection_name)
+        db._search_mode = SearchMode.DENSE
+        with self.assertRaises(MilvusError):
+            db.create_collection(x_dim=None)
+        connection_mocker.has_collection.return_value = "hello"
+        self.assertTrue(db.has_collection("hello"))
+
+    def test_validate_docs(self):
+        db = self.create_milvus_db_dense()
+        with self.assertRaises(MilvusError):
+            db._validate_metadatas([[1]])
+        with self.assertRaises(MilvusError):
+            db._validate_metadatas([1] * 1024 * 1025)
+        with self.assertRaises(ValueError):
+            db._validate_docs(["hello", 1])
+
+    def test_perform_search(self):
+        db = self.create_milvus_db_dense()
+        with self.assertRaises(ValueError):
+            db._search_mode = SearchMode.SPARSE
+            db._perform_dense_search(np.array([1]), 1, [])
+        with self.assertRaises(ValueError):
+            db._search_mode = SearchMode.DENSE
+            db._perform_sparse_search([{1: 0.1}], 1, [])
+        data = ExtraList([[{"id": 1, "distance": 0.1}]], extra={"total": 3})
+        scores, ids, extras = db._process_search_results(data)
+        self.assertEqual(scores, [[0.95]])
+        self.assertEqual(ids, [[1]])
+        self.assertEqual(extras, [[]])
+
+    def test_init_insert_data(self):
+        db = self.create_milvus_db_dense()
+        data = db._init_insert_data([1], ["text"], [{1: 0.1}], 1)
+        self.assertEqual(data, [{'id': 1, 'document_id': 1, 'document': 'text', 'metadata': {1: 0.1}}])
 
 
 if __name__ == "__main__":

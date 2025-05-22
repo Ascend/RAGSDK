@@ -106,6 +106,10 @@ class TestHelperDocStore(unittest.TestCase):
                 _DocStoreHelper(self.engine)
             mock_logger.critical.assert_called_once()
 
+    def test_update(self):
+        with self.assertRaises(StorageError):
+            self.docstore.update([1, 2], ["text1", "text2"])
+
 
 if __name__ == '__main__':
     unittest.main()

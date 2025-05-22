@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from pymilvus import MilvusClient
 
 from mx_rag.storage.document_store import MilvusDocstore, MxDocument
+from mx_rag.storage.vectorstore.milvus import MilvusError
 
 
 class TestMilvusDocStore(unittest.TestCase):
@@ -29,6 +30,8 @@ class TestMilvusDocStore(unittest.TestCase):
 
         self.assertEqual(self.store_bm25.client, self.mock_client)
         self.assertEqual(self.store_bm25.collection_name, "doc_store_bm25")
+        self.mock_client.has_collection.return_value = False
+        self.store_bm25.drop_collection()
 
     def test_add_documents(self):
         documents = [self.mock_document]
@@ -146,7 +149,7 @@ class TestMilvusDocStore(unittest.TestCase):
         self.mock_client.search.return_value = [[
             {
                 "distance": 0.1,
-                "entity":{
+                "entity": {
                     "metadata": {
                         "score": 0.1
                     },
@@ -158,6 +161,27 @@ class TestMilvusDocStore(unittest.TestCase):
         result = self.store_bm25.full_text_search("here")
         self.assertIsInstance(result[0], MxDocument)  # Ensure result is an MxDocument instance
         self.assertEqual(result[0].page_content, "Some content here.")  # Check content is correct
+        ans = self.store_bm25._do_bm25_search("hello", 1, None, {})
+        self.assertEqual(ans[0][0].get("distance"), 0.1)
+
+    def test_search_by_document_id(self):
+        self.mock_client.query.return_value = [
+            {'document_id': 1, 'page_content': 'Hello RAG SDK', 'document_name': '1.docx', 'metadata': {}},
+            {'document_id': 1, 'page_content': 'Hello RAG SDK1', 'document_name': '1.docx', 'metadata': {}},
+            {'document_id': 1, 'page_content': 'Hello RAG SDK2', 'document_name': '1.docx', 'metadata': {}}]
+        results = self.store_bm25.search_by_document_id(1)
+        self.assertEqual(len(results), 3)
+        self.assertEqual(results[0].page_content, 'Hello RAG SDK')
+
+    def test_update(self):
+        self.mock_client.get.return_value = [
+            {'document_id': 1, 'page_content': 'Hello RAG SDK', 'document_name': '1.docx', 'id': 457929421432291896}]
+        self.mock_client.upsert.return_value = None
+        self.mock_client.refresh_load.return_value = None
+        self.store_bm25.update([1, 2, 3], ["Hello RAG SDK", "Hello RAG SDK1", "Hello RAG SDK2"])
+        with self.assertRaises(ValueError):
+            self.store_bm25.update([1, 2, 3], ["Hello RAG SDK"])
+
 
 if __name__ == '__main__':
     unittest.main()

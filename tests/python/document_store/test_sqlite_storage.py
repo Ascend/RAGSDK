@@ -55,6 +55,26 @@ class TestSQLiteStorage(unittest.TestCase):
         chunk = db.search(1)
         self.assertEqual(chunk.page_content, "fack_encryt")
 
+    def test_search_by_document_id(self):
+        db = SQLiteDocstore(SQL_PATH)
+        doc = [MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test"),
+               MxDocument(page_content="Hello mxRAG1", metadata={"test": "test"}, document_name="test"),
+               MxDocument(page_content="Hello mxRAG2", metadata={"test": "test"}, document_name="test1"), ]
+        db.add(doc, 1)
+        q1 = db.search_by_document_id(1)
+        self.assertEqual(len(q1), 3)
+        q2 = db.search_by_document_id(2)
+        self.assertEqual(q2, [])
+
+    def test_update(self):
+        db = SQLiteDocstore(SQL_PATH)
+        self.test_search_by_document_id()
+        db.update([1, 2, 3], ["Hello RAG SDK", "Hello RAG SDK1", "Hello RAG SDK2"])
+        docs = db.search_by_document_id(1)
+        self.assertEqual(docs[0].page_content, "Hello RAG SDK")
+        self.assertEqual(docs[1].page_content, "Hello RAG SDK1")
+        self.assertEqual(docs[2].page_content, "Hello RAG SDK2")
+
 
 if __name__ == '__main__':
     unittest.main()

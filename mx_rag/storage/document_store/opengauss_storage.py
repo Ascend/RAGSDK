@@ -8,7 +8,7 @@ from sqlalchemy import Engine, Index, select, func, bindparam, text, inspect
 from mx_rag.storage.document_store.models import ChunkModel
 from mx_rag.storage.document_store.base_storage import MxDocument, Docstore
 from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
-from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, TEXT_MAX_LEN, MAX_TOP_K
+from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, TEXT_MAX_LEN, MAX_TOP_K, validate_list_str, STR_MAX_LEN
 
 
 class OpenGaussDocstore(Docstore):
@@ -60,6 +60,20 @@ class OpenGaussDocstore(Docstore):
 
     def get_all_document_id(self) -> List[int]:
         return self.doc_store.get_all_document_id()
+
+    @validate_params(document_id=dict(validator=lambda x: x >= 0, message=f"document_id must >= 0"))
+    def search_by_document_id(self, document_id: int):
+        return self.doc_store.search_by_document_id(document_id)
+
+    @validate_params(
+        chunk_ids=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM,
+                       message=f"param value range (0, {MAX_CHUNKS_NUM}]"),
+        texts=dict(validator=lambda x: validate_list_str(x, [1, MAX_CHUNKS_NUM], [1, STR_MAX_LEN]),
+                   message="param must meets: Type is List[str], "
+                           f"list length range [1, {MAX_CHUNKS_NUM}], str length range [1, {STR_MAX_LEN}]"),
+    )
+    def update(self, chunk_ids: List[int], texts: List[str]):
+        self.doc_store.update(chunk_ids, texts)
 
     @validate_params(
         query=dict(

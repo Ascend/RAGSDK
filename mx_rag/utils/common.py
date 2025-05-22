@@ -8,8 +8,9 @@ import os
 import pathlib
 from datetime import datetime
 from enum import Enum
-from typing import List, Union
+from typing import List, Union, Callable, Dict, Optional
 
+import numpy as np
 from OpenSSL import crypto
 from langchain_core.documents import Document
 from loguru import logger
@@ -57,6 +58,8 @@ INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
 STR_LENGTH_CHECK_1024 = "param length range [1, 1024]"
 STR_TYPE_CHECK_TIP_1024 = "param must be str, length range [1, 1024]"
+EMBED_FUNC_TIP = ("embed_func must be callable or {'dense': x, 'sparse': y}, "
+                  "and xy is callable or None, and cannot be None at the same time.")
 NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
 DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
 GRAPH_FILE_LIMIT = 10 * 1024 * 1024 * 1024
@@ -416,3 +419,59 @@ def get_lang_param(input_param: dict) -> str:
         if input_param.get("lang") not in ["zh", "en"]:
             raise ValueError(f"lang param error, value must be in [zh, en]")
     return input_param.get("lang", "zh")
+
+
+def check_embed_func(embed_func) -> bool:
+    if isinstance(embed_func, dict):
+        if len(embed_func) > 2:
+            logger.error("only support dense and sparse key in embed_func.")
+            return False
+        if set(embed_func.keys()).difference({"dense", "sparse"}):
+            logger.error("only support dense and sparse key in embed_func.")
+            return False
+        all_none_flag = True
+        for key in embed_func.keys():
+            if isinstance(embed_func.get(key), Callable):
+                all_none_flag = False
+            elif embed_func.get(key) is None:
+                continue
+            else:
+                logger.error(EMBED_FUNC_TIP)
+                return False
+        if all_none_flag:
+            logger.error(EMBED_FUNC_TIP)
+            return False
+        return True
+    elif isinstance(embed_func, Callable):
+        return True
+    else:
+        logger.error(EMBED_FUNC_TIP)
+        return False
+
+
+def _check_sparse_embedding(sparse: List[Dict[int, float]]):
+    if not (isinstance(sparse, List) and all(isinstance(it, dict) for it in sparse)):
+        logger.error("param must to be List[Dict[int, float]]")
+        return False
+    for item in sparse:
+        for k, v in item.items():
+            if not (isinstance(k, int) and isinstance(v, (float, np.floating))):
+                logger.error("param must to be List[Dict[int, float]]")
+                return False
+    return True
+
+
+def _check_sparse_and_dense(vec_ids: List[int], dense: Optional[np.ndarray] = None,
+                            sparse: Optional[List[Dict[int, float]]] = None):
+    if len(set(vec_ids)) != len(vec_ids):
+        raise ValueError("vec_ids contain duplicated value")
+    if dense is None and sparse is None:
+        raise ValueError("dense and sparse are both None while updating")
+    elif dense is None:
+        if len(vec_ids) != len(sparse):
+            raise ValueError("sparse input lengths mismatch while updating")
+    elif sparse is None:
+        if len(vec_ids) != len(dense):
+            raise ValueError("dense input lengths mismatch while updating")
+    elif not len(vec_ids) == len(dense) == len(sparse):
+        raise ValueError("dense, sparse and id input lengths mismatch while updating")

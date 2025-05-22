@@ -6,7 +6,6 @@ import numpy as np
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 from sqlalchemy.pool import Pool
-from sqlalchemy import text
 
 from mx_rag.storage.vectorstore.opengauss import (
     OpenGaussDB,
@@ -139,11 +138,10 @@ class TestOpenGaussDB(unittest.TestCase):
         self.mock_engine.dialect.identifier_preparer = mock_preparer
 
         with patch.object(self.db, '_transaction') as mock_transaction, \
-             patch('mx_rag.storage.vectorstore.opengauss.MetaData') as mock_metadata_class:
-            
+                patch('mx_rag.storage.vectorstore.opengauss.MetaData') as mock_metadata_class:
             # Set up the mock transaction to return our mock session
             mock_transaction.return_value.__enter__.return_value = mock_session
-            
+
             # Set up the mock metadata
             mock_metadata_class.return_value = mock_metadata
 
@@ -287,7 +285,7 @@ class TestOpenGaussDB(unittest.TestCase):
 
         with patch.object(self.db, '_transaction') as mock_transaction:
             mock_session = MagicMock()
-            mock_session.query.return_value.order_by.return_value.params.return_value.limit.\
+            mock_session.query.return_value.order_by.return_value.params.return_value.limit. \
                 return_value.all.return_value = [(mock_result, 0.9)]
             mock_transaction.return_value.__enter__.return_value = mock_session
 
@@ -400,6 +398,19 @@ class TestOpenGaussDB(unittest.TestCase):
         # Test mismatched lengths
         with self.assertRaises(ValueError):
             self.db._prepare_insert_data([1, 2], dense=dense_data)
+
+    def test_update(self):
+        dense_data = np.array([[1.0, 2.0, 3.0]])
+        sparse_data = [{1: 0.5, 2: 0.3}]
+        with self.assertRaises(ValueError):
+            self.db.update([1, 2, 3], dense_data, sparse_data)
+        self.db.sparse_dim = 1
+        self.db._get_vec_by_id = lambda x: [{"id": 1, "vector": [0.1], "sparse_vector": [{}]},
+                                            {"id": 2, "vector": [0.1], "sparse_vector": [{}]},
+                                            {"id": 3, "vector": [0.1], "sparse_vector": [{}]}]
+        with self.assertRaises(StorageError):
+            self.db.update([1, 2, 3], np.array([[1.0], [2.0], [3.0]]), [{1: 0.5}, {2: 0.3}, {3: 0.4}])
+
 
 
 if __name__ == '__main__':
