@@ -10,8 +10,7 @@ import numpy as np
 import torch.nn.functional as F
 
 from mx_rag.compress import PromptCompressor
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_DEVICE_ID, \
-    MAX_QUERY_LENGTH
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_DEVICE_ID, TEXT_MAX_LEN
 
 
 class ClusterCompressor(PromptCompressor):
@@ -37,7 +36,7 @@ class ClusterCompressor(PromptCompressor):
         self.dev_id = dev_id
 
     @staticmethod
-    def _assemble_result(sentences, labels, similarity, target_rate):
+    def _assemble_result(sentences, labels, similarity, compress_rate):
         # 根据压缩率，每个社区删除对应的比例，相似性差的先删
         reserved_sentences = []
         community = {}
@@ -49,7 +48,7 @@ class ClusterCompressor(PromptCompressor):
         for _, value in community.items():
             similarity_temp = [similarity[i] for i in value]
             sorted_sentences = np.argsort(similarity_temp)
-            reserved_index = sorted_sentences[int(len(value) * target_rate):]
+            reserved_index = sorted_sentences[int(len(value) * compress_rate):]
             for left_index in reserved_index:
                 reserved_sentences.append(value[left_index])
 
@@ -60,15 +59,15 @@ class ClusterCompressor(PromptCompressor):
     @validate_params(
         context=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PAGE_CONTENT,
                      message=f"param must be str, and length range [1, {MAX_PAGE_CONTENT}]"),
-        question=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_QUERY_LENGTH,
-                      message=STR_TYPE_CHECK_TIP + f", and length range [1, {MAX_QUERY_LENGTH}]"),
-        target_rate=dict(validator=lambda x: isinstance(x, float) and 0 < x < 1,
+        question=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= TEXT_MAX_LEN,
+                      message=STR_TYPE_CHECK_TIP + f", and length range [1, {TEXT_MAX_LEN}]"),
+        compress_rate=dict(validator=lambda x: isinstance(x, float) and 0 < x < 1,
                          message=f"param must be float and value range (0, 1)"),
     )
     def compress_texts(self,
                        context: str,
                        question: str,
-                       target_rate: float = 0.6,
+                       compress_rate: float = 0.6,
                        ):
         if self.splitter is None:
             sentence_splitter = RecursiveCharacterTextSplitter(
@@ -92,7 +91,7 @@ class ClusterCompressor(PromptCompressor):
         # 社区划分
         label = self.cluster_func(sentences_embedding)
         # 压缩文本
-        compress_context = self._assemble_result(sentences, label, similarity, target_rate)
+        compress_context = self._assemble_result(sentences, label, similarity, compress_rate)
 
         return compress_context
 
