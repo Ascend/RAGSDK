@@ -44,7 +44,9 @@ PROMPTS[
     4. Format each output as a JSON entry with the following format:
         {{"Triplets": [["source_entity", "relationship", "target_entity"]], "Entity": {{"entity_name": "entity_concept"}}, "Summary": "summary sentence"}}
 
-    The output is directly generated in JSON format. No additional information or explanation is required.
+    # IMPORTANT
+    - Do NOT output any code, explanation, or additional text.
+    - Only output the JSON as specified above.
     
     # Examples
     ######################

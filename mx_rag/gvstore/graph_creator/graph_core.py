@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 import networkx as nx
 from networkx import DiGraph
+from loguru import logger
 
 from mx_rag.gvstore.graph_creator.lang import lang_dict, lang_zh
 from mx_rag.gvstore.util.utils import GraphUpdatedData, safe_read_graphml
@@ -76,22 +77,21 @@ class GraphNX(GraphCore):
 
     # 图多跳处理
     def get_sub_graph(self, ids, nodes, level):
-        seeds = set(ids)
-        mem = set(nodes)
-        # original contexts that contains expanded entities
-        context_ids = set()
-        relation_datas = []
-        while level > 0 and len(seeds) > 0:
+        seeds, mem = set(ids), set(nodes)
+        context_ids, relation_datas = set(), []
+        while level > 0 and seeds:
             new_seeds = set()
             for seed_id in seeds:
                 self._expand_edge(seed_id, context_ids, relation_datas, new_seeds, mem)
                 if len(new_seeds) > MAX_NODE_MUM:
-                    raise KGCoreError(f"When the {level}-th hop traverses the graph nodes, "
-                                      f"the number of nodes exceeds limit {MAX_NODE_MUM}")
-            level -= 1
-            seeds = new_seeds
+                    logger.warning(f"{level}-th hop: node count exceeds {MAX_NODE_MUM}, stopping traversal")
+                    break
+            if len(new_seeds) > MAX_NODE_MUM:
+                break
+            seeds, level = new_seeds, level - 1
 
-        return self._assemble_data(ids, list(context_ids), relation_datas)
+        res = self._assemble_data(ids, list(context_ids), relation_datas)
+        return res
 
     # 实体消歧时获取相实体节点
     def get_nodes(self, keywords):
