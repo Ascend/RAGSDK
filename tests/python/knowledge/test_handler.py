@@ -21,9 +21,8 @@ SQL_PATH = "./sql.db"
 
 
 def embed_func(texts):
-    embeddings = np.concatenate([np.random.random((1, 1024))])
-
-    return [embeddings] * len(texts)
+    embeddings = np.concatenate([np.random.random((1, 1024))]).tolist()
+    return embeddings * len(texts)
 
 
 class TestHandler(unittest.TestCase):
@@ -162,6 +161,12 @@ class TestHandler(unittest.TestCase):
         res = self.knowledge_db.check_document_exist('test.pdf')
         self.assertEqual(res, False)
 
+    def test_upload_files_with_embed_fun(self):
+        self.common_params['embed_func'] = {"dense": embed_func, "sparse": None}
+        upload_files(**self.common_params, files=[self.test_file])
+        self.common_params['embed_func'] = {"dense": None, "sparse": None}
+        with self.assertRaises(ValueError):
+            upload_files(**self.common_params, files=[self.test_file])
 
 if __name__ == '__main__':
     unittest.main()

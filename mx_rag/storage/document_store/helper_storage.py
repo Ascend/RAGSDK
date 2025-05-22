@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 from contextlib import contextmanager
 from typing import List, Optional, Callable, Iterator, Iterable
-from sqlalchemy import create_engine, delete, URL, Engine
+from sqlalchemy import delete, Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, scoped_session, Session
 from loguru import logger
@@ -157,6 +157,25 @@ class _DocStoreHelper(Docstore):
         with self._transaction() as session:
             query = session.query(ChunkModel.document_id).yield_per(self.batch_size)
             return [document_id for (document_id,) in query]
+
+    def search_by_document_id(self, document_id: int) -> Optional[List[MxDocument]]:
+        """通过document_id来获取"""
+        with self._transaction() as session:
+            chunks = session.query(ChunkModel).filter_by(document_id=document_id).all()
+            documents = [MxDocument(
+                page_content=chunk.chunk_content,
+                metadata=chunk.chunk_metadata,
+                document_name=chunk.document_name
+            ) for chunk in chunks]
+            return documents
+
+    def update(self, chunk_ids: List[int], texts: List[str]):
+        if len(chunk_ids) != len(texts):
+            raise StorageError("chunk_ids and texts length not the same while calling update function.")
+        with self._transaction() as session:
+            updates = [{"chunk_id": chunk_id, "chunk_content": text} for chunk_id, text in zip(chunk_ids, texts)]
+            session.bulk_update_mappings(ChunkModel, updates)
+        logger.info(f"Successfully updated chunk ids {chunk_ids}")
 
     @contextmanager
     def _transaction(self) -> Iterator[scoped_session]:

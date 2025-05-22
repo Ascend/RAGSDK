@@ -1,7 +1,7 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 from pathlib import Path
-from typing import Callable, List
+from typing import Callable, List, Union
 
 from loguru import logger
 
@@ -10,7 +10,7 @@ from mx_rag.document.loader import BaseLoader
 from mx_rag.knowledge.base_knowledge import KnowledgeBase
 from mx_rag.knowledge.knowledge import KnowledgeDB
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, CALLABLE_TYPE_CHECK_TIP, NO_SPLIT_FILE_TYPE, \
-    FILE_COUNT_MAX, STR_TYPE_CHECK_TIP_1024
+    FILE_COUNT_MAX, STR_TYPE_CHECK_TIP_1024, check_embed_func, EMBED_FUNC_TIP
 from mx_rag.utils.file_check import SecFileCheck, FileCheck
 
 
@@ -21,14 +21,14 @@ class FileHandlerError(Exception):
 @validate_params(
     knowledge=dict(validator=lambda x: isinstance(x, KnowledgeDB), message="param must be instance of KnowledgeDB"),
     loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
-    embed_func=dict(validator=lambda x: isinstance(x, Callable), message=CALLABLE_TYPE_CHECK_TIP),
+    embed_func=dict(validator=lambda x: check_embed_func(x), message=EMBED_FUNC_TIP),
     force=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
 )
 def upload_files(
         knowledge: KnowledgeDB,
         files: List[str],
         loader_mng: LoaderMng,
-        embed_func: Callable[[List[str]], List[List[float]]],
+        embed_func: Union[Callable, dict],
         force: bool = False
 ):
     """上传单个文档，不支持的文件类型会抛出异常，如果文档重复，可选择强制覆盖"""
@@ -39,7 +39,9 @@ def upload_files(
     if not files:
         logger.warning("no files need to be loaded")
         return []
-
+    # 传入非字典形式，默认为稠密向量解析
+    if not isinstance(embed_func, dict):
+        embed_func = {"dense": embed_func, "sparse": None}
     fail_files = []
     for file in files:
         _check_file(file, force, knowledge)

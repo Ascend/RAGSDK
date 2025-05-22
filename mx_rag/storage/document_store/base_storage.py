@@ -48,3 +48,11 @@ class Docstore(ABC):
     @abstractmethod
     def get_all_document_id(self) -> List[int]:
         pass
+
+    @abstractmethod
+    def search_by_document_id(self, document_id: int):
+        pass
+
+    @abstractmethod
+    def update(self, chunk_ids: List[int], texts: List[str]):
+        pass

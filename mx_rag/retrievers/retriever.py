@@ -33,6 +33,7 @@ class Retriever(BaseRetriever):
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
         embeddings = self.embed_func([query])
+        # 只有MindFAISS没有search_mode
         if not hasattr(self.vector_store, "search_mode"):
             embeddings = np.array(embeddings)
 

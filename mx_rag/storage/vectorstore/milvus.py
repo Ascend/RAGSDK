@@ -10,7 +10,8 @@ from pymilvus import MilvusClient, DataType
 from pymilvus.client.types import ExtraList
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, MAX_CHUNKS_NUM
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, _check_sparse_embedding, \
+    _check_sparse_and_dense
 from mx_rag.utils.common import validate_list_str
 
 
@@ -225,6 +226,7 @@ class MilvusDB(VectorStore):
         self._validate_collection_existence()
         # Retrieval additional arguments
         output_fields = kwargs.pop("output_fields", [])
+
         if isinstance(embeddings, list) and all(isinstance(x, dict) for x in embeddings):
             return self._perform_sparse_search(embeddings, k, output_fields, **kwargs)
         else:
@@ -284,6 +286,39 @@ class MilvusDB(VectorStore):
         all_id = self.client.query(self._collection_name, filter="id == 0 or id != 0", output_fields=["id"])
         ids = [idx['id'] for idx in all_id]
         return ids
+
+    @validate_params(
+        vec_ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="vec_ids must be List[int]"),
+        dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
+                   message="dense must be Optional[np.ndarray]"),
+        sparse=dict(validator=lambda x: x is None or _check_sparse_embedding(x),
+                    message="sparse must to be Optional[List[Dict[int, float]]]")
+    )
+    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+               sparse: Optional[List[Dict[int, float]]] = None):
+        _check_sparse_and_dense(vec_ids, dense, sparse)
+        responses = self.client.get(
+            collection_name=self.collection_name,
+            ids=vec_ids
+        )
+        if len(responses) != len(vec_ids):
+            queried_ids = [res.get("id") for res in responses]
+            raise MilvusError(f"the input id {set(vec_ids)-set(queried_ids)} in vec_ids not exists in milvus")
+        if dense is None:
+            dense = [None] * len(vec_ids)
+        if sparse is None:
+            sparse = [None] * len(vec_ids)
+        for response in responses:
+            dense_vector = dense[vec_ids.index(response.get("id"))]
+            sparse_vector = sparse[vec_ids.index(response.get("id"))]
+            if dense_vector is not None:
+                response["vector"] = dense_vector
+            if sparse_vector is not None:
+                response["sparse_vector"] = sparse_vector
+        if responses:
+            self.client.upsert(collection_name=self.collection_name, data=responses)
+            self.client.refresh_load(collection_name=self.collection_name)
+            logger.info(f"Successfully updated chunk ids {vec_ids}")
 
     @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))
@@ -365,7 +400,7 @@ class MilvusDB(VectorStore):
             )
 
     def _validate_metadatas(self, data):
-        if not isinstance(data, list) or all(isinstance(it, dict) for it in data):
+        if not (isinstance(data, list) and all(isinstance(it, dict) for it in data)):
             raise MilvusError("param error: param must be list[dict]")
         if len(data) > self.MAX_SEARCH_BATCH:
             raise MilvusError(f"param error: length of list must be less or equal {self.MAX_SEARCH_BATCH}")

@@ -15,10 +15,10 @@ from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage.document_store import Docstore, MxDocument
-from mx_rag.storage.vectorstore import VectorStore
+from mx_rag.storage.vectorstore import VectorStore, MindFAISS
 from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, MAX_SQLITE_FILE_NAME_LEN, \
     check_db_file_limit, validate_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_sequence, STR_MAX_LEN, \
-    check_pathlib_path, validate_lock, BOOL_TYPE_CHECK_TIP
+    check_pathlib_path, validate_lock, BOOL_TYPE_CHECK_TIP, check_embed_func
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 Base = declarative_base()
@@ -340,6 +340,20 @@ def _check_metadatas(metadatas) -> bool:
     return True
 
 
+def _check_embedding(embed_type, embeddings, texts, metadatas):
+    if embed_type == "dense":
+        if not (isinstance(embeddings, List) and len(embeddings) > 0 and
+                isinstance(embeddings[0], List) and len(embeddings[0]) > 0
+                and isinstance(embeddings[0][0], (float, np.floating))):
+            raise KnowledgeError("The data type of dense embedding should be List[List[float]]")
+    if embed_type == "sparse":
+        if not (isinstance(embeddings, List) and len(embeddings) > 0 and
+                isinstance(embeddings[0], dict)):
+            raise KnowledgeError("The data type of sparse embedding should be List[List[dict]]")
+    if not len(texts) == len(metadatas) == len(embeddings):
+        raise KnowledgeError(f"texts, metadatas, {embed_type} embeddings expected to be equal length")
+
+
 class KnowledgeDB(KnowledgeBase):
     @validate_params(
         knowledge_store=dict(validator=lambda x: isinstance(x, KnowledgeStore),
@@ -391,19 +405,23 @@ class KnowledgeDB(KnowledgeBase):
         texts=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], "
                            f"list length range [1, {TEXT_MAX_LEN}], str length range [1, {STR_MAX_LEN}]"),
+        embed_func=dict(validator=lambda x: isinstance(x, dict) and check_embed_func(x),
+                        message="embed_func must be {'dense': x, 'sparse': y}, "
+                                "and xy is callable or None, and cannot be None at the same time."),
         metadatas=dict(validator=lambda x: _check_metadatas(x),
                        message='param must meets: Type is List[dict] or None,'
                                f' list length range [1, {TEXT_MAX_LEN}], other check please see the log')
     )
-    def add_file(self, file: pathlib.Path, texts: List[str], embed_func: Callable[[List[str]], List[List[float]]],
+    def add_file(self, file: pathlib.Path, texts: List[str], embed_func: dict,
                  metadatas: Optional[List[dict]]) -> NoReturn:
-
-        embeddings = embed_func(texts)
-        if not isinstance(embeddings, List):
-            raise KnowledgeError("The data type of embedding should be List[float]")
         metadatas = metadatas or [{} for _ in texts]
-        if not len(texts) == len(metadatas) == len(embeddings):
-            raise KnowledgeError("texts, metadatas, embeddings expected to be equal length")
+        embeddings = {}
+        if embed_func.get("dense"):
+            embeddings["dense"] = embed_func["dense"](texts)
+            _check_embedding("dense", embeddings["dense"], texts, metadatas)
+        if embed_func.get("sparse"):
+            embeddings["sparse"] = embed_func["sparse"](texts)
+            _check_embedding("sparse", embeddings["sparse"], texts, metadatas)
         documents = [MxDocument(page_content=t, metadata=m, document_name=file.name) for t, m in zip(texts, metadatas)]
         if self.lock:
             with self.lock:
@@ -453,7 +471,16 @@ class KnowledgeDB(KnowledgeBase):
         if len(ids) != num_removed:
             logger.warning("the number of documents does not match the number of vectors")
 
-    def _storage_and_vector_add(self, doc_name: str, file_path: str, documents: List, embeddings: List):
+    def _storage_and_vector_add(self, doc_name: str, file_path: str, documents: List, embeddings: dict):
         document_id = self._knowledge_store.add_doc_info(self.knowledge_name, doc_name, file_path, self.user_id)
         ids = self._document_store.add(documents, document_id)
-        self._vector_store.add(np.array(embeddings), ids, document_id)
+        dense_vector = embeddings.get("dense")
+        sparse_vector = embeddings.get("sparse")
+        if dense_vector and sparse_vector:
+            self._vector_store.add_dense_and_sparse(ids, np.array(dense_vector), sparse_vector)
+        elif dense_vector:
+            self._vector_store.add(np.array(dense_vector), ids, document_id)
+        else:
+            if isinstance(self._vector_store, MindFAISS):
+                raise KnowledgeError("MindFAISS does not support sparse embeddings")
+            self._vector_store.add_sparse(ids, sparse_vector)

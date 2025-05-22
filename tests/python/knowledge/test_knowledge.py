@@ -9,11 +9,10 @@ import numpy as np
 
 from mx_rag.knowledge import KnowledgeDB
 from mx_rag.knowledge.base_knowledge import KnowledgeError
-from mx_rag.knowledge.knowledge import KnowledgeStore
+from mx_rag.knowledge.knowledge import KnowledgeStore, _check_embedding
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
-import sys
-sys.tracebacklimit=1000
+
 SQL_PATH = "./sql.db"
 
 
@@ -58,10 +57,11 @@ class TestKnowledge(unittest.TestCase):
         knowledge = KnowledgeDB(knowledge_store, db, vector_store, "test_knowledge",
                                 white_paths=[top_path, ], user_id='user123')
         knowledge.add_file(pathlib.Path(self.test_file), ["this is a test"], metadatas=[{"filepath": "xxx.file"}],
-                           embed_func=embed_func)
+                           embed_func={"dense": embed_func, "sparse": None})
         with self.assertRaises(KnowledgeError):
             knowledge.add_file(pathlib.Path(self.test_file), ["this is a test"],
-                               metadatas=[{"filepath": "xxx.file"}, {"filepath": "yyy.file"}], embed_func=embed_func)
+                               metadatas=[{"filepath": "xxx.file"}, {"filepath": "yyy.file"}],
+                               embed_func={"dense": embed_func, "sparse": None})
 
         self.assertEqual(knowledge.get_all_documents()[0].knowledge_name, "test_knowledge")
         self.assertEqual(knowledge.get_all_documents()[0].document_name, "doc_name")
@@ -89,6 +89,15 @@ class TestKnowledge(unittest.TestCase):
 
         knowledge_db1.delete_all()
         self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), [])
+
+    def test_check_embedding(self):
+        dense = [[0.1, 0.2], [0.3, 0.4]]
+        sparse = [{1: 0.1, 2: 0.2}, {3: 0.3, 4: 0.4}]
+        _check_embedding("dense", dense, ["text1", "text2"], ["text1", "text2"])
+        _check_embedding("sparse", sparse, ["text1", "text2"], ["text1", "text2"])
+        with self.assertRaises(KnowledgeError):
+            _check_embedding("dense", dense, ["text1"], ["text1", "text2"])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from typing import List
+from typing import List, Optional, Dict
+
+import numpy as np
 
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.storage.vectorstore import VectorStore
@@ -12,13 +14,17 @@ class MockerReranker(Reranker):
 
 
 class MockerVecStorage(VectorStore):
+    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+               sparse: Optional[List[Dict[int, float]]] = None):
+        pass
+
     def delete(self, ids):
         pass
 
-    def search(self, embeddings, k):
+    def search(self, embeddings, k, filter_dict=None):
         pass
 
-    def add(self, embeddings, ids):
+    def add(self, embeddings, ids, document_id):
         pass
 
     def add_sparse(self, ids, sparse_embeddings):
