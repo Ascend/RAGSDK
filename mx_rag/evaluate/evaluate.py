@@ -88,11 +88,11 @@ class Evaluate:
     @classmethod
     def _check_datasets(cls, datasets: Dict[str, Any]) -> bool:
         check_attribute = {
-            "question": lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
-            "answer": lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
+            "question": lambda x: validate_list_str(x, [0, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
+            "answer": lambda x: validate_list_str(x, [0, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
             "contexts":
-                lambda x: validate_list_list_str(x, [1, cls.MAX_LIST_LEN], [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
-            "ground_truth": lambda x: validate_list_str(x, [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN])
+                lambda x: validate_list_list_str(x, [0, cls.MAX_LIST_LEN], [1, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN]),
+            "ground_truth": lambda x: validate_list_str(x, [0, cls.MAX_LIST_LEN], [1, TEXT_MAX_LEN])
         }
 
         if not (isinstance(datasets, Dict) and all(isinstance(key, str) for key in datasets)):
@@ -104,7 +104,6 @@ class Evaluate:
             return False
 
         return all(key in check_attribute and check_attribute.get(key)(value) for key, value in datasets.items())
-
 
     @validate_params(
         metrics_name=dict(validator=lambda x: validate_list_str(x, [1, len(Evaluate.RAG_TEST_METRIC)], [1, 50]),
@@ -185,27 +184,27 @@ class Evaluate:
             final_scores[metric_name] = [score.get(metric_name, np.nan) for score in scores]
         return final_scores
 
-    def _metrics_local_adapt(self, metrics, language: Optional[str], cache_dir: Optional[str]):
+    def _metrics_local_adapt(self, metrics, language: Optional[str], prompt_dir: Optional[str]):
         """
         ragas metrics 本地化适配
         Args:
             metrics: 具体的ragas metrics
             language: 本地化语言
-            cache_dir: 本地化语言对应的prompt 路径
+            prompt_dir: 本地化语言对应的prompt 路径
 
         Returns: None
         """
-        if language is None or cache_dir is None:
+        if language is None or prompt_dir is None:
             logger.warning(f"because local param is None will not adapt local")
             return
 
-        self._prompt_cache_check(cache_dir, language)
+        self._check_prompt_dir(prompt_dir, language)
 
         logger.info(f"adapt to local!")
 
         try:
             for metric in metrics:
-                self._metric_local_adapt(metric, language, cache_dir)
+                self._metric_local_adapt(metric, language, prompt_dir)
         except ValueError:
             logger.error("adapt to local run failed because value error")
         except Exception:
@@ -229,7 +228,7 @@ class Evaluate:
                     llm=metric.llm, language=language, cache_dir=cache_dir)
                 metric.save(cache_dir=cache_dir)
 
-    def _prompt_cache_check(self, cache_dir: str, language: str):
+    def _check_prompt_dir(self, cache_dir: str, language: str):
         prompt_dir = os.path.join(cache_dir, language)
 
         FileCheck.dir_check(prompt_dir)
@@ -241,5 +240,3 @@ class Evaluate:
 
         for file in filtered_files:
             SecFileCheck(file_path=file, max_size=self.PROMPT_FILE_MAX_SIZE).check()
-
-
