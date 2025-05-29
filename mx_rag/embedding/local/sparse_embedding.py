@@ -11,7 +11,7 @@ from loguru import logger
 from transformers import AutoTokenizer, is_torch_npu_available, AutoModel
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, TEXT_MAX_LEN, validate_list_str, \
-    BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, GB
+    BOOL_TYPE_CHECK_TIP, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, GB, get_model_max_input_length
 from mx_rag.utils.file_check import SecDirCheck, safetensors_check
 
 try:
@@ -73,27 +73,27 @@ class SparseEmbedding(Embeddings):
                    message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
                            "str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
-                        message=f"param value range [1, {MAX_BATCH_SIZE}]"),
-        max_length=dict(validator=lambda x: 1 <= x <= STR_MAX_LEN,
-                        message=f"param value range [1, {STR_MAX_LEN}]")
+                        message=f"param value range [1, {MAX_BATCH_SIZE}]")
     )
     def embed_documents(self,
                         texts: List[str],
-                        batch_size: int = 32,
-                        max_length: int = 512) -> List[dict[int, float]]:
-        result = self._encode(texts, batch_size, max_length)
+                        batch_size: int = 32) -> List[dict[int, float]]:
+
+        max_input_length = get_model_max_input_length(self.model.config)
+        if max_input_length == 0:
+            raise ValueError("get model max input length failed")
+
+        result = self._encode(texts, batch_size, max_input_length)
         if len(result) == 0:
             raise ValueError("embedding documents text error")
 
         return result
 
     @validate_params(
-        text=dict(validator=lambda x: 1 <= len(x) <= STR_MAX_LEN, message="param value range [1, 128 * 1024 * 1024]"),
-        max_length=dict(validator=lambda x: 1 <= x <= STR_MAX_LEN,
-                        message=f"param value range [1, {STR_MAX_LEN}]")
+        text=dict(validator=lambda x: 1 <= len(x) <= STR_MAX_LEN, message="param value range [1, 128 * 1024 * 1024]")
     )
-    def embed_query(self, text: str, max_length: int = 512) -> dict[int, float]:
-        embeddings = self.embed_documents([text], max_length=max_length)
+    def embed_query(self, text: str) -> dict[int, float]:
+        embeddings = self.embed_documents([text])
         if not embeddings:
             raise ValueError("embedding query text failed")
 

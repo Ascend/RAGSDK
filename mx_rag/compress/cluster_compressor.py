@@ -7,7 +7,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.embeddings import Embeddings
 import torch
 import numpy as np
-import torch.nn.functional as F
 
 from mx_rag.compress import PromptCompressor
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_DEVICE_ID, TEXT_MAX_LEN
@@ -101,10 +100,10 @@ class ClusterCompressor(PromptCompressor):
         question_embedding = np.array(question_embedding, dtype=np.float32)
 
         c1 = torch.from_numpy(sentences_embedding).to(f'npu:{self.dev_id}')
-        c2 = F.normalize(c1, p=2, dim=-1)
+        c2 = torch.nn.functional.normalize(c1, p=2, dim=-1)
 
         q1 = torch.from_numpy(question_embedding).to(f'npu:{self.dev_id}')
-        q2 = F.normalize(q1, p=2, dim=-1)
+        q2 = torch.nn.functional.normalize(q1, p=2, dim=-1)
 
         sims_with_query = q2.squeeze() @ c2.T  # 余弦相似度
         return sims_with_query

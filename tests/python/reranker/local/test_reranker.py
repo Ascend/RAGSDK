@@ -3,6 +3,7 @@
 import os
 import random
 import shutil
+from dataclasses import dataclass
 from typing import Dict
 import unittest
 from unittest.mock import patch
@@ -38,9 +39,18 @@ class TestLocalReranker(unittest.TestCase):
         def to(self, *args):
             return self
 
+    @dataclass
+    class PretrainedConfig:
+        model_type = "bert"
+        pad_token_id = 1
+        max_seq_length = 512
+        max_position_embeddings = 512
+        hidden_size = 512
+
     class Model:
-        def __init__(self):
+        def __init__(self, config):
             self.device = 'cpu'
+            self.config = config
 
         def __call__(self, *args, **kwargs):
             input_ids = kwargs.pop('input_ids')
@@ -73,7 +83,7 @@ class TestLocalReranker(unittest.TestCase):
                                  tok_pre_mock,
                                  model_pre_mock,
                                  dir_check_mock):
-        model_pre_mock.return_value = TestLocalReranker.Model()
+        model_pre_mock.return_value = TestLocalReranker.Model(self.PretrainedConfig())
         tok_pre_mock.return_value = TestLocalReranker.Tokenizer()
         torch_avail_mock.return_value = True
 
@@ -92,7 +102,7 @@ class TestLocalReranker(unittest.TestCase):
                                  tok_pre_mock,
                                  model_pre_mock,
                                  dir_check_mock):
-        model_pre_mock.return_value = TestLocalReranker.Model()
+        model_pre_mock.return_value = TestLocalReranker.Model(self.PretrainedConfig())
         tok_pre_mock.return_value = TestLocalReranker.Tokenizer()
         torch_avail_mock.return_value = False
 

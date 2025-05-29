@@ -10,7 +10,8 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, is_t
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import (validate_params, MAX_DEVICE_ID, MAX_TOP_K, TEXT_MAX_LEN,
                                  validate_list_str, BOOL_TYPE_CHECK_TIP,
-                                 MAX_QUERY_LENGTH, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, GB)
+                                 MAX_QUERY_LENGTH, STR_MAX_LEN, MAX_PATH_LENGTH, MAX_BATCH_SIZE, GB,
+                                 get_model_max_input_length)
 from mx_rag.utils.file_check import SecDirCheck, safetensors_check
 
 try:
@@ -75,21 +76,23 @@ class LocalReranker(Reranker):
                            "list length range [1, 1000 * 1000], str length range [1, 128 * 1024 * 1024]"),
         batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
                         message=f"param value range [1, {MAX_BATCH_SIZE}]"),
-        max_length=dict(validator=lambda x: 1 <= x <= STR_MAX_LEN, message=f"param value range [1, {STR_MAX_LEN}]")
     )
     def rerank(self,
                query: str,
                texts: List[str],
-               batch_size: int = 32,
-               max_length: int = 512) -> np.array:
+               batch_size: int = 32) -> np.array:
         sentence_pairs = [[query, text] for text in texts]
+
+        max_input_length = get_model_max_input_length(self.model.config)
+        if max_input_length == 0:
+            raise ValueError("get model max input length failed")
 
         result = []
         for start_index in range(0, len(sentence_pairs), batch_size):
             sentence_batch = sentence_pairs[start_index:start_index + batch_size]
 
             encode_pairs = self.tokenizer(
-                sentence_batch, padding=True, truncation=True, max_length=max_length, return_tensors='pt').to(
+                sentence_batch, padding=True, truncation=True, max_length=max_input_length, return_tensors='pt').to(
                 self.model.device)
 
             with torch.no_grad():

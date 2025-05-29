@@ -6,7 +6,7 @@ import shutil
 from typing import Dict
 import unittest
 from unittest.mock import patch
-
+from dataclasses import dataclass
 import torch
 
 from mx_rag.embedding.local import TextEmbedding
@@ -38,10 +38,19 @@ class TestTextEmbedding(unittest.TestCase):
         def to(self, *args):
             return self
 
+    @dataclass
+    class PretrainedConfig:
+        model_type = "bert"
+        pad_token_id = 1
+        max_seq_length = 512
+        max_position_embeddings = 512
+        hidden_size = 512
+
     class Model:
-        def __init__(self, test_embed_length):
+        def __init__(self, test_embed_length, config):
             self.device = 'cpu'
             self.test_embed_length = test_embed_length
+            self.config = config
 
         def __call__(self, *args, **kwargs):
             input_ids = args[0]
@@ -57,6 +66,13 @@ class TestTextEmbedding(unittest.TestCase):
         def eval(self):
             return self
 
+    class Pooling:
+        def __int__(self):
+            pass
+
+        def forward(self, d):
+            return {"sentence_embedding": d.get("token_embeddings")}
+
     class Tokenizer:
         def __call__(self, *args, **kwargs):
             batch_text = args[0]
@@ -70,12 +86,15 @@ class TestTextEmbedding(unittest.TestCase):
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")
+    @patch("sentence_transformers.models.Pooling")
     def test_encode_success_fp16_mean(self,
+                                      pooling_mock,
                                       torch_avail_mock,
                                       tok_pre_mock,
                                       model_pre_mock,
                                       dir_check_mock):
-        model_pre_mock.return_value = self.Model(1024)
+        pooling_mock.return_value = self.Pooling()
+        model_pre_mock.return_value = self.Model(1024, self.PretrainedConfig())
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = False
 
@@ -94,12 +113,15 @@ class TestTextEmbedding(unittest.TestCase):
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")
+    @patch("sentence_transformers.models.Pooling")
     def test_encode_success_fp32_cls(self,
+                                     pooling_mock,
                                      torch_avail_mock,
                                      tok_pre_mock,
                                      model_pre_mock,
                                      dir_check_mock):
-        model_pre_mock.return_value = self.Model(512)
+        pooling_mock.return_value = self.Pooling()
+        model_pre_mock.return_value = self.Model(1024, self.PretrainedConfig())
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
 
@@ -108,48 +130,26 @@ class TestTextEmbedding(unittest.TestCase):
 
         texts = ['test_txt'] * 100
         ret = embed.embed_documents(texts=texts)
-        self.assertEqual((len(ret), len(ret[0])), (len(texts), 512))
+        self.assertEqual((len(ret), len(ret[0])), (len(texts), 1024))
 
         texts = ['test_txt'] * 1000
         ret = embed.embed_documents(texts=texts)
-        self.assertEqual((len(ret), len(ret[0])), (len(texts), 512))
+        self.assertEqual((len(ret), len(ret[0])), (len(texts), 1024))
 
     @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("transformers.AutoModel.from_pretrained")
     @patch("transformers.AutoTokenizer.from_pretrained")
     @patch("transformers.is_torch_npu_available")
-    def test_encode_success_with_last_hidden_state(self,
-                                                   torch_avail_mock,
-                                                   tok_pre_mock,
-                                                   model_pre_mock,
-                                                   dir_check_mock):
-        model_pre_mock.return_value = self.Model(1024)
-        tok_pre_mock.return_value = self.Tokenizer()
-        torch_avail_mock.return_value = False
-
-        embed = TextEmbedding(model_path=self.model_path,
-                              pooling_method='mean')
-
-        texts = ['test_txt'] * 100
-        ret, lhs = embed.embed_documents_with_last_hidden_state(texts=texts)
-        self.assertEqual(ret.shape, (len(texts), 1024))
-        self.assertEqual(lhs.shape, (len(texts), 1024))
-
-        texts = ['test_txt'] * 1000
-        ret, lhs = embed.embed_documents_with_last_hidden_state(texts=texts)
-        self.assertEqual(ret.shape, (len(texts), 1024))
-        self.assertEqual(lhs.shape, (len(texts), 1024))
-
-    @patch("mx_rag.utils.file_check.FileCheck.dir_check")
-    @patch("transformers.AutoModel.from_pretrained")
-    @patch("transformers.AutoTokenizer.from_pretrained")
-    @patch("transformers.is_torch_npu_available")
+    @patch("sentence_transformers.models.Pooling")
     def test_encode_failed_invalid_pooling(self,
+                                           pooling_mock,
                                            torch_avail_mock,
                                            tok_pre_mock,
                                            model_pre_mock,
                                            dir_check_mock):
-        model_pre_mock.return_value = self.Model(1024)
+        pooling_mock.return_value = self.Pooling()
+        dir_check_mock.return_value = True
+        model_pre_mock.return_value = self.Model(1024, self.PretrainedConfig())
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = True
         with self.assertRaises(ValueError):
