@@ -475,3 +475,20 @@ def _check_sparse_and_dense(vec_ids: List[int], dense: Optional[np.ndarray] = No
             raise ValueError("dense input lengths mismatch while updating")
     elif not len(vec_ids) == len(dense) == len(sparse):
         raise ValueError("dense, sparse and id input lengths mismatch while updating")
+
+
+def get_model_max_input_length(config):
+    position_offset = 0
+    try:
+        if config.model_type in ["xlm-roberta", "camembert", "roberta"]:
+            position_offset = config.pad_token_id + 1
+
+        if hasattr(config, "max_seq_length"):
+            max_input_length = config.max_seq_length
+        else:
+            max_input_length = config.max_position_embeddings - position_offset
+    except AttributeError as err:
+        logger.error(f"get model config failed because:{err}")
+        return 0
+
+    return max_input_length

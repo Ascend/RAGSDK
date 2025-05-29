@@ -31,24 +31,6 @@ except Exception as e:
     logger.error(f"Unexpected error while importing torch_npu: {e}. ImageEmbedding will run on cpu.")
 
 
-def _preprocess_image(blob, image_size):
-    blob = base64.b64decode(blob)
-    img_transform = Compose(
-        [
-            Resize(image_size, interpolation=BICUBIC),
-            CenterCrop(image_size),
-            lambda x: x.convert('RGB'),
-            ToTensor(),
-            Normalize(
-                (0.48145466, 0.4578275, 0.40821073),
-                (0.26862954, 0.26130258, 0.27577711),
-            ),
-        ]
-    )
-    with Image.open(io.BytesIO(blob)) as img:
-        return img_transform(img)
-
-
 _CLIP_MODELS = {
     "ViT-B-16": {
         "checkpoint": "clip_cn_vit-b-16.pt",
@@ -87,7 +69,6 @@ class ImageEmbedding(Embeddings):
         SecFileCheck(os.path.join(self.model_path, _CLIP_MODELS[self.model_name]['checkpoint']), 10 * GB).check()
 
         self.device = "cpu"
-        self.image_size = _CLIP_MODELS[self.model_name]["image_size"]
         try:
             if is_torch_npu_available():
                 self.device = f'npu:{dev_id}'
@@ -96,7 +77,7 @@ class ImageEmbedding(Embeddings):
                            'currently running on cpu.')
         import cn_clip.clip as cnclip
         from cn_clip.clip import load_from_name
-        self.model, self.preproces = load_from_name(self.model_name, self.device, self.model_path)
+        self.model, self.preprocess = load_from_name(self.model_name, self.device, self.model_path)
         self.tokenizer = cnclip
         self.model.eval()
 
@@ -119,7 +100,7 @@ class ImageEmbedding(Embeddings):
             text_features = self.model.encode_text(text).detach()
             text_features /= text_features.norm(dim=-1, keepdim=True)
 
-        return text_features.cpu().numpy().tolist()
+        return text_features.cpu().tolist()
 
     @validate_params(
         text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= IMG_EMBEDDING_TEXT_LEN,
@@ -144,13 +125,15 @@ class ImageEmbedding(Embeddings):
             batch_images = images[start_idx: start_idx + batch_size]
             tensors_batch = []
             for image in batch_images:
-                tensors_batch.append(_preprocess_image(image, self.image_size).detach())
+                blob = base64.b64decode(image)
+                with Image.open(io.BytesIO(blob)) as img:
+                    tensors_batch.append(self.preprocess(img).detach())
             tensors_batch = torch.stack(tensors_batch).to(self.device)
             with torch.no_grad():
                 batch_image_features = self.model.encode_image(tensors_batch).detach()
                 # 归一化
                 batch_image_features = batch_image_features / batch_image_features.norm(p=2, dim=-1, keepdim=True)
-                image_features.extend(batch_image_features.cpu().numpy().tolist())
+                image_features.extend(batch_image_features.cpu().tolist())
 
         if not image_features:
             raise Exception("embedding image failed")

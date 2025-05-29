@@ -25,8 +25,6 @@ class TestExcelLoader(unittest.TestCase):
     def test_load_xls(self):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.xls"))
         docs = loader.load()
-        for doc in docs:
-            print(f"----------------{doc}")
         contents = [
             ':中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;',
             ':中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;',

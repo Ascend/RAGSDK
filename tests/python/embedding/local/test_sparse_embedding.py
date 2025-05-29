@@ -3,6 +3,7 @@
 import os
 import random
 import shutil
+from dataclasses import dataclass
 from typing import Dict
 import unittest
 from unittest.mock import patch
@@ -37,11 +38,19 @@ class TestSparseEmbedding(unittest.TestCase):
         def to(self, *args):
             return self
 
+    @dataclass
+    class PretrainedConfig:
+        model_type = "bert"
+        pad_token_id = 1
+        max_seq_length = 512
+        max_position_embeddings = 512
+        hidden_size = 1024
+
     class Model:
-        def __init__(self, test_embed_length, hidden_size):
+        def __init__(self, test_embed_length, config):
             self.device = 'cpu'
             self.test_embed_length = test_embed_length
-            self.config = TestSparseEmbedding.Config(hidden_size=hidden_size)
+            self.config = config
 
         def __call__(self, *args, **kwargs):
             input_ids = kwargs.get('input_ids')
@@ -93,7 +102,7 @@ class TestSparseEmbedding(unittest.TestCase):
                             model_pre_mock,
                             dir_check_mock,
                             torch_load_mock):
-        model_pre_mock.return_value = self.Model(1024, 1024)
+        model_pre_mock.return_value = self.Model(1024, self.PretrainedConfig())
         tok_pre_mock.return_value = self.Tokenizer()
         torch_avail_mock.return_value = False
         dir_check_mock.return_value = True
