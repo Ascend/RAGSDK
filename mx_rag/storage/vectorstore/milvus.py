@@ -443,7 +443,7 @@ class MilvusDB(VectorStore):
             "anns_field": "vector",
             "limit": k,
             "data": embeddings,
-            "output_fields": ["document_id", "id"]
+            "output_fields": output_fields
         }
         if doc_filter:
             search_kwargs["filter"] = "document_id IN {document_list}"
@@ -492,9 +492,15 @@ class MilvusDB(VectorStore):
             for entity in top_k:
                 k_score.append(entity["distance"])
                 k_id.append(entity["id"])
-                for idx, field in enumerate(filtered_fields):
-                    k_extra[idx].append(entity["entity"].get(field, None))
+                self._append_search_outfields(entity, filtered_fields, k_extra)
             scores.append(k_score)
             ids.append(k_id)
             extra_data.append(k_extra)
         return self._score_scale(scores), ids, extra_data
+
+    def _append_search_outfields(self, entity, filtered_fields, k_extra):
+        for idx, field in enumerate(filtered_fields):
+            k_extra_value = entity["entity"].get(field, None)
+            if k_extra_value is not None:
+                k_extra[idx].append({field: k_extra_value})
+
