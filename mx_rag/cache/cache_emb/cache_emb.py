@@ -27,7 +27,7 @@ class CacheEmb(BaseEmbedding):
         emb_obj=dict(validator=lambda x: isinstance(x, Embeddings) or x is None,
                      message="param must be instance of Embeddings or None"),
         x_dim=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_VEC_DIM,
-                    message="param must be int and value range [0, 1024 * 1024]"),
+                   message="param must be int and value range [0, 1024 * 1024]"),
         skip_emb=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, emb_obj: Embeddings = None, x_dim: int = 0, skip_emb: bool = False):

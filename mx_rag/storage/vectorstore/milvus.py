@@ -11,7 +11,7 @@ from pymilvus.client.types import ExtraList
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, _check_sparse_embedding, \
-    _check_sparse_and_dense
+    _check_sparse_and_dense, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.common import validate_list_str
 
 
@@ -101,10 +101,11 @@ class MilvusDB(VectorStore):
                         message="param must str and one of [FLAT, IVF_FLAT, IVF_PQ, HNSW]"),
         metric_type=dict(validator=lambda x: isinstance(x, str) and x in ("IP", "L2", "COSINE"),
                          message="param must str and one of  [IP, L2, COSINE]"),
+        auto_flush=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
     )
     def __init__(self, client: MilvusClient, collection_name: str = "rag_sdk",
                  search_mode: SearchMode = SearchMode.DENSE, auto_id=False,
-                 index_type: str = "FLAT", metric_type: str = "L2"):
+                 index_type: str = "FLAT", metric_type: str = "L2", auto_flush=True):
         super().__init__()
         self._client = client
         self._collection_name = collection_name
@@ -112,7 +113,8 @@ class MilvusDB(VectorStore):
         self._auto_id = auto_id
         self._index_type = index_type
         self._metric_type = metric_type
-        self.filter_dict = None
+        self._filter_dict = None
+        self._auto_flush = auto_flush
 
         if self.search_mode == SearchMode.SPARSE and (self._index_type != "HNSW" or self._metric_type != "IP"):
             raise ValueError("sparse vector index_type only support HNSW, metric_type only support IP")
@@ -157,9 +159,10 @@ class MilvusDB(VectorStore):
         collection_name = kwargs.pop("collection_name", "rag_sdk")
         search_mode = kwargs.pop("search_mode", SearchMode.DENSE)
         auto_id = kwargs.pop("auto_id", False)
-
+        auto_flush = kwargs.pop("auto_flush", True)
         milvus_db = MilvusDB(client, collection_name=collection_name, search_mode=search_mode,
-                             auto_id=auto_id, index_type=index_type, metric_type=metric_type)
+                             auto_id=auto_id, index_type=index_type, metric_type=metric_type,
+                             auto_flush=auto_flush)
 
         try:
             milvus_db.create_collection(x_dim=x_dim, params=params)
@@ -212,7 +215,8 @@ class MilvusDB(VectorStore):
         if len(ids) >= self.MAX_VEC_NUM:
             raise MilvusError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
         res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
-        self.client.refresh_load(self._collection_name)
+        if self._auto_flush:
+            self.flush()
         logger.info(f"success delete {len(ids)} vectors in MilvusDB.")
         return res
 
@@ -222,7 +226,7 @@ class MilvusDB(VectorStore):
                          message="param filter_dict must be dict or None"))
     def search(self, embeddings: Union[List[List[float]], List[Dict[int, float]]],
                k: int = 3, filter_dict=None, **kwargs):
-        self.filter_dict = filter_dict
+        self._filter_dict = filter_dict
         self._validate_collection_existence()
         # Retrieval additional arguments
         output_fields = kwargs.pop("output_fields", [])
@@ -245,7 +249,8 @@ class MilvusDB(VectorStore):
         data = self._init_insert_data(ids, docs, metadatas, document_id)
         self._handle_dense_input(embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
-        self.client.refresh_load(self._collection_name)
+        if self._auto_flush:
+            self.flush()
         logger.info(f"success add {len(ids)} ids in MilvusDB.")
 
     @validate_params(
@@ -260,7 +265,8 @@ class MilvusDB(VectorStore):
         data = self._init_insert_data(ids, docs, metadatas, document_id)
         self._handle_sparse_input(sparse_embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
-        self.client.refresh_load(self._collection_name)
+        if self._auto_flush:
+            self.flush()
         logger.info(f"successfully add {len(ids)} vectors in MilvusDB.")
 
     @validate_params(
@@ -279,7 +285,8 @@ class MilvusDB(VectorStore):
         self._handle_sparse_input(sparse_embeddings, ids, data)
         self._handle_dense_input(dense_embeddings, ids, data)
         self.client.insert(collection_name=self._collection_name, data=data)
-        self.client.refresh_load(self._collection_name)
+        if self._auto_flush:
+            self.flush()
         logger.info(f"successfully add {len(ids)} vectors in MilvusDB.")
 
     def get_all_ids(self) -> List[int]:
@@ -303,7 +310,7 @@ class MilvusDB(VectorStore):
         )
         if len(responses) != len(vec_ids):
             queried_ids = [res.get("id") for res in responses]
-            raise MilvusError(f"the input id {set(vec_ids)-set(queried_ids)} in vec_ids not exists in milvus")
+            raise MilvusError(f"the input id {set(vec_ids) - set(queried_ids)} in vec_ids not exists in milvus")
         if dense is None:
             dense = [None] * len(vec_ids)
         if sparse is None:
@@ -317,13 +324,17 @@ class MilvusDB(VectorStore):
                 response["sparse_vector"] = sparse_vector
         if responses:
             self.client.upsert(collection_name=self.collection_name, data=responses)
-            self.client.refresh_load(collection_name=self.collection_name)
+            if self._auto_flush:
+                self.flush()
             logger.info(f"Successfully updated chunk ids {vec_ids}")
 
     @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))
     def has_collection(self, collection_name):
         return self.client.has_collection(collection_name)
+
+    def flush(self):
+        self.client.refresh_load(collection_name=self.collection_name)
 
     def _create_schema_dense(self, x_dim):
         builder = SchemaBuilder(self._auto_id)
@@ -420,11 +431,10 @@ class MilvusDB(VectorStore):
         for i, x in enumerate(sparse_embeddings):
             data[i]["sparse_vector"] = x
 
-
     def _check_doc_filter(self, doc_filter):
         if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
             raise MilvusError("value of 'document_id' in filter_dict must be List[int]")
-        doc_filter = list(set(doc_filter)) # 去重
+        doc_filter = list(set(doc_filter))  # 去重
         max_ids_len = len(self.get_all_ids())
         if len(doc_filter) > max_ids_len:
             raise MilvusError(f"length of 'document_id' in filter_dict over than length of ids({max_ids_len})")
@@ -436,7 +446,7 @@ class MilvusDB(VectorStore):
             raise ValueError("Sparse search only supports DENSE or HYBRID mode")
         self._validate_dense_input(embeddings)
         embeddings = embeddings.astype(np.float32)
-        doc_filter = self.filter_dict.get("document_id", []) if self.filter_dict else []
+        doc_filter = self._filter_dict.get("document_id", []) if self._filter_dict else []
         doc_filter = self._check_doc_filter(doc_filter)
         search_kwargs = {
             "collection_name": self._collection_name,
@@ -456,7 +466,7 @@ class MilvusDB(VectorStore):
         if self.search_mode not in (SearchMode.SPARSE, SearchMode.HYBRID):
             raise ValueError("Sparse search only supports SPARSE or HYBRID mode")
         self._validate_sparse_input(sparse_embeddings)
-        doc_filter = self.filter_dict.get("document_id", []) if self.filter_dict else []
+        doc_filter = self._filter_dict.get("document_id", []) if self._filter_dict else []
         doc_filter = self._check_doc_filter(doc_filter)
         if doc_filter:
             res = self.client.search(
@@ -503,4 +513,3 @@ class MilvusDB(VectorStore):
             k_extra_value = entity["entity"].get(field, None)
             if k_extra_value is not None:
                 k_extra[idx].append({field: k_extra_value})
-

@@ -17,7 +17,8 @@ class Reranker(ABC):
     @abstractmethod
     def rerank(self,
                query: str,
-               texts: List[str]):
+               texts: List[str],
+               batch_size: int = 32):
         """ rank the texts and query"""
 
     @validate_params(
