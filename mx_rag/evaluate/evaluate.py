@@ -29,6 +29,11 @@ from ragas.metrics.critique import (
     conciseness
 )
 
+from ragas.validation import (
+    validate_column_dtypes,
+    validate_evaluation_modes,
+)
+
 from mx_rag.utils.file_check import FileCheck, SecFileCheck
 from mx_rag.utils.common import validate_params, validate_list_str, validate_list_list_str, TEXT_MAX_LEN, MB
 from mx_rag.embedding.local import TextEmbedding
@@ -140,6 +145,17 @@ class Evaluate:
         self._metrics_local_adapt(metrics, language, prompt_dir)
 
         datesets = Dataset.from_dict(datasets)
+
+        try:
+            validate_column_dtypes(datesets)
+            validate_evaluation_modes(datesets, metrics)
+        except ValueError as e:
+            logger.error(f"check datasets failed: {e}")
+            return None
+        except Exception:
+            logger.error("check datasets check failed")
+            return None
+
         try:
             from ragas import evaluate as ragas_evaluate
 
