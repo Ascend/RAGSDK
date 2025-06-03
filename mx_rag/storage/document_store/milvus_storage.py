@@ -9,7 +9,7 @@ from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import Docstore
 from mx_rag.storage.vectorstore import MilvusDB
 from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, KB, TEXT_MAX_LEN, MAX_TOP_K, validate_list_str, \
-    STR_MAX_LEN
+    STR_MAX_LEN, BOOL_TYPE_CHECK_TIP
 
 
 class MilvusDocstore(Docstore):
@@ -20,18 +20,22 @@ class MilvusDocstore(Docstore):
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
             message="param must be str and length range (0, 1024]"),
         enable_bm25=dict(validator=lambda x: isinstance(x, bool),
-                    message="param must be instance of bool"),
+                         message="param must be instance of bool"),
         bm25_k1=dict(validator=lambda x: isinstance(x, float) and 1.2 <= x <= 2.0,
                      message="param must be be range of [1.2, 2]"),
         bm25_b=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1,
-                    message="param must be range of [0, 1]"))
+                    message="param must be range of [0, 1]"),
+        auto_flush=dict(validator=lambda x: isinstance(x, bool) and 0 <= x <= 1,
+                        message=BOOL_TYPE_CHECK_TIP)
+    )
     def __init__(self, client: MilvusClient, collection_name: str = "doc_store",
-                 enable_bm25=True, bm25_k1: float = 1.2, bm25_b: float = 0.75):
+                 enable_bm25=True, bm25_k1: float = 1.2, bm25_b: float = 0.75, auto_flush=True):
         self._client = client
         self._collection_name = collection_name
         self._enable_bm25 = enable_bm25
-        self.bm25_k1 = bm25_k1
-        self.bm25_b = bm25_b
+        self._bm25_k1 = bm25_k1
+        self._bm25_b = bm25_b
+        self._auto_flush = auto_flush
         if not self._client.has_collection(self._collection_name):
             self._create_collection()
         else:
@@ -67,7 +71,8 @@ class MilvusDocstore(Docstore):
                 info["sparse_vector"] = {1: 0.1, 2: 0.3}
             data.append(info)
         res = self.client.insert(collection_name=self.collection_name, data=data)
-        self.client.refresh_load(collection_name=self.collection_name)
+        if self._auto_flush:
+            self.flush()
         logger.info(f"Successfully added {res['insert_count']} documents")
         return list(res["ids"])
 
@@ -154,7 +159,8 @@ class MilvusDocstore(Docstore):
         ids = [x.get("id") for x in res]
         if ids:
             self.client.delete(self.collection_name, ids)
-            self.client.refresh_load(self.collection_name)
+            if self._auto_flush:
+                self.flush()
         return ids
 
     def get_all_chunk_id(self):
@@ -199,8 +205,12 @@ class MilvusDocstore(Docstore):
             data.append(response)
         if data:
             self.client.upsert(collection_name=self.collection_name, data=data)
-            self.client.refresh_load(collection_name=self.collection_name)
+            if self._auto_flush:
+                self.flush()
             logger.info(f"Successfully updated chunk ids {chunk_ids}")
+
+    def flush(self):
+        self.client.refresh_load(collection_name=self.collection_name)
 
     def _do_bm25_search(self, query, top_k, search_params, doc_filter):
         search_kwargs = {
@@ -261,8 +271,8 @@ class MilvusDocstore(Docstore):
                 params={
                     "inverted_index_algo": "DAAT_MAXSCORE",
                     # Algorithm for building and querying the index. Valid values: DAAT_MAXSCORE, DAAT_WAND, TAAT_NAIVE.
-                    "bm25_k1": self.bm25_k1,
-                    "bm25_b": self.bm25_b
+                    "bm25_k1": self._bm25_k1,
+                    "bm25_b": self._bm25_b
                 },
             )
         self.client.create_collection(

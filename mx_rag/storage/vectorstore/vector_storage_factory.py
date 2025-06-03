@@ -7,7 +7,7 @@ from abc import ABC
 from typing import Optional
 from loguru import logger
 
-from mx_rag.storage.vectorstore import VectorStore
+from mx_rag.storage.vectorstore import VectorStore, OpenGaussDB
 from mx_rag.storage.vectorstore import MindFAISS
 from mx_rag.storage.vectorstore import MilvusDB
 
@@ -21,6 +21,7 @@ class VectorStorageFactory(ABC):
         NPU_SUPPORT_VEC_TYPE 字典，用于映射向量数据库和对应的构造函数
     """
     NPU_SUPPORT_VEC_TYPE = {
+        "opengauss_db": OpenGaussDB.create,
         "npu_faiss_db": MindFAISS.create,
         "milvus_db": MilvusDB.create
     }
