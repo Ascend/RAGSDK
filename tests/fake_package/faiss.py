@@ -25,3 +25,16 @@ class IndexFlatIP:
     def search(self, batch_embedding: list, k: int):
         return np.array([i for i in range(len(batch_embedding))]), \
             np.array([[i for i in range(k)]] * len(batch_embedding))
+
+
+class IndexHNSWFlat:
+    def __init__(self, embed_len: int, m: int = 16):
+        self.embed_len = embed_len
+        self.m = m
+
+    def add(self, embedding: list):
+        pass
+
+    def search(self, batch_embedding: list, k: int):
+        return np.array([i for i in range(len(batch_embedding))]), \
+            np.array([[i for i in range(k)]] * len(batch_embedding))
