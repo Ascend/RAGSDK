@@ -3,8 +3,10 @@
 
 from .graph_store import GraphStore
 from .networkx_graph import NetworkxGraph
+from .opengauss_graph import OpenGaussGraph
 
 __all__ = [
     "GraphStore",
-    "NetworkxGraph"
+    "NetworkxGraph",
+    "OpenGaussGraph"
 ]
