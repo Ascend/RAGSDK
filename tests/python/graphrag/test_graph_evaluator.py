@@ -1,0 +1,85 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+
+import unittest
+from unittest.mock import Mock, patch
+from mx_rag.graphrag.graph_evaluator import GraphEvaluator
+
+
+class TestGraphEvaluator(unittest.TestCase):
+    def setUp(self):
+        """Set up a GraphEvaluator instance with mocked dependencies."""
+        self.mock_llm = Mock()
+        self.mock_llm_config = Mock()
+        self.evaluator = GraphEvaluator(self.mock_llm, self.mock_llm_config)
+
+    def test_calculate(self):
+        """Test the calculate method for precision, recall, and F1 score."""
+        self.assertEqual(self.evaluator.calculate(10, 2, 3), [0.8, 0.7273, 0.7619])
+        self.assertEqual(self.evaluator.calculate(0, 0, 0), [None, None, None])
+        self.assertEqual(self.evaluator.calculate(5, 5, 2), [None, None, None])
+
+    def test_safe_len(self):
+        """Test the _safe_len method for handling objects with/without len."""
+        self.assertEqual(self.evaluator._safe_len([1, 2, 3]), 3)
+        self.assertEqual(self.evaluator._safe_len(None), 0)
+        self.assertEqual(self.evaluator._safe_len("test"), 4)
+
+    def test_remove_empty_lines(self):
+        """Test the _remove_empty_lines method for removing empty lines."""
+        text = "Line 1\n\nLine 2\n\n\nLine 3"
+        self.assertEqual(self.evaluator._remove_empty_lines(text), "Line 1\nLine 2\nLine 3")
+
+    def test_extract_entities_from_text(self):
+        """Test the _extract_entities_from_text method for extracting entities."""
+        text = "Some text with entities [entity1', 'entity2', 'entity3'] in it."
+        self.assertEqual(
+            self.evaluator._extract_entities_from_text(text),
+            ["entity1", "entity2", "entity3"]
+        )
+        self.assertEqual(self.evaluator._extract_entities_from_text("No entities here."), [])
+
+    def test_count_origin(self):
+        """Test the count_origin method for counting original entities/relations."""
+        entity_relations = [{"Head": "A", "Relation": "B", "Tail": "C"}]
+        event_entity_relations = [{"Entity": ["E1", "E2"]}]
+        event_relations = [{"Head": "X", "Relation": "Y", "Tail": "Z"}]
+        self.assertEqual(self.evaluator.count_origin(entity_relations,
+                         event_entity_relations, event_relations), [1, 2, 1])
+
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._remove_empty_lines")
+    def test_count_more(self, mock_remove_empty_lines):
+        """Test the count_more method for counting unrecognized entities/relations."""
+        mock_remove_empty_lines.side_effect = lambda x: x
+        task1 = "Triple1\nTriple2"
+        task2 = "{'Event': 'E1', 'Entity': ['E2', 'E3']}\n{'Event': 'E4', 'Entity': ['E5']}"
+        task3 = "All recognized"
+        self.assertEqual(self.evaluator.count_more(task1, task2, task3), [2, 3, 0])
+
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._remove_empty_lines")
+    def test_count_incorrect(self, mock_remove_empty_lines):
+        """Test the count_incorrect method for counting incorrect entities/relations."""
+        mock_remove_empty_lines.side_effect = lambda x: x
+        task1 = "Triple1\nTriple2"
+        task2 = "{'Event': 'E1', 'Entity': ['E2', 'E3']}\n{'Event': 'E4', 'Entity': ['E5']}"
+        task3 = "all correct"
+        self.assertEqual(self.evaluator.count_incorrect(task1, task2, task3), [2, 3, 0])
+
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.get_more")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.get_incorrect")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.count_origin")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.count_more")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.count_incorrect")
+    def test_evaluate(
+        self, mock_count_incorrect, mock_count_more, mock_count_origin, mock_get_incorrect, mock_get_more):
+        """Test the evaluate method for aggregating results."""
+        mock_count_origin.return_value = [10, 5, 8]
+        mock_get_more.return_value = ["more1", "more2", "more3"]
+        mock_count_more.return_value = [2, 1, 3]
+        mock_get_incorrect.return_value = ["incorrect1", "incorrect2", "incorrect3"]
+        mock_count_incorrect.return_value = [1, 0, 2]
+
+        relations = [{"raw_text": "text", "entity_relations": [], "event_entity_relations": [], "event_relations": []}]
+        with patch("mx_rag.graphrag.graph_evaluator.logger.info") as mock_logger:
+            self.evaluator.evaluate(relations)
+            mock_logger.assert_called()  # Ensure logging is called
