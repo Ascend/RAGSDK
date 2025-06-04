@@ -35,3 +35,4 @@ psycopg2==2.9.9
 networkx==3.2.1
 nebula3-python==3.8.2
 ragas==0.1.14
+json-repair==0.44.1
