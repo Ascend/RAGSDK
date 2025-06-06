@@ -6,7 +6,7 @@ import tempfile
 import os
 import networkx as nx
 
-from mx_rag.graphrag.graphs import NetworkxGraph
+from mx_rag.graphrag.graphs.networkx_graph import NetworkxGraph
 
 
 class TestNetworkxGraph(unittest.TestCase):

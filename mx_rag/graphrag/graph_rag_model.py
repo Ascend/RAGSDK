@@ -9,10 +9,11 @@ import numpy as np
 from loguru import logger
 from tqdm import tqdm
 
-from mx_rag.graphrag.graphs import GraphStore, OpenGaussGraph
+from mx_rag.graphrag.graphs.graph_store import GraphStore
+from mx_rag.graphrag.graphs.opengauss_graph import OpenGaussGraph
 from mx_rag.graphrag.prompts.evaluate_qa import TEXT_RAG_TEMPLATE
 from mx_rag.graphrag.qa_base_model import QABaseModel
-from mx_rag.graphrag.vector_stores import FaissVectorStore
+from mx_rag.graphrag.vector_stores.faiss_vector_store import FaissVectorStore
 from mx_rag.llm import LLMParameterConfig, Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import validate_params
@@ -168,7 +169,7 @@ class GraphRAGModel(QABaseModel):
 
     @validate_params(questions=dict(validator=lambda x: isinstance(x, list) and len(x) < 10000,
                                     message="questions must be a list and its length less than 10000"))
-    def generate(self, questions: List[str], max_triples: int = 150) -> List[str]:
+    def generate(self, questions: List[str], max_triples: int = 150, retrieve_only: bool = True) -> List[str]:
         """
         Generates answers for a list of questions using graph-based retrieval and LLM.
 
@@ -188,10 +189,10 @@ class GraphRAGModel(QABaseModel):
         entity_to_nodes = self._retrieve_nodes_batch(entities_list)
         
         # Step 3: Prepare prompts for all questions
-        prompts = self._prepare_prompts_batch(questions, entities_list, entity_to_nodes, max_triples)
+        prompts, all_contexts = self._prepare_prompts_batch(questions, entities_list, entity_to_nodes, max_triples)
         
         # Step 4: Generate answers in parallel
-        return self._generate_answers_batch(prompts)
+        return all_contexts if retrieve_only else self._generate_answers_batch(prompts)
 
     def _extract_entities_batch(self, questions: List[str]) -> List[List[str]]:
         """Extract entities from all questions in parallel."""
@@ -224,6 +225,7 @@ class GraphRAGModel(QABaseModel):
     ) -> List[str]:
         """Prepare prompts for all questions."""
         prompts = []
+        all_contexts = []
         
         for question, entities in tqdm(
             zip(questions, entities_list), 
@@ -235,12 +237,13 @@ class GraphRAGModel(QABaseModel):
             
             # Get and rerank contexts
             contexts = self._get_and_rerank_contexts(retrieved_nodes, question, max_triples)
+            all_contexts.append(contexts)
             
             # Create prompt
             prompt = TEXT_RAG_TEMPLATE.format(context=contexts, question=question)
             prompts.append(prompt)
         
-        return prompts
+        return prompts, all_contexts
 
     def _get_and_rerank_contexts(
         self, 

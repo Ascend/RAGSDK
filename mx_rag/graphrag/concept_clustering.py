@@ -5,8 +5,8 @@ import numpy as np
 from loguru import logger
 from tqdm import tqdm
 
-from mx_rag.graphrag.vector_stores import FaissVectorStore
-from mx_rag.graphrag.graphs import GraphStore
+from mx_rag.graphrag.vector_stores.faiss_vector_store import FaissVectorStore
+from mx_rag.graphrag.graphs.graph_store import GraphStore
 from mx_rag.utils.common import validate_params
 
 

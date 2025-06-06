@@ -4,7 +4,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from mx_rag.graphrag.vector_stores import FaissVectorStore
+from mx_rag.graphrag.vector_stores.faiss_vector_store import FaissVectorStore
 
 
 class TestFaissVectorStoreInit(unittest.TestCase):

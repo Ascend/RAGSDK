@@ -20,7 +20,8 @@ from mx_rag.graphrag.prompts.extract_graph import (
     RELATION_PROMPT_CN,
     RELATION_PROMPT_EN,
 )
-from mx_rag.graphrag.graphs import GraphStore, OpenGaussGraph
+from mx_rag.graphrag.graphs.graph_store import GraphStore
+from mx_rag.graphrag.graphs.opengauss_graph import OpenGaussGraph
 
 
 def extract_event_nodes(graph) -> List[Any]:
