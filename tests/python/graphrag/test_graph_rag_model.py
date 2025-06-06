@@ -157,10 +157,10 @@ class TestGraphRAGModel(unittest.TestCase):
         questions = ["What is AI?", "How does ML work?"]
         mock_extract.return_value = [["AI"], ["ML"]]
         mock_retrieve.return_value = {"AI": ["node1"], "ML": ["node2"]}
-        mock_prepare.return_value = ["prompt1", "prompt2"]
+        mock_prepare.return_value = [["prompt1", "prompt2"], []]
         mock_generate_answers.return_value = ["answer1", "answer2"]
         
-        result = self.model.generate(questions, max_triples=100)
+        result = self.model.generate(questions, max_triples=100, retrieve_only=False)
         
         self.assertEqual(result, ["answer1", "answer2"])
         mock_extract.assert_called_once_with(questions)

@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 from loguru import logger
 from tqdm import tqdm
 
-from mx_rag.graphrag.graphs import GraphStore
+from mx_rag.graphrag.graphs.graph_store import GraphStore
 
 
 class ConceptGraphMerger:

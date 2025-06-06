@@ -23,7 +23,7 @@ from mx_rag.graphrag.prompts.extract_graph import (
     PASSAGE_START_CN,
     PASSAGE_START_EN,
 )
-from mx_rag.graphrag.graphs import GraphStore
+from mx_rag.graphrag.graphs.graph_store import GraphStore
 
 
 NAMED_ENTITY_PROMPT_EN = '''

@@ -9,7 +9,7 @@ import networkx as nx
 
 from mx_rag.utils.common import Lang
 from mx_rag.graphrag.disambiguation import EntityDisambiguator, EntityContextManager
-from mx_rag.graphrag.graphs import GraphStore
+from mx_rag.graphrag.graphs.graph_store import GraphStore
 
 
 class TestEntityDisambiguator(unittest.TestCase):
