@@ -6,7 +6,6 @@
 #include <iostream>
 #include <sys/stat.h>
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
 #include <torch_npu/csrc/core/npu/NPUStream.h>
 #pragma GCC diagnostic pop
 #include <acl/acl.h>

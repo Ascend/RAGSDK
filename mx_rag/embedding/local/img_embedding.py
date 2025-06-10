@@ -10,13 +10,7 @@ from PIL import Image
 from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import is_torch_npu_available
-from torchvision.transforms import Compose, Resize, CenterCrop, ToTensor, Normalize
 
-try:
-    from torchvision.transforms import InterpolationMode
-    BICUBIC = InterpolationMode.BICUBIC
-except ImportError:
-    BICUBIC = Image.BICUBIC
 
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBEDDING_TEXT_COUNT, \
     IMG_EMBEDDING_TEXT_LEN, validate_list_str, MB, GB, EMBEDDING_IMG_COUNT

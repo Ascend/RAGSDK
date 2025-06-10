@@ -4,7 +4,6 @@
 
 #include "operation_torch.h"
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic pop
 #include <acl/acl.h>
 #include <torch/torch.h>

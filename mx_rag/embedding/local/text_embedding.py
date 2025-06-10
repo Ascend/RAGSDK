@@ -3,7 +3,6 @@
 
 from typing import List
 
-import numpy as np
 import torch
 from langchain_core.embeddings import Embeddings
 from loguru import logger
