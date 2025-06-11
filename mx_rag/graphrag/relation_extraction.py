@@ -140,13 +140,13 @@ class LLMRelationExtractor:
         system_start (str): The prefix indicating the system's instructions.
         configs (dict): Configurations for different extraction tasks (entity_relation, event_entity, event_relation).
     """
+    @validate_params(max_workers=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= 64),
+                                      message="param must be none or an integer in [1, 64]"))
     def __init__(self, llm: Text2TextLLM, pad_token: str, language: Lang = Lang.CH, max_workers=None):
         logger.info("Initializing RelationExtractorLLM...")
         self.llm = llm
         self.pad_token = pad_token
         self.language = language
-        if max_workers is not None and not isinstance(max_workers, int) and not (0 < max_workers <= 64):
-            raise ValueError("param error, param must be an integer in (0, 64]")
         self.max_workers = max_workers
         self.triple_instructions = TRIPLE_INSTRUCTIONS_CN if language == Lang.CH else TRIPLE_INSTRUCTIONS_EN
 
@@ -210,7 +210,7 @@ class LLMRelationExtractor:
             }
             for i, doc in enumerate(docs)
         ]
-    
+
     def _build_config(self, key: str, passage_start: str) -> dict:
         return {
             "prefix": f"{self.system_start}{self.prompt_start}{self.triple_instructions.get(key)}{passage_start}",

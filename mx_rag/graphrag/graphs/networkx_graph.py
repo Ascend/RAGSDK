@@ -47,13 +47,15 @@ class NetworkxGraph(GraphStore):
         """
         Add a node with optional attributes.
         """
-        self.graph.add_node(node, **attrs)
+        if not self.has_node(node):
+            self.graph.add_node(node, **attrs) 
 
     def add_nodes_from(self, nodes: Iterable[str], **attrs: Any) -> None:
         """
         Add multiple nodes with shared attributes.
         """
-        self.graph.add_nodes_from(nodes, **attrs)
+        for node in nodes:
+            self.add_node(node, **attrs)
 
     def remove_node(self, node: str) -> None:
         """
@@ -146,7 +148,8 @@ class NetworkxGraph(GraphStore):
         """
         Add an edge with optional attributes.
         """
-        self.graph.add_edge(u, v, **attr)
+        if not self.has_edge(u, v):
+            self.graph.add_edge(u, v, **attr)
 
     def add_edges_from(self, edges: Iterable[Tuple[str, str, Optional[Dict[str, Any]]]]) -> None:
         """

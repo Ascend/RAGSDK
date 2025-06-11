@@ -69,7 +69,7 @@ class ConceptCluster:
 
     def _prepare_vector_store(self, embeddings: np.ndarray) -> None:
         self.vector_store.normalize_vectors_l2(embeddings)
-        self.vector_store.add(embeddings, range(embeddings.shape[0]))
+        self.vector_store.add(embeddings, list(range(embeddings.shape[0])))
 
     def _search_similarities(
         self, embeddings: np.ndarray, top_k: int

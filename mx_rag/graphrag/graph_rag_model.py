@@ -241,7 +241,7 @@ class GraphRAGModel(QABaseModel):
         entities_list: List[List[str]], 
         entity_to_nodes: dict, 
         max_triples: int
-    ) -> List[str]:
+    ) -> Tuple[List[str], List[List[str]]]:
         """Prepare prompts for all questions."""
         prompts = []
         all_contexts = []
