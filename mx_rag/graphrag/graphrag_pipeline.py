@@ -28,7 +28,7 @@ from mx_rag.document import LoaderMng
 from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import validate_params, FileCheck, TEXT_MAX_LEN
 from mx_rag.reranker.reranker import Reranker
-from mx_rag.utils.file_check import check_disk_free_space
+from mx_rag.utils.file_check import check_disk_free_space, FileCheckError
 
 
 def save_to_json(data, file_path: str):
@@ -104,10 +104,16 @@ class GraphRAGPipeline:
         loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng")
     )
     def upload_files(self, file_list: list, loader_mng: LoaderMng):
+        failed_files = []
         for file in file_list:
-            FileCheck.check_path_is_exist_and_valid(file)
-            if not os.path.isfile(file):
-                raise GraphRAGError(f"upload files failed: '{file}' is not file")
+            try:
+                FileCheck.check_path_is_exist_and_valid(file)
+                if not os.path.isfile(file):
+                    failed_files.append(file)
+                    continue
+            except FileCheckError:
+                failed_files.append(file)
+                continue     
             file_obj = Path(file)
             loader_info = loader_mng.get_loader(file_obj.suffix)
             loader = loader_info.loader_class(file_path=file_obj.as_posix(), **loader_info.loader_params)
@@ -115,15 +121,14 @@ class GraphRAGPipeline:
             splitter = splitter_info.splitter_class(**splitter_info.splitter_params)
             docs = loader.load_and_split(splitter)
             self.docs.extend(docs)
+        if failed_files:
+            logger.warning(f"{len(failed_files)} files failed to upload, please check: {','.join(failed_files)}")
 
     @validate_params(lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be a Lang instance"),
                      pad_token=dict(validator=lambda x: isinstance(x, str) and len(x) < 256, 
                                     message="param must be a string, range [0, 255]"),
                      conceptualize=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean"))
     def build_graph(self, lang: Lang = Lang.EN, pad_token="", conceptualize: bool = False, **kwargs):
-        if self.graph.number_of_nodes() > 0:
-            logger.warning("The graph is not empty, skip building")
-            return
         max_workers = kwargs.pop("max_workers", (os.cpu_count() or 1) + 4)
         top_k = kwargs.pop("top_k", 5)
         threshold = kwargs.pop("threshold", 0.3)

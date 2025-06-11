@@ -42,6 +42,8 @@ class OpenGaussGraph(GraphStore):
         """
         Add a node with optional attributes.
         """
+        if self.has_node(node):
+            return
         label = hashlib.sha256(node.encode("utf-8")).hexdigest()
         attributes.update({"text": node, 'id': label})
         query = CypherQueryBuilder.merge_node(attributes)
@@ -107,11 +109,12 @@ class OpenGaussGraph(GraphStore):
             **common_attrs: Attributes applied to all nodes.
         """
         for node in nodes:
+            attrs = common_attrs.copy()
             if isinstance(node, tuple):
-                label, node_attrs = node
-                self.add_node(label, **{**common_attrs, **node_attrs})
-            else:
-                self.add_node(node, **common_attrs)
+                node, node_attrs = node
+                attrs.update(node_attrs)
+            if not self.has_node(node):
+                self.add_node(node, **attrs)
 
     def remove_node(self, node: str) -> None:
         """Remove a node."""
@@ -407,6 +410,9 @@ class OpenGaussGraph(GraphStore):
             if not self.has_node(node):
                 self.add_node(node)
 
+        if self.has_edge(u, v):
+            return
+
         # Hash node labels for internal use
         u_hashed = hashlib.sha256(u.encode("utf-8")).hexdigest()
         v_hashed = hashlib.sha256(v.encode("utf-8")).hexdigest()
@@ -515,8 +521,6 @@ class OpenGaussGraph(GraphStore):
             v = hashlib.sha256(v.encode("utf-8")).hexdigest()
             query = CypherQueryBuilder.set_edge_attribute(u, v, key, value, append)
             self.graph_adapter.execute_cypher_query(query)
-        else:
-            logger.warning(f"Edge does not exist")
 
     def get_edges(
         self, with_data: bool = True

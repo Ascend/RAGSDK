@@ -22,6 +22,7 @@ class TestOpenGaussGraph(unittest.TestCase):
 
     def test_add_node_calls_adapter(self):
         self.mock_adapter.execute_cypher_query.reset_mock()
+        self.graph.has_node = MagicMock(side_effect=[False])
         self.graph.add_node("foo", foo_attr=1)
         self.mock_adapter.execute_cypher_query.assert_called_once()
         args = self.mock_adapter.execute_cypher_query.call_args[0][0]
@@ -40,6 +41,7 @@ class TestOpenGaussGraph(unittest.TestCase):
             self.assertIn('"foo"', written)
 
     def test_add_nodes_from_tuple_and_str(self):
+        self.graph.has_node = MagicMock(side_effect=[False, False])
         self.graph.add_node = MagicMock()
         self.graph.add_nodes_from([("foo", {"a": 1}), "bar"], common=2)
         self.graph.add_node.assert_any_call("foo", a=1, common=2)
@@ -238,6 +240,7 @@ class TestOpenGaussGraph(unittest.TestCase):
     def test_add_edge(self):
         # Mock has_node and add_node methods
         self.graph.has_node = MagicMock(side_effect=[True, False])
+        self.graph.has_edge = MagicMock(side_effect=[False])
         self.graph.add_node = MagicMock()
 
         # Call the method
