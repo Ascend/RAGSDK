@@ -7,6 +7,7 @@ from typing import Callable, List, Optional
 from json_repair import repair_json
 from loguru import logger
 from tqdm import tqdm
+from langchain_core.documents import Document
 
 from mx_rag.graphrag.prompts.extract_graph import (
     CHAT_TEMPLATE,
@@ -24,7 +25,7 @@ from mx_rag.graphrag.utils.json_util import (
     normalize_json_string,
 )
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import Lang
+from mx_rag.utils.common import Lang, validate_params
 from mx_rag.storage.document_store import MxDocument
 
 
@@ -144,6 +145,8 @@ class LLMRelationExtractor:
         self.llm = llm
         self.pad_token = pad_token
         self.language = language
+        if max_workers is not None and not isinstance(max_workers, int) and not (0 < max_workers <= 64):
+            raise ValueError("param error, param must be an integer in (0, 64]")
         self.max_workers = max_workers
         self.triple_instructions = TRIPLE_INSTRUCTIONS_CN if language == Lang.CH else TRIPLE_INSTRUCTIONS_EN
 
@@ -161,7 +164,15 @@ class LLMRelationExtractor:
             "event_relation": self._build_config("event_relation", passage_start),
         }
 
-    def query(self, docs: List[MxDocument]) -> List[dict]:
+    @validate_params(
+        docs=dict(
+            validator=lambda x: isinstance(x, list) 
+            and all(isinstance(it, Document) for it in x) 
+            and 0 < len(x) <= 1000000,
+            message="param must be a list of Document elements, length range [1, 1000000]"
+        )
+    )
+    def query(self, docs: List[Document]) -> List[dict]:
         outputs = {key: [] for key in self.configs}
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
