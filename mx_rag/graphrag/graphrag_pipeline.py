@@ -25,30 +25,23 @@ from mx_rag.graphrag.concept_embedding import ConceptEmbedding
 from mx_rag.graphrag.graph_rag_model import GraphRAGModel
 from mx_rag.graphrag.vector_stores.faiss_vector_store import FaissVectorStore
 from mx_rag.document import LoaderMng
+from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import validate_params, FileCheck, TEXT_MAX_LEN
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.file_check import check_disk_free_space
 
 
-FREE_SPACE_LIMIT = 5 * 1024 * 1024 * 1024  # 5GB
-
-
 def save_to_json(data, file_path: str):
-    FileCheck.check_input_path_valid(file_path)
-    FileCheck.check_filename_valid(file_path)
-    dirname = os.path.dirname(file_path)
-    if check_disk_free_space(dirname if dirname else "./", FREE_SPACE_LIMIT):
-        raise StorageError("Insufficient remaining space, please clear disk space")
     try:
+        FileCheck.check_input_path_valid(file_path)
+        FileCheck.check_filename_valid(file_path)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
     except OSError as e:
         logger.error(f"Error creating directory or writing file {file_path}: {e}")
-        raise
     except Exception as e:
         logger.error(f"Error saving JSON data to {file_path}: {e}")
-        raise
 
 
 class GraphRAGError(Exception):
@@ -67,23 +60,39 @@ class GraphRetriever(BaseRetriever):
     )
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List:
-        return self.graph_rag_model.generate([query])
+        return self.graph_rag_model.generate([query])[0]
 
 
 class GraphRAGPipeline:
+    FREE_SPACE_LIMIT = 5 * 1024 * 1024 * 1024  # 5GB
+
+    @validate_params(
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM),
+                 message="llm must be an instance of Text2TextLLM"),
+        embedding_model=dict(validator=lambda x: isinstance(x, Embeddings),
+                             message="embedding_model must be an instance of Embeddings"),
+        rerank_model=dict(validator=lambda x: isinstance(x, Reranker),
+                          message="rerank_model must be an instance of Reranker"),
+        dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1024 * 1024,
+                 message="dim must be an integer, value range [1, 1024 * 1024]"),
+        graph_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 256 and x.isidentifier(),
+                        message="graph_name must be a str and length range [1, 255]"),
+        graph_type=dict(validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
+                        message="graph_type must be 'networkx' or 'opengauss'")
+    )
     def __init__(self, work_dir: str, llm, embedding_model, rerank_model, dim: int,
                  graph_type="networkx", graph_name: str = "graph", **kwargs):
+        FileCheck.check_input_path_valid(work_dir)
+        FileCheck.check_filename_valid(work_dir)
+        if check_disk_free_space(work_dir, self.FREE_SPACE_LIMIT):
+            raise StorageError("Insufficient remaining space, please clear disk space")
         self.work_dir = work_dir
         self.graph_name = graph_name
         self.graph_conf = None
         self._setup_save_path(self.graph_name)
         self._setup_graph(self.graph_name, graph_type, **kwargs)
         self.llm = llm
-        if not isinstance(embedding_model, Embeddings):
-            raise GraphRAGError("Embedding model requires to be an instance of langchain_core.embeddings.Embeddings")
         self.embedding_model = embedding_model
-        if not isinstance(rerank_model, Reranker):
-            raise GraphRAGError("Rerank model requires to be an instance of Reranker")
         self.rerank_model = rerank_model
         self.concept_embedding = None
         self.docs = []
@@ -91,7 +100,7 @@ class GraphRAGPipeline:
 
     @validate_params(
         file_list=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= 100,
-                       message="file_list must be list, and length range (0, 100]"),
+                       message="file_list must be list, and length range [1, 100]"),
         loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng")
     )
     def upload_files(self, file_list: list, loader_mng: LoaderMng):
@@ -107,6 +116,10 @@ class GraphRAGPipeline:
             docs = loader.load_and_split(splitter)
             self.docs.extend(docs)
 
+    @validate_params(lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be a Lang instance"),
+                     pad_token=dict(validator=lambda x: isinstance(x, str) and len(x) < 256, 
+                                    message="param must be a string, range [0, 255]"),
+                     conceptualize=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean"))
     def build_graph(self, lang: Lang = Lang.EN, pad_token="", conceptualize: bool = False, **kwargs):
         if self.graph.number_of_nodes() > 0:
             logger.warning("The graph is not empty, skip building")
@@ -168,12 +181,12 @@ class GraphRAGPipeline:
     def retrieve_graph(self, graph_name, graph_type, question: str, **kwargs):
         if self.graph.number_of_nodes() == 0:
             raise GraphRAGError("Empty graph, first build the graph")
-        
+
         return self.as_retriever(graph_name, graph_type, **kwargs).invoke(question)
-    
+
     @validate_params(
-        graph_name=dict(validator=lambda x: isinstance(x, str) and x.isidentifier() and 0 < len(x) <= 256,
-                        message=f"param must be a str and its length meets (0, 256], "
+        graph_name=dict(validator=lambda x: isinstance(x, str) and x.isidentifier() and 0 < len(x) < 256,
+                        message=f"param must be a str and its length meets [1, 255], "
                                 f"and only contains letters, _ and digits."),
         graph_type=dict(validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
                         message="param only takes from 'networkx' or 'opengauss'")
@@ -204,7 +217,7 @@ class GraphRAGPipeline:
             subgraph_depth=subgraph_depth
         )
         return GraphRetriever(graph_rag_model=rag_model)
-    
+
     def _setup_graph(self, graph_name, graph_type, **kwargs):
         if not isinstance(graph_type, str) or graph_type not in ["networkx", "opengauss"]:
             raise GraphRAGError(f"graph client supports only networkx or opengauss")

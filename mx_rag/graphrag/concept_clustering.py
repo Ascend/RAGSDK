@@ -42,7 +42,12 @@ class ConceptCluster:
 
     @validate_params(
         concept_embeddings=dict(
-            validator=lambda x: isinstance(x, dict), message="param error, param must be a dict"))
+            validator=lambda x: isinstance(x, dict), message="param must be a dict"),
+        top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100,
+                   message="param must be an integer, value range [1, 100]"),
+        threshold=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 1.0,
+                       message="param must be a float number, value range [0.0, 1.0]")
+    )
     def find_clusters(
         self,
         concept_embeddings: Dict[str, np.ndarray],

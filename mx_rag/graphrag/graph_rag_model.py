@@ -25,6 +25,25 @@ class GraphRAGModel(QABaseModel):
     It manages embedding databases, retrieves relevant nodes, and generates answers using graph context.
     """
 
+    @validate_params(
+        reranker_top_k=dict(
+            validator=lambda x: isinstance(x, int) and 0 < x <= 1000, 
+            message="param must be an integer, value range [1, 1000]"
+        ),
+        retrieval_top_k=dict(
+            validator=lambda x: isinstance(x, int) and 0 < x <= 1000,
+            message="param must be an integer, value range [1, 1000]"
+        ),
+        subgraph_depth=dict(
+            validator=lambda x: isinstance(x, int) and 1 <= x < 6, 
+            message="param must be an integer, value range [1, 5]"
+        ),
+        similarity_tail_threshold=dict(
+            validator=lambda x: isinstance(x, float) and 0.0 <= x <= 1.0, 
+            message="param must be a float, value range [0.0, 1.0]"
+        ),
+        use_text=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean")
+    )
     def __init__(
         self,
         llm: Text2TextLLM,
@@ -341,7 +360,7 @@ class GraphRAGModel(QABaseModel):
                 text_embs_norm = text_embs / np.linalg.norm(text_embs, axis=1, keepdims=True)
                 query_emb_norm = query_emb / np.linalg.norm(query_emb)
                 sims = np.dot(text_embs_norm, query_emb_norm)
-                idx = np.argsort(sims)[::-1][:self.retrieval_top_k]
+                idx = np.argsort(sims)[::-1][:self.reranker_top_k]
                 # Prune low-similarity tail
                 idx = [i for i in idx if sims[i] > self.similarity_tail_threshold or len(idx) <= self.min_number_text]
                 items = [text_nodes[i] for i in idx]
@@ -349,7 +368,7 @@ class GraphRAGModel(QABaseModel):
                 scores = self.reranker.rerank(query, text_nodes)
                 items = self.reranker.rerank_top_k(text_nodes, scores)
         else:
-            items = [item for item, _ in Counter(text_nodes).most_common(self.retrieval_top_k)]
+            items = [item for item, _ in Counter(text_nodes).most_common(self.reranker_top_k)]
         return items
 
     def _add_neighbors_to_subgraph(

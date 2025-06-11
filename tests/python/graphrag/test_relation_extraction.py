@@ -2,10 +2,9 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
-import json
+from unittest.mock import Mock, patch
 from mx_rag.utils.common import Lang
-from mx_rag.storage.document_store import MxDocument
+from langchain_core.documents import Document
 
 
 from mx_rag.graphrag.relation_extraction import (
@@ -221,8 +220,8 @@ class TestLLMRelationExtractor(unittest.TestCase):
 
         # Create test documents
         docs = [
-            MxDocument(page_content="text1", metadata={"source": "file1"}, document_name="file1"),
-            MxDocument(page_content="text2", metadata={"source": "file2"}, document_name="file2")
+            Document(page_content="text1", metadata={"source": "file1"}, document_name="file1"),
+            Document(page_content="text2", metadata={"source": "file2"}, document_name="file2")
         ]
 
         result = extractor.query(docs)
