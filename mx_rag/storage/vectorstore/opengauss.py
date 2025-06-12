@@ -238,7 +238,7 @@ class OpenGaussDB(VectorStore):
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="param requires to be np.ndarray"),
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
     )
-    def add(self, embeddings: np.ndarray, ids: List[int], document_id: int = 0):
+    def add(self, ids: List[int], embeddings: np.ndarray, document_id: int = 0):
         if self.search_mode != SearchMode.DENSE:
             raise ValueError("Add requires DENSE mode")
         self._internal_add(ids, embeddings, document_id=document_id)
@@ -293,7 +293,7 @@ class OpenGaussDB(VectorStore):
         filter_dict=dict(validator=lambda x: isinstance(x, dict) or x is None, message="param must be dict")
     )
     def search(self, embeddings: Union[List[List[float]], List[Dict[int, float]]],
-               k: int = 3, filter_dict = None):
+               k: int = 3, filter_dict=None):
         """
         Searches for the k-nearest neighbors of the given embeddings.
 
@@ -329,26 +329,26 @@ class OpenGaussDB(VectorStore):
             raise OpenGaussError("Failed to get all ids") from e
 
     @validate_params(
-        vec_ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="vec_ids must be List[int]"),
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="ids must be List[int]"),
         dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
                    message="dense must be Optional[np.ndarray]"),
         sparse=dict(validator=lambda x: x is None or _check_sparse_embedding(x),
                     message="sparse must to be Optional[List[Dict[int, float]]]")
     )
-    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+    def update(self, ids: List[int], dense: Optional[np.ndarray] = None,
                sparse: Optional[List[Dict[int, float]]] = None):
-        _check_sparse_and_dense(vec_ids, dense, sparse)
+        _check_sparse_and_dense(ids, dense, sparse)
         if dense is None:
-            dense = [None] * len(vec_ids)
+            dense = [None] * len(ids)
         if sparse is None:
-            sparse = [None] * len(vec_ids)
-        updates = self._get_vec_by_id(vec_ids)
-        if len(vec_ids) != len(updates):
+            sparse = [None] * len(ids)
+        updates = self._get_vec_by_id(ids)
+        if len(ids) != len(updates):
             queried_ids = [u.get("id") for u in updates]
-            raise OpenGaussError(f"the input id {set(vec_ids) - set(queried_ids)} in vec_ids not exists in openGauss")
+            raise OpenGaussError(f"the input id {set(ids) - set(queried_ids)} in ids not exists in openGauss")
         # 根据传入数据刷新数据
         for update in updates:
-            vec_id = vec_ids.index(update.get("id"))
+            vec_id = ids.index(update.get("id"))
             dense_vector = dense[vec_id]
             sparse_vector = sparse[vec_id]
             if dense_vector is not None:
@@ -358,7 +358,7 @@ class OpenGaussDB(VectorStore):
         try:
             with self._transaction() as session:
                 session.bulk_update_mappings(self.vector_model, updates)
-            logger.info(f"Successfully updated chunk ids {vec_ids}")
+            logger.info(f"Successfully updated chunk ids {ids}")
         except SQLAlchemyError as e:
             raise OpenGaussError("Failed to update") from e
 
@@ -381,7 +381,7 @@ class OpenGaussDB(VectorStore):
             ids: List[int],
             dense: Optional[np.ndarray] = None,
             sparse: Optional[List[Dict[int, float]]] = None,
-            document_id = 0
+            document_id=0
     ) -> None:
         """Unified method for adding embeddings."""
         data = self._prepare_insert_data(ids, dense, sparse, document_id=document_id)
@@ -392,10 +392,10 @@ class OpenGaussDB(VectorStore):
             ids: List[int],
             dense: Optional[np.ndarray] = None,
             sparse: Optional[List[Dict[int, float]]] = None,
-            document_id = None
+            document_id=None
     ) -> List[Dict]:
         """Prepare data for bulk insertion."""
-        data = [{"id": id_, "document_id": document_id } for id_ in ids]
+        data = [{"id": id_, "document_id": document_id} for id_ in ids]
         if dense is not None:
             if len(ids) != len(dense):
                 raise ValueError("Input lengths mismatch")
@@ -458,7 +458,7 @@ class OpenGaussDB(VectorStore):
             doc_filter = self._filter_dict.get("document_id", [])
             if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
                 raise ValueError("value of 'document_id' in filter_dict must be List[int]")
-            doc_filter = list(set(doc_filter)) # 去重
+            doc_filter = list(set(doc_filter))  # 去重
             max_ids_len = len(self.get_all_ids())
             if len(doc_filter) > max_ids_len:
                 raise ValueError(f"length of 'document_id' in filter_dict over length of ids({max_ids_len})")
@@ -547,10 +547,10 @@ class OpenGaussDB(VectorStore):
             max(4, cpu_count - 4)
         )
 
-    def _get_vec_by_id(self, vec_ids: List[int]):
+    def _get_vec_by_id(self, ids: List[int]):
         try:
             with self._transaction() as session:
-                vectors = session.query(self.vector_model).filter(self.vector_model.id.in_(vec_ids)).all()
+                vectors = session.query(self.vector_model).filter(self.vector_model.id.in_(ids)).all()
         except SQLAlchemyError as e:
             raise OpenGaussError("Failed to get all ids") from e
         results = []

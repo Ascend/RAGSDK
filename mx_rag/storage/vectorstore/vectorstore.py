@@ -30,7 +30,7 @@ class VectorStore(ABC):
         pass
 
     @abstractmethod
-    def add(self, embeddings, ids, document_id):
+    def add(self, ids, embeddings, document_id):
         pass
 
     @abstractmethod
@@ -46,7 +46,7 @@ class VectorStore(ABC):
         pass
 
     @abstractmethod
-    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+    def update(self, ids: List[int], dense: Optional[np.ndarray] = None,
                sparse: Optional[List[Dict[int, float]]] = None):
         pass
 

@@ -150,7 +150,7 @@ class MindFAISS(VectorStore):
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
-    def add(self, embeddings: np.ndarray, ids: List[int], document_id=0):
+    def add(self, ids: List[int], embeddings: np.ndarray, document_id=0):
         self._check_embeddings(embeddings, ids)
         try:
             self.index.add_with_ids(embeddings, np.array(ids))
@@ -176,18 +176,18 @@ class MindFAISS(VectorStore):
         return ids
 
     @validate_params(
-        vec_ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="vec_ids must be List[int]"),
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="ids must be List[int]"),
         dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
                    message="dense must be Optional[np.ndarray]")
     )
-    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+    def update(self, ids: List[int], dense: Optional[np.ndarray] = None,
                sparse: Optional[List[Dict[int, float]]] = None):
         if sparse is not None:
             logger.warning("MindFAISS not support update sparse vector")
         if dense is None:
             raise MindFAISSError("dense vector must be passed in MindFAISS update")
-        _check_sparse_and_dense(vec_ids, dense, sparse)
-        self.add(dense, vec_ids)
+        _check_sparse_and_dense(ids, dense, sparse)
+        self.add(ids, dense)
 
     def _create_index(self, x_dim):
         """Create or load a FAISS index on Ascend device."""
