@@ -49,7 +49,7 @@ class IndexParamsBuilder:
             index_name="sparse_index",
             index_type="SPARSE_INVERTED_INDEX",
             metric_type="IP",
-            params=params,
+            params=params.get("sparse", {}),
         )
 
     def add_dense_index(self, index_type, metric_type, params: Dict[str, Any]):
@@ -58,7 +58,7 @@ class IndexParamsBuilder:
             index_name="dense_index",
             index_type=index_type,
             metric_type=metric_type,
-            params=params,
+            params=params.get("dense", {}),
         )
 
     def build(self):
@@ -71,8 +71,8 @@ class IndexParamsBuilder:
         elif self.search_mode == SearchMode.SPARSE:
             self.add_sparse_index(params)
         else:
-            self.add_sparse_index(params.get("sparse", {}))
-            self.add_dense_index(index_type, metric_type, params.get("dense", {}))
+            self.add_sparse_index(params)
+            self.add_dense_index(index_type, metric_type, params)
 
         return self.build()
 
@@ -115,9 +115,6 @@ class MilvusDB(VectorStore):
         self._metric_type = metric_type
         self._filter_dict = None
         self._auto_flush = auto_flush
-
-        if self.search_mode == SearchMode.SPARSE and (self._index_type != "HNSW" or self._metric_type != "IP"):
-            raise ValueError("sparse vector index_type only support HNSW, metric_type only support IP")
 
     @property
     def search_mode(self):

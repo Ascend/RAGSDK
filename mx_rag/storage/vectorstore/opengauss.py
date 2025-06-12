@@ -17,7 +17,6 @@ from mx_rag.storage.document_store.base_storage import StorageError
 from mx_rag.utils.common import validate_params, _check_sparse_embedding, _check_sparse_and_dense
 from mx_rag.utils.common import MAX_COLLECTION_NAME_LENGTH, MAX_TOP_K
 
-DEFAULT_INDEX_OPTIONS = {'m': 16, 'ef_construction': 200}
 Base = declarative_base()
 
 
@@ -128,8 +127,6 @@ class OpenGaussDB(VectorStore):
         self._index_type = index_type
         self._metric_type = metric_type
         self._filter_dict = None
-        if self.search_mode == SearchMode.SPARSE and self._index_type != "HNSW":
-            raise ValueError("sparse vector index_type only support HNSW")
 
         self.session_factory = scoped_session(
             sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
@@ -152,7 +149,7 @@ class OpenGaussDB(VectorStore):
             instance.create_collection(
                 dense_dim=kwargs.get("dense_dim"),
                 sparse_dim=kwargs.get("sparse_dim", 100000),
-                params=kwargs.get("params")
+                params=kwargs.get("params", {})
             )
             logger.info("Successfully create database instance")
             return instance
@@ -422,32 +419,39 @@ class OpenGaussDB(VectorStore):
             logger.error(f"Insert failed: {str(e)}")
             raise StorageError("Bulk insert failed") from e
 
+    def _create_dense_index(self, params: Dict):
+        Index(
+            "ix_dense_index",
+            self.vector_model.vector,
+            opengauss_using=self.INDEX_MAP.get(self._index_type),
+            opengauss_with=params.get("dense", {}),
+            opengauss_ops={'vector': self.DENSE_METRIC_MAP.get(self._metric_type)}
+        ).create(self.engine)
+
+    def _create_sparse_index(self, params: Dict):
+        Index(
+            "ix_sparse_index",
+            self.vector_model.sparse_vector,
+            opengauss_using="hnsw",
+            opengauss_with=params.get("sparse", {}),
+            opengauss_ops={'sparse_vector': self.SPARSE_METRIC_MAP.get(self._metric_type)}
+        ).create(self.engine)
+
     def _create_indexes(self, params: Dict) -> None:
         """Create appropriate indexes for the table."""
-        index_options = {**DEFAULT_INDEX_OPTIONS, **params.get("index_creation_with_options", {})}
 
         with self._transaction() as session:
             # First, ensure no stale indexes exist
             session.execute(text(f"DROP INDEX IF EXISTS ix_dense_index CASCADE"))
             session.execute(text(f"DROP INDEX IF EXISTS ix_sparse_index CASCADE"))
 
-        if hasattr(self.vector_model, "vector"):
-            Index(
-                "ix_dense_index",
-                self.vector_model.vector,
-                opengauss_using=self.INDEX_MAP.get(self._index_type),
-                opengauss_with=index_options,
-                opengauss_ops={'vector': self.DENSE_METRIC_MAP.get(self._metric_type)}
-            ).create(self.engine)
-
-        if hasattr(self.vector_model, "sparse_vector"):
-            Index(
-                "ix_sparse_index",
-                self.vector_model.sparse_vector,
-                opengauss_using="hnsw",
-                opengauss_with=index_options,
-                opengauss_ops={'sparse_vector': self.SPARSE_METRIC_MAP.get(self._metric_type)}
-            ).create(self.engine)
+        if self.search_mode == SearchMode.DENSE:
+            self._create_dense_index(params)
+        elif self.search_mode == SearchMode.SPARSE:
+            self._create_sparse_index(params)
+        else:
+            self._create_dense_index(params)
+            self._create_sparse_index(params)
 
     def _get_doc_filter(self):
         if self._filter_dict:
