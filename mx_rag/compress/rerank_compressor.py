@@ -4,6 +4,7 @@
 from typing import List, Callable
 from langchain_text_splitters.base import TextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from loguru import logger
 
 from mx_rag.compress import PromptCompressor
 from mx_rag.reranker import Reranker
@@ -70,8 +71,11 @@ class RerankCompressor(PromptCompressor):
             )
             self.splitter = text_splitter
         # 文本切分
+        logger.info("Starting text embedding ")
         sentences_list = self.splitter.split_text(text=context)
         # 句子排序
+        logger.info("Starting sentence ranking ")
         ranker_result = self.reranker.rerank(query=question, texts=sentences_list)
         sorted_idx = sorted(enumerate(ranker_result), key=lambda x: x[1], reverse=True)
+        logger.info("Starting sentence compression ")
         return self._ranked_texts(sentences_list, sorted_idx, compress_rate, context_reorder)

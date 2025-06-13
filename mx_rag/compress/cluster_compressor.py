@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import re
+import time
 from typing import List, Callable
 from langchain_text_splitters.base import TextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.embeddings import Embeddings
 import torch
 import numpy as np
+from loguru import logger
 
 from mx_rag.compress import PromptCompressor
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_DEVICE_ID, TEXT_MAX_LEN
@@ -76,20 +78,25 @@ class ClusterCompressor(PromptCompressor):
             )
             self.splitter = sentence_splitter
         # 文本切分
+        logger.info("Starting text splitting ")
         sentences = self.splitter.split_text(text=context)
 
         if len(sentences) < 2:
             return context
         # 文本embedding
+        logger.info("Starting text embedding ")
         sentences_with_question = sentences + [question]
         sentences_embedding_with_question = self.embed.embed_documents(sentences_with_question)
         sentences_embedding = sentences_embedding_with_question[:-1]
         question_embedding = sentences_embedding_with_question[-1]
         # 计算余弦相似度
+        logger.info("Starting cosine calculate similarity ")
         similarity = np.array(self._get_similarity(sentences_embedding, question_embedding).to('cpu'))
         # 社区划分
+        logger.info("Starting community division ")
         label = self.cluster_func(sentences_embedding)
         # 压缩文本
+        logger.info("Starting text compression ")
         compress_context = self._assemble_result(sentences, label, similarity, compress_rate)
 
         return compress_context
