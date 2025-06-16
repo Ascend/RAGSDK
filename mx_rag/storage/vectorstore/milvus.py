@@ -449,34 +449,6 @@ class MilvusDB(VectorStore):
         res = self.client.search(**search_kwargs, **kwargs)
         return self._process_search_results(res, output_fields)
 
-    def _perform_sparse_search(self, sparse_embeddings: List[Dict[int, float]], k: int, output_fields: list, **kwargs):
-        """Handle sparse search logic."""
-        if self.search_mode not in (SearchMode.SPARSE, SearchMode.HYBRID):
-            raise ValueError("Sparse search only supports SPARSE or HYBRID mode")
-        self._validate_sparse_input(sparse_embeddings)
-        doc_filter = self._filter_dict.get("document_id", []) if self._filter_dict else []
-        doc_filter = self._check_doc_filter(doc_filter)
-        if doc_filter:
-            res = self.client.search(
-                collection_name=self._collection_name,
-                anns_field="sparse_vector",
-                limit=k,
-                data=sparse_embeddings,
-                output_fields=output_fields,
-                filter="document_id IN {document_list}",
-                filter_params={"document_list": doc_filter},
-                **kwargs
-            )
-        else:
-            res = self.client.search(
-                collection_name=self._collection_name,
-                anns_field="sparse_vector",
-                limit=k,
-                data=sparse_embeddings,
-                output_fields=output_fields,
-                **kwargs
-            )
-        return self._process_search_results(res, output_fields)
 
     def _process_search_results(self, data: ExtraList, output_fields: Optional[List[str]] = None):
         if output_fields is None:
