@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-from typing import Optional
+from typing import Optional, List
 import os
 import faiss
 import numpy as np
@@ -66,15 +66,15 @@ class FaissVectorStore:
         """
         faiss.normalize_L2(vectors)
 
-    def add(self, vectors: np.ndarray, ids: Optional[np.ndarray] = None) -> None:
+    def add(self, vectors: np.ndarray, ids: Optional[List[int]] = None) -> None:
         """
         Add vectors to the index.
 
         Args:
             vectors (np.ndarray): The vectors to add.
-            ids (np.ndarray): IDs corresponding to the vectors.
+            ids (List[int]): IDs corresponding to the vectors.
         """
-        self.index.add(vectors) if self.index_type == "IndexHNSWFlat" else self.index.add(vectors, ids)
+        self.index.add(vectors) if self.index_type == "IndexHNSWFlat" else self.index.add(ids, vectors)
 
     def search(self, query_vectors: np.ndarray, top_k: int):
         """

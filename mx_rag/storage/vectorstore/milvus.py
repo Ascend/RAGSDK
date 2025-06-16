@@ -236,7 +236,7 @@ class MilvusDB(VectorStore):
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
     )
-    def add(self, embeddings: np.ndarray, ids: List[int], document_id: int = 0, docs: Optional[List[str]] = None,
+    def add(self, ids: List[int], embeddings: np.ndarray, document_id: int = 0, docs: Optional[List[str]] = None,
             metadatas: Optional[List[Dict]] = None):
         """往向量数据库添加稠密向量，仅适用于稠密模式或混合模式
         """
@@ -292,29 +292,29 @@ class MilvusDB(VectorStore):
         return ids
 
     @validate_params(
-        vec_ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="vec_ids must be List[int]"),
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="ids must be List[int]"),
         dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
                    message="dense must be Optional[np.ndarray]"),
         sparse=dict(validator=lambda x: x is None or _check_sparse_embedding(x),
                     message="sparse must to be Optional[List[Dict[int, float]]]")
     )
-    def update(self, vec_ids: List[int], dense: Optional[np.ndarray] = None,
+    def update(self, ids: List[int], dense: Optional[np.ndarray] = None,
                sparse: Optional[List[Dict[int, float]]] = None):
-        _check_sparse_and_dense(vec_ids, dense, sparse)
+        _check_sparse_and_dense(ids, dense, sparse)
         responses = self.client.get(
             collection_name=self.collection_name,
-            ids=vec_ids
+            ids=ids
         )
-        if len(responses) != len(vec_ids):
+        if len(responses) != len(ids):
             queried_ids = [res.get("id") for res in responses]
-            raise MilvusError(f"the input id {set(vec_ids) - set(queried_ids)} in vec_ids not exists in milvus")
+            raise MilvusError(f"the input id {set(ids) - set(queried_ids)} in ids not exists in milvus")
         if dense is None:
-            dense = [None] * len(vec_ids)
+            dense = [None] * len(ids)
         if sparse is None:
-            sparse = [None] * len(vec_ids)
+            sparse = [None] * len(ids)
         for response in responses:
-            dense_vector = dense[vec_ids.index(response.get("id"))]
-            sparse_vector = sparse[vec_ids.index(response.get("id"))]
+            dense_vector = dense[ids.index(response.get("id"))]
+            sparse_vector = sparse[ids.index(response.get("id"))]
             if dense_vector is not None:
                 response["vector"] = dense_vector
             if sparse_vector is not None:
@@ -323,7 +323,7 @@ class MilvusDB(VectorStore):
             self.client.upsert(collection_name=self.collection_name, data=responses)
             if self._auto_flush:
                 self.flush()
-            logger.info(f"Successfully updated chunk ids {vec_ids}")
+            logger.info(f"Successfully updated chunk ids {ids}")
 
     @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))

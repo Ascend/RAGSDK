@@ -21,7 +21,7 @@ class TestMilvusDB(unittest.TestCase):
             my_milvus.client.has_collection = MagicMock(return_value=False)
             my_milvus.create_collection(768, "FLAT", "IP")
             my_milvus.client.has_collection = MagicMock(return_value=True)
-            my_milvus.add(embeddings, [0, 1, 2])
+            my_milvus.add([0, 1, 2], embeddings)
             res = my_milvus.search(query)
             my_milvus.delete([0, 1, 2])
             my_milvus.drop_collection()
@@ -86,26 +86,26 @@ class TestMilvusDB(unittest.TestCase):
 
     def test_add_data(self):
         vecs = np.random.randn(3, 1024)
-        self.create_milvus_db_dense().add(vecs, [0, 1, 2])
+        self.create_milvus_db_dense().add([0, 1, 2], vecs)
         self.create_milvus_db_dense().client.insert.assert_called_once()
         self.create_milvus_db_dense().client.refresh_load.assert_called_once()
 
         with self.assertRaises(ValueError):
             vecs = np.random.randn(3, 2, 1024)
-            self.create_milvus_db_dense().add(vecs, [0, 1, 2])
+            self.create_milvus_db_dense().add([0, 1, 2], vecs)
 
         with self.assertRaises(MilvusError):
             vecs = np.random.randn(2, 1024)
-            self.create_milvus_db_dense().add(vecs, [0, 1, 2])
+            self.create_milvus_db_dense().add([0, 1, 2], vecs)
 
         vecs = np.random.randn(3, 1024)
         with self.assertRaises(MilvusError):
             self.client.has_collection.return_value = False
-            self.create_milvus_db_dense().add(vecs, [0, 1, 2])
+            self.create_milvus_db_dense().add([0, 1, 2], vecs)
 
         with patch.object(VectorStore, 'MAX_VEC_NUM', 1):
             with self.assertRaises(MilvusError):
-                self.create_milvus_db_dense().add(vecs, [0, 1, 2])
+                self.create_milvus_db_dense().add([0, 1, 2], vecs)
 
     def test_add_sparse_no_docs(self):
         db = self.create_milvus_db_sparse()
@@ -157,7 +157,7 @@ class TestMilvusDB(unittest.TestCase):
 
     def test_delete_data(self):
         vecs = np.random.randn(3, 1024)
-        self.create_milvus_db_dense().add(vecs, [0, 1, 2])
+        self.create_milvus_db_dense().add([0, 1, 2], vecs)
         with patch.object(VectorStore, 'MAX_VEC_NUM', 1):
             with self.assertRaises(MilvusError):
                 self.create_milvus_db_dense().delete([1, 2])

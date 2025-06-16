@@ -479,7 +479,7 @@ class KnowledgeDB(KnowledgeBase):
         if dense_vector and sparse_vector:
             self._vector_store.add_dense_and_sparse(ids, np.array(dense_vector), sparse_vector)
         elif dense_vector:
-            self._vector_store.add(np.array(dense_vector), ids, document_id)
+            self._vector_store.add(ids, np.array(dense_vector), document_id)
         else:
             if isinstance(self._vector_store, MindFAISS):
                 raise KnowledgeError("MindFAISS does not support sparse embeddings")
