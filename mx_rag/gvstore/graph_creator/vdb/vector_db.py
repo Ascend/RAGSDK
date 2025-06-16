@@ -352,7 +352,7 @@ class GraphVecMindfaissDB(VectorDBBase):
             chunks = entity_list[i:i + self.chunk_size]
             embed_list = np.array(self.embedding_model.embed_documents(chunks))
             ids = id_list[i:i + self.chunk_size]
-            self.vec_store.add(embed_list, ids)
+            self.vec_store.add(ids, embed_list)
             labels = [partition_name] * len(ids)
             self._add_graph_chunk(chunks, ids, labels)
 
@@ -404,7 +404,7 @@ class GraphVecMindfaissDB(VectorDBBase):
         for i in range(0, len(chunks), self.chunk_size):
             emb_vec = np.array(self.embedding_model.embed_documents(chunks[i:i + self.chunk_size]))
             id_batch = ids[i:i + self.chunk_size]
-            self.vec_store.add(emb_vec, id_batch)
+            self.vec_store.add(id_batch, emb_vec)
             self._add_graph_chunk(chunks[i:i + self.chunk_size], id_batch, labels[i:i + self.chunk_size])
 
     def _check_store_accordance(self) -> None:

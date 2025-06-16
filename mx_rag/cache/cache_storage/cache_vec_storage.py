@@ -71,7 +71,7 @@ class CacheVecStorage(VectorBase):
         data_array, id_array = map(list, zip(*((data.data, data.id) for data in datas)))
 
         np_data = np.array(data_array).astype("float16").reshape(1, -1)
-        self._vec_impl.add(np_data, id_array)
+        self._vec_impl.add(id_array, np_data)
 
     def search(self, data: np.ndarray, top_k: int = -1):
         """
