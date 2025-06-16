@@ -88,11 +88,8 @@ class OpenGaussDocstore(Docstore):
         if not self._enable_bm25:
             logger.error("OpenGaussDocstore full_text_search failed due to enable_bm25 is False")
             return []
+        self._validate_filter_dict(filter_dict)
         doc_filter = filter_dict.get("document_id", []) if filter_dict else []
-        if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
-            raise ValueError("value of 'document_id' in filter_dict must be List[int]")
-        if len(doc_filter) > MAX_CHUNKS_NUM:
-            raise ValueError(f"length of 'document_id' in filter_dict is too large ( > {MAX_CHUNKS_NUM})")
         if not doc_filter:
             data = self._do_bm25_search()
         else:

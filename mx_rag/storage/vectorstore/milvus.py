@@ -428,23 +428,14 @@ class MilvusDB(VectorStore):
         for i, x in enumerate(sparse_embeddings):
             data[i]["sparse_vector"] = x
 
-    def _check_doc_filter(self, doc_filter):
-        if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
-            raise MilvusError("value of 'document_id' in filter_dict must be List[int]")
-        doc_filter = list(set(doc_filter))  # 去重
-        max_ids_len = len(self.get_all_ids())
-        if len(doc_filter) > max_ids_len:
-            raise MilvusError(f"length of 'document_id' in filter_dict over than length of ids({max_ids_len})")
-        return doc_filter
-
     def _perform_dense_search(self, embeddings: np.ndarray, k: int, output_fields: list, **kwargs):
         """Handle dense search logic."""
         if self.search_mode not in (SearchMode.DENSE, SearchMode.HYBRID):
             raise ValueError("Sparse search only supports DENSE or HYBRID mode")
         self._validate_dense_input(embeddings)
         embeddings = embeddings.astype(np.float32)
+        self._validate_filter_dict(self._filter_dict)
         doc_filter = self._filter_dict.get("document_id", []) if self._filter_dict else []
-        doc_filter = self._check_doc_filter(doc_filter)
         search_kwargs = {
             "collection_name": self._collection_name,
             "anns_field": "vector",

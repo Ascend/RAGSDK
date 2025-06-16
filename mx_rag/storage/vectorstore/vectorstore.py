@@ -7,6 +7,8 @@ from typing import List, Dict, Union, Optional
 import numpy as np
 from loguru import logger
 
+from mx_rag.utils.common import MAX_FILTER_SEARCH_ITEM, MAX_STDOUT_STR_LEN
+
 
 class SearchMode(Enum):
     DENSE = 0  # dense search
@@ -111,3 +113,20 @@ class VectorStore(ABC):
         if self.score_scale is not None:
             scores = [[self.score_scale(x) for x in row] for row in scores]
         return scores
+
+    def _validate_filter_dict(self, filter_dict):
+        if not filter_dict:
+            return
+        if len(filter_dict) > MAX_FILTER_SEARCH_ITEM:
+            raise ValueError(
+                f"filter_dict invalid length({len(filter_dict)}) is greater than {MAX_FILTER_SEARCH_ITEM}")
+        invalid_keys = str(filter_dict.keys() - {"document_id"})
+        if invalid_keys:
+            logger.warning(f"{invalid_keys[:MAX_STDOUT_STR_LEN]} ... is no support")
+        doc_filter = filter_dict.get("document_id", [])
+        if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
+            raise ValueError("value of 'document_id' in filter_dict must be List[int]")
+        doc_filter = list(set(doc_filter))  # 去重
+        max_ids_len = len(self.get_all_ids())
+        if len(doc_filter) > max_ids_len:
+            raise ValueError(f"length of 'document_id' in filter_dict over than length of ids({max_ids_len})")

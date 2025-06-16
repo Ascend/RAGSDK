@@ -453,18 +453,6 @@ class OpenGaussDB(VectorStore):
             self._create_dense_index(params)
             self._create_sparse_index(params)
 
-    def _get_doc_filter(self):
-        if self._filter_dict:
-            doc_filter = self._filter_dict.get("document_id", [])
-            if not isinstance(doc_filter, list) or not all(isinstance(item, int) for item in doc_filter):
-                raise ValueError("value of 'document_id' in filter_dict must be List[int]")
-            doc_filter = list(set(doc_filter))  # 去重
-            max_ids_len = len(self.get_all_ids())
-            if len(doc_filter) > max_ids_len:
-                raise ValueError(f"length of 'document_id' in filter_dict over length of ids({max_ids_len})")
-            return doc_filter
-        return []
-
     def _do_search(
             self,
             emb: Union[List[float], Dict[int, float]],
@@ -474,7 +462,8 @@ class OpenGaussDB(VectorStore):
         """Execute single search query."""
         if isinstance(emb, list):
             emb = np.array(emb)
-        doc_filter = self._get_doc_filter()
+        self._validate_filter_dict(self._filter_dict)
+        doc_filter = self._filter_dict.get("document_id", []) if self._filter_dict else []
         with (self._transaction() as session):
             field, param_key, order_dir = self._get_search_params(emb)
             emb_str = self._serialize_embedding(emb)
