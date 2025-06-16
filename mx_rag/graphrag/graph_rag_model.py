@@ -111,8 +111,8 @@ class GraphRAGModel(QABaseModel):
             logger.error(f"search_index error: {e}")
             raise
     
-    @validate_params(top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x < 1000,
-                                message="top_k must be an positive integer less than 1000"))
+    @validate_params(top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1000,
+                                message="top_k must be an integer, value range in [1, 1000]"))
     def retrieve(self, query: str, top_k: int = 5) -> List[str]:
         """
         Retrieves top-k relevant node names for a given query using node and concept embeddings.

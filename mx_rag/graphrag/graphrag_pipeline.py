@@ -138,6 +138,7 @@ class GraphRAGPipeline:
             t1 = time.time()
             extractor = LLMRelationExtractor(llm=self.llm, pad_token=pad_token, language=lang, max_workers=max_workers)
             relations = extractor.query(self.docs)
+            self._clear_docs()
             save_to_json(relations, self.relations_save_path)
             logger.info(f"Relations saved: {self.relations_save_path}")
 
@@ -244,3 +245,6 @@ class GraphRAGPipeline:
         self.synset_save_path = os.path.join(self.work_dir, f"{graph_name}_synset.json")
         self.node_vectors_path = os.path.join(self.work_dir, f"{graph_name}_node_vectors.index")
         self.concept_vectors_path = os.path.join(self.work_dir, f"{graph_name}_concept_vectors.index")
+
+    def _clear_docs(self):
+        self.docs = []
