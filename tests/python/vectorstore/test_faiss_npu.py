@@ -48,17 +48,17 @@ class TestMindFAISS(unittest.TestCase):
                     vecs = np.random.randn(3, 2, 1024)
                     index.search(vecs)
 
-                index.add(query, [1])
+                index.add([1], query)
                 with self.assertRaises(MindFAISSError):
                     vecs = np.random.randn(3, 2, 1024)
-                    index.add(vecs, [0, 1, 2])
+                    index.add([0, 1, 2], vecs)
                 with self.assertRaises(MindFAISSError):
                     vecs = np.random.randn(2, 1024)
-                    index.add(vecs, [0, 1, 2])
+                    index.add([0, 1, 2], vecs)
                 with patch.object(VectorStore, 'MAX_VEC_NUM', 1):
                     with self.assertRaises(MindFAISSError):
                         vecs = np.random.randn(3, 1024)
-                        index.add(vecs, [0, 1, 2])
+                        index.add([0, 1, 2], vecs)
                     with self.assertRaises(MindFAISSError):
                         index.delete([1, 2, 3])
                 with patch.object(VectorStore, 'MAX_SEARCH_BATCH', 1):

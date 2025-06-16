@@ -69,7 +69,7 @@ class TestOpenGaussDB(unittest.TestCase):
         ids = [1, 2]
 
         with patch.object(self.db, '_internal_add') as mock_add:
-            self.db.add(embeddings, ids, document_id=0)
+            self.db.add(ids, embeddings, document_id=0)
             mock_add.assert_called_once_with(ids, embeddings, document_id=0)
 
     def test_add_sparse(self):
@@ -200,7 +200,7 @@ class TestOpenGaussDB(unittest.TestCase):
         # Test adding dense vectors in SPARSE mode
         db = OpenGaussDB(self.mock_engine, search_mode=SearchMode.SPARSE)
         with self.assertRaises(ValueError):
-            db.add(np.array([[1.0, 2.0]]), [1])
+            db.add([1], np.array([[1.0, 2.0]]))
 
         # Test adding sparse vectors in DENSE mode
         db = OpenGaussDB(self.mock_engine, search_mode=SearchMode.DENSE)
