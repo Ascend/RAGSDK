@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-from typing import List, Union
+from typing import List, Union, Dict
 from loguru import logger
 
 from langchain_core.pydantic_v1 import Field
@@ -8,7 +8,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 
-from mx_rag.utils.common import TEXT_MAX_LEN, validate_params, MAX_TOP_K
+from mx_rag.utils.common import TEXT_MAX_LEN, validate_params, MAX_TOP_K, MAX_FILTER_SEARCH_ITEM, MAX_STDOUT_STR_LEN
 from mx_rag.storage.document_store import MilvusDocstore, OpenGaussDocstore
 
 
@@ -37,5 +37,12 @@ class FullTextRetriever(BaseRetriever):
 
         return result
 
+    @validate_params(
+        filter_dict=dict(validator=lambda x: isinstance(x, Dict) and 0 < len(x) <= MAX_FILTER_SEARCH_ITEM,
+                         message=f"filter_dict must be a dict and length range (0, {MAX_FILTER_SEARCH_ITEM}]")
+    )
     def set_filter(self, filter_dict: dict):
+        invalid_keys = str(filter_dict.keys() - {"document_id"})
+        if invalid_keys:
+            logger.warning(f"{invalid_keys[:MAX_STDOUT_STR_LEN]} ... is no support")
         self.filter_dict = filter_dict

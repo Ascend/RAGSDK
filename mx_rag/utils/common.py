@@ -68,6 +68,9 @@ MAX_PAGE_CONTENT = 16 * MB
 
 MAX_COLLECTION_NAME_LENGTH = 1024
 
+MAX_FILTER_SEARCH_ITEM = 32
+MAX_STDOUT_STR_LEN = 1024
+
 
 def safe_get(data, keys, default=None):
     """
