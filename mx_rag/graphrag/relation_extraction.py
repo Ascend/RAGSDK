@@ -65,7 +65,7 @@ def _parse_and_repair_json(
             if result is not None:
                 return result
         except Exception as e:
-            logger.warning("Repair function failed: %s", e)
+            logger.warning(f"Repair function failed: {e}")
 
         # Try only repair_function
         try:
@@ -74,7 +74,7 @@ def _parse_and_repair_json(
             if result is not None:
                 return result
         except Exception as e:
-            logger.warning("Repair function (direct) failed: %s", e)
+            logger.warning(f"Repair function (direct) failed: {e}")
 
     # Try LLM repair
     try:
@@ -85,11 +85,11 @@ def _parse_and_repair_json(
             logger.info("Successfully fixed by LLM!")
             return result
         else:
-            logger.warning("LLM output could not be parsed: %s", llm_output)
+            logger.warning(f"LLM output could not be parsed: {llm_output}")
     except Exception as e:
-        logger.warning("LLM repair failed: %s", e)
+        logger.warning(f"LLM repair failed: {e}")
 
-    logger.warning("All repair attempts failed. Discarding: %s", json_text)
+    logger.warning(f"All repair attempts failed. Discarding: {json_text}")
     return []
 
 
