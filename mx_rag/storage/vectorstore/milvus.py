@@ -454,8 +454,9 @@ class MilvusDB(VectorStore):
         if self.search_mode not in (SearchMode.SPARSE, SearchMode.HYBRID):
             raise ValueError("Sparse search only supports SPARSE or HYBRID mode")
         self._validate_sparse_input(sparse_embeddings)
+        self._validate_filter_dict(self._filter_dict)
         doc_filter = self._filter_dict.get("document_id", []) if self._filter_dict else []
-        doc_filter = self._check_doc_filter(doc_filter)
+
         if doc_filter:
             res = self.client.search(
                 collection_name=self._collection_name,
