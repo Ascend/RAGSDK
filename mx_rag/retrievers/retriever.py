@@ -12,7 +12,7 @@ import numpy as np
 from langchain_core.retrievers import BaseRetriever
 from mx_rag.storage.document_store import Docstore
 from mx_rag.storage.vectorstore import VectorStore
-from mx_rag.utils.common import MAX_TOP_K, TEXT_MAX_LEN, validate_params
+from mx_rag.utils.common import MAX_TOP_K, TEXT_MAX_LEN, validate_params, MAX_FILTER_SEARCH_ITEM, MAX_STDOUT_STR_LEN
 
 
 class Retriever(BaseRetriever):
@@ -53,7 +53,14 @@ class Retriever(BaseRetriever):
                 result.append((doc, score))
         return self._post_process_result(result)
 
+    @validate_params(
+        filter_dict=dict(validator=lambda x: isinstance(x, Dict) and 0 < len(x) <= MAX_FILTER_SEARCH_ITEM,
+                   message=f"filter_dict must be a dict and length range (0, {MAX_FILTER_SEARCH_ITEM}]")
+    )
     def set_filter(self, filter_dict: dict):
+        invalid_keys = str(filter_dict.keys() - {"document_id"})
+        if invalid_keys:
+            logger.warning(f"{invalid_keys[:MAX_STDOUT_STR_LEN]} ... is no support")
         self.filter_dict = filter_dict
 
     def _post_process_result(self, result: List[tuple]):
