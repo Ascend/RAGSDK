@@ -9,7 +9,7 @@ from loguru import logger
 
 from langchain_core.retrievers import BaseRetriever
 
-from mx_rag.gvstore.prompt.prompt_template import PROMPTS
+from mx_rag.graphrag.prompts.evaluate_qa import TEXT_RAG_TEMPLATE
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, TEXT_MAX_LEN
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import Chain
@@ -121,8 +121,7 @@ class GraphRagText2TextChain(SingleText2TextChain):
             scores = self._reranker.rerank(question, contexts)
             contexts = self._reranker.rerank_top_k(contexts, scores)
         input_context = '\n'.join(contexts) if contexts else ""
-        prompt = PROMPTS["GENERATOR"]
-        prompt = prompt.format(context=input_context, question=question)
+        prompt = TEXT_RAG_TEMPLATE.format(context=input_context, question=question)
         if self._llm.llm_config.stream:
             return self._do_stream_query(prompt, llm_config, question, [])
         return self._do_query(prompt, llm_config, question, [])
