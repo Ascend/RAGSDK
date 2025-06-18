@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
+from typing import Callable
 
 from loguru import logger
 
@@ -79,10 +80,15 @@ class TrainDataGenerator(BaseGenerator):
         dataset_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PATH_LENGTH,
                           message=f"param must be str and str length range (0, {MAX_PATH_LENGTH}]"),
         reranker=dict(validator=lambda x: isinstance(x, Reranker),
-                      message="param must be instance of Reranker")
+                      message="param must be instance of Reranker"),
+        encrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                        message="encrypt_fun must be None or callable function"),
+        decrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                        message="decrypt_fun must be None or callable function")
     )
-    def __init__(self, llm: Text2TextLLM, dataset_path: str, reranker: Reranker):
-        super().__init__(llm, dataset_path)
+    def __init__(self, llm: Text2TextLLM, dataset_path: str, reranker: Reranker,
+                 encrypt_fn: Callable[[str], str] = None, decrypt_fn: Callable[[str], str] = None):
+        super().__init__(llm, dataset_path, encrypt_fn, decrypt_fn)
         self.reranker = reranker
 
     @validate_params(
@@ -139,7 +145,7 @@ class TrainDataGenerator(BaseGenerator):
 
         train_data = []
         for query, doc in zip(query_list, doc_list):
-            train_data.append({"query": query, "corpus": doc})
+            train_data.append({"query": self._encrypt(query), "corpus": self._encrypt(doc)})
 
         train_data_path = os.path.join(self.dataset_path, "train_data.jsonl")
         write_jsonl_to_file(train_data, train_data_path)
@@ -170,8 +176,8 @@ class TrainDataGenerator(BaseGenerator):
         if os.path.exists(rewrite_data_path):
             rewrite_data_list = read_jsonl_from_file(rewrite_data_path)
             for rewrite_data in rewrite_data_list:
-                query_list.append(rewrite_data["query"])
-                doc_list.append(rewrite_data["corpus"])
+                query_list.append(self._decrypt(rewrite_data["query"]))
+                doc_list.append(self._decrypt(rewrite_data["corpus"]))
             if len(query_list) == len(preferred_query_list) * query_rewrite_number:
                 logger.info("rewrite query finished, skip rewrite query process")
                 return query_list, doc_list
@@ -215,7 +221,7 @@ class TrainDataGenerator(BaseGenerator):
             for query, doc in zip(new_query_list, chunk_doc_list):
                 if query != "":
                     query_list.append(query)
-                    temp_qd_pairs.append({"query": query, "corpus": doc})
+                    temp_qd_pairs.append({"query": self._encrypt(query), "corpus": self._encrypt(doc)})
             write_jsonl_to_file(temp_qd_pairs, rewrite_data_path, 'a')
             logger.info(f"The {count + 1} st time rewrite query success by chunk {batch_size}")
             count += 1
