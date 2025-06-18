@@ -191,21 +191,21 @@ class TestMilvusDB(unittest.TestCase):
                 [{'distance': 0.4, 'id': 4}, {'distance': 0.5, 'id': 5}, {'distance': 0.6, 'id': 6}]
             ]
             embedding = np.array([[1, 2, 3], [4, 5, 6]])
-            scores, ids = self.create_milvus_db_dense().search(embedding, 3)[:2]
+            scores, ids = self.create_milvus_db_dense().search(embedding.tolist(), 3)[:2]
             self.assertEqual(scores, [1, 2, 3])
             self.assertEqual(ids, [[1, 2, 3], [4, 5, 6]])
 
         with self.assertRaises(ValueError):
             embedding = np.random.randn(3, 2, 1024)
-            self.create_milvus_db_dense().search(embedding, 3)
+            self.create_milvus_db_dense().search(embedding.tolist(), 3)
 
         with patch.object(VectorStore, 'MAX_SEARCH_BATCH', 1):
             with self.assertRaises(ValueError):
-                self.create_milvus_db_dense().search(np.array([[1, 2], [4, 5]]))
+                self.create_milvus_db_dense().search(np.array([[1, 2], [4, 5]]).tolist())
 
         with self.assertRaises(MilvusError):
             self.client.has_collection.return_value = False
-            self.create_milvus_db_dense().search(np.array([[1, 2]]))
+            self.create_milvus_db_dense().search(np.array([[1, 2]]).tolist())
 
     @patch("mx_rag.storage.vectorstore.milvus.MilvusDB.client")
     def test_update(self, client_mocker):
