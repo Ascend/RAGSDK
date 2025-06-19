@@ -12,7 +12,7 @@ from pymilvus.client.types import ExtraList
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, _check_sparse_embedding, \
     _check_sparse_and_dense, BOOL_TYPE_CHECK_TIP
-from mx_rag.utils.common import validate_list_str
+from mx_rag.utils.common import validate_list_str, validate_embeddings
 
 
 class MilvusError(Exception):
@@ -218,6 +218,8 @@ class MilvusDB(VectorStore):
         return res
 
     @validate_params(
+        embeddings=dict(validator=lambda x: validate_embeddings(x)[0],
+                        message="param must be Union[List[List[float]], List[Dict[int, float]]]"),
         k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param length range (0, 10000]"),
         filter_dict=dict(validator=lambda x: isinstance(x, dict) or x is None,
                          message="param filter_dict must be dict or None"))

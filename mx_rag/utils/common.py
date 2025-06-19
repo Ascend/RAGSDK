@@ -8,7 +8,7 @@ import os
 import pathlib
 from datetime import datetime
 from enum import Enum
-from typing import List, Union, Callable, Dict, Optional
+from typing import List, Union, Callable, Dict, Optional, Tuple, Any
 
 import numpy as np
 from OpenSSL import crypto
@@ -450,6 +450,46 @@ def check_embed_func(embed_func) -> bool:
     else:
         logger.error(EMBED_FUNC_TIP)
         return False
+
+
+def validate_embeddings(embeddings: Any) -> Tuple[bool, str]:
+    """
+    Validates the structure and type of embedding data.
+
+    Args:
+        embeddings: The embedding data to validate (List[List[float]] or List[Dict[int, float]]).
+
+    Returns:
+        Tuple[bool, str]: (True, "") if valid, (False, error_msg) if invalid.
+    """
+    if not isinstance(embeddings, list):
+        return False, f"Embeddings must be a list, but got {type(embeddings)}."
+    if not embeddings:
+        return False, "Embeddings cannot be empty list"
+
+    # Find first non-empty element to determine type
+    first_element = next((x for x in embeddings if x), None)
+    if first_element is None:
+        return False, "Embeddings cannot consist of empty elements"
+
+    if isinstance(first_element, list):
+        # Validate List[List[float]] case
+        try:
+            _ = np.array(embeddings)
+        except ValueError:
+            return False, "Embeddings must be convertable to numpy.ndarray"
+
+    elif isinstance(first_element, dict):
+        # Validate List[Dict[int, float]] case
+        if not all(isinstance(x, dict) for x in embeddings):
+            return False, "Embeddings must contain only dictionaries"
+        if not all(isinstance(k, int) and isinstance(v, (int, float))
+                   for x in embeddings for k, v in x.items()):
+            return False, "All keys must be ints and values must be float or int values"
+    else:
+        return False, "Embeddings must be lists of floats or dicts of int to float"
+
+    return True, ""
 
 
 def _check_sparse_embedding(sparse: List[Dict[int, float]]):

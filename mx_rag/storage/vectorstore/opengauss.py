@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 from mx_rag.storage.vectorstore import VectorStore, SearchMode
 from mx_rag.storage.document_store.base_storage import StorageError
-from mx_rag.utils.common import validate_params, _check_sparse_embedding, _check_sparse_and_dense
+from mx_rag.utils.common import validate_params, _check_sparse_embedding, _check_sparse_and_dense, validate_embeddings
 from mx_rag.utils.common import MAX_COLLECTION_NAME_LENGTH, MAX_TOP_K
 
 Base = declarative_base()
@@ -286,10 +286,9 @@ class OpenGaussDB(VectorStore):
             raise StorageError(f"Delete failed: {e}") from e
 
     @validate_params(
-        k={
-            "validator": lambda x: 0 < x <= MAX_TOP_K,
-            "message": "param length range (0, 10000]"
-        },
+        embeddings=dict(validator=lambda x: validate_embeddings(x)[0],
+                        message="param must be Union[List[List[float]], List[Dict[int, float]]]"),
+        k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param length range (0, 10000]"),
         filter_dict=dict(validator=lambda x: isinstance(x, dict) or x is None, message="param must be dict")
     )
     def search(self, embeddings: Union[List[List[float]], List[Dict[int, float]]],
@@ -300,6 +299,7 @@ class OpenGaussDB(VectorStore):
         Args:
             embeddings: A list of dense vectors (list of lists) or sparse vectors (list of dictionaries).
             k: The number of nearest neighbors to return.
+            filter_dict: A dict that specifies conditions to filter.
 
         Raises:
             ValueError: If embeddings is not a non-empty list of vectors or sparse vectors.
@@ -307,14 +307,6 @@ class OpenGaussDB(VectorStore):
         Returns:
             The result of the parallel search.
         """
-        if not (
-                isinstance(embeddings, list)
-                and len(embeddings) > 0
-                and all(isinstance(e, (list, dict)) and len(e) > 0 for e in embeddings)
-        ):
-            raise ValueError(
-                "embeddings must be a non-empty list of vectors (list) or sparse vectors (dict)"
-            )
         self._filter_dict = filter_dict
         return self._parallel_search(embeddings, k)
 
