@@ -86,7 +86,7 @@ class CacheVecStorage(VectorBase):
         top_k = top_k if top_k != -1 else self._top_k
 
         np_data = np.array(data).astype("float16").reshape(1, -1)
-        dist, ids = self._vec_impl.search(np_data, top_k)[:2]
+        dist, ids = self._vec_impl.search(np_data.tolist(), top_k)[:2]
         ids = [int(i) for i in ids[0]]
         return list(zip(dist[0], ids))
 

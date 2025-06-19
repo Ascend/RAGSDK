@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 from mx_rag.storage.vectorstore import VectorStore, SearchMode
 from mx_rag.storage.document_store.base_storage import StorageError
-from mx_rag.utils.common import validate_params, _check_sparse_embedding, _check_sparse_and_dense
+from mx_rag.utils.common import (validate_params, validate_embeddings, _check_sparse_and_dense)
 from mx_rag.utils.common import MAX_COLLECTION_NAME_LENGTH, MAX_TOP_K
 
 Base = declarative_base()
@@ -245,7 +245,7 @@ class OpenGaussDB(VectorStore):
 
     @validate_params(
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
-        sparse_embeddings=dict(validator=lambda x: _check_sparse_embedding(x),
+        sparse_embeddings=dict(validator=lambda x: validate_embeddings(x)[0],
                                message="param requires to be List[Dict[int, float]]")
     )
     def add_sparse(self, ids: List[int], sparse_embeddings: List[Dict[int, float]], document_id: int = 0):
@@ -257,7 +257,7 @@ class OpenGaussDB(VectorStore):
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
         dense_embeddings=dict(validator=lambda x: isinstance(x, np.ndarray),
                               message="param requires to be np.ndarray"),
-        sparse_embeddings=dict(validator=lambda x: _check_sparse_embedding(x),
+        sparse_embeddings=dict(validator=lambda x: validate_embeddings(x)[0],
                                message="param requires to be List[Dict[int, float]]")
     )
     def add_dense_and_sparse(self, ids: List[int],
@@ -332,7 +332,7 @@ class OpenGaussDB(VectorStore):
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="ids must be List[int]"),
         dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
                    message="dense must be Optional[np.ndarray]"),
-        sparse=dict(validator=lambda x: x is None or _check_sparse_embedding(x),
+        sparse=dict(validator=lambda x: x is None or validate_embeddings(x)[0],
                     message="sparse must to be Optional[List[Dict[int, float]]]")
     )
     def update(self, ids: List[int], dense: Optional[np.ndarray] = None,
