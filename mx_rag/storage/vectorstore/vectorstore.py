@@ -52,7 +52,7 @@ class VectorStore(ABC):
                sparse: Optional[List[Dict[int, float]]] = None):
         pass
 
-    def search_with_threshold(self, embeddings: Union[np.ndarray, List[Dict[int, float]]],
+    def search_with_threshold(self, embeddings: Union[List[List[float]], List[Dict[int, float]]],
                               k: int = 3, threshold: float = 0.1, filter_dict=None):
         """
         根据阈值进行查找 过滤调不满足的分数
@@ -66,7 +66,6 @@ class VectorStore(ABC):
 
         """
         scores, indices = self.search(embeddings, k, filter_dict=filter_dict)[:2]
-
 
         logger.info(f"threshold is [>={threshold}]")
 
