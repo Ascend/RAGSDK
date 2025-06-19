@@ -9,7 +9,6 @@ from loguru import logger
 
 from langchain_core.retrievers import BaseRetriever
 
-from mx_rag.graphrag.prompts.evaluate_qa import TEXT_RAG_TEMPLATE
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, TEXT_MAX_LEN
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import Chain
@@ -18,6 +17,15 @@ from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import MAX_PROMPT_LENGTH
 
 DEFAULT_RAG_PROMPT = """根据上述已知信息，简洁和专业地回答用户的问题。如果无法从已知信息中得到答案，请根据自身经验做出回答"""
+TEXT_RAG_TEMPLATE = """You are an assistant for question-answering tasks. 
+        Use the following pieces of retrieved context to answer the question. 
+        If you don't know the answer, just say that you don't know. 
+        Use three sentences maximum and keep the answer as concise and accurate as possible.
+        Do NOT repeat the question or output any other words.
+        Context: {context} 
+        Question: {question} 
+        Answer:
+"""
 
 
 class SingleText2TextChain(Chain):
