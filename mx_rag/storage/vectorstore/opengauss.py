@@ -462,6 +462,8 @@ class OpenGaussDB(VectorStore):
         """Execute single search query."""
         if isinstance(emb, list):
             emb = np.array(emb)
+        elif isinstance(emb, dict):
+            emb = {k+1: v for k, v in emb.items()}
         self._validate_filter_dict(self._filter_dict)
         doc_filter = self._filter_dict.get("document_id", []) if self._filter_dict else []
         with (self._transaction() as session):
