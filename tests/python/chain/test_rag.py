@@ -88,7 +88,7 @@ class MyTestCase(unittest.TestCase):
             return
 
         def embed_func(texts):
-            return np.random.random((1, 1024))
+            return np.random.random((1, 1024)).tolist()
 
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
         db = SQLiteDocstore("sql.db")
