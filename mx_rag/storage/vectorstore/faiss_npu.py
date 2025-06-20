@@ -13,7 +13,7 @@ from loguru import logger
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, \
-    MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024, _check_sparse_and_dense, check_dense_embedding
+    MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024, _check_sparse_and_dense
 
 
 class MindFAISSError(Exception):
@@ -135,19 +135,16 @@ class MindFAISS(VectorStore):
         return res
 
     @validate_params(
-        k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_TOP_K,
-               message="k must be an integer in the range (0, 10000]"),
-        embeddings=dict(
-            validator=lambda x: check_dense_embedding(x), message="embeddings must be a list of list of floats"))
-    def search(self, embeddings: List[List[float]], k: int = 3, filter_dict=None):
-        xq = np.array(embeddings)
-        if len(xq.shape) != 2:
+        k=dict(validator=lambda x: 0 < x <= MAX_TOP_K, message="param value range (0, 10000]"),
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
+    def search(self, embeddings: np.ndarray, k: int = 3, filter_dict=None):
+        if len(embeddings.shape) != 2:
             raise MindFAISSError("shape of embedding must equal to 2")
         if filter_dict:
             logger.warning("filter_dict is not None, MindFAISS does not support filter search!)")
-        if xq.shape[0] >= self.MAX_SEARCH_BATCH:
+        if embeddings.shape[0] >= self.MAX_SEARCH_BATCH:
             raise MindFAISSError(f"num of embeddings must less {self.MAX_SEARCH_BATCH}")
-        scores, indices = self.index.search(xq, k)
+        scores, indices = self.index.search(embeddings, k)
         return self._score_scale(scores.tolist()), indices.tolist()
 
     @validate_params(

@@ -87,9 +87,7 @@ class FaissVectorStore:
         Returns:
             tuple: Distances and indices of the top_k results.
         """
-        if self.index_type == "IndexHNSWFlat":
-            return self.index.search(query_vectors, top_k)
-        return self.index.search(query_vectors.tolist(), top_k, None)
+        return self.index.search(query_vectors, top_k)
 
     def ntotal(self) -> int:
         """
