@@ -17,6 +17,11 @@ class TestMindFAISS(unittest.TestCase):
                 total = np.random.random((3, 1024))
                 query = np.array([total[0]])
 
+                def embed_func(texts):
+                    if len(texts) > 1:
+                        return total
+                    return query
+
                 os.system = MagicMock(return_value=0)
                 os.chmod = MagicMock()
 
@@ -38,10 +43,10 @@ class TestMindFAISS(unittest.TestCase):
                 index = MindFAISS.create(x_dim=1024, devs=[0],
                                          load_local_index="./faiss.index")
 
-                index.search(query.tolist(), k=1)
-                with self.assertRaises(ValueError):
+                index.search(query, k=1)
+                with self.assertRaises(MindFAISSError):
                     vecs = np.random.randn(3, 2, 1024)
-                    index.search(vecs.tolist())
+                    index.search(vecs)
 
                 index.add([1], query)
                 with self.assertRaises(MindFAISSError):
@@ -59,7 +64,7 @@ class TestMindFAISS(unittest.TestCase):
                 with patch.object(VectorStore, 'MAX_SEARCH_BATCH', 1):
                     with self.assertRaises(MindFAISSError):
                         vecs = np.random.randn(3, 1024)
-                        index.search(vecs.tolist())
+                        index.search(vecs)
                 with self.assertRaises(AttributeError):
                     index.get_all_ids()
                 index.delete([1])

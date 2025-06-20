@@ -452,13 +452,6 @@ def check_embed_func(embed_func) -> bool:
         return False
 
 
-def check_dense_embedding(dense: List[List[float]]) -> bool:
-    if not (isinstance(dense, list) and 0 < len(dense) <= 1024 * 1024 and
-            all(isinstance(it, list) and all(isinstance(f, float) for f in it) for it in dense)):
-        return False
-    return True
-
-
 def validate_embeddings(embeddings: Any) -> Tuple[bool, str]:
     """
     Validates the structure and type of embedding data.
