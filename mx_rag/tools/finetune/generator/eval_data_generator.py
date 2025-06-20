@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import os
+from typing import Callable
 
 from loguru import logger
 
@@ -17,10 +18,15 @@ class EvalDataGenerator(BaseGenerator):
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
         dataset_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PATH_LENGTH,
-                          message=f"param must be str and str length range (0, {MAX_PATH_LENGTH}]")
+                          message=f"param must be str and str length range (0, {MAX_PATH_LENGTH}]"),
+        encrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                        message="encrypt_fun must be None or callable function"),
+        decrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                        message="decrypt_fun must be None or callable function")
     )
-    def __init__(self, llm: Text2TextLLM, dataset_path: str):
-        super().__init__(llm, dataset_path)
+    def __init__(self, llm: Text2TextLLM, dataset_path: str, encrypt_fn: Callable[[str], str] = None,
+                 decrypt_fn: Callable[[str], str] = None):
+        super().__init__(llm, dataset_path, encrypt_fn, decrypt_fn)
 
     @validate_params(
         split_doc_list=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
@@ -53,7 +59,7 @@ class EvalDataGenerator(BaseGenerator):
 
         evaluate_data = []
         for query, doc in zip(query_list, doc_list):
-            evaluate_data.append({"query": query, "corpus": doc})
+            evaluate_data.append({"query": self._encrypt(query), "corpus": self._encrypt(doc)})
 
         write_jsonl_to_file(evaluate_data, evaluate_data_path)
 

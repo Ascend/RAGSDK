@@ -27,9 +27,12 @@ SAMPLE_RANGE_MIN = 100
 
 class BaseGenerator:
 
-    def __init__(self, llm: Text2TextLLM, dataset_path: str):
+    def __init__(self, llm: Text2TextLLM, dataset_path: str, encrypt_fn: Callable[[str], str] = None,
+                 decrypt_fn: Callable[[str], str] = None):
         self.llm = llm
         self.dataset_path = dataset_path
+        self.encrypt_fn = encrypt_fn
+        self.decrypt_fn = decrypt_fn
 
     @validate_params(
         document_path=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_PATH_LENGTH,
@@ -109,8 +112,8 @@ class BaseGenerator:
             qd_pairs = read_jsonl_from_file(origin_train_data_path)
 
             for qd in qd_pairs:
-                query_list.append(qd["query"])
-                doc_list.append(qd["corpus"])
+                query_list.append(self._decrypt(qd["query"]))
+                doc_list.append(self._decrypt(qd["corpus"]))
             interrupted = doc_list[-1]
             interrupted_index = split_doc_list.index(interrupted)
             if interrupted_index == len(split_doc_list) - 1:
@@ -151,7 +154,7 @@ class BaseGenerator:
         if len(bm25_scores) == 0:
             bm25_scores = bm25_featured(query_list, doc_list)
             # 保存bm25打分的分数
-            datas = [{'query': query, 'corpus': doc, 'score': score}
+            datas = [{'query': self._encrypt(query), 'corpus': self._encrypt(doc), 'score': score}
                      for query, doc, score in zip(query_list, doc_list, bm25_scores)]
             write_jsonl_to_file(datas, bm25_scores_path)
         bm25_sorted_indices = sorted(range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True)
@@ -167,7 +170,7 @@ class BaseGenerator:
         if len(reranker_scores) == 0:
             reranker_scores = reranker_featured(reranker, query_list, doc_list)
             # 保存reranker打分的分数
-            datas = [{'query': query, 'corpus': doc, 'score': score}
+            datas = [{'query': self._encrypt(query), 'corpus': self._encrypt(doc), 'score': score}
                      for query, doc, score in zip(query_list, doc_list, reranker_scores)]
             write_jsonl_to_file(datas, reranker_scores_path)
         reranker_sorted_indices = sorted(range(len(reranker_scores)), key=lambda i: reranker_scores[i], reverse=True)
@@ -205,7 +208,7 @@ class BaseGenerator:
         llm_scores = []
         if os.path.exists(llm_scores_path):
             scored_data_list = read_jsonl_from_file(llm_scores_path)
-            scored_query_list = [data['query'] for data in scored_data_list]
+            scored_query_list = [self._decrypt(data['query']) for data in scored_data_list]
 
             interrupted = scored_query_list[-1]
             interrupted_index = featured_query_list.index(interrupted)
@@ -243,7 +246,7 @@ class BaseGenerator:
             chunk_doc_list = doc_list[i:i + batch_size]
             llm_scores = llm_preferred(self.llm, chunk_query_list, chunk_doc_list, prompt)
             score_list.extend(llm_scores)
-            qd_pair_scores = [{'query': query, 'corpus': doc, 'score': score}
+            qd_pair_scores = [{'query': self._encrypt(query), 'corpus': self._encrypt(doc), 'score': score}
                               for query, doc, score in zip(chunk_query_list, chunk_doc_list, llm_scores)]
             write_jsonl_to_file(qd_pair_scores, llm_scores_path, 'a')
             logger.info(f"The {count + 1}st LLM scoring success")
@@ -270,10 +273,22 @@ class BaseGenerator:
                 docs = [doc] * len(queries)
                 doc_list.extend(docs)
                 for query, pos_doc in zip(queries, docs):
-                    qd_pairs.append({"query": query, "corpus": pos_doc})
+                    qd_pairs.append({"query": self._encrypt(query), "corpus": self._encrypt(pos_doc)})
             # 按块写文件
             write_jsonl_to_file(qd_pairs, origin_train_data_path, 'a')
             logger.info(f"The {count + 1}st query document pair generated success")
             count += 1
 
         return query_list, doc_list
+
+    def _encrypt(self, text):
+        if self.encrypt_fn is not None:
+            return self.encrypt_fn(text)
+        else:
+            return text
+
+    def _decrypt(self, text):
+        if self.decrypt_fn is not None:
+            return self.decrypt_fn(text)
+        else:
+            return text
