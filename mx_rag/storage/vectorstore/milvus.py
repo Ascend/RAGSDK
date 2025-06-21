@@ -10,7 +10,7 @@ from pymilvus import MilvusClient, DataType
 from pymilvus.client.types import ExtraList
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, _check_sparse_embedding, \
+from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, validate_embeddings, \
     _check_sparse_and_dense, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.common import validate_list_str
 
@@ -295,7 +295,7 @@ class MilvusDB(VectorStore):
         ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="ids must be List[int]"),
         dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
                    message="dense must be Optional[np.ndarray]"),
-        sparse=dict(validator=lambda x: x is None or _check_sparse_embedding(x),
+        sparse=dict(validator=lambda x: x is None or validate_embeddings(x)[0],
                     message="sparse must to be Optional[List[Dict[int, float]]]")
     )
     def update(self, ids: List[int], dense: Optional[np.ndarray] = None,

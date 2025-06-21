@@ -8,7 +8,7 @@ import os
 import pathlib
 from datetime import datetime
 from enum import Enum
-from typing import List, Union, Callable, Dict, Optional
+from typing import List, Union, Callable, Dict, Optional, Tuple, Any
 
 import numpy as np
 from OpenSSL import crypto
@@ -70,6 +70,7 @@ MAX_COLLECTION_NAME_LENGTH = 1024
 
 MAX_FILTER_SEARCH_ITEM = 32
 MAX_STDOUT_STR_LEN = 1024
+MAX_EMBEDDINGS_SIZE = 1024 * 1024
 
 
 def safe_get(data, keys, default=None):
@@ -452,16 +453,47 @@ def check_embed_func(embed_func) -> bool:
         return False
 
 
-def _check_sparse_embedding(sparse: List[Dict[int, float]]):
-    if not (isinstance(sparse, List) and all(isinstance(it, dict) for it in sparse)):
-        logger.error("param must to be List[Dict[int, float]]")
-        return False
-    for item in sparse:
-        for k, v in item.items():
-            if not (isinstance(k, int) and isinstance(v, (float, np.floating))):
-                logger.error("param must to be List[Dict[int, float]]")
-                return False
-    return True
+def validate_embeddings(embeddings: Any) -> Tuple[bool, str]:
+    """
+    Validates the structure and type of embedding data.
+
+    Args:
+        embeddings: The embedding data to validate (List[List[float]] or List[Dict[int, float]]).
+
+    Returns:
+        Tuple[bool, str]: (True, "") if valid, (False, error_msg) if invalid.
+    """
+    if not isinstance(embeddings, list):
+        return False, f"Embeddings must be a list, but got {type(embeddings)}."
+    if not embeddings:
+        return False, "Embeddings cannot be empty list"
+
+    if not (0 < len(embeddings) <= MAX_EMBEDDINGS_SIZE):
+        return False, "Embeddings size must be in range [1, 1024*1024]"
+
+    # Find first non-empty element to determine type
+    first_element = next((x for x in embeddings if x), None)
+    if first_element is None:
+        return False, "Embeddings cannot consist of empty elements"
+
+    if isinstance(first_element, list):
+        # Validate List[List[float]] case
+        try:
+            _ = np.array(embeddings)
+        except ValueError:
+            return False, "Embeddings must be convertible to numpy.ndarray"
+
+    elif isinstance(first_element, dict):
+        # Validate List[Dict[int, float]] case
+        if not all(isinstance(x, dict) for x in embeddings):
+            return False, "Embeddings must contain only dictionaries"
+        if not all(isinstance(k, int) and isinstance(v, (int, float, np.floating))
+                   for x in embeddings for k, v in x.items()):
+            return False, "All keys must be ints and values must be float or int values"
+    else:
+        return False, "Embeddings must be lists of floats or dicts of int to float"
+
+    return True, ""
 
 
 def _check_sparse_and_dense(vec_ids: List[int], dense: Optional[np.ndarray] = None,
