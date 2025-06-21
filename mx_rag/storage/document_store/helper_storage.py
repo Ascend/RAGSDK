@@ -59,11 +59,9 @@ class _DocStoreHelper(Docstore):
                 chunk = ChunkModel(
                     document_id=document_id,
                     document_name=doc.document_name,
-                    chunk_content=doc.page_content,
+                    chunk_content=self._encrypt(doc.page_content),
                     chunk_metadata=doc.metadata
                 )
-                if self.encrypt_fn:
-                    chunk.encrypt_chunk(self.encrypt_fn)
                 chunks.append(chunk)
             session.bulk_save_objects(chunks, return_defaults=True)
 
@@ -132,16 +130,8 @@ class _DocStoreHelper(Docstore):
             chunk = session.get(ChunkModel, chunk_id)
             if not chunk:
                 return None
-
-            if self.decrypt_fn:
-                try:
-                    chunk.decrypt_chunk(self.decrypt_fn)
-                except Exception as e:
-                    logger.error("Decryption failed for chunk {}", chunk_id)
-                    raise StorageError("Decryption failed") from e
-
             return MxDocument(
-                page_content=chunk.chunk_content,
+                page_content=self._decrypt(chunk.chunk_content),
                 metadata=chunk.chunk_metadata,
                 document_name=chunk.document_name
             )
@@ -156,14 +146,14 @@ class _DocStoreHelper(Docstore):
         """获取所有document_id的生成器实现"""
         with self._transaction() as session:
             query = session.query(ChunkModel.document_id).yield_per(self.batch_size)
-            return [document_id for (document_id,) in query]
+            return list(set([document_id for (document_id,) in query]))
 
     def search_by_document_id(self, document_id: int) -> Optional[List[MxDocument]]:
         """通过document_id来获取"""
         with self._transaction() as session:
             chunks = session.query(ChunkModel).filter_by(document_id=document_id).all()
             documents = [MxDocument(
-                page_content=chunk.chunk_content,
+                page_content=self._decrypt(chunk.chunk_content),
                 metadata=chunk.chunk_metadata,
                 document_name=chunk.document_name
             ) for chunk in chunks]
@@ -173,7 +163,8 @@ class _DocStoreHelper(Docstore):
         if len(chunk_ids) != len(texts):
             raise StorageError("chunk_ids and texts length not the same while calling update function.")
         with self._transaction() as session:
-            updates = [{"chunk_id": chunk_id, "chunk_content": text} for chunk_id, text in zip(chunk_ids, texts)]
+            updates = [{"chunk_id": chunk_id, "chunk_content": self._encrypt(text)}
+                       for chunk_id, text in zip(chunk_ids, texts)]
             session.bulk_update_mappings(ChunkModel, updates)
         logger.info(f"Successfully updated chunk ids {chunk_ids}")
 
@@ -234,3 +225,15 @@ class _DocStoreHelper(Docstore):
         except Exception as e:
             logger.error(f"Batch operation failed at {total}: {str(e)}")
             raise StorageError(f"Batch operation failed: {e}") from e
+
+    def _encrypt(self, text):
+        if self.encrypt_fn is not None:
+            return self.encrypt_fn(text)
+        else:
+            return text
+
+    def _decrypt(self, text):
+        if self.decrypt_fn is not None:
+            return self.decrypt_fn(text)
+        else:
+            return text
