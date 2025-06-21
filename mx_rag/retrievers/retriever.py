@@ -52,7 +52,7 @@ class Retriever(BaseRetriever):
 
     @validate_params(
         filter_dict=dict(validator=lambda x: isinstance(x, Dict) and 0 < len(x) <= MAX_FILTER_SEARCH_ITEM,
-                   message=f"filter_dict must be a dict and length range (0, {MAX_FILTER_SEARCH_ITEM}]")
+                         message=f"filter_dict must be a dict and length range (0, {MAX_FILTER_SEARCH_ITEM}]")
     )
     def set_filter(self, filter_dict: dict):
         invalid_keys = str(filter_dict.keys() - {"document_id"})

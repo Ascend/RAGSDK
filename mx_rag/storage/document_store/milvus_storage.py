@@ -1,7 +1,8 @@
 # encoding: utf-8
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 import json
-from typing import List, Union
+from typing import List, Union, Optional, Callable
+
 from loguru import logger
 from pymilvus import MilvusClient, DataType, Function, FunctionType
 
@@ -26,16 +27,24 @@ class MilvusDocstore(Docstore):
         bm25_b=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1,
                     message="param must be range of [0, 1]"),
         auto_flush=dict(validator=lambda x: isinstance(x, bool) and 0 <= x <= 1,
-                        message=BOOL_TYPE_CHECK_TIP)
+                        message=BOOL_TYPE_CHECK_TIP),
+        encrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                        message="encrypt_fn must be None or callable function"),
+        decrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                        message="decrypt_fn must be None or callable function")
     )
     def __init__(self, client: MilvusClient, collection_name: str = "doc_store",
-                 enable_bm25=True, bm25_k1: float = 1.2, bm25_b: float = 0.75, auto_flush=True):
+                 enable_bm25=True, bm25_k1: float = 1.2, bm25_b: float = 0.75, auto_flush=True,
+                 encrypt_fn: Optional[Callable[[str], str]] = None,
+                 decrypt_fn: Optional[Callable[[str], str]] = None):
         self._client = client
         self._collection_name = collection_name
         self._enable_bm25 = enable_bm25
         self._bm25_k1 = bm25_k1
         self._bm25_b = bm25_b
         self._auto_flush = auto_flush
+        self.encrypt_fn = encrypt_fn
+        self.decrypt_fn = decrypt_fn
         if not self._client.has_collection(self._collection_name):
             self._create_collection()
         else:
@@ -62,7 +71,7 @@ class MilvusDocstore(Docstore):
         data = []
         for doc in documents:
             info = dict(
-                page_content=doc.page_content,
+                page_content=self._encrypt(doc.page_content),
                 document_id=document_id,
                 document_name=doc.document_name,
                 metadata=doc.metadata
@@ -86,7 +95,7 @@ class MilvusDocstore(Docstore):
         if res:
             doc = res[0]
             result = MxDocument(
-                page_content=doc["page_content"],
+                page_content=self._decrypt(doc["page_content"]),
                 metadata=doc["metadata"],
                 document_name=doc["document_name"]
             )
@@ -125,7 +134,7 @@ class MilvusDocstore(Docstore):
             for item in res[0]:
                 item["entity"]["metadata"]["score"] = item["distance"]
                 result.append(MxDocument(
-                    page_content=item["entity"]["page_content"],
+                    page_content=self._decrypt(item["entity"]["page_content"]),
                     metadata=item["entity"]["metadata"],
                     document_name=item["entity"]["document_name"]
                 ))
@@ -167,7 +176,7 @@ class MilvusDocstore(Docstore):
 
     def get_all_document_id(self) -> List[int]:
         res = self.client.query(self.collection_name, filter="id == 0 or id != 0", output_fields=["document_id"])
-        return [x.get("document_id") for x in res]
+        return list(set([x.get("document_id") for x in res]))
 
     @validate_params(document_id=dict(validator=lambda x: x >= 0, message=f"document_id must >= 0"))
     def search_by_document_id(self, document_id: int):
@@ -177,7 +186,7 @@ class MilvusDocstore(Docstore):
             output_fields=["page_content", "metadata", "document_name"]
         )
         results = [MxDocument(
-            page_content=output["page_content"],
+            page_content=self._decrypt(output["page_content"]),
             metadata=output["metadata"],
             document_name=output["document_name"]
         ) for output in outputs]
@@ -199,13 +208,15 @@ class MilvusDocstore(Docstore):
         )
         data = []
         for response, text in zip(responses, texts):
-            response["page_content"] = text
+            response["page_content"] = self._encrypt(text)
             data.append(response)
         if data:
             self.client.upsert(collection_name=self.collection_name, data=data)
             if self._auto_flush:
                 self.flush()
             logger.info(f"Successfully updated chunk ids {chunk_ids}")
+        else:
+            logger.warning(f"chunk_ids {chunk_ids} not found in MilvusDocstore")
 
     def flush(self):
         self.client.refresh_load(collection_name=self.collection_name)
@@ -258,7 +269,6 @@ class MilvusDocstore(Docstore):
                 index_name="sparse_index",
                 index_type="SPARSE_INVERTED_INDEX",
                 metric_type="IP"
-
             )
         else:
             index_params.add_index(
@@ -278,3 +288,15 @@ class MilvusDocstore(Docstore):
             schema=schema,
             index_params=index_params
         )
+
+    def _encrypt(self, text):
+        if self.encrypt_fn is not None and not self._enable_bm25:
+            return self.encrypt_fn(text)
+        else:
+            return text
+
+    def _decrypt(self, text):
+        if self.decrypt_fn is not None and not self._enable_bm25:
+            return self.decrypt_fn(text)
+        else:
+            return text
