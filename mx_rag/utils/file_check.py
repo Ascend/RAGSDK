@@ -23,9 +23,10 @@ class FileCheckError(Exception):
 
 
 class SecFileCheck:
-    def __init__(self, file_path, max_size):
+    def __init__(self, file_path, max_size, mode_limit=0o755):
         self.file_path = file_path
         self.max_size = max_size
+        self.mode_limit = mode_limit
 
     def check(self):
         FileCheck.check_path_is_exist_and_valid(self.file_path)
@@ -35,6 +36,7 @@ class SecFileCheck:
 
         FileCheck.check_file_size(self.file_path, self.max_size)
         FileCheck.check_file_owner(self.file_path)
+        FileCheck.check_mode(self.file_path, self.mode_limit)
 
 
 class SecDirCheck:
@@ -58,29 +60,6 @@ class SecDirCheck:
         self.max_file_num = max_file_num
         self._cur_file_num = 0
 
-    @staticmethod
-    def _get_file_mode(file_path):
-        status = os.stat(file_path)
-        return status.st_mode
-
-    @staticmethod
-    def _compare_mode(mode_a, mode_b):
-        # 文件权限比较，权限为3位八进制数，从右往前比较，遇到第一位a比b大，则认为mode_a比mode_b大
-        mode_a = mode_a & 0o777
-        mode_b = mode_b & 0o777
-
-        if mode_a == mode_b:
-            return 0
-
-        for _ in range(3 * 3):
-            if (mode_a & 1) > (mode_b & 1):
-                return 1
-
-            mode_a >>= 1
-            mode_b >>= 1
-
-        return -1
-
     def check(self):
         self._recursive_listdir(self.dir_path, 0)
 
@@ -97,10 +76,8 @@ class SecDirCheck:
                 self._cur_file_num += 1
                 if self._cur_file_num > self.max_file_num:
                     raise ValueError(f"recursive list dir error because up to max file nums:{self.max_file_num}")
+
                 SecFileCheck(file_path, self.max_size).check()
-                mode = self._get_file_mode(file_path)
-                if self._compare_mode(mode, self.mode) > 0:
-                    raise ValueError(f" the mode of {file_path} is {oct(mode)} not less than {oct(self.mode)}")
 
             elif os.path.isdir(file_path):
                 self._recursive_listdir(file_path, cur_depth + 1)
@@ -212,6 +189,28 @@ class FileCheck:
         file_name = os.path.basename(file_path)
         if len(file_name) > max_length:
             raise FileCheckError(f"the file name length of {file_name[:max_length]}... is over limit {max_length}")
+
+    @staticmethod
+    def check_mode(file_path: str, mode_limit=0o755):
+        try:
+            status = os.stat(file_path)
+        except Exception as e:
+            raise FileCheckError(f"get [{file_path}] status failed: {e}") from e
+        mode_a = status.st_mode
+        mode_b = mode_limit
+        # 文件权限比较，权限为3位八进制数，从右往前比较，遇到第一位a比b大，则认为mode_a比mode_b大
+
+        mode_a = mode_a & 0o777
+        mode_b = mode_b & 0o777
+        if mode_a == mode_b:
+            return
+
+        for _ in range(3 * 3):
+            if (mode_a & 1) > (mode_b & 1):
+                raise FileCheckError(f"the file [{file_path}] mode:[{oct(mode_a)}] greater than [{oct(mode_b)}]")
+
+            mode_a >>= 1
+            mode_b >>= 1
 
 
 def check_disk_free_space(path, volume):
