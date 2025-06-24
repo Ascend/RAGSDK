@@ -7,6 +7,8 @@ import stat
 import unittest
 from unittest.mock import patch, MagicMock
 
+import pytest
+
 from mx_rag.utils.file_check import FileCheckError, FileCheck, SecDirCheck
 from mx_rag.utils.file_operate import read_jsonl_from_file
 
@@ -137,20 +139,59 @@ class TestSecDirCheck(unittest.TestCase):
     def tearDown(self) -> None:
         shutil.rmtree(self.dir_path)
 
-    def test_mode_compare(self):
-        checker = SecDirCheck("/tmp", max_size=1024)
+    # 创建临时文件的辅助函数
+    def create_temp_file(self, path: str, mode: int):
+        with open(path, 'w') as f:
+            f.write("test")
+        os.chmod(path, mode)
 
-        res = checker._compare_mode(0o676, 0o766)
-        self.assertEqual(res, 1)
+    # 测试用例1: 文件权限等于mode_limit，不应抛出异常
+    def test_check_mode_equal(self):
+        temp_file = "temp_file.txt"
+        self.create_temp_file(temp_file, 0o755)
+        try:
+            FileCheck.check_mode(temp_file, 0o755)
+        except FileCheckError:
+            pytest.fail("Should not raise an exception when file mode is equal to mode_limit")
+        finally:
+            os.remove(temp_file)
 
-        res = checker._compare_mode(0o660, 0o660)
-        self.assertEqual(res, 0)
+    # 测试用例2: 文件权限小于mode_limit，不应抛出异常
+    def test_check_mode_less(self):
+        temp_file = "temp_file.txt"
+        self.create_temp_file(temp_file, 0o750)
+        try:
+            FileCheck.check_mode(temp_file, 0o755)
+        except FileCheckError:
+            pytest.fail("Should not raise an exception when file mode is less than mode_limit")
+        finally:
+            os.remove(temp_file)
 
-        res = checker._compare_mode(0o540, 0o641)
-        self.assertEqual(res, 1)
+    # 测试用例3: 文件权限大于mode_limit，应抛出异常
+    def test_check_mode_greater(self):
+        temp_file = "temp_file.txt"
+        self.create_temp_file(temp_file, 0o760)
+        with pytest.raises(FileCheckError) as e:
+            FileCheck.check_mode(temp_file, 0o755)
+        os.remove(temp_file)
+        assert "greater than" in str(e.value)
 
-        res = checker._compare_mode(0o441, 0o641)
-        self.assertEqual(res, -1)
+    # 测试用例4: 文件不存在，应抛出异常
+    def test_check_mode_file_not_found(self):
+        temp_file = "non_existent_file.txt"
+        with pytest.raises(FileCheckError) as e:
+            FileCheck.check_mode(temp_file, 0o755)
+        assert "get" in str(e.value) and "failed" in str(e.value)
+
+    # 测试用例5: 文件权限大于mode_limit，应抛出异常（检查所有位）
+    def test_check_mode_greater_all_bits(self):
+        temp_file = "temp_file.txt"
+        self.create_temp_file(temp_file, 0o777)
+        with pytest.raises(FileCheckError) as e:
+            FileCheck.check_mode(temp_file, 0o755)
+        os.remove(temp_file)
+        assert "greater than" in str(e.value)
+
 
     def test_dir_file_num_1(self):
         # 测试当前目录下有两个文件，期望存在一个文件
@@ -164,7 +205,6 @@ class TestSecDirCheck(unittest.TestCase):
             SecDirCheck(self.dir_path, max_size=1024, max_file_num=1).check()
 
         self.assertTrue("file nums" in cm.exception.__str__())
-
 
     def test_dir_file_num_2(self):
         # 测试当前目录及子目录总文件数2个文件，期望存在一个文件
