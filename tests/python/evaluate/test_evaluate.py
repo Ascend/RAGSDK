@@ -1,43 +1,109 @@
-import os
 import unittest
 from unittest.mock import MagicMock, patch
-
-from datasets import Dataset
-from ragas.evaluation import Result
-from ragas.validation import handle_deprecated_ground_truths, remap_column_names
+from ragas.evaluation import EvaluationResult
 
 from mx_rag.embedding.local import TextEmbedding
-from mx_rag.evaluate import Evaluate
+from mx_rag.evaluate import RAGEvaluator
 from mx_rag.llm import Text2TextLLM
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-PROMPT_DIR = os.path.realpath(os.path.join(current_dir, "../../../mx_rag/evaluate/prompt"))
 
-
-class TestEvaluate(unittest.TestCase):
-    @patch("ragas.evaluate")
+class TestRAGEvaluator(unittest.TestCase):
+    @patch("mx_rag.evaluate.rag_evaluator.evaluate", autospec=True)
     def test_evaluate(self, evaluate_mock):
-        ori_dataset = {
-            "question": ["世界上最高的山峰是哪座？"],
-            "answer": ["珠穆朗玛峰"],
-            "contexts": [["世界上最高的山峰是珠穆朗玛峰，位于喜马拉雅山脉，海拔8848米。"]]
+        dataset = {
+            "user_input": ["世界上最高的山峰是哪座？"],
+            "response": ["珠穆朗玛峰"],
+            "retrieved_contexts": [["世界上最高的山峰是珠穆朗玛峰，位于喜马拉雅山脉，海拔8848米。"]]
         }
-        datasets = Dataset.from_dict(ori_dataset)
-        dataset = remap_column_names(datasets, {})
-        dataset = handle_deprecated_ground_truths(dataset)
         llm = MagicMock(spec=Text2TextLLM)
-        embedding = MagicMock(spec=TextEmbedding)
-        evaluator = Evaluate(llm=llm, embedding=embedding)
+        embeddings = MagicMock(spec=TextEmbedding)
+        evaluator = RAGEvaluator(llm=llm, embeddings=embeddings)
         scores = [{"answer_relevancy": 0.09, "context_utilization": 0.01, "faithfulness": 0.5}]
-        result = Result(
-            scores=Dataset.from_list(scores),
-            dataset=dataset,
-            binary_columns=[],
-        )
-
+        result = MagicMock(spec=EvaluationResult)
+        result.scores = scores
         evaluate_mock.return_value = result
-        scores = evaluator.evaluate_scores(metrics_name=["answer_relevancy", "context_utilization", "faithfulness"],
-                                           datasets=ori_dataset,
-                                           language="chinese",
-                                           prompt_dir=PROMPT_DIR)
+        scores = evaluator.evaluate(
+            metrics=["answer_relevancy", "context_utilization", "faithfulness"],
+            dataset=dataset,
+            language="chinese"
+        )
         self.assertEqual(scores, {'answer_relevancy': [0.09], 'context_utilization': [0.01], 'faithfulness': [0.5]})
+
+    @patch("mx_rag.evaluate.rag_evaluator.evaluate", autospec=True)
+    def test_evaluate_with_unsupported_metric(self, evaluate_mock):
+        dataset = {
+            "user_input": ["What is the capital of France?"],
+            "response": ["Paris"],
+            "retrieved_contexts": [["Paris is the capital of France."]]
+        }
+        llm = MagicMock(spec=Text2TextLLM)
+        embeddings = MagicMock(spec=TextEmbedding)
+        evaluator = RAGEvaluator(llm=llm, embeddings=embeddings)
+        scores = [{"faithfulness": 1.0}]
+        result = MagicMock(spec=EvaluationResult)
+        result.scores = scores
+        evaluate_mock.return_value = result
+        # Only 'faithfulness' is supported, 'unsupported_metric' should be filtered out
+        output = evaluator.evaluate(
+            metrics=["faithfulness", "unsupported_metric", "faithfulness"],
+            dataset=dataset,
+            language="english"
+        )
+        self.assertEqual(output, {'faithfulness': [1.0]})
+
+    @patch("mx_rag.evaluate.rag_evaluator.evaluate", autospec=True)
+    def test_evaluate_with_empty_metrics(self, evaluate_mock):
+        dataset = {
+            "user_input": ["What is the capital of France?"],
+            "response": ["Paris"],
+            "retrieved_contexts": [["Paris is the capital of France."]]
+        }
+        llm = MagicMock(spec=Text2TextLLM)
+        embeddings = MagicMock(spec=TextEmbedding)
+        evaluator = RAGEvaluator(llm=llm, embeddings=embeddings)
+        with self.assertRaises(ValueError):
+            evaluator.evaluate(
+                metrics=[],
+                dataset=dataset,
+                language="english"
+            )
+
+    @patch("mx_rag.evaluate.rag_evaluator.evaluate", autospec=True)
+    def test_evaluate_handles_ragas_value_error(self, evaluate_mock):
+        dataset = {
+            "user_input": ["What is the capital of France?"],
+            "response": ["Paris"],
+            "retrieved_contexts": [["Paris is the capital of France."]]
+        }
+        llm = MagicMock(spec=Text2TextLLM)
+        embeddings = MagicMock(spec=TextEmbedding)
+        evaluator = RAGEvaluator(llm=llm, embeddings=embeddings)
+        evaluate_mock.side_effect = ValueError("ragas error")
+        result = evaluator.evaluate(
+            metrics=["faithfulness"],
+            dataset=dataset,
+            language="english"
+        )
+        self.assertIsNone(result)
+
+    @patch("mx_rag.evaluate.rag_evaluator.evaluate", autospec=True)
+    def test_evaluate_handles_ragas_general_exception(self, evaluate_mock):
+        dataset = {
+            "user_input": ["What is the capital of France?"],
+            "response": ["Paris"],
+            "retrieved_contexts": [["Paris is the capital of France."]]
+        }
+        llm = MagicMock(spec=Text2TextLLM)
+        embeddings = MagicMock(spec=TextEmbedding)
+        evaluator = RAGEvaluator(llm=llm, embeddings=embeddings)
+        evaluate_mock.side_effect = Exception("unexpected error")
+        result = evaluator.evaluate(
+            metrics=["faithfulness"],
+            dataset=dataset,
+            language="english"
+        )
+        self.assertIsNone(result)
+
+
+if __name__ == "__main__":
+    unittest.main()
