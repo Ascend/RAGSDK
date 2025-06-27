@@ -142,12 +142,17 @@ class RAGEvaluator:
             prompts_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
 
         if language and language != "english":
-            logger.info(f"Adating metrics for language '{language}'")
+            logger.info(f"Adapting prompts in metrics for language '{language}'")
             self._adapt_metrics(metrics, language, prompts_path)
 
-        dataset = Dataset.from_dict(dataset)
+        evaluation_dataset = Dataset.from_dict(dataset)
         try:
-            result = evaluate(dataset=dataset, metrics=metrics, llm=self.evaluator_llm, embeddings=self.embeddings)
+            result = evaluate(
+                dataset=evaluation_dataset,
+                metrics=metrics, 
+                llm=self.evaluator_llm, 
+                embeddings=self.embeddings
+            )
         except KeyError as e:
             logger.error(f"ragas evaluate run failed: {e}")
             return None
