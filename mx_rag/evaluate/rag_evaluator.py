@@ -3,6 +3,7 @@
 from typing import Dict, Any, Optional, List
 import os
 import asyncio
+import logging
 import pandas as pd
 from langchain_core.embeddings import Embeddings
 from langchain.llms.base import LLM
@@ -29,6 +30,10 @@ from mx_rag.utils.common import validate_params, validate_list_str, validate_lis
 from mx_rag.embedding.local import TextEmbedding
 from mx_rag.embedding.service import TEIEmbedding
 
+# Disable logs from ragas
+if os.environ.get("DISABLE_RAGAS_LOGGING", "1") == "1":
+    logging.getLogger("ragas").setLevel(logging.CRITICAL)
+
 
 class RAGEvaluator:
     RAG_METRICS = {
@@ -49,7 +54,7 @@ class RAGEvaluator:
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, LLM), message="param must be instance of LLM"),
         embeddings=dict(validator=lambda x: isinstance(x, (TextEmbedding, TEIEmbedding, Embeddings)),
-                       message="param must be instance of TextEmbedding, TEIEmbedding or Embeddings")
+                        message="param must be instance of TextEmbedding, TEIEmbedding or Embeddings")
     )
     def __init__(self, llm: LLM, embeddings: Embeddings):
         self.embeddings = embeddings
@@ -125,7 +130,8 @@ class RAGEvaluator:
             metrics: List[str],
             dataset: Dict[str, Any],
             language: Optional[str] = None,
-            prompts_path: Optional[str] = None
+            prompts_path: Optional[str] = None,
+            show_progress: bool = False
     ) -> Optional[Dict[str, List[float]]]:
         """
         Evaluate the given dataset using specified metrics.
@@ -134,6 +140,7 @@ class RAGEvaluator:
             dataset: Dataset in dict format (see ragas docs for structure).
             language: Target language ('chinese' or 'english').
             prompts_path: Path to directory containing custom prompts.
+            show_progress: Whether to show the progress bar during evaluation. Default is False.
         Returns:
             Dict[str, List[float]]: Scores for each metric, or None if evaluation fails.
         """
@@ -151,7 +158,8 @@ class RAGEvaluator:
                 dataset=evaluation_dataset,
                 metrics=metrics, 
                 llm=self.evaluator_llm, 
-                embeddings=self.embeddings
+                embeddings=self.embeddings,
+                show_progress=show_progress
             )
         except KeyError as e:
             logger.error(f"ragas evaluate run failed: {e}")
