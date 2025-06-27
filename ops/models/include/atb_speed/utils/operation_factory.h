@@ -34,6 +34,6 @@ private:
                 OperationFactory::Register(OPERATION_NAMESPACE_STRINGIFY(nameSpace##_##operationCreateFunc), \
                     &(operationCreateFunc));                                                                 \
             }                                                                                                \
-        } static instance_##nameSpace##operationCreateFunc;
+        } static instance_##nameSpace##operationCreateFunc
 } // namespace atb_speed
 #endif
