@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-
+import numpy as np
 import unittest
 from unittest.mock import Mock, patch
 from mx_rag.graphrag.graph_evaluator import GraphEvaluator
@@ -15,9 +15,9 @@ class TestGraphEvaluator(unittest.TestCase):
 
     def test_calculate(self):
         """Test the calculate method for precision, recall, and F1 score."""
-        self.assertEqual(self.evaluator.calculate(10, 2, 3), [0.8, 0.7273, 0.7619])
-        self.assertEqual(self.evaluator.calculate(0, 0, 0), [None, None, None])
-        self.assertEqual(self.evaluator.calculate(5, 5, 2), [None, None, None])
+        self.assertEqual(self.evaluator._calculate(10, 2, 3), [0.8, 0.7273, 0.7619])
+        self.assertEqual(self.evaluator._calculate(0, 0, 0), [np.nan, np.nan, np.nan])
+        self.assertEqual(self.evaluator._calculate(5, 5, 2), [np.nan, np.nan, np.nan])
 
     def test_safe_len(self):
         """Test the _safe_len method for handling objects with/without len."""
@@ -44,8 +44,8 @@ class TestGraphEvaluator(unittest.TestCase):
         entity_relations = [{"Head": "A", "Relation": "B", "Tail": "C"}]
         event_entity_relations = [{"Entity": ["E1", "E2"]}]
         event_relations = [{"Head": "X", "Relation": "Y", "Tail": "Z"}]
-        self.assertEqual(self.evaluator.count_origin(entity_relations,
-                         event_entity_relations, event_relations), [1, 2, 1])
+        self.assertEqual(self.evaluator._count_origin(entity_relations,
+                                                      event_entity_relations, event_relations), [1, 2, 1])
 
     @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._remove_empty_lines")
     def test_count_more(self, mock_remove_empty_lines):
@@ -54,7 +54,7 @@ class TestGraphEvaluator(unittest.TestCase):
         task1 = "Triple1\nTriple2"
         task2 = "{'Event': 'E1', 'Entity': ['E2', 'E3']}\n{'Event': 'E4', 'Entity': ['E5']}"
         task3 = "All recognized"
-        self.assertEqual(self.evaluator.count_more(task1, task2, task3), [2, 3, 0])
+        self.assertEqual(self.evaluator._count_more(task1, task2, task3), [2, 3, 0])
 
     @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._remove_empty_lines")
     def test_count_incorrect(self, mock_remove_empty_lines):
@@ -63,13 +63,13 @@ class TestGraphEvaluator(unittest.TestCase):
         task1 = "Triple1\nTriple2"
         task2 = "{'Event': 'E1', 'Entity': ['E2', 'E3']}\n{'Event': 'E4', 'Entity': ['E5']}"
         task3 = "all correct"
-        self.assertEqual(self.evaluator.count_incorrect(task1, task2, task3), [2, 3, 0])
+        self.assertEqual(self.evaluator._count_incorrect(task1, task2, task3), [2, 3, 0])
 
-    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.get_more")
-    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.get_incorrect")
-    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.count_origin")
-    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.count_more")
-    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator.count_incorrect")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._get_more")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._get_incorrect")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._count_origin")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._count_more")
+    @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._count_incorrect")
     def test_evaluate(
         self, mock_count_incorrect, mock_count_more, mock_count_origin, mock_get_incorrect, mock_get_more):
         """Test the evaluate method for aggregating results."""

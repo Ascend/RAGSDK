@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-
 import re
 import concurrent.futures
+import numpy as np
 from typing import Any, List, Optional
 from dataclasses import dataclass
 
@@ -45,7 +45,7 @@ class GraphEvaluator:
         self.llm_config = llm_config
 
     @staticmethod
-    def calculate(length: int, incorrect: int, more: int) -> List[Optional[float]]:
+    def _calculate(length: int, incorrect: int, more: int) -> List[Optional[float]]:
         """
         Calculate precision, recall, and F1 score.
 
@@ -61,17 +61,17 @@ class GraphEvaluator:
             precision = round((length - incorrect) / length, 4)
             recall = round((length - incorrect) / (length - incorrect + more), 4)
         else:
-            precision = recall = None
+            precision = recall = np.nan
 
-        if precision is not None and recall is not None and (precision + recall) != 0:
+        if not np.isnan(precision) and not np.isnan(recall) and (precision + recall) > 0:
             f1 = round(2 * (precision * recall) / (precision + recall), 4)
         else:
-            f1 = None
+            f1 = np.nan
 
         return [precision, recall, f1]
 
     @staticmethod
-    def count_origin(entity_relations: Any, event_entity_relations: Any, event_relations: Any) -> List[int]:
+    def _count_origin(entity_relations: Any, event_entity_relations: Any, event_relations: Any) -> List[int]:
         """
         Count the number of original entity, event-entity, and event relations.
 
@@ -141,8 +141,8 @@ class GraphEvaluator:
         except Exception:
             return 0
 
-    def get_more(self, text: str, entity_relations: Any, event_entity_relations: Any, 
-                 event_relations: Any) -> List[str]:
+    def _get_more(self, text: str, entity_relations: Any, event_entity_relations: Any,
+                  event_relations: Any) -> List[str]:
         """
         Get more unrecognized relations/entities from the model.
 
@@ -188,7 +188,7 @@ class GraphEvaluator:
             self.llm.chat(f"{text_prompt}{text}{prompts[2]}{event_relations}", llm_config=self.llm_config)
         ]
 
-    def count_more(self, task1_more_answer: str, task2_more_answer: str, task3_more_answer: str) -> List[int]:
+    def _count_more(self, task1_more_answer: str, task2_more_answer: str, task3_more_answer: str) -> List[int]:
         """
         Count the number of additional (unrecognized) relations/entities.
 
@@ -217,8 +217,8 @@ class GraphEvaluator:
 
         return [len1_more, len2_more, len3_more]
 
-    def get_incorrect(self, text: str, entity_relations: Any, event_entity_relations: Any, 
-                      event_relations: Any) -> List[str]:
+    def _get_incorrect(self, text: str, entity_relations: Any, event_entity_relations: Any,
+                       event_relations: Any) -> List[str]:
         """
         Get incorrect relations/entities from the model.
 
@@ -279,8 +279,8 @@ class GraphEvaluator:
             self.llm.chat(f"{text_prompt}{text}{prompts[2]}{event_relations}", llm_config=self.llm_config)
         ]
 
-    def count_incorrect(self, task1_incorrect_answer: str, task2_incorrect_answer: str, 
-                        task3_incorrect_answer: str) -> List[int]:
+    def _count_incorrect(self, task1_incorrect_answer: str, task2_incorrect_answer: str,
+                         task3_incorrect_answer: str) -> List[int]:
         """
         Count the number of incorrect relations/entities.
 
@@ -322,9 +322,15 @@ class GraphEvaluator:
                 - 'event_entity_relations'
                 - 'event_relations'
         """
-        total_len_1 = total_len_2 = total_len_3 = 0
-        total_len1_incorrect = total_len2_incorrect = total_len3_incorrect = 0
-        total_len1_more = total_len2_more = total_len3_more = 0
+        precision_list_1 = []
+        precision_list_2 = []
+        precision_list_3 = []
+        recall_list_1 = []
+        recall_list_2 = []
+        recall_list_3 = []
+        f1_list_1 = []
+        f1_list_2 = []
+        f1_list_3 = []
 
         def process_item(args):
             i, item = args
@@ -336,23 +342,14 @@ class GraphEvaluator:
             event_entity_relations = item.get('event_entity_relations', [])
             event_relations = item.get('event_relations', [])
 
-            len_1, len_2, len_3 = self.count_origin(entity_relations, event_entity_relations, event_relations)
-            task1_more_answer, task2_more_answer, task3_more_answer = self.get_more(
+            len_1, len_2, len_3 = self._count_origin(entity_relations, event_entity_relations, event_relations)
+            task1_more_answer, task2_more_answer, task3_more_answer = self._get_more(
                 text, entity_relations, event_entity_relations, event_relations)
-            len1_more, len2_more, len3_more = self.count_more(task1_more_answer, task2_more_answer, task3_more_answer)
-            task1_incorrect_answer, task2_incorrect_answer, task3_incorrect_answer = self.get_incorrect(
+            len1_more, len2_more, len3_more = self._count_more(task1_more_answer, task2_more_answer, task3_more_answer)
+            task1_incorrect_answer, task2_incorrect_answer, task3_incorrect_answer = self._get_incorrect(
                 text, entity_relations, event_entity_relations, event_relations)
-            len1_incorrect, len2_incorrect, len3_incorrect = self.count_incorrect(
+            len1_incorrect, len2_incorrect, len3_incorrect = self._count_incorrect(
                 task1_incorrect_answer, task2_incorrect_answer, task3_incorrect_answer)
-
-            precision_1, recall_1, f1_1 = self.calculate(len_1, len1_incorrect, len1_more)
-            precision_2, recall_2, f1_2 = self.calculate(len_2, len2_incorrect, len2_more)
-            precision_3, recall_3, f1_3 = self.calculate(len_3, len3_incorrect, len3_more)
-
-            logger.info(f"Item {i + 1}:")
-            logger.info(f"Precision: [{precision_1}, {precision_2}, {precision_3}]")
-            logger.info(f"Recall: [{recall_1}, {recall_2}, {recall_3}]")
-            logger.info(f"F1: [{f1_1}, {f1_2}, {f1_3}]")
 
             return ProcessResult(
                 len_1=len_1, len_2=len_2, len_3=len_3,
@@ -364,45 +361,36 @@ class GraphEvaluator:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for result in tqdm(
                 executor.map(process_item, enumerate(relations)),
-                total=len(relations), desc="Processing relations (parallel)"
+                total=len(relations), desc="Evaluating relations"
             ):
                 results.append(result)
 
         for result in results:
-            total_len_1 += result.len_1
-            total_len_2 += result.len_2
-            total_len_3 += result.len_3
-            total_len1_incorrect += result.len1_incorrect
-            total_len2_incorrect += result.len2_incorrect
-            total_len3_incorrect += result.len3_incorrect
-            total_len1_more += result.len1_more
-            total_len2_more += result.len2_more
-            total_len3_more += result.len3_more
+            precision_1, recall_1, f1_1 = self._calculate(result.len_1, result.len1_incorrect, result.len1_more)
+            precision_2, recall_2, f1_2 = self._calculate(result.len_2, result.len2_incorrect, result.len2_more)
+            precision_3, recall_3, f1_3 = self._calculate(result.len_3, result.len3_incorrect, result.len3_more)
 
-        num_items = len(relations)
-        average_len_1 = total_len_1 / num_items
-        average_len_2 = total_len_2 / num_items
-        average_len_3 = total_len_3 / num_items
-        average_len1_incorrect = total_len1_incorrect / num_items
-        average_len2_incorrect = total_len2_incorrect / num_items
-        average_len3_incorrect = total_len3_incorrect / num_items
-        average_len1_more = total_len1_more / num_items
-        average_len2_more = total_len2_more / num_items
-        average_len3_more = total_len3_more / num_items
+            precision_list_1.append(precision_1)
+            precision_list_2.append(precision_2)
+            precision_list_3.append(precision_3)
+            recall_list_1.append(recall_1)
+            recall_list_2.append(recall_2)
+            recall_list_3.append(recall_3)
+            f1_list_1.append(f1_1)
+            f1_list_2.append(f1_2)
+            f1_list_3.append(f1_3)
 
-        average_precision_1, average_recall_1, average_f1_1 = self.calculate(
-            average_len_1, average_len1_incorrect, average_len1_more)
-        average_precision_2, average_recall_2, average_f1_2 = self.calculate(
-            average_len_2, average_len2_incorrect, average_len2_more)
-        average_precision_3, average_recall_3, average_f1_3 = self.calculate(
-            average_len_3, average_len3_incorrect, average_len3_more)
+        average_precision_1 = np.nanmean(precision_list_1)
+        average_recall_1 = np.nanmean(recall_list_1)
+        average_f1_1 = np.nanmean(f1_list_1)
 
-        logger.debug(f"[average_len_1, average_len1_incorrect, average_len1_more]:"
-                     f"{[average_len_1, average_len1_incorrect, average_len1_more]}")
-        logger.debug(f"[average_len_2, average_len2_incorrect, average_len2_more]:"
-                     f"{[average_len_2, average_len2_incorrect, average_len2_more]}")
-        logger.debug(f"[average_len_3, average_len3_incorrect, average_len3_more]:"
-                     f"{[average_len_3, average_len3_incorrect, average_len3_more]}")
+        average_precision_2 = np.nanmean(precision_list_2)
+        average_recall_2 = np.nanmean(recall_list_2)
+        average_f1_2 = np.nanmean(f1_list_2)
+
+        average_precision_3 = np.nanmean(precision_list_3)
+        average_recall_3 = np.nanmean(recall_list_3)
+        average_f1_3 = np.nanmean(f1_list_3)
 
         logger.info(f"[average_precision_1, average_recall_1, average_f1_1]: "
                     f"{average_precision_1}, {average_recall_1}, {average_f1_1}")
