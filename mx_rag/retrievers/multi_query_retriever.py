@@ -18,9 +18,15 @@ from mx_rag.utils.common import TEXT_MAX_LEN, MAX_PROMPT_LENGTH, validate_params
 
 DEFAULT_QUERY_PROMPT_CH = PromptTemplate(
     input_variables=["question"],
-    template="""你是一个人工智能语言模型助理。您的任务是根据用户的原始问题，从矢量数据库中基于
-    距离的相似性检索出与原问题相关的3个问题。你的目标是通过生成的多个角度的提问来帮助
-    用户克服原问题的限制。请从1开始编号且用中文回答，每个回答用换行符分隔开。原始问题：{question}"""
+    template="""你是一个人工智能语言模型助理。您的任务是根据用户的原始问题，从不同角度改写生成3个问题。
+    请从1开始编号且用中文回答，每个问题用换行符分隔开。下面是一个改写例子：
+    样例原始问题：
+    你能告诉我关于爱因斯坦相关的信息吗？
+    样例改写生成后的3个问题：
+    1.爱因斯坦的生平和主要科学成就有哪些？
+    2.爱因斯坦在相对论和其他物理学领域有哪些重要贡献？
+    3.爱因斯坦的个人生活和他对社会的影响是怎样的？
+    需要改写的问题：{question}"""
 )
 
 
@@ -69,5 +75,11 @@ class MultiQueryRetriever(Retriever):
             doc = super(MultiQueryRetriever, self)._get_relevant_documents(sub_query)
             docs.extend(doc)
 
-        docs = [doc for i, doc in enumerate(docs) if doc not in docs[:i]]
-        return sorted(docs, key=lambda x: len(x.page_content))
+        contents = set()
+        new_docs = []
+        for doc in docs:
+            if doc.page_content not in contents:
+                new_docs.append(doc)
+                contents.add(doc.page_content)
+
+        return new_docs
