@@ -12,7 +12,7 @@ from glib.security import TlsConfig
 from mx_rag.utils.client_param import ClientParam
 from .cert_check import CertContentsChecker
 from .common import MB
-from .file_check import SecFileCheck
+from .file_check import SecFileCheck, FileCheckError, PathNotFileException
 
 HTTP_SUCCESS = 200
 MAX_CERT_FILE_SIZE = MB
@@ -219,8 +219,18 @@ class RequestUtils:
             yield Result(False, "")
 
     def _check_https_para(self, client_param: ClientParam):
-        SecFileCheck(client_param.ca_file, MAX_CERT_FILE_SIZE).check()
+        try:
+            SecFileCheck(client_param.ca_file, MAX_CERT_FILE_SIZE).check()
+        except (FileCheckError, PathNotFileException) as e:
+            logger.error(f"check ca file failed: {e}")
+            raise ValueError('check ca file failed') from e
+
         self._check_ca_content(client_param.ca_file)
 
         if client_param.crl_file:
-            SecFileCheck(client_param.crl_file, MAX_CERT_FILE_SIZE).check()
+            try:
+                SecFileCheck(client_param.crl_file, MAX_CERT_FILE_SIZE).check()
+            except (FileCheckError, PathNotFileException) as e:
+                logger.error(f"check crl file failed: {e}")
+                raise ValueError('check crl file failed') from e
+

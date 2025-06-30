@@ -128,6 +128,9 @@ class FileCheck:
         if not isinstance(path, str):
             raise FileCheckError(f"Input path '{path}' is not valid str")
 
+        if len(path) == 0:
+            raise FileCheckError(f"Input path is ''")
+
         if len(path) > FileCheck.MAX_PATH_LENGTH:
             raise FileCheckError(f"Input path '{path[:FileCheck.MAX_PATH_LENGTH]}...' length over limit")
 
