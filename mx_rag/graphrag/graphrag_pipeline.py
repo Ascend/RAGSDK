@@ -129,7 +129,7 @@ class GraphRAGPipeline:
                                     message="param must be a string, range [0, 255]"),
                      conceptualize=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean"))
     def build_graph(self, lang: Lang = Lang.EN, pad_token="", conceptualize: bool = False, **kwargs):
-        max_workers = kwargs.pop("max_workers", (os.cpu_count() or 1) + 4)
+        max_workers = kwargs.pop("max_workers", None)
         top_k = kwargs.pop("top_k", 5)
         threshold = kwargs.pop("threshold", 0.3)
         if not self.docs:
