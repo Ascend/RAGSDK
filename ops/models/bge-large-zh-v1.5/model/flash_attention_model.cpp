@@ -81,10 +81,24 @@ void FlashAttentionModel::Param::FromString(const std::string &param)
         ss << "parse param fail, please check param's format, error: " << e.what() << std::endl;
         throw std::runtime_error(ss.str());
     }
+
+    if (!paramJson.contains("layerNormEps") || !paramJson.contains("headNum") ||
+        !paramJson.contains("dk") || !paramJson.contains("layerNum")) {
+        std::stringstream ss;
+        ss << "json param must be contain layerNormEps, headNum, dk, layerNum" << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+
     layerNormEps = paramJson["layerNormEps"].get<double>();
     headNum = CheckPositive(paramJson["headNum"].get<int>());
     dk = CheckPositive(paramJson["dk"].get<int>());
     layerNum = CheckPositive(paramJson["layerNum"].get<int>());
+    if (layerNum > MAX_LAYER_NUM) {
+        std::stringstream ss;
+        ss << "layerNum must be less than or equal to "<< MAX_LAYER_NUM << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+
     if (paramJson.contains("rank")) {
         rank = paramJson["rank"].get<int>();
     }
