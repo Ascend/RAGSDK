@@ -21,7 +21,13 @@ std::map<std::string, OperationCreateFunc> g_funcMap = {
 
 atb::Operation *CreateOperation(const std::string &opName, const std::string &param)
 {
-    nlohmann::json paramJson = nlohmann::json::parse(param);
+    nlohmann::json paramJson;
+    try {
+        paramJson = nlohmann::json::parse(param);
+    } catch (const std::exception &e) {
+        ATB_LOG(ERROR) <<"parse param fail, please check param's format,error: " << e.what() << param;
+        return nullptr;
+    }
 
     auto operation = atb_speed::OperationFactory::CreateOperation(opName, paramJson);
     if (operation != nullptr) {
