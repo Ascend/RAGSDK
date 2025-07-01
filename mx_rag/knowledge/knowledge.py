@@ -465,6 +465,7 @@ class KnowledgeDB(KnowledgeBase):
     def _storage_and_vector_delete(self, doc_name: str):
         document_id = self._knowledge_store.delete_doc_info(self.knowledge_name, doc_name, self.user_id)
         if document_id is None:
+            logger.warning(f"doc_name={doc_name} does not exist in knowledge_name={self.knowledge_name}")
             return
         ids = self._document_store.delete(document_id)
         num_removed = self._vector_store.delete(ids)
