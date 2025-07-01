@@ -140,8 +140,8 @@ class LLMRelationExtractor:
         system_start (str): The prefix indicating the system's instructions.
         configs (dict): Configurations for different extraction tasks (entity_relation, event_entity, event_relation).
     """
-    @validate_params(max_workers=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= 64),
-                                      message="param must be none or an integer in [1, 64]"))
+    @validate_params(max_workers=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= 512),
+                                      message="param must be none or an integer in [1, 512]"))
     def __init__(self, llm: Text2TextLLM, pad_token: str, language: Lang = Lang.CH, max_workers=None):
         logger.info("Initializing RelationExtractorLLM...")
         self.llm = llm
