@@ -29,7 +29,7 @@ function clean()
 
 function build_so_package()
 {
-    py=$1
+    local py=$1
     find "${ROOT_PATH}/mx_rag"  \( -name "*.so" -o -name "*.c" \) -exec  rm -f {} \;
 
     cd "${ROOT_PATH}/mx_rag"
@@ -43,7 +43,7 @@ function build_so_package()
 
 function build_transformer_adapter()
 {
-    py=$1
+    local py=$1
     find "${ROOT_PATH}/ops/transformer_adapter"  \( -name "*.so" \) -exec  rm -f {} \;
 
     cd "${ROOT_PATH}/ops/transformer_adapter"
@@ -57,7 +57,7 @@ function build_transformer_adapter()
 
 function build_wheel_package()
 {
-    py=$1
+    local py=$1
     tag=$2
     cd "${ROOT_PATH}"
     ${py} ./setup.py bdist_wheel --plat-name linux_"${ARCH}" --python-tag "${tag}"
@@ -72,7 +72,7 @@ function package()
 function build_ops()
 {
     platform=$1
-    py=$2
+    local py=$2
     echo "perpare ops build"
     cd "${ROOT_PATH}/ops"
     dos2unix build.sh
