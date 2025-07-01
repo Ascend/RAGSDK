@@ -132,10 +132,6 @@ protected:
 
     // Max length of param string
     const size_t MAX_PARAM_STRING_LENGTH = 20000;
-    // Max layer num
-    static const int MAX_LAYER_NUM = 1024;
-
-    const size_t MAX_BATCH_SIZE = 10240;
     // Max value of tokenOffset, seqLen and qLen
     const int MAX_PARAM_VALUE = 600000;
 };

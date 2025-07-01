@@ -81,24 +81,10 @@ void FlashAttentionModel::Param::FromString(const std::string &param)
         ss << "parse param fail, please check param's format, error: " << e.what() << std::endl;
         throw std::runtime_error(ss.str());
     }
-
-    if (!paramJson.contains("layerNormEps") || !paramJson.contains("headNum") ||
-        !paramJson.contains("dk") || !paramJson.contains("layerNum")) {
-        std::stringstream ss;
-        ss << "json param must be contain layerNormEps, headNum, dk, layerNum" << std::endl;
-        throw std::runtime_error(ss.str());
-    }
-
     layerNormEps = paramJson["layerNormEps"].get<double>();
     headNum = CheckPositive(paramJson["headNum"].get<int>());
     dk = CheckPositive(paramJson["dk"].get<int>());
     layerNum = CheckPositive(paramJson["layerNum"].get<int>());
-    if (layerNum > MAX_LAYER_NUM) {
-        std::stringstream ss;
-        ss << "layerNum must be less than or equal to "<< MAX_LAYER_NUM << std::endl;
-        throw std::runtime_error(ss.str());
-    }
-
     if (paramJson.contains("rank")) {
         rank = paramJson["rank"].get<int>();
     }
@@ -350,33 +336,16 @@ int64_t FlashAttentionModel::BuildGraph()
 atb::Status FlashAttentionModel::ParseParam(const std::string &param)
 {
     CHECK_PARAM_LT(param.size(), MAX_PARAM_STRING_LENGTH);
-    nlohmann::json paramJson;
-    try {
-        paramJson = nlohmann::json::parse(param);
-    } catch (const std::exception &e) {
-        ATB_LOG(ERROR) <<"parse param fail, please check param's format,error: " << e.what() << param;
-        return atb::ERROR_INVALID_PARAM;
-    }
-
-    if (!paramJson.contains("tokenOffset") || !paramJson.contains("seqLen")) {
-        ATB_LOG(ERROR) <<"json param must contain tokenOffset and seqLen "<< param;
-        return atb::ERROR_INVALID_PARAM;
-    }
-
-    std::vector<int> tokenOffsets = paramJson["tokenOffset"].template get<std::vector<int>>();
-    std::vector<int> seqLens = paramJson["seqLen"].template get<std::vector<int>>();
-    if (tokenOffsets.size() > MAX_BATCH_SIZE  || seqLens.size() > MAX_BATCH_SIZE) {
-        ATB_LOG(ERROR) <<"tokenOffset and seqLen size must be less than or equal to "<<MAX_BATCH_SIZE;
-        return atb::ERROR_INVALID_PARAM;
-    }
-
+    nlohmann::json paramJson = nlohmann::json::parse(param);
     tokenOffset_.clear();
-    for (const auto &tokenOffset : tokenOffsets) {
+    for (const auto &item : paramJson["tokenOffset"]) {
+        int tokenOffset = item.get<int>();
         CHECK_PARAM_LT(tokenOffset, MAX_PARAM_VALUE);
         tokenOffset_.push_back(tokenOffset);
     }
     seqLen_.clear();
-    for (const auto &seqLen : seqLens) {
+    for (const auto &item : paramJson["seqLen"]) {
+        int seqLen = item.get<int>();
         CHECK_PARAM_LT(seqLen, MAX_PARAM_VALUE);
         seqLen_.push_back(seqLen);
     }
