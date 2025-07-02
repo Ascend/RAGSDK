@@ -13,6 +13,7 @@ from mx_rag.utils.client_param import ClientParam
 from .cert_check import CertContentsChecker
 from .common import MB
 from .file_check import SecFileCheck, FileCheckError, PathNotFileException
+from .crl_checker import CRLChecker, CRLCheckError
 
 HTTP_SUCCESS = 200
 MAX_CERT_FILE_SIZE = MB
@@ -49,27 +50,15 @@ class RequestUtils:
         self.use_http = client_param.use_http
         self.response_limit_size = client_param.response_limit_size
 
-        if not client_param.use_http:
-            # 未配置ssl context并且使用https时，校验证书相关参数合法性
+        if client_param.use_http:
+            ssl_ctx = TlsConfig._get_init_context()
+        else:
+            # Use https, check certificate and crl
             self._check_https_para(client_param)
             success, ssl_ctx = TlsConfig.get_client_ssl_context(client_param.ca_file, client_param.crl_file)
             if not success:
-                raise ValueError('unable to add ca or crl to ssl context')
-
-            ssl_ctx.verify_mode = ssl.CERT_REQUIRED
-        else:
-            ssl_ctx = ssl.create_default_context()
-            ssl_ctx.minimum_version = ssl.TLSVersion.TLSv1_2
-            ssl_ctx.maximum_version = ssl.TLSVersion.TLSv1_3
-            ssl_ctx.set_ciphers(':'.join([
-                'ECDHE-ECDSA-AES128-GCM-SHA256',
-                'ECDHE-ECDSA-AES256-GCM-SHA384',
-                "ECDHE-ECDSA-CHACHA20-POLY1305-SHA256",
-                'ECDHE-RSA-AES128-GCM-SHA256',
-                'ECDHE-RSA-AES256-GCM-SHA384',
-                "ECDHE-RSA-CHACHA20-POLY1305-SHA256"
-            ]))
-            ssl_ctx.verify_mode = ssl.CERT_REQUIRED
+                # When failed, ssl_ctx is the error message
+                raise ValueError(f'{ssl_ctx}')
 
         self.pool = urllib3.PoolManager(ssl_context=ssl_ctx,
                                         retries=retries,
@@ -227,10 +216,19 @@ class RequestUtils:
 
         self._check_ca_content(client_param.ca_file)
 
-        if client_param.crl_file:
-            try:
-                SecFileCheck(client_param.crl_file, MAX_CERT_FILE_SIZE).check()
-            except (FileCheckError, PathNotFileException) as e:
-                logger.error(f"check crl file failed: {e}")
-                raise ValueError('check crl file failed') from e
+        if not client_param.crl_file:
+            logger.info("No CRL file provided; skipping CRL checks.")
+            return
+
+        try:
+            SecFileCheck(client_param.crl_file, MAX_CERT_FILE_SIZE).check()
+        except (FileCheckError, PathNotFileException) as e:
+            logger.error(f"check crl file failed: {e}")
+            raise ValueError('check crl file failed') from e
+
+        checker = CRLChecker(crl_path=client_param.crl_file, issuer_cert_path=client_param.ca_file)
+        if not checker.check_crl():
+            logger.error(f"CRL check failed for file: {client_param.crl_file}")
+            raise CRLCheckError("CRL check error")
+
 
