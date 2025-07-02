@@ -130,6 +130,8 @@ protected:
     std::vector<std::pair<atb::Tensor, bool>> internalTensors_;
     std::vector<atb::Tensor*> nodeOutTensors_;
 
+    // Max layer num
+    static const int MAX_LAYER_NUM = 1024;
     // Max length of param string
     const size_t MAX_PARAM_STRING_LENGTH = 20000;
     // Max value of tokenOffset, seqLen and qLen
