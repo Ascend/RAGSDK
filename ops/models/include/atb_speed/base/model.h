@@ -136,6 +136,8 @@ protected:
     const size_t MAX_PARAM_STRING_LENGTH = 20000;
     // Max value of tokenOffset, seqLen and qLen
     const int MAX_PARAM_VALUE = 600000;
+    // Max batch size
+    const size_t MAX_BATCH_SIZE = 10240;
 };
 
 // Param Type Size

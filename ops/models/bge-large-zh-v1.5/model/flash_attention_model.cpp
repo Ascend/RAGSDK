@@ -350,16 +350,33 @@ int64_t FlashAttentionModel::BuildGraph()
 atb::Status FlashAttentionModel::ParseParam(const std::string &param)
 {
     CHECK_PARAM_LT(param.size(), MAX_PARAM_STRING_LENGTH);
-    nlohmann::json paramJson = nlohmann::json::parse(param);
+    nlohmann::json paramJson;
+    try {
+        paramJson = nlohmann::json::parse(param);
+    } catch (const std::exception &e) {
+        ATB_LOG(ERROR) <<"parse param fail, please check param's format,error: " << e.what() << param;
+        return atb::ERROR_INVALID_PARAM;
+    }
+
+    if (!paramJson.contains("tokenOffset") || !paramJson.contains("seqLen")) {
+        ATB_LOG(ERROR) <<"json param must contain tokenOffset and seqLen "<< param;
+        return atb::ERROR_INVALID_PARAM;
+    }
+
+    std::vector<int> tokenOffsets = paramJson["tokenOffset"].template get<std::vector<int>>();
+    std::vector<int> seqLens = paramJson["seqLen"].template get<std::vector<int>>();
+    if (tokenOffsets.size() > MAX_BATCH_SIZE  || seqLens.size() > MAX_BATCH_SIZE) {
+        ATB_LOG(ERROR) <<"tokenOffset and seqLen size must be less than or equal to "<<MAX_BATCH_SIZE;
+        return atb::ERROR_INVALID_PARAM;
+    }
+
     tokenOffset_.clear();
-    for (const auto &item : paramJson["tokenOffset"]) {
-        int tokenOffset = item.get<int>();
+    for (const auto &tokenOffset : tokenOffsets) {
         CHECK_PARAM_LT(tokenOffset, MAX_PARAM_VALUE);
         tokenOffset_.push_back(tokenOffset);
     }
     seqLen_.clear();
-    for (const auto &item : paramJson["seqLen"]) {
-        int seqLen = item.get<int>();
+    for (const auto &seqLen : seqLens) {
         CHECK_PARAM_LT(seqLen, MAX_PARAM_VALUE);
         seqLen_.push_back(seqLen);
     }
