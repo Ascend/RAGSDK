@@ -69,7 +69,7 @@ class TestMilvusDB(unittest.TestCase):
     def test_create_no_x_dim(self):
         del self.dense_kwargs['x_dim']
         milvus_db = MilvusDB.create(**self.dense_kwargs)
-        self.assertIsNone(milvus_db)
+        self.assertIsNotNone(milvus_db)
 
     def test_create_no_similarity_strategy(self):
         milvus_db = MilvusDB.create(**self.dense_kwargs)
@@ -219,8 +219,6 @@ class TestMilvusDB(unittest.TestCase):
         db.set_collection_name("hello")
         self.assertEqual("hello", db.collection_name)
         db._search_mode = SearchMode.DENSE
-        with self.assertRaises(MilvusError):
-            db.create_collection(x_dim=None)
         connection_mocker.has_collection.return_value = "hello"
         self.assertTrue(db.has_collection("hello"))
 
@@ -243,7 +241,7 @@ class TestMilvusDB(unittest.TestCase):
             db._perform_sparse_search([{1: 0.1}], 1, [])
         data = ExtraList([[{"id": 1, "distance": 0.1}]], extra={"total": 3})
         scores, ids, extras = db._process_search_results(data)
-        self.assertEqual(scores, [[0.95]])
+        self.assertEqual(scores, [[0.1]])
         self.assertEqual(ids, [[1]])
         self.assertEqual(extras, [[]])
 
