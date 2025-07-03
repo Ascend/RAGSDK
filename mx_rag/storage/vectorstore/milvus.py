@@ -181,6 +181,10 @@ class MilvusDB(VectorStore):
         x_dim=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
                    message="param value range (0, 1024 * 1024]"))
     def create_collection(self, x_dim: Optional[int] = None, params=None):
+        if self._client.has_collection(self._collection_name):
+            logger.warning(f"Collection {self._collection_name} already exists")
+            return
+
         if (self.search_mode == SearchMode.DENSE or self.search_mode == SearchMode.HYBRID) and x_dim is None:
             raise MilvusError("x_dim can't be None in mode DENSE or HYBRID")
 
