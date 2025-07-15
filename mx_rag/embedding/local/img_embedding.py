@@ -24,7 +24,6 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Unexpected error while importing torch_npu: {e}. ImageEmbedding will run on cpu.")
 
-
 _CLIP_MODELS = {
     "ViT-B-16": {
         "checkpoint": "clip_cn_vit-b-16.pt",
@@ -87,14 +86,23 @@ class ImageEmbedding(Embeddings):
         texts=dict(validator=lambda x: validate_list_str(x, [1, EMBEDDING_TEXT_COUNT], [1, IMG_EMBEDDING_TEXT_LEN]),
                    message="param must meets: Type is List[str], "
                            "list length range [1, 1000 * 1000], str length range [1, 256]"))
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         text = self.tokenizer.tokenize(texts, context_length=52).to(self.device)
 
-        with torch.no_grad():
-            text_features = self.model.encode_text(text).detach()
-            text_features /= text_features.norm(dim=-1, keepdim=True)
+        result = []
+        for start_index in range(0, len(texts), batch_size):
+            batch_texts = texts[start_index:start_index + batch_size]
+            encode_texts = self.tokenizer.tokenize(batch_texts, context_length=52).to(self.device)
 
-        return text_features.cpu().tolist()
+            with torch.no_grad():
+                torch.npu.synchronize()
+                text_features = self.model.encode_text(encode_texts)
+                torch.npu.synchronize()
+                text_features /= text_features.norm(dim=-1, keepdim=True).cpu().tolist()
+
+            result.extend(text_features)
+
+        return result
 
     @validate_params(
         text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= IMG_EMBEDDING_TEXT_LEN,
@@ -111,9 +119,8 @@ class ImageEmbedding(Embeddings):
             validator=lambda x: (isinstance(x, list) and validate_list_str(x, [1, EMBEDDING_IMG_COUNT], [1, 10 * MB])),
             message=f"param must meets: Type is List[str], list length range [1, {EMBEDDING_IMG_COUNT}],"
                     f" str length range [1, {10 * MB}]"))
-    def embed_images(self, images: List[str]) -> List[List[float]]:
+    def embed_images(self, images: List[str], batch_size: int = 32) -> List[List[float]]:
         image_features = []
-        batch_size = 32
 
         for start_idx in range(0, len(images), batch_size):
             batch_images = images[start_idx: start_idx + batch_size]
@@ -121,12 +128,14 @@ class ImageEmbedding(Embeddings):
             for image in batch_images:
                 blob = base64.b64decode(image)
                 with Image.open(io.BytesIO(blob)) as img:
-                    tensors_batch.append(self.preprocess(img).detach())
+                    tensors_batch.append(self.preprocess(img))
             tensors_batch = torch.stack(tensors_batch).to(self.device)
             with torch.no_grad():
-                batch_image_features = self.model.encode_image(tensors_batch).detach()
+                torch.npu.synchronize()
+                batch_image_features = self.model.encode_image(tensors_batch)
                 # 归一化
                 batch_image_features = batch_image_features / batch_image_features.norm(p=2, dim=-1, keepdim=True)
+                torch.npu.synchronize()
                 image_features.extend(batch_image_features.cpu().tolist())
 
         if not image_features:
