@@ -11,13 +11,13 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import is_torch_npu_available
 
-
 from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBEDDING_TEXT_COUNT, \
-    IMG_EMBEDDING_TEXT_LEN, validate_list_str, MB, GB, EMBEDDING_IMG_COUNT
+    IMG_EMBEDDING_TEXT_LEN, validate_list_str, MB, GB, EMBEDDING_IMG_COUNT, MAX_BATCH_SIZE
 from mx_rag.utils.file_check import SecFileCheck, SecDirCheck, safetensors_check
 
 try:
     import torch_npu
+
     torch.npu.set_compile_mode(jit_compile=False)
 except ImportError as e:
     logger.warning(f"Failed to import torch_npu: {e}. ImageEmbedding will run on cpu.")
@@ -85,20 +85,20 @@ class ImageEmbedding(Embeddings):
     @validate_params(
         texts=dict(validator=lambda x: validate_list_str(x, [1, EMBEDDING_TEXT_COUNT], [1, IMG_EMBEDDING_TEXT_LEN]),
                    message="param must meets: Type is List[str], "
-                           "list length range [1, 1000 * 1000], str length range [1, 256]"))
-    def embed_documents(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
-        text = self.tokenizer.tokenize(texts, context_length=52).to(self.device)
+                           "list length range [1, 1000 * 1000], str length range [1, 256]"),
 
+        batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
+                        message=f"param value range [1, {MAX_BATCH_SIZE}]")
+    )
+    def embed_documents(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         result = []
         for start_index in range(0, len(texts), batch_size):
             batch_texts = texts[start_index:start_index + batch_size]
             encode_texts = self.tokenizer.tokenize(batch_texts, context_length=52).to(self.device)
 
             with torch.no_grad():
-                torch.npu.synchronize()
                 text_features = self.model.encode_text(encode_texts)
-                torch.npu.synchronize()
-                text_features /= text_features.norm(dim=-1, keepdim=True).cpu().tolist()
+                text_features = torch.nn.functional.normalize(text_features, p=2, dim=-1).cpu().tolist()
 
             result.extend(text_features)
 
@@ -118,7 +118,10 @@ class ImageEmbedding(Embeddings):
         images=dict(
             validator=lambda x: (isinstance(x, list) and validate_list_str(x, [1, EMBEDDING_IMG_COUNT], [1, 10 * MB])),
             message=f"param must meets: Type is List[str], list length range [1, {EMBEDDING_IMG_COUNT}],"
-                    f" str length range [1, {10 * MB}]"))
+                    f" str length range [1, {10 * MB}]"),
+        batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
+                        message=f"param value range [1, {MAX_BATCH_SIZE}]")
+    )
     def embed_images(self, images: List[str], batch_size: int = 32) -> List[List[float]]:
         image_features = []
 
@@ -131,11 +134,9 @@ class ImageEmbedding(Embeddings):
                     tensors_batch.append(self.preprocess(img))
             tensors_batch = torch.stack(tensors_batch).to(self.device)
             with torch.no_grad():
-                torch.npu.synchronize()
                 batch_image_features = self.model.encode_image(tensors_batch)
                 # 归一化
                 batch_image_features = batch_image_features / batch_image_features.norm(p=2, dim=-1, keepdim=True)
-                torch.npu.synchronize()
                 image_features.extend(batch_image_features.cpu().tolist())
 
         if not image_features:

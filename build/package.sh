@@ -61,7 +61,7 @@ function package()
     cp -rf "${ROOT_PATH}"/ops/Ascend310P/lib ./ops/310
 
     mkdir -p ./ops/transformer_adapter
-    cp -rf "${ROOT_PATH}"/ops/transformer_adapter/output/* ./ops/transformer_adapter
+    cp -rf "${ROOT_PATH}"/ops/transformer_adapter/* ./ops/transformer_adapter
 
     #将所有目录设置为750，特殊目录单独处理
     find ./ -type d -exec chmod 750 {} \;

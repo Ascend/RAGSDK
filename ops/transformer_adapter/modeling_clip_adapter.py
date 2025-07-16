@@ -9,7 +9,7 @@ import torch_npu
 import torchair
 import torchvision
 from cn_clip.clip.model import ResidualAttentionBlock
-from cn_clip.training.main import convert_weights
+from cn_clip.clip.model import convert_weights
 from loguru import logger
 from torch import nn
 from torchair.configs.compiler_config import CompilerConfig
@@ -21,14 +21,12 @@ from cn_clip import clip
 old_load_from_name = clip.load_from_name
 old_init = ResidualAttentionBlock.__init__
 old_attention = ResidualAttentionBlock.attention
-
 enable_clip_speed: bool = True
 
 
 def read_img(image):
     f = io.BytesIO()
     image.save(f, format='JPEG')
-    # f = io.BytesIO(blob)
     f.seek(0)
     prefix = f.read(16)
     # DVPP only provides DecodeJpeg op currently
@@ -51,14 +49,17 @@ def read_img(image):
         return img.unsqueeze(0).npu(non_blocking=True)
 
 
-def new_preprocess(image):
-    img_tensor = read_img(image)
-    rs_img = Resize((224, 224), interpolation=InterpolationMode.BICUBIC)(
-        img_tensor.squeeze(0).float() / 255)
+def new_image_transform(image_size=224):
+    def image_processor(image):
+        img_tensor = read_img(image)
+        rs_img = Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC)(
+            img_tensor.squeeze(0).float() / 255)
 
-    nl_img = Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))(
-        rs_img)
-    return nl_img
+        nl_img = Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))(
+            rs_img)
+        return nl_img
+
+    return image_processor
 
 
 def new_load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu",
@@ -67,19 +68,18 @@ def new_load_from_name(name: str, device: Union[str, torch.device] = "cuda" if t
     if enable_boost not in ("True", "False"):
         raise ValueError("env ENABLE_BOOST value must be True or False")
 
-    if enable_boost == "True":
+    if enable_boost == "True" and name.find("ViT") != -1:
         logger.info("enable clip model boost")
         model, preprocess = old_load_from_name(name,
                                                device=device,
-                                               download_root=download_root, )
-        convert_weights(model)
+                                               download_root=download_root)
 
         tmp_preprocess = preprocess
         device_name = torch.npu.get_device_name()
         if "910B" in device_name:
             torch.ops.torchvision._dvpp_init()
             torchvision.set_image_backend('npu')
-            tmp_preprocess = new_preprocess
+            tmp_preprocess = new_image_transform(model.visual.input_resolution)
 
         config = CompilerConfig()
         config.experimental_config.frozen_parameter = True
@@ -111,7 +111,7 @@ def new__init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None,
         self.n_head = n_head
 
 
-def new_attention(self, x: torch.Tensor):
+def new_attention(self, x):
     if not self.boost_flag:
         return old_attention(self, x)
 
