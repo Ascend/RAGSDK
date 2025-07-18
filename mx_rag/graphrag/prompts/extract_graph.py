@@ -37,7 +37,7 @@ CHAT_TEMPLATE = {
         "prompt_end": "<|im_end|>",
         "model_start": "<|im_start|>assistant\n"
     },
-    "Llama-3-8B-Chinese-Chat":  {
+    "Llama-3-8B-Chinese-Chat": {
         "system_start": """<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n You are a helpful 
         AI assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>""",
         "prompt_start": """<|start_header_id|>user<|end_header_id|>  """,
