@@ -16,14 +16,14 @@ CHAT_TEMPLATE = {
         "prompt_end": "",
         "model_start": "[/INST]"
     },
-    "Meta-Llama-3-8B-Instruct": {
+    "Llama-3-8B-Instruct": {
         "system_start": """<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n You are a helpful 
         AI assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>""",
         "prompt_start": """<|start_header_id|>user<|end_header_id|>  """,
         "prompt_end": "<|eot_id|>",
         "model_start": "<|start_header_id|>assistant<|end_header_id|>"
     },
-    "Meta-Llama-3.1-8B-Instruct": {
+    "Llama-3.1-8B-Instruct": {
         "system_start": """<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n You are a helpful 
         AI assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>""",
         "prompt_start": """<|start_header_id|>user<|end_header_id|>  """,
@@ -37,6 +37,13 @@ CHAT_TEMPLATE = {
         "prompt_end": "<|im_end|>",
         "model_start": "<|im_start|>assistant\n"
     },
+    "Llama-3-8B-Chinese-Chat":  {
+        "system_start": """<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n You are a helpful 
+        AI assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>""",
+        "prompt_start": """<|start_header_id|>user<|end_header_id|>  """,
+        "prompt_end": "<|eot_id|>",
+        "model_start": "<|start_header_id|>assistant<|end_header_id|>"
+    }
 }
 
 TRIPLE_INSTRUCTIONS_EN = {
