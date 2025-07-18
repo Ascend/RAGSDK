@@ -169,8 +169,8 @@ def upload_dir(params: FilesLoadInfo):
         else:
             unsupported_files.append(file)
     if len(unsupported_files) > 0:
-        logger.error(f"These files '{unsupported_files}' are not of supported types "
-                     f"because no loader or splitter has been registered.")
+        logger.warning(f"These files '{unsupported_files}' are not of supported types "
+                       f"because no loader or splitter has been registered.")
     fail_files = upload_files(knowledge, files, loader_mng, embed_func, force)
 
     return unsupported_files + fail_files
