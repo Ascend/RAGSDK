@@ -120,7 +120,7 @@ def extract_json_like_substring(text: str, start_marker: str) -> str:
         from after the `start_marker` to the end. Returns an empty string
         if the `start_marker` is not found in the text.
     """
-    start_index = text.rfind(start_marker)
+    start_index = text.rfind(start_marker) if start_marker else 0
     if start_index == -1:
         return ""  # Return empty string if start marker is not found
 
