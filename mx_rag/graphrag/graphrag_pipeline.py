@@ -131,7 +131,7 @@ class GraphRAGPipeline:
     def build_graph(self, lang: Lang = Lang.EN, pad_token="", conceptualize: bool = False, **kwargs):
         max_workers = kwargs.pop("max_workers", None)
         top_k = kwargs.pop("top_k", 5)
-        threshold = kwargs.pop("threshold", 0.3)
+        threshold = kwargs.pop("threshold", 0.5)
         if not self.docs:
             raise GraphRAGError("Empty documents, please first run upload_files")
         try:
@@ -192,8 +192,8 @@ class GraphRAGPipeline:
 
     @validate_params(
         graph_name=dict(validator=lambda x: isinstance(x, str) and x.isidentifier() and 0 < len(x) < 256,
-                        message=f"param must be a str and its length meets [1, 255], "
-                                f"and only contains letters, _ and digits."),
+                        message="param must be a str and its length meets [1, 255], "
+                                "and only contains letters, _ and digits."),
         graph_type=dict(validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
                         message="param only takes from 'networkx' or 'opengauss'")
     )
@@ -226,7 +226,7 @@ class GraphRAGPipeline:
 
     def _setup_graph(self, graph_name, graph_type, **kwargs):
         if not isinstance(graph_type, str) or graph_type not in ["networkx", "opengauss"]:
-            raise GraphRAGError(f"graph client supports only networkx or opengauss")
+            raise GraphRAGError("graph client supports only networkx or opengauss")
         if graph_type == "networkx":
             self.graph = NetworkxGraph(path=self.graph_save_path)
         elif self.graph_conf is None:

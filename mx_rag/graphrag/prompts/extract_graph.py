@@ -1,51 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-
-
-CHAT_TEMPLATE = {
-    "glm-4-9b-chat": {
-        "system_start": """[gMASK]<sop><|system|>\n你是一个名为 ChatGLM 的人工智能助手。
-        你是基于智谱AI训练的语言模型 GLM-4 模型开发的，你的任务是针对用户的问题和要求提供适当的答复和支持。""",
-        "prompt_start": """<|user|>\n""",
-        "prompt_end": "",
-        "model_start": "<|assistant|>"
-    },
-    "Qwen2-7B-Instruct": {
-        "system_start": """[INST] You are a helpful AI assistant. """,
-        "prompt_start": """[INST] """,
-        "prompt_end": "",
-        "model_start": "[/INST]"
-    },
-    "Llama-3-8B-Instruct": {
-        "system_start": """<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n You are a helpful 
-        AI assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>""",
-        "prompt_start": """<|start_header_id|>user<|end_header_id|>  """,
-        "prompt_end": "<|eot_id|>",
-        "model_start": "<|start_header_id|>assistant<|end_header_id|>"
-    },
-    "Llama-3.1-8B-Instruct": {
-        "system_start": """<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n You are a helpful 
-        AI assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>""",
-        "prompt_start": """<|start_header_id|>user<|end_header_id|>  """,
-        "prompt_end": "<|eot_id|>",
-        "model_start": "<|start_header_id|>assistant<|end_header_id|>"
-    },
-    "Qwen2.5-7B-Instruct": {
-        "system_start": """<|im_start|>system\n You are Qwen, created by Alibaba Cloud. 
-        You are a helpful assistant.<|im_end|> """,
-        "prompt_start": """<|im_start|>user\n""",
-        "prompt_end": "<|im_end|>",
-        "model_start": "<|im_start|>assistant\n"
-    },
-    "Llama-3-8B-Chinese-Chat": {
-        "system_start": """<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n You are a helpful 
-        AI assistant.<|eot_id|><|start_header_id|>user<|end_header_id|>""",
-        "prompt_start": """<|start_header_id|>user<|end_header_id|>  """,
-        "prompt_end": "<|eot_id|>",
-        "model_start": "<|start_header_id|>assistant<|end_header_id|>"
-    }
-}
-
 TRIPLE_INSTRUCTIONS_EN = {
     "entity_relation": """Given a passage, summarize all the important entities and the relations between them in 
     a concise manner. Relations should briefly capture the connections between entities, without repeating information 

@@ -19,7 +19,6 @@ from mx_rag.graphrag.graph_merger import (
     FILE_ID_KEY,
 )
 from mx_rag.graphrag.prompts.extract_graph import (
-    CHAT_TEMPLATE,
     PASSAGE_START_CN,
     PASSAGE_START_EN,
 )
@@ -80,26 +79,6 @@ ENTITY_PROMPT_CN = '''
 '''
 
 
-def build_chat_input(chat_template, prompt):
-    """
-    Constructs a chat input string using the provided template and prompt.
-
-    Args:
-        chat_template (dict): Template for chat formatting.
-        prompt (str): The prompt to insert.
-
-    Returns:
-        str: The constructed chat input.
-    """
-    return "".join([
-        chat_template.get("system_start", ""),
-        chat_template.get("prompt_start", ""),
-        prompt,
-        chat_template.get("prompt_end", ""),
-        chat_template.get("model_start", ""),
-    ])
-
-
 @dataclass
 class DisambiguationConfig:
     """Configuration for disambiguation process."""
@@ -147,11 +126,10 @@ class NamedEntityRecognizer:
     @validate_params(entity_nodes=dict(validator=lambda x: len(x) < 50000, message="Too many entities"))
     def identify_named_entities(self, entity_nodes: List[str], lang: Lang) -> List[str]:
         """Identify named entities from entity nodes using parallelized LLM prompts."""
-        chat_template = CHAT_TEMPLATE.get(self.model_name, {})
         prompt_template = NAMED_ENTITY_PROMPT_CN if lang == Lang.CH else NAMED_ENTITY_PROMPT_EN
         
         prompts = [
-            build_chat_input(chat_template, prompt_template.replace("[TEXT]", node))
+            prompt_template.replace("[TEXT]", node)
             for node in entity_nodes
         ]
         
@@ -260,17 +238,10 @@ class EntityDisambiguator:
     
     def _check_entity_similarity(self, node_pairs: List[Tuple[str, str, str, str]], lang: Lang) -> List[bool]:
         """Check if entity pairs refer to the same meaning using LLM."""
-        chat_template = CHAT_TEMPLATE.get(self.model_name, {})
         prompt_template = ENTITY_PROMPT_CN if lang == Lang.CH else ENTITY_PROMPT_EN
         
         prompts = [
-            build_chat_input(
-                chat_template,
-                prompt_template.replace("[NODE1]", pair[0])
-                              .replace("[CONTEXT1]", pair[1])
-                              .replace("[NODE2]", pair[2])
-                              .replace("[CONTEXT2]", pair[3])
-            )
+            prompt_template.replace("[NODE1]", pair[0]).replace("[CONTEXT1]", pair[1]).replace("[NODE2]", pair[2]).replace("[CONTEXT2]", pair[3])
             for pair in node_pairs
         ]
         

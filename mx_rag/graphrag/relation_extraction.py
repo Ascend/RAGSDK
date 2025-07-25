@@ -10,7 +10,6 @@ from tqdm import tqdm
 from langchain_core.documents import Document
 
 from mx_rag.graphrag.prompts.extract_graph import (
-    CHAT_TEMPLATE,
     PASSAGE_START_CN,
     PASSAGE_START_EN,
     TRIPLE_INSTRUCTIONS_CN,
@@ -26,13 +25,12 @@ from mx_rag.graphrag.utils.json_util import (
 )
 from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import Lang, validate_params
-from mx_rag.storage.document_store import MxDocument
 
 
 def _parse_and_repair_json(
     llm: Text2TextLLM,
     text: str,
-    answer_start_token: str,
+    answer_start_token: str = "",
     repair_function: Optional[Callable[[str], str]] = None,
     remove_space: bool = False,
     handle_single_quote: bool = False,
@@ -42,7 +40,10 @@ def _parse_and_repair_json(
     Efficiently parse and repair a JSON-like string, escalating from local fixes to LLM repair.
     """
     json_text = extract_json_like_substring(text, answer_start_token).strip()
-    json_text = normalize_json_string(json_text, remove_space, handle_single_quote)
+    normalized_json_text = normalize_json_string(
+        json_text, remove_space, handle_single_quote
+    )
+    repaired_json_text = repair_json(normalized_json_text, ensure_ascii=False)
 
     def try_parse(s: str) -> Optional[List[dict]]:
         try:
@@ -50,46 +51,37 @@ def _parse_and_repair_json(
         except Exception:
             return None
 
+    def attempt_repair_and_parse(
+        repair_strategy: Callable[[str], str], text
+    ) -> Optional[List[dict]]:
+        try:
+            repaired = repair_strategy(text)
+            return try_parse(repaired)
+        except Exception:
+            return None
+
     # Try direct parse
     result = try_parse(json_text)
-    if result is not None:
+    if result:
         return result
 
-    # Try repair_json + repair_function if provided
     if repair_function:
-        try:
-            repaired = repair_json(json_text)
-            repaired = normalize_json_string(repaired, remove_space, handle_single_quote)
-            repaired = repair_function(repaired)
-            result = try_parse(repaired)
-            if result is not None:
-                return result
-        except Exception as e:
-            logger.warning(f"Repair function failed: {e}")
+        result = attempt_repair_and_parse(repair_function, json_text)
+        if result:
+            return result
 
-        # Try only repair_function
-        try:
-            repaired = repair_function(json_text)
-            result = try_parse(repaired)
-            if result is not None:
-                return result
-        except Exception as e:
-            logger.warning(f"Repair function (direct) failed: {e}")
+        result = attempt_repair_and_parse(repair_function, repaired_json_text)
+        if result:
+            return result
 
     # Try LLM repair
-    try:
-        query = llm_repair_prompt_template.format(q=json_text)
-        llm_output = llm.chat(query)
-        result = try_parse(llm_output)
-        if result is not None:
-            logger.info("Successfully fixed by LLM!")
-            return result
-        else:
-            logger.warning(f"LLM output could not be parsed: {llm_output}")
-    except Exception as e:
-        logger.warning(f"LLM repair failed: {e}")
+    result = attempt_repair_and_parse(
+        lambda s: llm.chat(llm_repair_prompt_template.format(q=s)), json_text
+    )
+    if result:
+        return result
 
-    logger.warning(f"All repair attempts failed. Discarding: {json_text}")
+    logger.warning("All repair attempts failed.")
     return []
 
 
@@ -97,7 +89,6 @@ def generate_relations_cn(
     llm: Text2TextLLM,
     pad_token: str,
     texts: List[str],
-    answer_start_token: str,
     repair_function: Callable[[str], str],
 ) -> List[List[dict]]:
     """
@@ -106,22 +97,15 @@ def generate_relations_cn(
     processed_texts = [text.replace(pad_token, "") for text in texts]
     relations = []
     for text in processed_texts:
-        relations.append(
-            _parse_and_repair_json(llm, text, answer_start_token, repair_function, True, True)
-        )
+        relations.append(_parse_and_repair_json(llm, text, "", repair_function, True, True))
     return relations
 
 
-def generate_relations_en(
-    llm: Text2TextLLM, texts: List[str], answer_start_token: str
-) -> List[List[dict]]:
+def generate_relations_en(llm: Text2TextLLM, texts: List[str]) -> List[List[dict]]:
     """
     Generates a list of entity relation dictionaries from the model output (English).
     """
-    return [
-        _parse_and_repair_json(llm, text, answer_start_token, repair_json)
-        for text in texts
-    ]
+    return [_parse_and_repair_json(llm, text, "", repair_json) for text in texts]
 
 
 class LLMRelationExtractor:
@@ -133,69 +117,73 @@ class LLMRelationExtractor:
         pad_token (str): The token used for padding in the LLM.
         language (Lang): The language setting, defaulting to Chinese (Lang.CH).
         triple_instructions (dict): Instructions for extracting triples based on the language.
-        chat_template (dict): Template configurations for the LLM model.
-        prompt_start (str): The starting prompt for the LLM.
-        prompt_end (str): The ending prompt for the LLM.
-        model_start (str): The prefix indicating the model's response.
-        system_start (str): The prefix indicating the system's instructions.
-        configs (dict): Configurations for different extraction tasks (entity_relation, event_entity, event_relation).
+        user_prompts (dict): User prompts for different extraction tasks (entity_relation, event_entity, event_relation).
     """
-    @validate_params(max_workers=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= 512),
-                                      message="param must be none or an integer in [1, 512]"))
-    def __init__(self, llm: Text2TextLLM, pad_token: str, language: Lang = Lang.CH, max_workers=None):
-        logger.info("Initializing RelationExtractorLLM...")
+
+    @validate_params(
+        max_workers=dict(
+            validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= 512),
+            message="param must be none or an integer in [1, 512]",
+        )
+    )
+    def __init__(
+        self,
+        llm: Text2TextLLM,
+        pad_token: str,
+        language: Lang = Lang.CH,
+        max_workers=None,
+    ):
         self.llm = llm
         self.pad_token = pad_token
         self.language = language
         self.max_workers = max_workers
-        self.triple_instructions = TRIPLE_INSTRUCTIONS_CN if language == Lang.CH else TRIPLE_INSTRUCTIONS_EN
+        self.triple_instructions = (
+            TRIPLE_INSTRUCTIONS_CN if language == Lang.CH else TRIPLE_INSTRUCTIONS_EN
+        )
 
-        self.chat_template = CHAT_TEMPLATE.get(self.llm.model_name, {})
+        passage_start = (
+            PASSAGE_START_CN if self.language == Lang.CH else PASSAGE_START_EN
+        )
 
-        self.prompt_start = self.chat_template.get("prompt_start", "")
-        self.prompt_end = self.chat_template.get("prompt_end", "")
-        self.model_start = self.chat_template.get("model_start", "")
-        self.system_start = self.chat_template.get("system_start", "")
-        passage_start = PASSAGE_START_CN if self.language == Lang.CH else PASSAGE_START_EN
-
-        self.configs = {
-            "entity_relation": self._build_config("entity_relation", passage_start),
-            "event_entity": self._build_config("event_entity", passage_start),
-            "event_relation": self._build_config("event_relation", passage_start),
+        self.user_prompts = {
+            "entity_relation": f"{self.triple_instructions.get('entity_relation')}{passage_start}\n",
+            "event_entity": f"{self.triple_instructions.get('event_entity')}{passage_start}\n",
+            "event_relation": f"{self.triple_instructions.get('event_relation')}{passage_start}\n",
         }
 
     @validate_params(
         docs=dict(
-            validator=lambda x: isinstance(x, list) 
-            and all(isinstance(it, Document) for it in x) 
+            validator=lambda x: isinstance(x, list)
+            and all(isinstance(it, Document) for it in x)
             and 0 < len(x) <= 1000000,
-            message="param must be a list of Document elements, length range [1, 1000000]"
+            message="param must be a list of Document elements, length range [1, 1000000]",
         )
     )
     def query(self, docs: List[Document]) -> List[dict]:
-        outputs = {key: [] for key in self.configs}
+        outputs = {key: [] for key in self.user_prompts}
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            for key, config in self.configs.items():
-                logger.info(f"Processing texts for key: {key}")
+            for key, user_prompt in self.user_prompts.items():
                 texts = [doc.page_content for doc in docs]
                 outputs[key] = list(
                     tqdm(
-                        executor.map(lambda text: self._generate_stage_output(text, config), texts),
+                        executor.map(
+                            lambda text: self.llm.chat(f"{user_prompt}{text}"), texts
+                        ),
                         total=len(texts),
                         desc=f"Processing {key}",
                     )
                 )
-                logger.info(f"Finished processing texts for key: {key}")
 
-        logger.info("Processing entity relations...")
-        entity_relations = self._process_relations(outputs["entity_relation"], fix_entity_relation_json_string)
-
-        logger.info("Processing event-entity relations...")
-        event_entity_relations = self._process_relations(outputs["event_entity"], fix_entity_event_json_string)
-
-        logger.info("Processing event relations...")
-        event_relations = self._process_relations(outputs["event_relation"], fix_event_relation_json_string)
+        entity_relations = self._process_relations(
+            outputs["entity_relation"], fix_entity_relation_json_string
+        )
+        event_entity_relations = self._process_relations(
+            outputs["event_entity"], fix_entity_event_json_string
+        )
+        event_relations = self._process_relations(
+            outputs["event_relation"], fix_event_relation_json_string
+        )
 
         return [
             {
@@ -204,27 +192,18 @@ class LLMRelationExtractor:
                 "entity_relations": entity_relations[i],
                 "event_entity_relations": event_entity_relations[i],
                 "event_relations": event_relations[i],
-                "output_stage_one": outputs["entity_relation"][i],
-                "output_stage_two": outputs["event_entity"][i],
-                "output_stage_three": outputs["event_relation"][i],
+                "llm_output_entity_entity": outputs["entity_relation"][i],
+                "llm_output_event_entity": outputs["event_entity"][i],
+                "llm_output_event_event": outputs["event_relation"][i],
             }
             for i, doc in enumerate(docs)
         ]
 
-    def _build_config(self, key: str, passage_start: str) -> dict:
-        return {
-            "prefix": f"{self.system_start}{self.prompt_start}{self.triple_instructions.get(key)}{passage_start}",
-            "suffix": f"{self.prompt_end}{self.model_start}",
-        }
-
-    def _generate_stage_output(self, text: str, config: dict) -> str:
-        query = f"{config['prefix']}{text}{config['suffix']}"
-        output = self.model_start + self.llm.chat(query)
-        return output
-
-    def _process_relations(self, outputs: List[str], repair_function: Callable) -> List[List[dict]]:
+    def _process_relations(
+        self, outputs: List[str], repair_function: Callable
+    ) -> List[List[dict]]:
         if self.language == Lang.CH:
-            relations = generate_relations_cn(self.llm, self.pad_token, outputs, self.model_start, repair_function)
-        else:
-            relations = generate_relations_en(self.llm, outputs, self.model_start)
-        return relations
+            return generate_relations_cn(
+                self.llm, self.pad_token, outputs, repair_function
+            )
+        return generate_relations_en(self.llm, outputs)
