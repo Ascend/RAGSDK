@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-
 import time
 import random
 from typing import Any, Dict, List, Optional
@@ -12,7 +11,6 @@ from tqdm import tqdm
 from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import Lang
 from mx_rag.graphrag.prompts.extract_graph import (
-    CHAT_TEMPLATE,
     ENTITY_PROMPT_CN,
     ENTITY_PROMPT_EN,
     EVENT_PROMPT_CN,
@@ -62,7 +60,6 @@ class GraphConceptualizer:
         graph: GraphStore,
         sample_num: Optional[int] = None,
         lang: Lang = Lang.CH,
-        chat_template: Optional[Dict[str, str]] = None,
         err_instructions: Optional[Dict[str, str]] = None,
         seed: int = 4096,
     ) -> None:
@@ -88,10 +85,6 @@ class GraphConceptualizer:
             self.entities = random.sample(self.entities, min(sample_num, len(self.entities)))
             self.relations = random.sample(self.relations, min(sample_num, len(self.relations)))
 
-        self.chat_template = CHAT_TEMPLATE.get(self.llm.model_name, {})
-        if chat_template:
-            self.chat_template.update(chat_template)
-
     def conceptualize(self) -> List[Dict[str, Any]]:
         """
         Conceptualize events, entities, and relations in the graph in parallel.
@@ -115,23 +108,6 @@ class GraphConceptualizer:
 
         return result
 
-    def _build_query(self, prompt: str) -> str:
-        """
-        Build a query string for the LLM.
-
-        Args:
-            prompt: The prompt to use.
-
-        Returns:
-            The formatted query string.
-        """
-        return (
-            self.chat_template.get("system_start", "")
-            + self.chat_template.get("prompt_start", "")
-            + prompt
-            + self.chat_template.get("prompt_end", "")
-            + self.chat_template.get("model_start", "")
-        )
 
     def _conceptualize_event(self, event: str) -> Dict[str, Any]:
         """
@@ -144,8 +120,7 @@ class GraphConceptualizer:
             Dict with conceptualized event.
         """
         prompt = self.prompt_map["event_prompt"].replace("[EVENT]", event)
-        query = self._build_query(prompt)
-        answer = self.llm.chat(query)
+        answer = self.llm.chat(prompt)
         return {
             "node": event,
             "conceptualized_node": answer,
@@ -203,8 +178,7 @@ class GraphConceptualizer:
             )
 
         prompt = prompt.replace("[CONTEXT]", context)
-        query = self._build_query(prompt)
-        answer = self.llm.chat(query)
+        answer = self.llm.chat(prompt)
         return {
             "node": entity,
             "conceptualized_node": answer,
@@ -222,8 +196,7 @@ class GraphConceptualizer:
             Dict with conceptualized relation.
         """
         prompt = self.prompt_map["relation_prompt"].replace("[RELATION]", relation)
-        query = self._build_query(prompt)
-        answer = self.llm.chat(query)
+        answer = self.llm.chat(prompt)
         return {
             "node": relation,
             "conceptualized_node": answer,

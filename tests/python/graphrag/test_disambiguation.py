@@ -101,10 +101,7 @@ class TestEntityDisambiguator(unittest.TestCase):
             self.assertIsInstance(result, nx.Graph)
             self.assertTrue(result.has_edge("file1", "file2"))
 
-    @patch('mx_rag.graphrag.disambiguation.CHAT_TEMPLATE', 
-           {"test_model": {"system_start": "", "prompt_start": "", "prompt_end": "", "model_start": ""}})
-    @patch('mx_rag.graphrag.disambiguation.ENTITY_PROMPT_EN', 
-           "test prompt [NODE1] [CONTEXT1] [NODE2] [CONTEXT2]")
+    @patch('mx_rag.graphrag.disambiguation.ENTITY_PROMPT_EN', "test prompt [NODE1] [CONTEXT1] [NODE2] [CONTEXT2]")
     def test_check_entity_similarity(self):
         """Test _check_entity_similarity method."""
         node_pairs = [("entity1", "context1", "entity1", "context2")]

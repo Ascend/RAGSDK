@@ -17,12 +17,6 @@ class TestGraphConceptualizer(unittest.TestCase):
         self.mock_graph = Mock()
         self.mock_graph.get_nodes_by_attribute.return_value = ["node1", "node2"]
         self.mock_graph.get_edge_attribute_values.return_value = ["relation1", "relation2"]
-        self.chat_template = {
-            "system_start": "System:",
-            "prompt_start": "Prompt:",
-            "prompt_end": ":EndPrompt",
-            "model_start": "Model:",
-        }
 
     def test_initialization(self):
         """Test initialization of GraphConceptualizer."""
@@ -31,7 +25,6 @@ class TestGraphConceptualizer(unittest.TestCase):
             graph=self.mock_graph,
             sample_num=None,
             lang=Lang.EN,
-            chat_template=self.chat_template,
         )
         self.assertEqual(conceptualizer.llm, self.mock_llm)
         self.assertEqual(conceptualizer.graph, self.mock_graph)
@@ -47,7 +40,6 @@ class TestGraphConceptualizer(unittest.TestCase):
             graph=self.mock_graph,
             sample_num=1,
             lang=Lang.EN,
-            chat_template=self.chat_template,
         )
         with patch.object(conceptualizer, "_conceptualize_event", return_value={"node_type": "event"}), \
                 patch.object(conceptualizer, "_conceptualize_entity", return_value={"node_type": "entity"}), \
@@ -64,12 +56,11 @@ class TestGraphConceptualizer(unittest.TestCase):
             llm=self.mock_llm,
             graph=self.mock_graph,
             lang=Lang.EN,
-            chat_template=self.chat_template,
         )
         event = "event1"
         conceptualizer.prompt_map["event_prompt"] = "Event: [EVENT]"
         result = conceptualizer._conceptualize_event(event)
-        self.mock_llm.chat.assert_called_once_with("System:Prompt:Event: event1:EndPromptModel:")
+        self.mock_llm.chat.assert_called_once_with("Event: event1")
         self.assertEqual(result["node"], event)
         self.assertEqual(result["conceptualized_node"], "mock_response")
         self.assertEqual(result["node_type"], "event")
@@ -80,7 +71,6 @@ class TestGraphConceptualizer(unittest.TestCase):
             llm=self.mock_llm,
             graph=self.mock_graph,
             lang=Lang.EN,
-            chat_template=self.chat_template,
         )
         entity = "entity1"
         self.mock_graph.predecessors.return_value = ["pred1"]
@@ -101,12 +91,11 @@ class TestGraphConceptualizer(unittest.TestCase):
             llm=self.mock_llm,
             graph=self.mock_graph,
             lang=Lang.EN,
-            chat_template=self.chat_template,
         )
         relation = "relation1"
         conceptualizer.prompt_map["relation_prompt"] = "Relation: [RELATION]"
         result = conceptualizer._conceptualize_relation(relation)
-        self.mock_llm.chat.assert_called_once_with("System:Prompt:Relation: relation1:EndPromptModel:")
+        self.mock_llm.chat.assert_called_once_with("Relation: relation1")
         self.assertEqual(result["node"], relation)
         self.assertEqual(result["conceptualized_node"], "mock_response")
         self.assertEqual(result["node_type"], "relation")
