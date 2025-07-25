@@ -9,7 +9,6 @@ import torch_npu
 import torchair
 import torchvision
 from cn_clip.clip.model import ResidualAttentionBlock
-from cn_clip.clip.model import convert_weights
 from loguru import logger
 from torch import nn
 from torchair.configs.compiler_config import CompilerConfig
@@ -25,10 +24,14 @@ enable_clip_speed: bool = True
 
 
 def read_img(image):
-    f = io.BytesIO()
-    image.save(f, format='JPEG')
-    f.seek(0)
-    prefix = f.read(16)
+    try:
+        f = io.BytesIO()
+        image.save(f, format=image.format)
+        f.seek(0)
+        prefix = f.read(16)
+    except Exception as e:
+        raise ValueError("parse image failed") from e
+
     # DVPP only provides DecodeJpeg op currently
     if prefix[:3] == b"\xff\xd8\xff":
         f.seek(0)
@@ -116,6 +119,9 @@ def new_attention(self, x):
         return old_attention(self, x)
 
     embed_dim = self.d_model
+    if self.n_head == 0:
+        raise ValueError("n_head must not be zero")
+
     head_dim = embed_dim // self.n_head
 
     if head_dim == 0:
@@ -138,8 +144,6 @@ def new_attention(self, x):
         num_heads=self.n_head,
         input_layout="BSH",
         scale_value=1.0 / math.sqrt(head_dim),
-        pre_tokens=65535,
-        next_tokens=65535,
         atten_mask=self.attn_mask
     )
 

@@ -3,10 +3,12 @@
 import base64
 import io
 import os
-from typing import List
+from typing import List, Union
 
 import torch
 from PIL import Image
+from tqdm import tqdm
+
 from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import is_torch_npu_available
@@ -88,11 +90,11 @@ class ImageEmbedding(Embeddings):
                            "list length range [1, 1000 * 1000], str length range [1, 256]"),
 
         batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
-                        message=f"param value range [1, {MAX_BATCH_SIZE}]")
+                        message=f"param value valid range is [1, {MAX_BATCH_SIZE}]")
     )
     def embed_documents(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         result = []
-        for start_index in range(0, len(texts), batch_size):
+        for start_index in tqdm(range(0, len(texts), batch_size), desc='text embedding ...'):
             batch_texts = texts[start_index:start_index + batch_size]
             encode_texts = self.tokenizer.tokenize(batch_texts, context_length=52).to(self.device)
 
@@ -116,23 +118,19 @@ class ImageEmbedding(Embeddings):
 
     @validate_params(
         images=dict(
-            validator=lambda x: (isinstance(x, list) and validate_list_str(x, [1, EMBEDDING_IMG_COUNT], [1, 10 * MB])),
-            message=f"param must meets: Type is List[str], list length range [1, {EMBEDDING_IMG_COUNT}],"
-                    f" str length range [1, {10 * MB}]"),
+            validator=lambda x: (isinstance(x, list) and len(x) <= EMBEDDING_IMG_COUNT),
+            message=f"param must meets: Type is list, list length range [1, {EMBEDDING_IMG_COUNT}]"),
         batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
                         message=f"param value range [1, {MAX_BATCH_SIZE}]")
     )
-    def embed_images(self, images: List[str], batch_size: int = 32) -> List[List[float]]:
+    def embed_images(self, images: Union[List[str], List[Image.Image]], batch_size: int = 32) -> List[List[float]]:
         image_features = []
 
-        for start_idx in range(0, len(images), batch_size):
+        for start_idx in tqdm(range(0, len(images), batch_size), desc='image embedding ...'):
             batch_images = images[start_idx: start_idx + batch_size]
-            tensors_batch = []
-            for image in batch_images:
-                blob = base64.b64decode(image)
-                with Image.open(io.BytesIO(blob)) as img:
-                    tensors_batch.append(self.preprocess(img))
+            tensors_batch = self._preprocess_images(batch_images)
             tensors_batch = torch.stack(tensors_batch).to(self.device)
+
             with torch.no_grad():
                 batch_image_features = self.model.encode_image(tensors_batch)
                 # 归一化
@@ -143,3 +141,28 @@ class ImageEmbedding(Embeddings):
             raise Exception("embedding image failed")
 
         return image_features
+
+    @validate_params(
+        images=dict(
+            validator=lambda x: all((isinstance(i, str) for i in x)) or all((isinstance(i, Image.Image) for i in x)),
+            message=f"param must meets: all item is str or Image.Image")
+    )
+    def _preprocess_images(self, images: Union[List[str], List[Image.Image]]) -> List[torch.Tensor]:
+        tensors_batch = []
+
+        for image in images:
+            if isinstance(image, Image.Image):
+                tensors_batch.append(self.preprocess(image))
+                continue
+
+            if not 1 <= len(image) <= 10 * MB:
+                raise ValueError(f"image size out of range, size range is [1, {10 * MB}]")
+
+            try:
+                blob = base64.b64decode(image)
+                with Image.open(io.BytesIO(blob)) as img:
+                    tensors_batch.append(self.preprocess(img))
+            except Exception as exe:
+                raise ValueError("image preprocess failed") from exe
+
+        return tensors_batch
