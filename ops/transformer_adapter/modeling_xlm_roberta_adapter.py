@@ -30,12 +30,12 @@ def new__init__(self, config: XLMRobertaConfig, add_pooling_layer: bool = True):
     self.max_seq_len = config.max_position_embeddings
     self.padding_idx = config.pad_token_id
     if self.boost_flag:
-        logger.info("enable xlmroberta model boost")
+        logger.info("enable xlm_roberta model boost")
         old_init(self, config, add_pooling_layer)
         self.init_ascend_operations_boost(config)
         self.layer_id_list = [torch.tensor([i], dtype=torch.int32).npu() for i in range(config.num_hidden_layers)]
     else:
-        logger.info("disenable xlmroberta model boost")
+        logger.info("disable xlm_roberta model boost")
         old_init(self, config, add_pooling_layer)
 
 

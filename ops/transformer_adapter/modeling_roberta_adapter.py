@@ -35,7 +35,7 @@ def new__init__(self, config: RobertaConfig, add_pooling_layer: bool = True):
         self.init_ascend_operations_boost(config)
         self.layer_id_list = [torch.tensor([i], dtype=torch.int32).npu() for i in range(config.num_hidden_layers)]
     else:
-        logger.info("disenable roberta model boost")
+        logger.info("disable roberta model boost")
         old_init(self, config, add_pooling_layer)
 
 

@@ -41,20 +41,6 @@ function build_so_package()
     rm -rf build
 }
 
-function build_transformer_adapter()
-{
-    local py=$1
-    find "${ROOT_PATH}/ops/transformer_adapter"  \( -name "*.so" \) -exec  rm -f {} \;
-
-    cd "${ROOT_PATH}/ops/transformer_adapter"
-    cp "${ROOT_PATH}"/mx_rag/setup.py .
-    ${py} ./setup.py build_ext -j"$(nproc)"
-    mkdir -p "${TRANSFOMER_ADAPTER_OUTPUT_DIR}"
-    cp -arfv build/lib.linux-*/transformer_adapter/*  $TRANSFOMER_ADAPTER_OUTPUT_DIR
-    rm -f $TRANSFOMER_ADAPTER_OUTPUT_DIR/setup.cpython*.so
-    rm -rf build
-}
-
 function build_wheel_package()
 {
     local py=$1
@@ -84,7 +70,6 @@ function main()
 {
     clean
     build_so_package python3.11
-    build_transformer_adapter python3.11
     build_wheel_package python3.11 "${PY311_VER}"
     build_ops Ascend310P python3.11
     build_ops Ascend910B python3.11
