@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-import time
 import random
 from typing import Any, Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from loguru import logger
 
 from tqdm import tqdm
 
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import Lang
+from mx_rag.utils.common import Lang, MAX_PROMPT_LENGTH, validate_params
 from mx_rag.graphrag.prompts.extract_graph import (
     ENTITY_PROMPT_CN,
     ENTITY_PROMPT_EN,
@@ -49,6 +47,45 @@ def extract_relation_edges(graph) -> List[Any]:
     return relations
 
 
+def _check_conceptualizer_prompts(prompts: Optional[dict]) -> bool:
+    """
+    Check if the conceptualizer prompts are valid.
+    """
+    if prompts is None:
+        return True
+    return isinstance(prompts, dict) and all(
+        isinstance(prompts.get(k), str)
+        and 1 <= len(prompts.get(k)) <= MAX_PROMPT_LENGTH
+        for k in ["event", "entity", "relation"]
+    )
+
+
+@validate_params(
+    llm=dict(
+        validator=lambda x: isinstance(x, Text2TextLLM),
+        message="llm must be an instance of Text2TextLLM",
+    ),
+    graph=dict(
+        validator=lambda x: isinstance(x, GraphStore),
+        message="graph must be an instance of GraphStore",
+    ),
+    sample_num=dict(
+        validator=lambda x: x is None or (isinstance(x, int) and 0 <= x <= 1000000),
+        message="sample_num must be None or an integer, value range [0, 1000000]",
+    ),
+    lang=dict(
+        validator=lambda x: isinstance(x, Lang),
+        message="lang must be an instance of Lang",
+    ),
+    seed=dict(
+        validator=lambda x: isinstance(x, int) and 0 <= x <= 65535,
+        message="seed must be an integer, value range [0, 65535]",
+    ),
+    prompts=dict(
+        validator=_check_conceptualizer_prompts,
+        message="prompts must be None or a dict with keys: 'event', 'entity', 'relation'",
+    ),
+)
 class GraphConceptualizer:
     """
     Conceptualizes events, entities, and relations in a graph using an LLM.
@@ -60,21 +97,19 @@ class GraphConceptualizer:
         graph: GraphStore,
         sample_num: Optional[int] = None,
         lang: Lang = Lang.CH,
-        err_instructions: Optional[Dict[str, str]] = None,
         seed: int = 4096,
+        prompts: Optional[dict] = None,
     ) -> None:
         random.seed(seed)
         self.llm = llm
         self.graph = graph
         self.sample_num = sample_num
 
-        self.prompt_map = {
-            "event_prompt": EVENT_PROMPT_CN if lang == Lang.CH else EVENT_PROMPT_EN,
-            "entity_prompt": ENTITY_PROMPT_CN if lang == Lang.CH else ENTITY_PROMPT_EN,
-            "relation_prompt": RELATION_PROMPT_CN if lang == Lang.CH else RELATION_PROMPT_EN,
+        self.prompts = prompts or {
+            "event": (EVENT_PROMPT_CN if lang == Lang.CH else EVENT_PROMPT_EN),
+            "entity": (ENTITY_PROMPT_CN if lang == Lang.CH else ENTITY_PROMPT_EN),
+            "relation": (RELATION_PROMPT_CN if lang == Lang.CH else RELATION_PROMPT_EN),
         }
-        if err_instructions:
-            self.prompt_map.update(err_instructions)
 
         self.events = extract_event_nodes(self.graph)
         self.entities = extract_entity_nodes(self.graph)
@@ -82,8 +117,12 @@ class GraphConceptualizer:
 
         if sample_num:
             self.events = random.sample(self.events, min(sample_num, len(self.events)))
-            self.entities = random.sample(self.entities, min(sample_num, len(self.entities)))
-            self.relations = random.sample(self.relations, min(sample_num, len(self.relations)))
+            self.entities = random.sample(
+                self.entities, min(sample_num, len(self.entities))
+            )
+            self.relations = random.sample(
+                self.relations, min(sample_num, len(self.relations))
+            )
 
     def conceptualize(self) -> List[Dict[str, Any]]:
         """
@@ -98,16 +137,31 @@ class GraphConceptualizer:
             outputs = []
             with ThreadPoolExecutor() as executor:
                 future_to_item = {executor.submit(func, item): item for item in items}
-                for future in tqdm(as_completed(future_to_item), total=len(items), desc=desc):
+                for future in tqdm(
+                    as_completed(future_to_item), total=len(items), desc=desc
+                ):
                     outputs.append(future.result())
             return outputs
 
-        result.extend(run_parallel(self.events, self._conceptualize_event, "Conceptualizing events"))
-        result.extend(run_parallel(self.entities, self._conceptualize_entity, "Conceptualizing entities"))
-        result.extend(run_parallel(self.relations, self._conceptualize_relation, "Conceptualizing relations"))
+        result.extend(
+            run_parallel(
+                self.events, self._conceptualize_event, "Conceptualizing events"
+            )
+        )
+        result.extend(
+            run_parallel(
+                self.entities, self._conceptualize_entity, "Conceptualizing entities"
+            )
+        )
+        result.extend(
+            run_parallel(
+                self.relations,
+                self._conceptualize_relation,
+                "Conceptualizing relations",
+            )
+        )
 
         return result
-
 
     def _conceptualize_event(self, event: str) -> Dict[str, Any]:
         """
@@ -119,7 +173,7 @@ class GraphConceptualizer:
         Returns:
             Dict with conceptualized event.
         """
-        prompt = self.prompt_map["event_prompt"].replace("[EVENT]", event)
+        prompt = self.prompts["event"].replace("[EVENT]", event)
         answer = self.llm.chat(prompt)
         return {
             "node": event,
@@ -138,43 +192,32 @@ class GraphConceptualizer:
             Dict with conceptualized entity.
         """
         entity_name = entity.split(":::")[0] if ":::" in entity else entity
-        prompt = self.prompt_map["entity_prompt"].replace("[ENTITY]", entity_name)
+        prompt = self.prompts["entity"].replace("[ENTITY]", entity_name)
 
         if isinstance(self.graph, OpenGaussGraph):
             # Multi-thread case: each thread gets its connection
             local_graph = OpenGaussGraph(self.graph.graph_name, self.graph.conf)
         else:
             local_graph = self.graph
-        t0 = time.time()
         entity_predecessors = list(local_graph.predecessors(entity))
-        t1 = time.time()
         entity_successors = list(local_graph.successors(entity))
-        t2 = time.time()
-        predecessors_time_ms = (t1 - t0) * 1000
-        successors_time_ms = (t2 - t1) * 1000
-        total_time_ms = (t2 - t0) * 1000
-        
-        # Only log if operations are slow (> 200ms)
-        if total_time_ms > 200:
-            logger.debug(
-                f"Graph query performance for entity '{entity_name}': "
-                f"predecessors={predecessors_time_ms:.2f}ms ({len(entity_predecessors)} nodes), "
-                f"successors={successors_time_ms:.2f}ms ({len(entity_successors)} nodes), "
-                f"total={total_time_ms:.2f}ms"
-            )
 
         context = ""
         if entity_predecessors:
-            neighbors = random.sample(entity_predecessors, min(1, len(entity_predecessors)))
+            neighbors = random.sample(
+                entity_predecessors, min(1, len(entity_predecessors))
+            )
             context += ", ".join(
-                f"{neighbor} {local_graph.get_edge_attributes(neighbor, entity, 'relation')}" for neighbor in neighbors
+                f"{neighbor} {local_graph.get_edge_attributes(neighbor, entity, 'relation')}"
+                for neighbor in neighbors
             )
         if entity_successors:
             neighbors = random.sample(entity_successors, min(1, len(entity_successors)))
             if context:
                 context += ", "
             context += ", ".join(
-                f"{local_graph.get_edge_attributes(entity, neighbor, 'relation')} {neighbor}" for neighbor in neighbors
+                f"{local_graph.get_edge_attributes(entity, neighbor, 'relation')} {neighbor}"
+                for neighbor in neighbors
             )
 
         prompt = prompt.replace("[CONTEXT]", context)
@@ -195,7 +238,7 @@ class GraphConceptualizer:
         Returns:
             Dict with conceptualized relation.
         """
-        prompt = self.prompt_map["relation_prompt"].replace("[RELATION]", relation)
+        prompt = self.prompts["relation"].replace("[RELATION]", relation)
         answer = self.llm.chat(prompt)
         return {
             "node": relation,

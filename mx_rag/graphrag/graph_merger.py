@@ -298,7 +298,6 @@ class GraphMerger:
             GraphMerger: Returns self for method chaining.
         """
         merge_relations_into_graph(self.graph, relations, language)
-        return self
 
     def save_graph(self, output_path: str) -> None:
         """

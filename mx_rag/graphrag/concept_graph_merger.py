@@ -40,7 +40,6 @@ class ConceptGraphMerger:
         self._process_concept_data(concept_data)
         self._process_synset(synset_list)
         self._update_graph_attributes()
-        return self
 
     def save_graph(self, output_path: str):
         """

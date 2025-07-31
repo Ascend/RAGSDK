@@ -18,10 +18,6 @@ from mx_rag.graphrag.graph_merger import (
     RAW_TEXT_KEY,
     FILE_ID_KEY,
 )
-from mx_rag.graphrag.prompts.extract_graph import (
-    PASSAGE_START_CN,
-    PASSAGE_START_EN,
-)
 from mx_rag.graphrag.graphs.graph_store import GraphStore
 
 
@@ -426,11 +422,10 @@ class Disambiguation:
     def _extract_contexts(self, relationships: List[Dict], lang: Lang) -> None:
         """Extract contexts from relationships."""
         keys = get_language_keys(lang)
-        passage_start = PASSAGE_START_CN if lang == Lang.CH else PASSAGE_START_EN
         
         for relationship in relationships:
             file_id = relationship[FILE_ID_KEY]
-            raw_text = relationship[RAW_TEXT_KEY].split(passage_start, 1)[-1]
+            raw_text = relationship[RAW_TEXT_KEY]
             
             # Extract all triples
             entity_triples = self.extract_triples(relationship["entity_relations"], keys, "entity")

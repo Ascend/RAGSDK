@@ -9,12 +9,7 @@ from loguru import logger
 from tqdm import tqdm
 from langchain_core.documents import Document
 
-from mx_rag.graphrag.prompts.extract_graph import (
-    PASSAGE_START_CN,
-    PASSAGE_START_EN,
-    TRIPLE_INSTRUCTIONS_CN,
-    TRIPLE_INSTRUCTIONS_EN,
-)
+from mx_rag.graphrag.prompts.extract_graph import TRIPLE_INSTRUCTIONS_CN, TRIPLE_INSTRUCTIONS_EN
 from mx_rag.graphrag.prompts.repair_json import JSON_REPAIR_PROMPT
 from mx_rag.graphrag.utils.json_util import (
     extract_json_like_substring,
@@ -24,7 +19,7 @@ from mx_rag.graphrag.utils.json_util import (
     normalize_json_string,
 )
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import Lang, validate_params
+from mx_rag.utils.common import Lang, validate_params, MAX_PROMPT_LENGTH
 
 
 def _parse_and_repair_json(
@@ -108,6 +103,19 @@ def generate_relations_en(llm: Text2TextLLM, texts: List[str]) -> List[List[dict
     return [_parse_and_repair_json(llm, text, "", repair_json) for text in texts]
 
 
+def _check_triple_instructions(triple_instructions: Optional[dict] = None) -> bool:
+    """
+    Check if the triple instructions are valid.
+    """
+    if triple_instructions is None:
+        return True
+    return isinstance(triple_instructions, dict) and all(
+        isinstance(triple_instructions.get(k), str)
+        and 1 <= len(triple_instructions.get(k)) <= MAX_PROMPT_LENGTH
+        for k in ["entity_relation", "event_entity", "event_relation"]
+    )
+
+
 class LLMRelationExtractor:
     """
     LLMRelationExtractor is a class designed to extract relations and entities from text using a language model (LLM).
@@ -126,29 +134,32 @@ class LLMRelationExtractor:
             message="param must be none or an integer in [1, 512]",
         )
     )
+    @validate_params(
+        triple_instructions=dict(
+            validator=lambda x: _check_triple_instructions(x),
+            message=f"Must be None or a dict with keys: 'entity_relation', 'event_entity', 'event_relation' "
+                    f"and each value must be a string with length in [1, {MAX_PROMPT_LENGTH}]",
+        )
+    )
     def __init__(
         self,
         llm: Text2TextLLM,
         pad_token: str,
         language: Lang = Lang.CH,
         max_workers=None,
+        triple_instructions: Optional[dict] = None,
     ):
         self.llm = llm
         self.pad_token = pad_token
         self.language = language
         self.max_workers = max_workers
-        self.triple_instructions = (
+        triple_instructions = triple_instructions or (
             TRIPLE_INSTRUCTIONS_CN if language == Lang.CH else TRIPLE_INSTRUCTIONS_EN
         )
-
-        passage_start = (
-            PASSAGE_START_CN if self.language == Lang.CH else PASSAGE_START_EN
-        )
-
         self.user_prompts = {
-            "entity_relation": f"{self.triple_instructions.get('entity_relation')}{passage_start}\n",
-            "event_entity": f"{self.triple_instructions.get('event_entity')}{passage_start}\n",
-            "event_relation": f"{self.triple_instructions.get('event_relation')}{passage_start}\n",
+            "entity_relation": triple_instructions.get("entity_relation"),
+            "event_entity": triple_instructions.get("event_entity"),
+            "event_relation": triple_instructions.get("event_relation"),
         }
 
     @validate_params(

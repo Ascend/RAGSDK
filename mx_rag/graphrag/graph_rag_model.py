@@ -13,7 +13,7 @@ from mx_rag.graphrag.graphs.graph_store import GraphStore
 from mx_rag.graphrag.graphs.opengauss_graph import OpenGaussGraph
 from mx_rag.graphrag.prompts.evaluate_qa import TEXT_RAG_TEMPLATE
 from mx_rag.graphrag.qa_base_model import QABaseModel
-from mx_rag.graphrag.vector_stores.faiss_vector_store import FaissVectorStore
+from mx_rag.graphrag.vector_stores.vector_store_wrapper import VectorStoreWrapper
 from mx_rag.llm import LLMParameterConfig, Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import validate_params
@@ -50,10 +50,10 @@ class GraphRAGModel(QABaseModel):
         llm_config: LLMParameterConfig,
         embed_func: Callable[[List[str], int], List[Any]],
         graph_store: GraphStore,
-        vector_store: FaissVectorStore,
+        vector_store: VectorStoreWrapper,
         metric: str = "generation",
-        vector_store_concept: Optional[FaissVectorStore] = None,
-        reranker: Reranker = None,
+        vector_store_concept: Optional[VectorStoreWrapper] = None,
+        reranker: Optional[Reranker] = None,
         retrieval_top_k: int = 10,
         reranker_top_k: int = 10,
         subgraph_depth: int = 1,
