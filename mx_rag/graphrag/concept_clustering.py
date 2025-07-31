@@ -5,14 +5,16 @@ import numpy as np
 from loguru import logger
 from tqdm import tqdm
 
-from mx_rag.graphrag.vector_stores.faiss_vector_store import FaissVectorStore
+from mx_rag.graphrag.vector_stores.vector_store_wrapper import VectorStoreWrapper
 from mx_rag.graphrag.graphs.graph_store import GraphStore
 from mx_rag.utils.common import validate_params
 
 
 class ConceptCluster:
-
-    def __init__(self, vector_store: FaissVectorStore, graph: GraphStore) -> None:
+    """
+    Clusters concepts based on embedding similarity using a vector store and a graph wrapper.
+    """
+    def __init__(self, vector_store: VectorStoreWrapper, graph: GraphStore) -> None:
         self.vector_store = vector_store
         self.graph = graph
 

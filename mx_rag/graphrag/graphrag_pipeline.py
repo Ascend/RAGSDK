@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import os
-import time
 import json
-from typing import List
+from typing import List, Optional
 from pathlib import Path
 
 from loguru import logger
@@ -13,6 +12,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 
 from mx_rag.storage.document_store.base_storage import StorageError
+from mx_rag.storage.vectorstore import VectorStorageFactory
 from mx_rag.utils import Lang
 from mx_rag.graphrag.relation_extraction import LLMRelationExtractor
 from mx_rag.graphrag.graph_merger import GraphMerger
@@ -23,7 +23,7 @@ from mx_rag.graphrag.graph_conceptualizer import GraphConceptualizer
 from mx_rag.graphrag.concept_clustering import ConceptCluster
 from mx_rag.graphrag.concept_embedding import ConceptEmbedding
 from mx_rag.graphrag.graph_rag_model import GraphRAGModel
-from mx_rag.graphrag.vector_stores.faiss_vector_store import FaissVectorStore
+from mx_rag.graphrag.vector_stores.vector_store_wrapper import VectorStoreWrapper
 from mx_rag.document import LoaderMng
 from mx_rag.llm import Text2TextLLM
 from mx_rag.utils.common import validate_params, FileCheck, TEXT_MAX_LEN
@@ -59,7 +59,7 @@ class GraphRetriever(BaseRetriever):
                    message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]")
     )
     def _get_relevant_documents(self, query: str, *,
-                                run_manager: CallbackManagerForRetrieverRun = None) -> List:
+                                run_manager: Optional[CallbackManagerForRetrieverRun] = None) -> List:
         return self.graph_rag_model.generate([query])[0]
 
 
@@ -98,6 +98,13 @@ class GraphRAGPipeline:
         self.docs = []
         self.dim = dim
 
+        self.triple_instructions: Optional[dict] = None
+        self.conceptualizer_prompts: Optional[dict] = None
+        
+        self.devs: List[int] = kwargs.pop("devs", [0])
+        self.concept_vector_store = kwargs.pop("concept_vector_store", None)
+        self.node_vector_store = kwargs.pop("node_vector_store", None)
+
     @validate_params(
         file_list=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= 100,
                        message="file_list must be list, and length range [1, 100]"),
@@ -124,60 +131,59 @@ class GraphRAGPipeline:
         if failed_files:
             logger.warning(f"{len(failed_files)} files failed to upload, please check: {','.join(failed_files)}")
 
-    @validate_params(lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be a Lang instance"),
-                     pad_token=dict(validator=lambda x: isinstance(x, str) and len(x) < 256, 
-                                    message="param must be a string, range [0, 255]"),
-                     conceptualize=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean"))
-    def build_graph(self, lang: Lang = Lang.EN, pad_token="", conceptualize: bool = False, **kwargs):
+    @validate_params(
+        lang=dict(
+            validator=lambda x: isinstance(x, Lang),
+            message="param must be a Lang instance",
+        ),
+        pad_token=dict(
+            validator=lambda x: isinstance(x, str) and len(x) < 256,
+            message="param must be a string, range [0, 255]",
+        ),
+        conceptualize=dict(
+            validator=lambda x: isinstance(x, bool), message="param must be a boolean"
+        ),
+    )
+    def build_graph(
+        self,
+        lang: Lang = Lang.EN,
+        pad_token: str = "",
+        conceptualize: bool = False,
+        **kwargs,
+    ):
         max_workers = kwargs.pop("max_workers", None)
         top_k = kwargs.pop("top_k", 5)
         threshold = kwargs.pop("threshold", 0.5)
+        self.triple_instructions = kwargs.pop("triple_instructions", self.triple_instructions)
+        self.conceptualizer_prompts = kwargs.pop("conceptualizer_prompts", self.conceptualizer_prompts)
+
+        if self.node_vector_store is None:
+            self.node_vector_store = VectorStorageFactory.create_storage(
+                vector_type="npu_faiss_db", x_dim=self.dim, 
+                load_local_index=self.node_vectors_path, devs=self.devs, **kwargs
+            )
         if not self.docs:
             raise GraphRAGError("Empty documents, please first run upload_files")
         try:
-            t1 = time.time()
-            extractor = LLMRelationExtractor(llm=self.llm, pad_token=pad_token, language=lang, max_workers=max_workers)
+            extractor = LLMRelationExtractor(
+                llm=self.llm,
+                pad_token=pad_token,
+                language=lang,
+                max_workers=max_workers,
+                triple_instructions=self.triple_instructions,
+            )
             relations = extractor.query(self.docs)
-            self._clear_docs()
+            self.docs = []
             save_to_json(relations, self.relations_save_path)
             logger.info(f"Relations saved: {self.relations_save_path}")
 
-            t2 = time.time()
-            GraphMerger(self.graph).merge(relations, lang).save_graph(self.graph_save_path)
-
-            timings = {
-                "extract_relations_ms": int((t2 - t1) * 1000),
-                "build_graph_ms": int((time.time() - t2) * 1000),
-            }
+            merger = GraphMerger(self.graph)
+            merger.merge(relations, lang)
+            merger.save_graph(self.graph_save_path)
 
             if conceptualize:
-                if self.concept_embedding is None:
-                    self.concept_embedding = ConceptEmbedding(self.embedding_model.embed_documents)
-                t3 = time.time()
-                concepts = GraphConceptualizer(self.llm, self.graph, lang=lang).conceptualize()
-                save_to_json(concepts, self.concepts_save_path)
-                logger.info(f"Concepts saved: {self.concepts_save_path}")
-
-                t4 = time.time()
-                embeddings = self.concept_embedding.embed(concepts)
-                vector_store = FaissVectorStore(self.dim, self.concept_cluster_path)
-                graph = NetworkxGraph(is_digraph=False)
-                cluster = ConceptCluster(vector_store=vector_store, graph=graph)
-                clusters = cluster.find_clusters(embeddings, top_k=top_k, threshold=threshold)
-                save_to_json([list(c) for c in clusters], self.synset_save_path)
-                logger.info(f"Clusters saved: {self.synset_save_path}")
-                t5 = time.time()
-                ConceptGraphMerger(self.graph).merge_concepts_and_synset(concepts, clusters)\
-                    .save_graph(self.graph_save_path)
-                t6 = time.time()
-
-                timings.update({
-                    "conceptualize_graph_ms": int((t4 - t3) * 1000),
-                    "embed_and_cluster_ms": int((t5 - t4) * 1000),
-                    "merge_concepts_synset_ms": int((t6 - t5) * 1000),
-                    "total_ms": int((t6 - t1) * 1000),
-                })
-            logger.info(f"Graph built successfully: {timings}")
+                self._process_concepts_and_clusters(lang, top_k, threshold, **kwargs)
+            logger.info("Graph built successfully")
         except Exception as e:
             logger.error(f"Graph build failed: {e}")
 
@@ -191,11 +197,15 @@ class GraphRAGPipeline:
         return self.as_retriever(graph_name, graph_type, **kwargs).invoke(question)
 
     @validate_params(
-        graph_name=dict(validator=lambda x: isinstance(x, str) and x.isidentifier() and 0 < len(x) < 256,
-                        message="param must be a str and its length meets [1, 255], "
-                                "and only contains letters, _ and digits."),
-        graph_type=dict(validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
-                        message="param only takes from 'networkx' or 'opengauss'")
+        graph_name=dict(
+            validator=lambda x: isinstance(x, str) and x.isidentifier() and 0 < len(x) < 256,
+            message="param must be a str and its length meets [1, 255], "
+                    "and only contains letters, _ and digits."
+        ),
+        graph_type=dict(
+            validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
+            message="param only takes from 'networkx' or 'opengauss'"
+        )
     )
     def as_retriever(self, graph_name, graph_type, **kwargs):
         self._setup_save_path(graph_name)
@@ -207,13 +217,18 @@ class GraphRAGPipeline:
         retrieval_top_k = kwargs.pop("retrieval_top_k", 40)
         reranker_top_k = kwargs.pop("reranker_top_k", 20)
         subgraph_depth = kwargs.pop("subgraph_depth", 2)
+        node_vector_store_wrapper = VectorStoreWrapper(vector_store=self.node_vector_store)
+        if self.concept_vector_store is not None:
+            concept_vector_store_wrapper = VectorStoreWrapper(vector_store=self.concept_vector_store)
+        else:
+            concept_vector_store_wrapper = None
 
         rag_model = GraphRAGModel(
             llm=self.llm, llm_config=self.llm.llm_config,
             embed_func=self.embedding_model.embed_documents,
             graph_store=self.graph,
-            vector_store=FaissVectorStore(self.dim, self.node_vectors_path, **kwargs),
-            vector_store_concept=FaissVectorStore(self.dim, self.concept_vectors_path, **kwargs),
+            vector_store=node_vector_store_wrapper,
+            vector_store_concept=concept_vector_store_wrapper,
             reranker=self.rerank_model,
             use_text=use_text,
             batch_size=batch_size,
@@ -246,5 +261,36 @@ class GraphRAGPipeline:
         self.node_vectors_path = os.path.join(self.work_dir, f"{graph_name}_node_vectors.index")
         self.concept_vectors_path = os.path.join(self.work_dir, f"{graph_name}_concept_vectors.index")
 
-    def _clear_docs(self):
-        self.docs = []
+    def _process_concepts_and_clusters(self, lang, top_k, threshold, **kwargs):
+        if self.concept_embedding is None:
+            self.concept_embedding = ConceptEmbedding(
+                self.embedding_model.embed_documents
+            )
+        concepts = GraphConceptualizer(
+            self.llm,
+            self.graph,
+            lang=lang,
+            prompts=self.conceptualizer_prompts,
+        ).conceptualize()
+        save_to_json(concepts, self.concepts_save_path)
+        logger.info(f"Concepts saved: {self.concepts_save_path}")
+
+        embeddings = self.concept_embedding.embed(concepts)
+        if self.concept_vector_store is None:
+            self.concept_vector_store = VectorStorageFactory.create_storage(
+                vector_type="npu_faiss_db",
+                x_dim=self.dim,
+                load_local_index=self.concept_vectors_path,
+                devs=self.devs,
+                **kwargs,
+            )
+        vector_store_wrapper = VectorStoreWrapper(self.concept_vector_store)
+        graph = NetworkxGraph(is_digraph=False)
+        cluster = ConceptCluster(vector_store=vector_store_wrapper, graph=graph)
+        clusters = cluster.find_clusters(embeddings, top_k=top_k, threshold=threshold)
+        save_to_json([list(c) for c in clusters], self.synset_save_path)
+        logger.info(f"Clusters saved: {self.synset_save_path}")
+
+        merger = ConceptGraphMerger(self.graph)
+        merger.merge_concepts_and_synset(concepts, clusters)
+        merger.save_graph(self.graph_save_path)

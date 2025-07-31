@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-from paddle.base import libpaddle
 import unittest
 from unittest.mock import Mock, patch
 from mx_rag.utils.common import Lang
@@ -112,7 +111,6 @@ class TestLLMRelationExtractor(unittest.TestCase):
         "event_entity": "extract events",
         "event_relation": "extract event relations"
     })
-    @patch('mx_rag.graphrag.relation_extraction.PASSAGE_START_CN', "passage:")
     def test_init_chinese(self):
         extractor = LLMRelationExtractor(self.mock_llm, "<pad>", Lang.CH, max_workers=4)
 
