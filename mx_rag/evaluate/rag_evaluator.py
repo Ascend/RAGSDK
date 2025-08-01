@@ -26,9 +26,10 @@ from ragas.metrics import (
     ResponseGroundedness
 )
 
-from mx_rag.utils.common import validate_params, validate_list_str, validate_list_list_str, TEXT_MAX_LEN
+from mx_rag.utils.common import validate_params, validate_list_str, validate_list_list_str, TEXT_MAX_LEN, MB
 from mx_rag.embedding.local import TextEmbedding
 from mx_rag.embedding.service import TEIEmbedding
+from mx_rag.utils.file_check import SecDirCheck
 
 # Disable logs from ragas
 if os.environ.get("DISABLE_RAGAS_LOGGING", "1") == "1":
@@ -106,6 +107,7 @@ class RAGEvaluator:
             return
         try:
             new_prompts = metric.load_prompts(prompts_path, language)
+            SecDirCheck(new_prompts, 4 * MB).check()
             if new_prompts:
                 metric.set_prompts(**new_prompts)
         except FileNotFoundError:
