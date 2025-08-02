@@ -158,8 +158,8 @@ class RAGEvaluator:
         try:
             result = evaluate(
                 dataset=evaluation_dataset,
-                metrics=metrics, 
-                llm=self.evaluator_llm, 
+                metrics=metrics,
+                llm=self.evaluator_llm,
                 embeddings=self.embeddings,
                 show_progress=show_progress
             )
@@ -175,7 +175,7 @@ class RAGEvaluator:
         # ragas 0.2.x returns a EvaluationResult object with .scores as a list
         df = pd.DataFrame(result.scores)
         return df.to_dict(orient='list')
-    
+
     def _adapt_metrics(self, metrics: List, language: str, prompts_path: Optional[str]) -> None:
         """
         Adapts the prompts in the metrics to the given language.

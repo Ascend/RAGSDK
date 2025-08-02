@@ -42,7 +42,9 @@ class MxRAGCache:
     verbose: bool = False
 
     @validate_params(
-        cache_name=dict(validator=lambda x: isinstance(x, str), message=STR_TYPE_CHECK_TIP),
+        cache_name=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) < 64 and bool(re.fullmatch(r'[0-9a-zA-Z_]+', x)),
+            message="param must meets: Type is str, length range (0, 64), match '[0-9a-zA-Z_]+'"),
         config=dict(validator=lambda x: isinstance(x, CacheConfig) or isinstance(x, SimilarityCacheConfig),
                     message="param must be instance of CacheConfig or SimilarityCacheConfig")
     )
