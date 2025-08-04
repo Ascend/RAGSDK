@@ -185,7 +185,7 @@ class GraphRAGPipeline:
                 self._process_concepts_and_clusters(lang, top_k, threshold, **kwargs)
             logger.info("Graph built successfully")
         except Exception as e:
-            logger.error(f"Graph build failed: {e}")
+            raise GraphRAGError("Graph build failed") from e
 
     @validate_params(
         question=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
