@@ -103,6 +103,8 @@ def add_edge_with_attributes(
         head_type (str): Type of head node.
         tail_type (str): Type of tail node.
     """
+    if head == tail:
+        return
     graph.add_edge(head, tail, relation=relation)
     graph.add_edge(head, raw_text, relation=TEXT_CONCLUDE)
     graph.add_edge(tail, raw_text, relation=TEXT_CONCLUDE)
@@ -140,7 +142,7 @@ def process_entity_relations(
     """
     for relation in entity_relations:
         if not isinstance(relation, dict):
-            logger.warning(f"Wrong relation")
+            logger.warning("Wrong relation")
             continue
         head = relation.get(keys["head_entity"])
         rel = relation.get(keys["relation"])
@@ -150,7 +152,7 @@ def process_entity_relations(
                 graph, head.strip(), tail.strip(), rel.strip(), raw_text, file_id, ENTITY_TYPE, ENTITY_TYPE
             )
         else:
-            logger.warning(f"Invalid entity relation format")
+            logger.warning("Invalid entity relation format")
 
 
 def process_event_relations(
@@ -177,7 +179,7 @@ def process_event_relations(
         if isinstance(relation, list) and relation:
             relation = relation[0]
         if not isinstance(relation, dict):
-            logger.warning(f"Wrong relation")
+            logger.warning("Wrong relation")
             continue
         head = relation.get(keys["head_event"])
         rel = relation.get(keys["relation"])
@@ -187,7 +189,7 @@ def process_event_relations(
                 graph, head.strip(), tail.strip(), rel.strip(), raw_text, file_id, EVENT_TYPE, EVENT_TYPE
             )
         else:
-            logger.warning(f"Invalid event relation format")
+            logger.warning("Invalid event relation format")
 
 
 def process_event_entity_relations(
@@ -213,7 +215,7 @@ def process_event_entity_relations(
     triples = extract_event_entity_triples(event_entity_relations, keys)
     for event, relation, entity in triples:
         add_edge_with_attributes(
-            graph, event, entity, relation, raw_text, file_id, EVENT_TYPE, ENTITY_TYPE
+            graph, entity, event, relation, raw_text, file_id, ENTITY_TYPE, EVENT_TYPE
         )
 
 
@@ -234,7 +236,7 @@ def merge_relations_into_graph(
 
     for data in tqdm(relations, desc="Processing relations", total=len(relations)):
         if not isinstance(data, dict):
-            logger.warning(f"Invalid relation")
+            logger.warning("Invalid relation")
             continue
 
         file_id = str(data.get(FILE_ID_KEY, ""))
@@ -244,7 +246,7 @@ def merge_relations_into_graph(
         event_relations = data.get("event_relations", [])
 
         if not raw_text:
-            logger.warning(f"Missing raw_text in relation")
+            logger.warning("Missing raw_text in relation")
             continue
 
         graph.add_node(raw_text)
