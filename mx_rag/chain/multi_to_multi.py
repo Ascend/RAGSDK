@@ -83,8 +83,6 @@ class Multi2MultiChain(Chain):
         text_docs = [doc for doc in docs if doc.metadata.get("type", "") == "text"]
         img_docs = [doc for doc in docs if doc.metadata.get("type", "") == "image"]
 
-
-
         # 2. Add text quotes
         user_message = "Text Quotes are:"
         for i, doc in enumerate(text_docs):
@@ -102,11 +100,6 @@ class Multi2MultiChain(Chain):
         # 4. add user question
         user_message += f"The user question is: {query}"
 
-        # 构造请求消息
-        # messages = [
-        #     {"role": "system", "content": prompt},
-        #     {"role": "user", "content": user_message}
-        # ]
         return user_message
 
     def _query(self,
@@ -131,6 +124,7 @@ class Multi2MultiChain(Chain):
             resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in q_docs]
 
         sys_messages = [{"role": "system", "content": self._prompt}]
+
         logger.debug(f"q_with_promp: {q_with_promp}")
         llm_response = self._llm.chat(query=q_with_promp, sys_messages=sys_messages, role=self._role, llm_config=llm_config)
         resp['result'] = llm_response

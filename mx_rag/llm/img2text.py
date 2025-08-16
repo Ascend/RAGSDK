@@ -58,15 +58,14 @@ class Img2TextLLM(LLM):
                         message="param must be LLMParameterConfig")
     )
     def chat(self, prompt: str = IMG_TO_TEXT_PROMPT,
-             type: str = "image_url",
-             url: dict = None,
+             image_url: dict = None,
              sys_messages: List[dict] = None,
              role: str = "user",
              llm_config: LLMParameterConfig = LLMParameterConfig()):
         ans = ""
         if sys_messages is None:
             sys_messages = [{"role": "system", "content": "你是一个友好的AI助手。"}]
-        request_body = self._get_request_body(prompt, type, url, sys_messages, role, llm_config)
+        request_body = self._get_request_body(prompt, image_url, sys_messages, role, llm_config)
         request_body["stream"] = False
         response = self._client.post(url=self.base_url, body=json.dumps(request_body),
                                      headers={"Content-Type": "application/json"})
@@ -88,11 +87,11 @@ class Img2TextLLM(LLM):
             logger.error("get response failed, please check the server log for details")
         return ans
 
-    def _get_request_body(self, prompt: str, type: str, url: dict, messages: List[dict], role: str,
+    def _get_request_body(self, prompt: str, image_url: dict, messages: List[dict], role: str,
                           llm_config: LLMParameterConfig):
         content = [
             {"type": "text", "text": prompt},
-            {"type": type, type: url}
+            {"type": "image_url", "image_url": image_url}
         ]
         messages.append({"role": role, "content": content})
         # 适配MindIE参数范围

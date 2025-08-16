@@ -10,6 +10,7 @@ import base64
 from loguru import logger
 from PIL import Image
 
+from mx_rag.llm import Img2TextLLM
 from mx_rag.utils import file_check
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024
 
@@ -144,11 +145,11 @@ class BaseLoader(ABC):
                 image.close()
         return img_base64
 
-    def _interpret_image(self, image_data, vlm):
+    def _interpret_image(self, image_data, vlm: Img2TextLLM):
         img_base64 = self._convert_to_base64(image_data)
         # vllm解析图像
-        url = {"url": f"data:image/jpeg;base64,{img_base64}"}
-        image_summary = vlm.chat(url=url)
+        image_url = {"url": f"data:image/jpeg;base64,{img_base64}"}
+        image_summary = vlm.chat(image_url=image_url)
         if image_summary is None:
             image_summary = ""
             logger.warning("image summary func exec failed")

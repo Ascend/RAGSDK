@@ -36,4 +36,5 @@ class ImageLoader(BaseLoader, mxBaseLoader):
         with open(self.file_path, "rb") as fi:
             encode_content = str(base64.b64encode(fi.read()).decode())
 
-        yield Document(page_content=encode_content, metadata={"source": os.path.basename(self.file_path)})
+        yield Document(page_content=encode_content, metadata={"source": os.path.basename(self.file_path),
+                                                              "type": "image"})

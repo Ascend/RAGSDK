@@ -146,6 +146,7 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                     image_summaries.append(image_summary if image_summary else "")
             except Exception as e:
                 logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
+        pdf_document.close()
 
         return self._text_merger(pdf_content, image_summaries, img_base64_list)
 
