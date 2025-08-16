@@ -48,4 +48,4 @@ class TestTokenParseDocumentFile(unittest.TestCase):
         tokenizer = None
         texts, metadatas = TestTokenParseDocumentFile.token_parse_document_file(self.file_path, tokenizer, 100,
                                                                                 DOC_PARSER_MAP)
-        self.assertEqual(metadatas, [{'source': 'demo.docx'}])
+        self.assertEqual(metadatas, [{'source': 'demo.docx', 'type': 'text'}])

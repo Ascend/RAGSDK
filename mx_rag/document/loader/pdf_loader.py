@@ -25,7 +25,7 @@ from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, Lang
 
 class PdfLoader(BaseLoader, mxBaseLoader):
     EXTENSION = (".pdf",)
-    
+
     @validate_params(
         lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
         layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
@@ -64,12 +64,10 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                                                         "page_count": self._get_pdf_page_count(),
                                                         "type": "text"
                                                         })
-
-        for img_base64, image_summary in zip(img_base64_list, image_summaries):
-            yield Document(page_content=image_summary, metadata={"source": self.file_path,
-                                                                 "image_base64": img_base64, "type": "image"})
-
-
+        if image_summaries and img_base64_list:
+            for img_base64, image_summary in zip(img_base64_list, image_summaries):
+                yield Document(page_content=image_summary, metadata={"source": self.file_path,
+                                                                     "image_base64": img_base64, "type": "image"})
 
     def _layout_recognize(self, pdf_document):
         layout_res = []
@@ -137,7 +135,7 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                 page = pdf_document.load_page(page_num)
                 pdf_content.append(page.get_text("text"))
                 image_list = page.get_images(full=True) if self.vlm else []
-                for img_index, img in enumerate(image_list):
+                for _, img in enumerate(image_list):
                     xref = img[0]
                     base_image = pdf_document.extract_image(xref)
                     image_data = base_image["image"]
