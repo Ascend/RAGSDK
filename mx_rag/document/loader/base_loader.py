@@ -5,8 +5,10 @@ import os
 from abc import ABC
 import zipfile
 import psutil
+import base64
 
 from loguru import logger
+from PIL import Image
 
 from mx_rag.utils import file_check
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024
@@ -106,3 +108,48 @@ class BaseLoader(ABC):
             return self._check_nested_depth(file_data, current_depth + 1)
         else:
             return current_depth
+
+    def _convert_to_base64(self, image_data):
+        """
+        通过调整图片的质量来减小图片的文件大小，并返回PIL图像对象
+        - 图片将转换为JPEG格式，并设置指定的压缩质量
+        """
+        image = Image.open(io.BytesIO(image_data))
+        try:
+            # 将图片数据转换为PIL图像对象
+            image = image.convert("RGB")
+            # 将PIL图像对象转换为JPEG格式，并保存到字节流中
+            img_byte_arr = io.BytesIO()
+            image.save(img_byte_arr, format="JPEG")
+            img_byte_arr.seek(0)
+
+            # 获取原始图片的Base64编码
+            img_base64 = base64.b64encode(image_data).decode('utf-8')
+            iterations = 0  # 迭代次数计数器
+            # 如果Base64编码的长度大于1024*1024，则降低图片质量
+            while len(img_base64) > 1024 * 1024:
+                if iterations > 10:
+                    image.close()
+                    raise ValueError(f"Reached maximum iterations stopping.")
+                quality = max(10, 100 - len(img_base64) // (1024 * 1024))  # 根据编码大小调节质量
+
+                # 将图片保存到字节流中，使用JPEG格式并调整质量
+                img_byte_arr = io.BytesIO()
+                image.save(img_byte_arr, format="JPEG", quality=quality)
+                img_byte_arr.seek(0)
+                img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+                iterations += 1
+        finally:
+            if image and hasattr(image, 'close'):
+                image.close()
+        return img_base64
+
+    def _interpret_image(self, image_data, vlm):
+        img_base64 = self._convert_to_base64(image_data)
+        # vllm解析图像
+        url = {"url": f"data:image/jpeg;base64,{img_base64}"}
+        image_summary = vlm.chat(url=url)
+        if image_summary is None:
+            image_summary = ""
+            logger.warning("image summary func exec failed")
+        return img_base64, image_summary

@@ -104,6 +104,7 @@ class SingleText2TextChain(Chain):
         resp = {"query": question, "result": ""}
         if self._source:
             resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in q_docs]
+        logger.debug(f"q_with_promp:{q_with_promp}")
         llm_response = self._llm.chat(query=q_with_promp, role=self._role, llm_config=llm_config)
         resp['result'] = llm_response
         return resp

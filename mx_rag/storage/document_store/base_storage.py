@@ -24,7 +24,7 @@ class MxDocument(BaseModel):
 
     @validator('metadata')
     def _validate_metadata(cls, metadata):
-        if not validate_sequence(metadata):
+        if not validate_sequence(metadata, 1024*1024):
             raise ValueError("check MxDocument metadata failed")
 
         return metadata

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-from typing import List, Iterator
+from typing import List, Iterator, Callable
 
 from pathlib import Path
 import fitz
@@ -18,6 +18,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
+from mx_rag.llm import Img2TextLLM
 from mx_rag.utils.file_check import SecFileCheck
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, Lang
 
@@ -29,11 +30,13 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
         layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
-    def __init__(self, file_path: str, lang: Lang = Lang.CH, layout_recognize: bool = False):
+    def __init__(self, file_path: str, vlm: Img2TextLLM = None,
+                 lang: Lang = Lang.CH, layout_recognize: bool = False):
         super().__init__(file_path)
         self.layout_recognize = layout_recognize
         self.ocr_engine = None
         self.lang = lang
+        self.vlm = vlm
 
     @staticmethod
     def _reconstruct(layout_res):
@@ -55,10 +58,18 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         self._check()
         return self._parser() if self.layout_recognize else self._plain_parser()
 
-    def _text_merger(self, pdf_content):
+    def _text_merger(self, pdf_content, image_summaries=None, img_base64_list=None):
         one_text = " ".join(pdf_content)
         yield Document(page_content=one_text, metadata={"source": self.file_path,
-                                                        "page_count": self._get_pdf_page_count()})
+                                                        "page_count": self._get_pdf_page_count(),
+                                                        "type": "text"
+                                                        })
+
+        for img_base64, image_summary in zip(img_base64_list, image_summaries):
+            yield Document(page_content=image_summary, metadata={"source": self.file_path,
+                                                                 "image_base64": img_base64, "type": "image"})
+
+
 
     def _layout_recognize(self, pdf_document):
         layout_res = []
@@ -117,18 +128,26 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         return self._text_merger(pdf_content)
 
     def _plain_parser(self):
-        pdf_content = []
+        pdf_content, img_base64_list, image_summaries = [], [], []
 
-        with fitz.open(self.file_path) as pdf_document:
-            logger.info(f"Extracting text from PDF with {pdf_document.page_count} pages...")
-            for page_num in tqdm(range(pdf_document.page_count), desc="Extracting text"):
-                try:
-                    page = pdf_document.load_page(page_num)
-                    pdf_content.append(page.get_text("text"))
-                except Exception as e:
-                    logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
+        pdf_document = fitz.open(self.file_path)
+        logger.info(f"Extracting text from PDF with {pdf_document.page_count} pages...")
+        for page_num in tqdm(range(pdf_document.page_count), desc="Extracting text"):
+            try:
+                page = pdf_document.load_page(page_num)
+                pdf_content.append(page.get_text("text"))
+                image_list = page.get_images(full=True) if self.vlm else []
+                for img_index, img in enumerate(image_list):
+                    xref = img[0]
+                    base_image = pdf_document.extract_image(xref)
+                    image_data = base_image["image"]
+                    img_base64, image_summary = self._interpret_image(image_data, self.vlm)
+                    img_base64_list.append(img_base64 if img_base64 else "")
+                    image_summaries.append(image_summary if image_summary else "")
+            except Exception as e:
+                logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
 
-        return self._text_merger(pdf_content)
+        return self._text_merger(pdf_content, image_summaries, img_base64_list)
 
     def _get_pdf_page_count(self):
         pdf_document = fitz.open(self.file_path)
