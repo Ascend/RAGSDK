@@ -91,32 +91,31 @@ class SingleText2TextChain(Chain):
             scores = self._reranker.rerank(question, [doc.page_content for doc in q_docs])
             q_docs = self._reranker.rerank_top_k(q_docs, scores)
 
-        q_with_promp = self._merge_query_prompt(question, copy.deepcopy(q_docs), self._prompt)
+        q_with_prompt = self._merge_query_prompt(question, copy.deepcopy(q_docs), self._prompt)
 
         if not llm_config.stream:
-            return self._do_query(q_with_promp, llm_config, question=question, q_docs=q_docs)
+            return self._do_query(q_with_prompt, llm_config, question=question, q_docs=q_docs)
 
-        return self._do_stream_query(q_with_promp, llm_config, question=question, q_docs=q_docs)
+        return self._do_stream_query(q_with_prompt, llm_config, question=question, q_docs=q_docs)
 
-    def _do_query(self, q_with_promp: str, llm_config: LLMParameterConfig, question: str, q_docs: List[Document]) \
+    def _do_query(self, q_with_prompt: str, llm_config: LLMParameterConfig, question: str, q_docs: List[Document]) \
             -> Dict:
         logger.info("invoke normal query")
         resp = {"query": question, "result": ""}
         if self._source:
             resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in q_docs]
-        logger.debug(f"q_with_promp:{q_with_promp}")
-        llm_response = self._llm.chat(query=q_with_promp, role=self._role, llm_config=llm_config)
+        llm_response = self._llm.chat(query=q_with_prompt, role=self._role, llm_config=llm_config)
         resp['result'] = llm_response
         return resp
 
-    def _do_stream_query(self, q_with_promp: str, llm_config: LLMParameterConfig, question: str,
+    def _do_stream_query(self, q_with_prompt: str, llm_config: LLMParameterConfig, question: str,
                          q_docs: List[Document] = None) -> Iterator[Dict]:
         logger.info("invoke stream query")
         resp = {"query": question, "result": ""}
         if self._source and q_docs:
             resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in q_docs]
 
-        for response in self._llm.chat_streamly(query=q_with_promp, role=self._role, llm_config=llm_config):
+        for response in self._llm.chat_streamly(query=q_with_prompt, role=self._role, llm_config=llm_config):
             resp['result'] = response
             yield resp
 
@@ -135,18 +134,18 @@ class GraphRagText2TextChain(SingleText2TextChain):
             return self._do_stream_query(prompt, llm_config, question, [])
         return self._do_query(prompt, llm_config, question, [])
 
-    def _do_query(self, q_with_promp: str, llm_config: LLMParameterConfig, question: str, q_docs: List[Document]) \
+    def _do_query(self, q_with_prompt: str, llm_config: LLMParameterConfig, question: str, q_docs: List[Document]) \
             -> Dict:
         logger.info("invoke normal query")
         resp = {"query": question, "result": ""}
-        llm_response = self._llm.chat(query=q_with_promp, role=self._role, llm_config=llm_config)
+        llm_response = self._llm.chat(query=q_with_prompt, role=self._role, llm_config=llm_config)
         resp['result'] = llm_response
         return resp
 
-    def _do_stream_query(self, q_with_promp: str, llm_config: LLMParameterConfig, question: str,
+    def _do_stream_query(self, q_with_prompt: str, llm_config: LLMParameterConfig, question: str,
                          q_docs: List[Document] = None) -> Iterator[Dict]:
         logger.info("invoke stream query")
         resp = {"query": question, "result": ""}
-        for response in self._llm.chat_streamly(query=q_with_promp, role=self._role, llm_config=llm_config):
+        for response in self._llm.chat_streamly(query=q_with_prompt, role=self._role, llm_config=llm_config):
             resp['result'] = response
             yield resp

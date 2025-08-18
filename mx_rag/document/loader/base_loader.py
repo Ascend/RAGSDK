@@ -129,7 +129,7 @@ class BaseLoader(ABC):
             iterations = 0  # 迭代次数计数器
             # 如果Base64编码的长度大于1024*1024，则降低图片质量
             while len(img_base64) > 1024 * 1024:
-                if iterations > 10:
+                if iterations >= 10:
                     image.close()
                     raise ValueError(f"Reached maximum iterations stopping.")
                 quality = max(10, 100 - len(img_base64) // (1024 * 1024))  # 根据编码大小调节质量
