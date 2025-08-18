@@ -53,11 +53,10 @@ def _check_conceptualizer_prompts(prompts: Optional[dict]) -> bool:
     """
     if prompts is None:
         return True
-    return isinstance(prompts, dict) and all(
-        isinstance(prompts.get(k), str)
-        and 1 <= len(prompts.get(k)) <= MAX_PROMPT_LENGTH
-        for k in ["event", "entity", "relation"]
-    )
+    required_keys = {"event", "entity", "relation"}
+    if set(prompts.keys()) != required_keys:
+        return False
+    return all(isinstance(prompts[key], str) and 0 < len(prompts[key]) <= MAX_PROMPT_LENGTH for key in required_keys)
 
 
 @validate_params(

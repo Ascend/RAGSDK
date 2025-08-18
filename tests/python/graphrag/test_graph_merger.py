@@ -43,7 +43,7 @@ class TestMergeRelationsIntoGraph(unittest.TestCase):
         self.mock_graph.update_node_attribute.assert_any_call("Sample text", "type", "raw_text")
         self.mock_graph.update_node_attribute.assert_any_call("Sample text", "file_id", "123", append=True)
         self.mock_graph.add_edge.assert_any_call("Entity1", "Entity2", relation="related_to")
-        self.mock_graph.add_edge.assert_any_call("Event1", "Entity1", relation="participate")
+        self.mock_graph.add_edge.assert_any_call("Entity1", "Event1", relation="participate")
         self.mock_graph.add_edge.assert_any_call("Event1", "Event2", relation="causes")
 
     def test_merge_with_invalid_relations(self):

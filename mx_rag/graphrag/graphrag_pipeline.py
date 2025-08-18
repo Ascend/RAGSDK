@@ -13,6 +13,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 
 from mx_rag.storage.document_store.base_storage import StorageError
 from mx_rag.storage.vectorstore import VectorStorageFactory
+from mx_rag.storage.vectorstore.vectorstore import VectorStore
 from mx_rag.utils import Lang
 from mx_rag.graphrag.relation_extraction import LLMRelationExtractor
 from mx_rag.graphrag.graph_merger import GraphMerger
@@ -100,10 +101,10 @@ class GraphRAGPipeline:
 
         self.triple_instructions: Optional[dict] = None
         self.conceptualizer_prompts: Optional[dict] = None
-        
+        self.concept_vector_store = None
+        self.node_vector_store = None
         self.devs: List[int] = kwargs.pop("devs", [0])
-        self.concept_vector_store = kwargs.pop("concept_vector_store", None)
-        self.node_vector_store = kwargs.pop("node_vector_store", None)
+        self._init_vector_store(**kwargs)
 
     @validate_params(
         file_list=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= 100,
@@ -157,11 +158,6 @@ class GraphRAGPipeline:
         self.triple_instructions = kwargs.pop("triple_instructions", self.triple_instructions)
         self.conceptualizer_prompts = kwargs.pop("conceptualizer_prompts", self.conceptualizer_prompts)
 
-        if self.node_vector_store is None:
-            self.node_vector_store = VectorStorageFactory.create_storage(
-                vector_type="npu_faiss_db", x_dim=self.dim, 
-                load_local_index=self.node_vectors_path, devs=self.devs, **kwargs
-            )
         if not self.docs:
             raise GraphRAGError("Empty documents, please first run upload_files")
         try:
@@ -182,10 +178,10 @@ class GraphRAGPipeline:
             merger.save_graph(self.graph_save_path)
 
             if conceptualize:
-                self._process_concepts_and_clusters(lang, top_k, threshold, **kwargs)
+                self._process_concepts_and_clusters(lang, top_k, threshold)
             logger.info("Graph built successfully")
         except Exception as e:
-            raise GraphRAGError("Graph build failed") from e
+            raise GraphRAGError("Graph building failed") from e
 
     @validate_params(
         question=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
@@ -239,6 +235,29 @@ class GraphRAGPipeline:
         )
         return GraphRetriever(graph_rag_model=rag_model)
 
+    def _init_vector_store(self, **kwargs):
+        self.node_vector_store = kwargs.pop("node_vector_store", None)
+        self.concept_vector_store = kwargs.pop("concept_vector_store", None)
+
+        if self.node_vector_store is None:
+            self.node_vector_store = VectorStorageFactory.create_storage(
+                vector_type="npu_faiss_db",
+                x_dim=self.dim,
+                load_local_index=self.node_vectors_path,
+                devs=self.devs
+            )
+        elif not isinstance(self.node_vector_store, VectorStore):
+            raise GraphRAGError("node_vector_store must be an instance of VectorStore")
+        if self.concept_vector_store is None:
+            self.concept_vector_store = VectorStorageFactory.create_storage(
+                vector_type="npu_faiss_db",
+                x_dim=self.dim,
+                load_local_index=self.concept_vectors_path,
+                devs=self.devs
+            )
+        elif not isinstance(self.concept_vector_store, VectorStore):
+            raise GraphRAGError("concept_vector_store must be an instance of VectorStore")
+
     def _setup_graph(self, graph_name, graph_type, **kwargs):
         if not isinstance(graph_type, str) or graph_type not in ["networkx", "opengauss"]:
             raise GraphRAGError("graph client supports only networkx or opengauss")
@@ -261,7 +280,7 @@ class GraphRAGPipeline:
         self.node_vectors_path = os.path.join(self.work_dir, f"{graph_name}_node_vectors.index")
         self.concept_vectors_path = os.path.join(self.work_dir, f"{graph_name}_concept_vectors.index")
 
-    def _process_concepts_and_clusters(self, lang, top_k, threshold, **kwargs):
+    def _process_concepts_and_clusters(self, lang, top_k, threshold):
         if self.concept_embedding is None:
             self.concept_embedding = ConceptEmbedding(
                 self.embedding_model.embed_documents
@@ -276,14 +295,6 @@ class GraphRAGPipeline:
         logger.info(f"Concepts saved: {self.concepts_save_path}")
 
         embeddings = self.concept_embedding.embed(concepts)
-        if self.concept_vector_store is None:
-            self.concept_vector_store = VectorStorageFactory.create_storage(
-                vector_type="npu_faiss_db",
-                x_dim=self.dim,
-                load_local_index=self.concept_vectors_path,
-                devs=self.devs,
-                **kwargs,
-            )
         vector_store_wrapper = VectorStoreWrapper(self.concept_vector_store)
         graph = NetworkxGraph(is_digraph=False)
         cluster = ConceptCluster(vector_store=vector_store_wrapper, graph=graph)

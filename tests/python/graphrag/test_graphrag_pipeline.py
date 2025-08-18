@@ -89,8 +89,6 @@ class TestGraphRAGPipeline(unittest.TestCase):
         self.assertEqual(pipeline.dim, self.test_dim)
         self.assertEqual(pipeline.docs, [])
         self.assertIsNone(pipeline.concept_embedding)
-        self.assertIsNone(pipeline.node_vector_store)
-        self.assertIsNone(pipeline.concept_vector_store)
     
     @patch('mx_rag.graphrag.graphrag_pipeline.check_disk_free_space')
     def test_init_insufficient_disk_space(self, mock_check_space):
