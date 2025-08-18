@@ -105,8 +105,8 @@ class RAGEvaluator:
         if isinstance(metric, AnswerSimilarity):
             # AnswerSimilarity object has no attribute 'load_prompts'
             return
-        SecDirCheck(prompts_path, 4 * MB).check()
         try:
+            SecDirCheck(prompts_path, 4 * MB).check()
             new_prompts = metric.load_prompts(prompts_path, language)
             if new_prompts:
                 metric.set_prompts(**new_prompts)
@@ -125,8 +125,7 @@ class RAGEvaluator:
             message="param must be None or 'chinese' or 'english'"),
         prompts_path=dict(
             validator=lambda x: x is None or (isinstance(x, str) and 0 < len(x) < 256),
-            message="param must be None or str, and str length range [1, 255]"),
-        show_progress=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean")
+            message="param must be None or str, and str length range [1, 255]")
     )
     def evaluate(
             self,

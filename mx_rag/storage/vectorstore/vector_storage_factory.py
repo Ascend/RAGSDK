@@ -5,17 +5,11 @@
 """
 from abc import ABC
 from typing import Optional
+from loguru import logger
 
 from mx_rag.storage.vectorstore import VectorStore, OpenGaussDB
 from mx_rag.storage.vectorstore import MindFAISS
 from mx_rag.storage.vectorstore import MilvusDB
-
-
-class VectorStorageError(Exception):
-    """
-    向量数据库错误
-    """
-    pass
 
 
 class VectorStorageFactory(ABC):
@@ -47,22 +41,27 @@ class VectorStorageFactory(ABC):
             ValueError: 数据类型不匹配
         """
         if "vector_type" not in kwargs:
-            raise VectorStorageError("The 'vector_type' parameter is required.")
+            logger.error("need vector_type param. ")
+            return None
 
         vector_type = kwargs.pop("vector_type")
 
         if not isinstance(vector_type, str):
-            raise VectorStorageError("The 'vector_type' parameter must be of type str.")
+            logger.error("vector_type should be str type. ")
+            return None
 
         if vector_type not in cls.NPU_SUPPORT_VEC_TYPE:
-            raise VectorStorageError(f"The specified 'vector_type' '{vector_type}' is not supported.")
+            logger.error("vector_type is not support. ")
+            return None
 
         creator = cls.NPU_SUPPORT_VEC_TYPE.get(vector_type)
         try:
             vector_store = creator(**kwargs)
-        except KeyError as e:
-            raise VectorStorageError("A KeyError occurred while creating the vector store.") from e
-        except Exception as e:
-            raise VectorStorageError("An unexpected error occurred while constructing the vector store.") from e
+        except KeyError:
+            logger.error(f"create vector store key error")
+            return None
+        except Exception:
+            logger.error(f"exception occurred while constructing vector store")
+            return None
 
         return vector_store
