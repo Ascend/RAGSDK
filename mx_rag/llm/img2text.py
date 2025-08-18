@@ -2,7 +2,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import json
 from typing import List, Optional, Any, Iterator
-import copy
 
 from pydantic.v1 import Field
 
@@ -66,7 +65,7 @@ class Img2TextLLM(LLM):
         ans = ""
         if sys_messages is None:
             sys_messages = [{"role": "system", "content": "你是一个友好的AI助手。"}]
-        request_body = self._get_request_body(prompt, image_url, copy.deepcopy(sys_messages), role, llm_config)
+        request_body = self._get_request_body(prompt, image_url, sys_messages, role, llm_config)
         request_body["stream"] = False
         response = self._client.post(url=self.base_url, body=json.dumps(request_body),
                                      headers={"Content-Type": "application/json"})
