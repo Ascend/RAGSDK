@@ -39,6 +39,9 @@ class Reranker(ABC):
                              f"list length range [1, {TEXT_MAX_LEN}], "
                              f"str length range [1, {STR_MAX_LEN}]")
 
+        if not len(objs) == len(scores):
+            raise ValueError(f"objs and scores expected to be equal length")
+
         obj_scores = list(zip(objs, scores))
         obj_scores.sort(reverse=True, key=lambda ele: ele[1])
 
