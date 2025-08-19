@@ -12,8 +12,8 @@ from PIL import Image
 
 from mx_rag.llm import Img2TextLLM
 from mx_rag.utils import file_check
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024, MAX_IMAGE_PIXELS, MIN_IMAEG_WIDTH, \
-    MIN_IMAEG_HEIGHT, MIN_IMAEG_PIXELS, MAX_BASE64_SIZE
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024, MAX_IMAGE_PIXELS, MIN_IMAGE_WIDTH, \
+    MIN_IMAGE_HEIGHT, MIN_IMAGE_PIXELS, MAX_BASE64_SIZE
 
 
 class BaseLoader(ABC):
@@ -120,11 +120,11 @@ class BaseLoader(ABC):
                 if total_pixels > MAX_IMAGE_PIXELS:
                     logger.warning(f"Image too large: {width}x{height} pixels. Skipping.")
                     return False
-                elif width < MIN_IMAEG_WIDTH and height < MIN_IMAEG_HEIGHT:
+                elif width < MIN_IMAGE_WIDTH and height < MIN_IMAGE_HEIGHT:
                     logger.warning(f"Image too small: {width}x{height} pixels. Skipping.")
                     return False
-                elif width * height < MIN_IMAEG_PIXELS:
-                    logger.warning(f"Image size is less than {MIN_IMAEG_PIXELS} pixels. Skipping.")
+                elif width * height < MIN_IMAGE_PIXELS:
+                    logger.warning(f"Image size is less than {MIN_IMAGE_PIXELS} pixels. Skipping.")
                     return False
 
                 return True

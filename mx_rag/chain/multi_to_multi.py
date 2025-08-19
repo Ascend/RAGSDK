@@ -16,7 +16,7 @@ from mx_rag.llm import Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import MAX_PROMPT_LENGTH
 
-TEXT_INFER_PRMPT = '''
+TEXT_INFER_PROMPT = '''
 You are a helpful question-answering assistant. Your task is to generate a interleaved text and image response based on provided questions and quotes. Here‘s how to refine your process:
 
 1. **Evidence Selection**:
@@ -28,7 +28,6 @@ You are a helpful question-answering assistant. Your task is to generate a inter
    - Conclude with a direct and concise answer to the question in a simple and clear sentence.
 
 3. **Quote Citation**:
-   - Cite text by adding [index]; for example, quote from the first text should be [1].
    - Cite images using the format `![{conclusion}](image index)`; for the first image, use `![{conclusion}](image1)`;The {conclusion} should be a concise one-sentence summary of the image’s content.
    - Ensure the cite of the image must strict follow `![{conclusion}](image index)`, do not simply stating "See image1", "image1 shows" ,"[image1]" or "image1".
    - Each image or text can only be quoted once.
@@ -36,7 +35,8 @@ You are a helpful question-answering assistant. Your task is to generate a inter
 - Do not cite irrelevant quotes.
 - Compose a detailed and articulate interleaved answer to the question.
 - Ensure that your answer is logical, informative, and directly ties back to the evidence provided by the quotes.
-- Interleaved answer must contain both text and image response.
+- If Quote contain text and image, answer must contain both text and image response.
+- If Quote only contain text, answer must contain text response, do not contain image.
 - Answer in chinese.
 '''
 
@@ -57,7 +57,7 @@ class Multi2MultiChain(Chain):
     def __init__(self, llm: Text2TextLLM,
                  retriever: BaseRetriever,
                  reranker: Reranker = None,
-                 prompt: str = TEXT_INFER_PRMPT,
+                 prompt: str = TEXT_INFER_PROMPT,
                  source: bool = True):
         super().__init__()
         self._retriever = retriever

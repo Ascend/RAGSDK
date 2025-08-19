@@ -55,7 +55,8 @@ class DocxLoader(BaseLoader, mxBaseLoader):
                 all_text.append(para_text)
 
         one_text = "\n\n".join([t for t in all_text])
-        yield Document(page_content=one_text, metadata={"source": os.path.basename(self.file_path), "type": "text"})
+        one_text and (yield Document(page_content=one_text,
+                                     metadata={"source": os.path.basename(self.file_path), "type": "text"}))
 
         if self.vlm:
             for rel in doc.part.rels.values():
@@ -63,12 +64,12 @@ class DocxLoader(BaseLoader, mxBaseLoader):
                     image_part = rel.target_part
                     image_data = image_part.blob
                     img_base64, image_summary = self._interpret_image(image_data, self.vlm)
-                    img_base64_list.extend([img_base64] if image_summary and img_base64 else [])
-                    image_summaries.extend([image_summary] if image_summary and img_base64 else [])
-
-            for img_base64, image_summary in zip(img_base64_list, image_summaries):
-                yield Document(page_content=image_summary, metadata={"source": os.path.basename(self.file_path),
-                                                                     "image_base64": img_base64, "type": "image"})
+                    img_base64 and image_summary and (yield Document(page_content=image_summary,
+                                                                     metadata={
+                                                                         "source": os.path.basename(
+                                                                             self.file_path),
+                                                                         "image_base64": img_base64,
+                                                                         "type": "image"}))
 
     def _handle_table(self, element):
         """docx.oxml.table.CT_Tbl"""

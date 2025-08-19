@@ -66,10 +66,10 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                                                         "page_count": self._get_pdf_page_count(),
                                                         "type": "text"
                                                         })
-        if image_summaries and img_base64_list:
-            for img_base64, image_summary in zip(img_base64_list, image_summaries):
-                yield Document(page_content=image_summary, metadata={"source": self.file_path,
-                                                                     "image_base64": img_base64, "type": "image"})
+        # if image_summaries and img_base64_list:
+        #     for img_base64, image_summary in zip(img_base64_list, image_summaries):
+        #         yield Document(page_content=image_summary, metadata={"source": self.file_path,
+        #                                                              "image_base64": img_base64, "type": "image"})
 
     def _layout_recognize(self, pdf_document):
         layout_res = []
@@ -141,14 +141,20 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                     xref = img[0]
                     base_image = pdf_document.extract_image(xref)
                     image_data = base_image["image"]
-                    img_base64, image_summary = self._interpret_image(image_data, self.vlm)
-                    img_base64_list.extend([img_base64] if image_summary and img_base64 else [])
-                    image_summaries.extend([image_summary] if image_summary and img_base64 else [])
+                    img_base64, img_sumy = self._interpret_image(image_data, self.vlm)
+                    img_base64 and img_sumy and (yield Document(page_content=img_sumy,
+                                                                metadata={"source": self.file_path,
+                                                                          "image_base64": img_base64,
+                                                                          "type": "image"}))
             except Exception as e:
                 logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
         pdf_document.close()
 
-        return self._text_merger(pdf_content, image_summaries, img_base64_list)
+        one_text = " ".join(pdf_content)
+        one_text and (yield Document(page_content=one_text, metadata={"source": self.file_path,
+                                                                              "page_count": self._get_pdf_page_count(),
+                                                                              "type": "text"
+                                                                              }))
 
     def _get_pdf_page_count(self):
         pdf_document = fitz.open(self.file_path)

@@ -37,8 +37,6 @@ description in chinese with two levels of granularity:
 
 
 def _check_image_url(image_url):
-    if image_url is None:
-        return True
     # 检查输入是否为字典
     if not isinstance(image_url, dict):
         return False
@@ -53,7 +51,7 @@ def _check_image_url(image_url):
         return False
 
     # 检查字符串长度
-    if len(url_value.encode("utf-8")) >= MB * 3:
+    if not 0 < len(url_value.encode("utf-8")) <= 3*MB:
         return False
 
     return True
@@ -76,7 +74,7 @@ class Img2TextLLM(LLM):
         prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PROMPT_LENGTH,
                     message=f"param must be str and length range [1, {MAX_PROMPT_LENGTH}]"),
         image_url=dict(validator=lambda x: _check_image_url(x),
-                       message="param must be None or dict, and len(dict)==1"
+                       message="param must be dict, and len(dict)==1"
                                "and must contain 'url' key with string value less than 3MB"),
         sys_messages=dict(validator=lambda x: _check_sys_messages(x),
                           message="param must be None or List[dict], and length of dict <= 16, "
@@ -85,8 +83,8 @@ class Img2TextLLM(LLM):
         llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
                         message="param must be LLMParameterConfig")
     )
-    def chat(self, prompt: str = IMG_TO_TEXT_PROMPT,
-             image_url: dict = None,
+    def chat(self, image_url: dict,
+             prompt: str = IMG_TO_TEXT_PROMPT,
              sys_messages: List[dict] = None,
              role: str = "user",
              llm_config: LLMParameterConfig = LLMParameterConfig()):
