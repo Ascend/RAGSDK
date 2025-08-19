@@ -141,8 +141,8 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                     base_image = pdf_document.extract_image(xref)
                     image_data = base_image["image"]
                     img_base64, image_summary = self._interpret_image(image_data, self.vlm)
-                    img_base64_list.append(img_base64 if img_base64 else "")
-                    image_summaries.append(image_summary if image_summary else "")
+                    img_base64_list.extend([img_base64] if image_summary and img_base64 else [])
+                    image_summaries.extend([image_summary] if image_summary and img_base64 else [])
             except Exception as e:
                 logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
         pdf_document.close()

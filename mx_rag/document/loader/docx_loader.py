@@ -62,8 +62,8 @@ class DocxLoader(BaseLoader, mxBaseLoader):
                     image_part = rel.target_part
                     image_data = image_part.blob
                     img_base64, image_summary = self._interpret_image(image_data, self.vlm)
-                    img_base64_list.append(img_base64)
-                    image_summaries.append(image_summary)
+                    img_base64_list.extend([img_base64] if image_summary and img_base64 else [])
+                    image_summaries.extend([image_summary] if image_summary and img_base64 else [])
 
             for img_base64, image_summary in zip(img_base64_list, image_summaries):
                 yield Document(page_content=image_summary, metadata={"source": os.path.basename(self.file_path),

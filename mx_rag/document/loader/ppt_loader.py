@@ -105,8 +105,8 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
             if hasattr(shape, "image") and self.vlm:
                 image_data = shape.image.blob
                 img_base64, image_summary = self._interpret_image(image_data, self.vlm)
-                img_base64_list.append(img_base64 if img_base64 else "")
-                image_summaries.append(image_summary if image_summary else "")
+                img_base64_list.extend([img_base64] if image_summary and img_base64 else [])
+                image_summaries.extend([image_summary] if image_summary and img_base64 else [])
 
             if shape.has_table:
                 table = shape.table

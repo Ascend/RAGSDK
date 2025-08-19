@@ -13,7 +13,7 @@ from PIL import Image
 from mx_rag.llm import Img2TextLLM
 from mx_rag.utils import file_check
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024, MAX_IMAGE_PIXELS, MIN_IMAEG_WIDTH, \
-    MIN_IMAEG_HEIGHT, MIN_IMAEG_PIXELS
+    MIN_IMAEG_HEIGHT, MIN_IMAEG_PIXELS, MAX_BASE64_SIZE
 
 
 class BaseLoader(ABC):
@@ -114,8 +114,6 @@ class BaseLoader(ABC):
     def _verify_image_size(self, image_bytes):
         """Verify if the image dimensions are within acceptable limits."""
         try:
-            from PIL import Image
-            import io
             with Image.open(io.BytesIO(image_bytes)) as img:
                 width, height = img.size
                 total_pixels = width * height
@@ -126,7 +124,7 @@ class BaseLoader(ABC):
                     logger.warning(f"Image too small: {width}x{height} pixels. Skipping.")
                     return False
                 elif width * height < MIN_IMAEG_PIXELS:
-                    logger.warning(f"Image size is less than 100 pixels. Skipping.")
+                    logger.warning(f"Image size is less than {MIN_IMAEG_PIXELS} pixels. Skipping.")
                     return False
 
                 return True
@@ -134,47 +132,50 @@ class BaseLoader(ABC):
             logger.warning(f"Failed to verify image size: {err}")
             return False
 
-    def _convert_to_base64(self, image_data):
+    def _convert_to_base64(self, image_data,
+                           max_base64_size=MAX_BASE64_SIZE,  # base64最大长度
+                           max_iterations=10):
         """
-        通过调整图片的质量来减小图片的文件大小，并返回PIL图像对象
-        - 图片将转换为JPEG格式，并设置指定的压缩质量
+        将图片转为Base64编码，并控制大小不超过 max_base64_size。
+        - 如果直接base64不超限制，直接返回；
+        - 否则逐步压缩 JPEG 质量。
         """
-        image = Image.open(io.BytesIO(image_data))
-        try:
-            # 将图片数据转换为PIL图像对象
+        # 快速预判：如果原始图片本身足够小，大概率base64也小
+        if len(image_data) * 4 // 3 <= max_base64_size:
+            return base64.b64encode(image_data).decode("utf-8")
+
+        with Image.open(io.BytesIO(image_data)) as image:
             image = image.convert("RGB")
-            # 将PIL图像对象转换为JPEG格式，并保存到字节流中
-            img_byte_arr = io.BytesIO()
-            image.save(img_byte_arr, format="JPEG")
-            img_byte_arr.seek(0)
 
-            # 获取原始图片的Base64编码
-            img_base64 = base64.b64encode(image_data).decode('utf-8')
-            iterations = 0  # 迭代次数计数器
-            # 如果Base64编码的长度大于1024*1024，则降低图片质量
-            while len(img_base64) > 1024 * 1024:
-                if iterations >= 10:
-                    image.close()
-                    raise ValueError(f"Reached maximum iterations stopping.")
-                quality = max(10, 100 - len(img_base64) // (1024 * 1024))  # 根据编码大小调节质量
+            # 否则逐步压缩
+            quality = 95
+            for _ in range(max_iterations):
+                buffer = io.BytesIO()
+                image.save(buffer, format="JPEG", quality=quality)
+                data = buffer.getvalue()
+                img_base64 = base64.b64encode(data).decode("utf-8")
 
-                # 将图片保存到字节流中，使用JPEG格式并调整质量
-                img_byte_arr = io.BytesIO()
-                image.save(img_byte_arr, format="JPEG", quality=quality)
-                img_byte_arr.seek(0)
-                img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
-                iterations += 1
-        finally:
-            if image and hasattr(image, 'close'):
-                image.close()
-        return img_base64
+                if len(img_base64) <= max_base64_size:
+                    return img_base64
+
+                quality = max(10, quality - 10)
+
+            raise ValueError(
+                f"Image could not be reduced below {max_base64_size / 1024:.1f}KB "
+                f"after {max_iterations} iterations"
+            )
 
     def _interpret_image(self, image_data, vlm: Img2TextLLM):
         img_base64 = self._convert_to_base64(image_data)
+        if self._verify_image_size(image_data) is False:
+            logger.warning("image size is invalid")
+            img_base64, img_summary = "", ""
+            return img_base64, img_summary
+
         # vllm解析图像
         image_url = {"url": f"data:image/jpeg;base64,{img_base64}"}
         image_summary = vlm.chat(image_url=image_url)
-        if image_summary is None:
-            image_summary = ""
+        if image_summary == "":
+            img_base64 = ""
             logger.warning("image summary func exec failed")
         return img_base64, image_summary
