@@ -36,6 +36,29 @@ description in chinese with two levels of granularity:
   as appropriate, answer in chinese'''
 
 
+def _check_image_url(image_url):
+    if image_url is None:
+        return True
+    # 检查输入是否为字典
+    if not isinstance(image_url, dict):
+        return False
+
+    # 检查是否包含 url 键
+    if "url" not in image_url or len(image_url) != 1:
+        return False
+
+    # 检查 url 的值是否为字符串
+    url_value = image_url["url"]
+    if not isinstance(url_value, str):
+        return False
+
+    # 检查字符串长度
+    if len(url_value.encode("utf-8")) >= MB * 3:
+        return False
+
+    return True
+
+
 class Img2TextLLM(LLM):
     base_url: str = Field(min_length=1, max_length=MAX_URL_LENGTH)
     model_name: str = Field(min_length=1, max_length=MAX_MODEL_NAME_LENGTH)
@@ -52,6 +75,9 @@ class Img2TextLLM(LLM):
     @validate_params(
         prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PROMPT_LENGTH,
                     message=f"param must be str and length range [1, {MAX_PROMPT_LENGTH}]"),
+        image_url=dict(validator=lambda x: _check_image_url(x),
+                       message="param must be None or dict, and len(dict)==1"
+                               "and must contain 'url' key with string value less than 3MB"),
         sys_messages=dict(validator=lambda x: _check_sys_messages(x),
                           message="param must be None or List[dict], and length of dict <= 16, "
                                   "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),

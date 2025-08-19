@@ -83,10 +83,13 @@ class Multi2MultiChain(Chain):
         text_docs = [doc for doc in docs if doc.metadata.get("type", "") == "text"]
         img_docs = [doc for doc in docs if doc.metadata.get("type", "") == "image"]
 
-        # 2. Add text quotes
-        user_message = "Text Quotes are:"
-        for i, doc in enumerate(text_docs):
-            user_message += f"\n[{i + 1}] {doc.page_content}"
+        user_message = ""
+        if len(text_docs) > 0:
+            # 2. Add text quotes
+            user_message = "Text Quotes are:"
+            for i, doc in enumerate(text_docs):
+                user_message += f"\n[{i + 1}] {doc.page_content}"
+
         if len(img_docs) > 0:
             # 3. Add image quotes vlm-text or ocr-text
             user_message += "\nImage Quotes are:"

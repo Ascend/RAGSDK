@@ -24,7 +24,8 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     MAX_TABLE_COL = 50
 
     @validate_params(
-        vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM), message="param must be instance of Img2TextLLM"),
+        vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM) or x is None,
+                 message="param must be instance of Img2TextLLM or None"),
         lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
         enable_ocr=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
