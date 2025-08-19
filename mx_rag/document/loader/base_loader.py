@@ -12,7 +12,8 @@ from PIL import Image
 
 from mx_rag.llm import Img2TextLLM
 from mx_rag.utils import file_check
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024, MAX_IMAGE_PIXELS, MIN_IMAEG_WIDTH, \
+    MIN_IMAEG_HEIGHT, MIN_IMAEG_PIXELS
 
 
 class BaseLoader(ABC):
@@ -109,6 +110,29 @@ class BaseLoader(ABC):
             return self._check_nested_depth(file_data, current_depth + 1)
         else:
             return current_depth
+
+    def _verify_image_size(self, image_bytes):
+        """Verify if the image dimensions are within acceptable limits."""
+        try:
+            from PIL import Image
+            import io
+            with Image.open(io.BytesIO(image_bytes)) as img:
+                width, height = img.size
+                total_pixels = width * height
+                if total_pixels > MAX_IMAGE_PIXELS:
+                    logger.warning(f"Image too large: {width}x{height} pixels. Skipping.")
+                    return False
+                elif width < MIN_IMAEG_WIDTH and height < MIN_IMAEG_HEIGHT:
+                    logger.warning(f"Image too small: {width}x{height} pixels. Skipping.")
+                    return False
+                elif width * height < MIN_IMAEG_PIXELS:
+                    logger.warning(f"Image size is less than 100 pixels. Skipping.")
+                    return False
+
+                return True
+        except Exception as err:
+            logger.warning(f"Failed to verify image size: {err}")
+            return False
 
     def _convert_to_base64(self, image_data):
         """

@@ -27,6 +27,7 @@ class PdfLoader(BaseLoader, mxBaseLoader):
     EXTENSION = (".pdf",)
 
     @validate_params(
+        vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM), message="param must be instance of Img2TextLLM"),
         lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
         layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )

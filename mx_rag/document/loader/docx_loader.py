@@ -24,6 +24,7 @@ class DocxLoader(BaseLoader, mxBaseLoader):
     EXTENSION = (".docx",)
 
     @validate_params(
+        vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM), message="param must be instance of Img2TextLLM"),
         image_inline=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, file_path: str, vlm: Img2TextLLM = None, image_inline: bool = False):

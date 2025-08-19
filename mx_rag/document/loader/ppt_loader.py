@@ -24,6 +24,7 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     MAX_TABLE_COL = 50
 
     @validate_params(
+        vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM), message="param must be instance of Img2TextLLM"),
         lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
         enable_ocr=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
@@ -80,22 +81,6 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
                 self._load_merged_cell(data, cell, row, col)
 
         return itertools.chain.from_iterable(data)
-
-    def _verify_image_size(self, image_bytes):
-        """Verify if the image dimensions are within acceptable limits."""
-        try:
-            from PIL import Image
-            import io
-            with Image.open(io.BytesIO(image_bytes)) as img:
-                width, height = img.size
-                total_pixels = width * height
-                if total_pixels > MAX_IMAGE_PIXELS:
-                    logger.warning(f"Image too large: {width}x{height} pixels. Skipping OCR.")
-                    return False
-                return True
-        except Exception as err:
-            logger.warning(f"Failed to verify image size: {err}")
-            return False
 
     def _load_image_text(self, image_bytes):
         if not self._verify_image_size(image_bytes):

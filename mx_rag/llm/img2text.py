@@ -12,7 +12,7 @@ from loguru import logger
 
 from mx_rag.llm.text2text import _check_sys_messages
 from mx_rag.utils import ClientParam
-from mx_rag.utils.common import safe_get, MB, validate_params, MAX_URL_LENGTH, MAX_MODEL_NAME_LENGTH
+from mx_rag.utils.common import safe_get, MB, validate_params, MAX_URL_LENGTH, MAX_MODEL_NAME_LENGTH, MAX_PROMPT_LENGTH
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.utils.url import RequestUtils
 
@@ -50,6 +50,8 @@ class Img2TextLLM(LLM):
         return RequestUtils(client_param=self.client_param)
 
     @validate_params(
+        prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PROMPT_LENGTH,
+                    message=f"param must be str and length range [1, {MAX_PROMPT_LENGTH}]"),
         sys_messages=dict(validator=lambda x: _check_sys_messages(x),
                           message="param must be None or List[dict], and length of dict <= 16, "
                                   "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),
@@ -93,7 +95,6 @@ class Img2TextLLM(LLM):
             {"type": "image_url", "image_url": image_url}
         ]
         messages.append({"role": role, "content": content})
-        # 适配MindIE参数范围
         request_body = {
             "model": self.model_name,
             "messages": messages,
