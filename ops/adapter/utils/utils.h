@@ -18,7 +18,6 @@ public:
     static at::Tensor NpuFormatCast(const at::Tensor &tensor);
     static void BuildVariantPack(const std::vector<torch::Tensor> &inTensors,
                                  const std::vector<torch::Tensor> &outTensors, atb::VariantPack &variantPack);
-    static bool AtTensorShapeEqualToTensor(const at::Tensor &atTensor, const atb::TensorDesc &tensorDesc);
     static atb::Tensor AtTensor2Tensor(const at::Tensor &atTensor);
     static at::Tensor CreateAtTensorFromTensorDesc(const atb::TensorDesc &tensorDesc);
     static void ContiguousAtTensor(std::vector<torch::Tensor> &atTensors);

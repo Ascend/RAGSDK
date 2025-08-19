@@ -340,6 +340,12 @@ atb::Status Model::ExecuteNode(int nodeId)
         ss << "execute失败 详细信息见Ascend官方文档，请开启日志进一步定位问题。" << std::endl;
         throw std::runtime_error(ss.str());
     }
+    
+    if (node.operation == nullptr) {
+        ATB_LOG(ERROR) << modelName_ << " execute node[" << nodeId << "] fail, node.operation is nullptr";
+        return atb::ERROR_OPERATION_NULL_RUNNER;
+    }
+    
     atb::Status st = node.operation->Setup(node.variantPack, node.workspaceSize, context_);
     if (st != atb::NO_ERROR) {
         std::stringstream ss;
@@ -460,7 +466,7 @@ std::string Model::GetSaveTensorDir() const
 void Model::ExecuteNodeView(int nodeId)
 {
     auto &node = graph_.nodes.at(nodeId);
-    if (node.inTensorReshapeFuncs.size() > 0) {
+    if (node.inTensorReshapeFuncs.size() >= node.inTensors.size()) {
         for (size_t i = 0; i < node.inTensors.size() && node.inTensorReshapeFuncs.at(i) != nullptr; i++) {
             node.inTensorReshapeFuncs.at(i)(node.inTensors.at(i)->desc.shape, node.inTensors.at(i)->desc.shape);
         }
