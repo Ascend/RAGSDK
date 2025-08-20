@@ -267,65 +267,68 @@ atb::Status AddLayerNormNode(atb::GraphParam& opGraph, size_t& nodeId, const Fla
     return atb::NO_ERROR;
 }
 
+void FreeNodeResource(atb::GraphParam &opGraph)
+{
+    for (size_t i = 0; i < opGraph.nodes.size(); i++) {
+        if (opGraph.nodes[i].operation != nullptr) {
+            delete opGraph.nodes[i].operation;
+            opGraph.nodes[i].operation = nullptr;
+        }
+    }
+}
+
 atb::Status FlashAttentionLayer(const FlashAttentionLayerParam &param, atb::Operation **operation)
 {
     ATB_LOG(INFO) << __func__ << " called, headNum: " << param.headNum;
-    atb::GraphParam opGraph;
-    opGraph.inTensorNum = IN_TENSOR_COUNT;
-    opGraph.outTensorNum = OUT_TENSOR_COUNT;
-    opGraph.internalTensorNum = INTERMEDIATE_TENSOR_COUNT;
-    opGraph.nodes.resize(NODE_COUNT);
-    opGraph.name = GetFuncNameAndNameSpace(__PRETTY_FUNCTION__);
+    atb::GraphParam opGraph = {GetFuncNameAndNameSpace(__PRETTY_FUNCTION__), IN_TENSOR_COUNT,
+        OUT_TENSOR_COUNT, INTERMEDIATE_TENSOR_COUNT, std::vector<atb::Node>(NODE_COUNT), nullptr};
 
     size_t nodeId = 0;
-    atb::Status status;
-    // atb::Node &qLinearNode = opGraph.nodes.at(nodeId++);
+
     AddQLinearNode(opGraph, nodeId);
-    // atb::Node &kLinearNode = opGraph.nodes.at(nodeId++);
+
     AddKLinearNode(opGraph, nodeId);
 
-    // atb::Node &vLinearNode = opGraph.nodes.at(nodeId++);
     AddVLinearNode(opGraph, nodeId);
     
-    // atb::Node &selfAttentionKvCacheNode = opGraph.nodes.at(nodeId++);
     // attention
-    status = AddSelfAttentionKvCacheNode(opGraph, nodeId, param);
+    atb::Status status = AddSelfAttentionKvCacheNode(opGraph, nodeId, param);
     if (status != atb::NO_ERROR) {
+        FreeNodeResource(opGraph);
         return status;
     }
-    // atb::Node &selfOutLinearNode = opGraph.nodes.at(nodeId++);
+
     AddSelfOutLinearNode(opGraph, nodeId);
 
-    // atb::Node &selfResidualAddNode = opGraph.nodes.at(nodeId++);
     // hiddenStates + afterDense
     status = AddSelfResidualAddNode(opGraph, nodeId);
     if (status != atb::NO_ERROR) {
+        FreeNodeResource(opGraph);
         return status;
     }
-    // atb::Node &selfNormNode = opGraph.nodes.at(nodeId++);
+
     // layerNorm
     status = AddSelfNormNode(opGraph, nodeId, param);
     if (status != atb::NO_ERROR) {
+        FreeNodeResource(opGraph);
         return status;
     }
 
-    // atb::Node &feedNode = opGraph.nodes.at(nodeId++);
     // feedForward
     AddFeedNode(opGraph, nodeId);
 
-    // atb::Node &feedOutLinearNode = opGraph.nodes.at(nodeId++);
     AddFeedOutLinearNode(opGraph, nodeId);
 
-    // atb::Node &afterDenseAddNode = opGraph.nodes.at(nodeId++);
     // add
     status = AddAfterDenseAddNode(opGraph, nodeId);
     if (status != atb::NO_ERROR) {
+        FreeNodeResource(opGraph);
         return status;
     }
-    // atb::Node &layerNormNode = opGraph.nodes.at(nodeId++);
     // layerNorm
     status = AddLayerNormNode(opGraph, nodeId, param);
     if (status != atb::NO_ERROR) {
+        FreeNodeResource(opGraph);
         return status;
     }
     opGraph.inferShapeFunc = [=](const atb::SVector<atb::TensorDesc> &inTensorDescs,
@@ -333,7 +336,13 @@ atb::Status FlashAttentionLayer(const FlashAttentionLayerParam &param, atb::Oper
         outTensorDescs.at(0) = inTensorDescs.at(0);
         return atb::NO_ERROR;
     };
-    CREATE_OPERATION(opGraph, operation);
+    
+    atb::Status atbStatus = atb::CreateOperation(opGraph, operation);
+    if (atbStatus != atb::NO_ERROR) {
+        FreeNodeResource(opGraph);
+        return atbStatus;
+    }
+
     return atb::NO_ERROR;
 }
 

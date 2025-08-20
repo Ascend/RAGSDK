@@ -63,18 +63,6 @@ void Utils::BuildVariantPack(const std::vector<torch::Tensor> &inTensors, const 
     }
 }
 
-bool Utils::AtTensorShapeEqualToTensor(const at::Tensor &atTensor, const atb::TensorDesc &tensorDesc)
-{
-    if (tensorDesc.shape.dimNum == atTensor.sizes().size()) {
-        return false;
-    }
-    for (uint64_t i = 0; i < atTensor.sizes().size(); i++) {
-        if (tensorDesc.shape.dims[i] != atTensor.sizes()[i]) {
-            return false;
-        }
-    }
-    return true;
-}
 
 atb::Tensor Utils::AtTensor2Tensor(const at::Tensor &atTensor)
 {
