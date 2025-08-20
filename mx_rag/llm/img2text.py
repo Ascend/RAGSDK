@@ -59,6 +59,7 @@ def _check_image_url(image_url):
 
 class Img2TextLLM(LLM):
     base_url: str = Field(min_length=1, max_length=MAX_URL_LENGTH)
+    prompt: str = Field(min_length=1, max_length=MAX_PROMPT_LENGTH, default=IMG_TO_TEXT_PROMPT)
     model_name: str = Field(min_length=1, max_length=MAX_MODEL_NAME_LENGTH)
     llm_config: LLMParameterConfig = LLMParameterConfig()
     client_param: ClientParam = ClientParam()
@@ -71,8 +72,6 @@ class Img2TextLLM(LLM):
         return RequestUtils(client_param=self.client_param)
 
     @validate_params(
-        prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PROMPT_LENGTH,
-                    message=f"param must be str and length range [1, {MAX_PROMPT_LENGTH}]"),
         image_url=dict(validator=lambda x: _check_image_url(x),
                        message="param must be dict, and len(dict)==1"
                                "and must contain 'url' key with string value less than 3MB"),
@@ -84,14 +83,13 @@ class Img2TextLLM(LLM):
                         message="param must be LLMParameterConfig")
     )
     def chat(self, image_url: dict,
-             prompt: str = IMG_TO_TEXT_PROMPT,
              sys_messages: List[dict] = None,
              role: str = "user",
              llm_config: LLMParameterConfig = LLMParameterConfig()):
         ans = ""
         if sys_messages is None:
-            sys_messages = [{"role": "system", "content": "你是一个友好的AI助手。"}]
-        request_body = self._get_request_body(prompt, image_url, sys_messages, role, llm_config)
+            sys_messages = []
+        request_body = self._get_request_body(self.prompt, image_url, sys_messages, role, llm_config)
         request_body["stream"] = False
         response = self._client.post(url=self.base_url, body=json.dumps(request_body),
                                      headers={"Content-Type": "application/json"})

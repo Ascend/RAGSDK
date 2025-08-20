@@ -123,9 +123,6 @@ class BaseLoader(ABC):
                 elif width < MIN_IMAGE_WIDTH and height < MIN_IMAGE_HEIGHT:
                     logger.warning(f"Image too small: {width}x{height} pixels. Skipping.")
                     return False
-                elif width * height < MIN_IMAGE_PIXELS:
-                    logger.warning(f"Image size is less than {MIN_IMAGE_PIXELS} pixels. Skipping.")
-                    return False
 
                 return True
         except Exception as err:
@@ -137,33 +134,28 @@ class BaseLoader(ABC):
                            max_iterations=10):
         """
         将图片转为Base64编码，并控制大小不超过 max_base64_size。
-        - 如果直接base64不超限制，直接返回；
-        - 否则逐步压缩 JPEG 质量。
+        - 如果原始数据直接符合要求，直接返回；
+        - 否则按比例缩小分辨率，直到符合大小要求。
         """
-        # 快速预判：如果原始图片本身足够小，大概率base64也小
-        if len(image_data) * 4 // 3 <= max_base64_size:
+        raw_b64_len = len(image_data) * 4 // 3
+        if raw_b64_len <= max_base64_size:
             return base64.b64encode(image_data).decode("utf-8")
 
         with Image.open(io.BytesIO(image_data)) as image:
             image = image.convert("RGB")
 
-            # 否则逐步压缩
-            quality = 95
-            for _ in range(max_iterations):
-                buffer = io.BytesIO()
-                image.save(buffer, format="JPEG", quality=quality)
-                data = buffer.getvalue()
-                img_base64 = base64.b64encode(data).decode("utf-8")
+            # 计算缩放比例
+            ratio = (max_base64_size / raw_b64_len) ** 0.5
+            new_w = int(image.width * ratio)
+            new_h = int(image.height * ratio)
 
-                if len(img_base64) <= max_base64_size:
-                    return img_base64
+            resized_img = image.resize((new_w, new_h), Image.LANCZOS)
 
-                quality = max(10, quality - 10)
+            buffer = io.BytesIO()
+            resized_img.save(buffer, format="JPEG", quality=90)  # 默认高质量JPEG
+            compressed_data = buffer.getvalue()
 
-            raise ValueError(
-                f"Image could not be reduced below {max_base64_size / 1024:.1f}KB "
-                f"after {max_iterations} iterations"
-            )
+            return base64.b64encode(compressed_data).decode("utf-8")
 
     def _interpret_image(self, image_data, vlm: Img2TextLLM):
         img_base64 = self._convert_to_base64(image_data)
