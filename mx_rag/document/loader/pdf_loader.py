@@ -66,10 +66,6 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                                                         "page_count": self._get_pdf_page_count(),
                                                         "type": "text"
                                                         })
-        # if image_summaries and img_base64_list:
-        #     for img_base64, image_summary in zip(img_base64_list, image_summaries):
-        #         yield Document(page_content=image_summary, metadata={"source": self.file_path,
-        #                                                              "image_base64": img_base64, "type": "image"})
 
     def _layout_recognize(self, pdf_document):
         layout_res = []

@@ -83,25 +83,25 @@ class Multi2MultiChain(Chain):
         text_docs = [doc for doc in docs if doc.metadata.get("type", "") == "text"]
         img_docs = [doc for doc in docs if doc.metadata.get("type", "") == "image"]
 
-        user_message = ""
+        user_message = []
         if len(text_docs) > 0:
             # 2. Add text quotes
-            user_message = "Text Quotes are:"
+            user_message.append(f"Text Quotes are:")
             for i, doc in enumerate(text_docs):
-                user_message += f"\n[{i + 1}] {doc.page_content}"
+                user_message.append(f"\n[{i + 1}] {doc.page_content}")
 
         if len(img_docs) > 0:
             # 3. Add image quotes vlm-text or ocr-text
-            user_message += "\nImage Quotes are:"
+            user_message.append("\nImage Quotes are:")
             for i, doc in enumerate(img_docs):
-                user_message += f"\nimage{i + 1} is described as: {doc.page_content}"
+                user_message.append(f"\nimage{i + 1} is described as: {doc.page_content}")
 
-        user_message += "\n\n"
+        user_message.append("\n\n")
 
         # 4. add user question
-        user_message += f"The user question is: {query}"
+        user_message.append(f"The user question is: {query}")
 
-        return user_message
+        return ''.join(user_message)
 
     def _query(self,
                question: str,
@@ -117,8 +117,7 @@ class Multi2MultiChain(Chain):
 
         return self._do_query(q_with_prompt, llm_config, question=question, q_docs=q_docs)
 
-    def _do_query(self, q_with_prompt, llm_config: LLMParameterConfig, question: str, q_docs: List[Document]) \
-            -> Dict:
+    def _do_query(self, q_with_prompt, llm_config: LLMParameterConfig, question: str, q_docs: List[Document]) -> Dict:
         logger.info("invoke normal query")
         resp = {"query": question, "result": ""}
         if self._source:
@@ -126,7 +125,7 @@ class Multi2MultiChain(Chain):
 
         sys_messages = [{"role": "system", "content": self._prompt}]
 
-        llm_response = self._llm.chat(query=q_with_prompt, sys_messages=sys_messages, role=self._role, llm_config=llm_config)
+        llm_response = self._llm.chat(query=q_with_prompt, sys_messages=sys_messages,
+                                      role=self._role, llm_config=llm_config)
         resp['result'] = llm_response
         return resp
-
