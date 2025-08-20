@@ -2,6 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import itertools
 from enum import Enum
+from typing import Callable
 
 from loguru import logger
 from paddleocr import PaddleOCR
@@ -11,6 +12,7 @@ from langchain_community.document_loaders.base import BaseLoader
 from tqdm import tqdm
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
+from mx_rag.llm import Img2TextLLM
 from mx_rag.utils.common import validate_params, Lang, MAX_IMAGE_PIXELS, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import SecFileCheck
 
@@ -22,12 +24,16 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
     MAX_TABLE_COL = 50
 
     @validate_params(
+        vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM) or x is None,
+                 message="param must be instance of Img2TextLLM or None"),
         lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
         enable_ocr=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
-    def __init__(self, file_path, lang=Lang.CH, enable_ocr=False):
+    def __init__(self, file_path, vlm: Img2TextLLM = None, lang=Lang.CH, enable_ocr=False):
         super().__init__(file_path)
         self.enable_ocr = enable_ocr
+        self.vlm = vlm
+
         try:
             self.ocr = PaddleOCR(use_angle_cls=True, lang=lang.value, show_log=False) if enable_ocr else None
         except Exception as err:
@@ -77,22 +83,6 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
 
         return itertools.chain.from_iterable(data)
 
-    def _verify_image_size(self, image_bytes):
-        """Verify if the image dimensions are within acceptable limits."""
-        try:
-            from PIL import Image
-            import io
-            with Image.open(io.BytesIO(image_bytes)) as img:
-                width, height = img.size
-                total_pixels = width * height
-                if total_pixels > MAX_IMAGE_PIXELS:
-                    logger.warning(f"Image too large: {width}x{height} pixels. Skipping OCR.")
-                    return False
-                return True
-        except Exception as err:
-            logger.warning(f"Failed to verify image size: {err}")
-            return False
-
     def _load_image_text(self, image_bytes):
         if not self._verify_image_size(image_bytes):
             return None
@@ -105,13 +95,19 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
             return None
 
     def _load_slide(self, slide):
-        slide_text = []
+        slide_text, img_base64_list, image_summaries = [], [], []
         for shape in slide.shapes:
             if hasattr(shape, "image") and self.enable_ocr and self.ocr is not None:
                 image_data = shape.image.blob
                 img_text = self._load_image_text(image_data)
                 if img_text is not None:
                     slide_text.extend(img_text)
+
+            if hasattr(shape, "image") and self.vlm:
+                image_data = shape.image.blob
+                img_base64, image_summary = self._interpret_image(image_data, self.vlm)
+                img_base64_list.extend([img_base64] if image_summary and img_base64 else [])
+                image_summaries.extend([image_summary] if image_summary and img_base64 else [])
 
             if shape.has_table:
                 table = shape.table
@@ -120,13 +116,17 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
 
             if shape.has_text_frame:
                 slide_text.append(shape.text_frame.text.replace("\n", " "))
-        return " ".join(slide_text)
+        return " ".join(slide_text), img_base64_list, image_summaries
 
     def _load_ppt(self):
         prs = Presentation(self.file_path)
         total_slides = len(prs.slides)
-        
+
         # Only show progress bar if there are more than 5 slides
         for slide in tqdm(prs.slides, desc="Processing slides", total=total_slides, disable=total_slides < 5):
-            slide_text = self._load_slide(slide)
-            yield Document(page_content=slide_text, metadata={"source": self.file_path})
+            slide_text, img_base64_list, image_summaries = self._load_slide(slide)
+            for img_base64, image_summary in zip(img_base64_list, image_summaries):
+                yield Document(page_content=image_summary, metadata={"source": self.file_path,
+                                                                     "image_base64": img_base64, "type": "image"})
+
+            yield Document(page_content=slide_text, metadata={"source": self.file_path, "type": "text"})

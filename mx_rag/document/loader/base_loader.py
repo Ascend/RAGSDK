@@ -5,11 +5,15 @@ import os
 from abc import ABC
 import zipfile
 import psutil
+import base64
 
 from loguru import logger
+from PIL import Image
 
+from mx_rag.llm import Img2TextLLM
 from mx_rag.utils import file_check
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024, MAX_IMAGE_PIXELS, MIN_IMAGE_WIDTH, \
+    MIN_IMAGE_HEIGHT, MIN_IMAGE_PIXELS, MAX_BASE64_SIZE
 
 
 class BaseLoader(ABC):
@@ -106,3 +110,64 @@ class BaseLoader(ABC):
             return self._check_nested_depth(file_data, current_depth + 1)
         else:
             return current_depth
+
+    def _verify_image_size(self, image_bytes):
+        """Verify if the image dimensions are within acceptable limits."""
+        try:
+            with Image.open(io.BytesIO(image_bytes)) as img:
+                width, height = img.size
+                total_pixels = width * height
+                if total_pixels > MAX_IMAGE_PIXELS:
+                    logger.warning(f"Image too large: {width}x{height} pixels. Skipping.")
+                    return False
+                elif width < MIN_IMAGE_WIDTH and height < MIN_IMAGE_HEIGHT:
+                    logger.warning(f"Image too small: {width}x{height} pixels. Skipping.")
+                    return False
+
+                return True
+        except Exception as err:
+            logger.warning(f"Failed to verify image size: {err}")
+            return False
+
+    def _convert_to_base64(self, image_data,
+                           max_base64_size=MAX_BASE64_SIZE,  # base64最大长度
+                           max_iterations=10):
+        """
+        将图片转为Base64编码，并控制大小不超过 max_base64_size。
+        - 如果原始数据直接符合要求，直接返回；
+        - 否则按比例缩小分辨率，直到符合大小要求。
+        """
+        raw_b64_len = len(image_data) * 4 // 3
+        if raw_b64_len <= max_base64_size:
+            return base64.b64encode(image_data).decode("utf-8")
+
+        with Image.open(io.BytesIO(image_data)) as image:
+            image = image.convert("RGB")
+
+            # 计算缩放比例
+            ratio = (max_base64_size / raw_b64_len) ** 0.5
+            new_w = int(image.width * ratio)
+            new_h = int(image.height * ratio)
+
+            resized_img = image.resize((new_w, new_h), Image.LANCZOS)
+
+            buffer = io.BytesIO()
+            resized_img.save(buffer, format="JPEG", quality=90)  # 默认高质量JPEG
+            compressed_data = buffer.getvalue()
+
+            return base64.b64encode(compressed_data).decode("utf-8")
+
+    def _interpret_image(self, image_data, vlm: Img2TextLLM):
+        img_base64 = self._convert_to_base64(image_data)
+        if self._verify_image_size(image_data) is False:
+            logger.warning("image size is invalid")
+            img_base64, img_summary = "", ""
+            return img_base64, img_summary
+
+        # vllm解析图像
+        image_url = {"url": f"data:image/jpeg;base64,{img_base64}"}
+        image_summary = vlm.chat(image_url=image_url)
+        if image_summary == "":
+            img_base64 = ""
+            logger.warning("image summary func exec failed")
+        return img_base64, image_summary

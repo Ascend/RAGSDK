@@ -334,7 +334,7 @@ def _check_metadatas(metadatas) -> bool:
         if not isinstance(item, dict):
             logger.error("metadata type is not dict")
             return False
-        if not validate_sequence(item):
+        if not validate_sequence(item, max_str_length=STR_MAX_LEN):
             return False
 
     return True

@@ -136,7 +136,6 @@ class Text2TextLLM(LLM):
 
     def _get_request_body(self, query: str, messages: List[dict], role: str, llm_config: LLMParameterConfig):
         messages.append({"role": role, "content": query})
-        # 适配MindIE参数范围
         request_body = {
             "model": self.model_name,
             "messages": messages,

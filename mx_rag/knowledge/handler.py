@@ -50,13 +50,16 @@ def upload_files(
         loader_info = loader_mng.get_loader(file_obj.suffix)
 
         loader = loader_info.loader_class(file_path=file_obj.as_posix(), **loader_info.loader_params)
-        # 不需要切分的文件直接load
-        if file_obj.suffix in NO_SPLIT_FILE_TYPE:
-            docs = loader.load()
-        else:
-            splitter_info = loader_mng.get_splitter(file_obj.suffix)
-            splitter = splitter_info.splitter_class(**splitter_info.splitter_params)
-            docs = loader.load_and_split(splitter)
+
+        docs = []
+        for doc in loader.load():
+            if doc.metadata.get("type", "") == "text":
+                splitter_info = loader_mng.get_splitter(file_obj.suffix)
+                splitter = splitter_info.splitter_class(**splitter_info.splitter_params)
+                docs.extend(splitter.split_documents([doc]))
+            # 图片不需要切分的直接load
+            else:
+                docs.append(doc)
 
         texts = [doc.page_content for doc in docs if doc.page_content]
         meta_data = [doc.metadata for doc in docs if doc.page_content]
