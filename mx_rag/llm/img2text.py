@@ -51,7 +51,7 @@ def _check_image_url(image_url):
         return False
 
     # 检查字符串长度
-    if not 0 < len(url_value.encode("utf-8")) <= 3*MB:
+    if not 0 < len(url_value) <= 3*MB:
         return False
 
     return True
