@@ -51,7 +51,7 @@ def _check_image_url(image_url):
         return False
 
     # 检查字符串长度
-    if not 0 < len(url_value) <= 3*MB:
+    if not 0 < len(url_value) <= 4*MB:
         return False
 
     return True
@@ -74,7 +74,7 @@ class Img2TextLLM(LLM):
     @validate_params(
         image_url=dict(validator=lambda x: _check_image_url(x),
                        message="param must be dict, and len(dict)==1"
-                               "and must contain 'url' key with string value less than 3MB"),
+                               "and must contain 'url' key with string value less than 4MB"),
         sys_messages=dict(validator=lambda x: _check_sys_messages(x),
                           message="param must be None or List[dict], and length of dict <= 16, "
                                   "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),
