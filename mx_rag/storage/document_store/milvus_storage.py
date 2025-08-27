@@ -129,8 +129,6 @@ class MilvusDocstore(Docstore):
         if not res:
             return []
         try:
-            res = json.dumps(res)
-            res = json.loads(res)
             for item in res[0]:
                 item["entity"]["metadata"]["score"] = item["distance"]
                 result.append(MxDocument(

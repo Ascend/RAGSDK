@@ -11,7 +11,7 @@ from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import StorageError
 from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.storage.document_store.models import Base, ChunkModel
-from mx_rag.utils.common import MAX_CHUNKS_NUM
+from mx_rag.utils.common import MAX_CHUNKS_NUM, STR_MAX_LEN
 
 SQLITE = "/tmp/sql.db"
 
@@ -39,7 +39,7 @@ class TestHelperDocStore(unittest.TestCase):
         self.assertEqual(len(inserted_ids), len(self.test_documents))
         for i, chunk_id in enumerate(inserted_ids):
             with self.docstore._transaction() as session:
-                chunk = session.query(ChunkModel).get(chunk_id)
+                chunk = session.query(ChunkModel).filter_by(chunk_id=chunk_id).first()
                 self.assertIsNotNone(chunk)
                 self.assertEqual(chunk.document_id, doc_id)
                 self.assertEqual(chunk.chunk_content, self.test_documents[i].page_content)
@@ -109,6 +109,11 @@ class TestHelperDocStore(unittest.TestCase):
     def test_update(self):
         with self.assertRaises(StorageError):
             self.docstore.update([1, 2], ["text1", "text2"])
+
+    def test_mx_document(self):
+        MxDocument(page_content="hello", metadata={}, document_name="name")
+        with self.assertRaises(ValueError):
+            MxDocument(page_content="hello", metadata={"key": "a" * (STR_MAX_LEN+1)}, document_name="name")
 
 
 if __name__ == '__main__':

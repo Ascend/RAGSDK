@@ -47,7 +47,7 @@ class TextEmbedding(Embeddings):
         safetensors_check(model_path)
         self.pooling_method = pooling_method
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True, use_safetensors=True)
-        self.model = AutoModel.from_pretrained(model_path, local_files_only=True, use_safetensors=True)
+        self.model = AutoModel.from_pretrained(model_path, local_files_only=True)
         self.pooling = Pooling(self.model.config.hidden_size, pooling_mode=self.pooling_method)
 
         self.model_lock = lock

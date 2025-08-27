@@ -3,7 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple
 
-from pydantic.v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from langchain_core.prompts import PromptTemplate
 from loguru import logger
@@ -29,13 +29,11 @@ def _thread_pool_callback(worker):
 
 
 class Summary(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     llm: Text2TextLLM
     llm_config: LLMParameterConfig = LLMParameterConfig(temperature=0.5, top_p=0.95)
     __counter: int = 0
     __max_texts_length: int = 1024
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @staticmethod
     def _split_summary_by_threshold(texts: List[str], merge_threshold: int) -> List[Tuple[int, int]]:
@@ -121,12 +119,12 @@ class Summary(BaseModel):
             raise ValueError(f"texts can not be greater than {self.__max_texts_length}"
                              f",you can set chunk_size to a larger value")
         try:
-            if Summary.__counter >= 10:
+            if self.__counter >= 10:
                 raise RecursionError("Maximum recursion depth reached, you can set merge_threshold to a larger value")
 
             splits = self._split_summary_by_threshold(texts, merge_threshold)
             res = self.summarize(["\n\n".join(texts[s[0]:s[1] + 1]) for s in splits], not_summarize_threshold, prompt)
-            Summary.__counter += 1
+            self.__counter += 1
             if len(res) > len(texts):
                 raise Exception("sub summary number should less than origin summary number")
             if len(res) == 1:
@@ -138,7 +136,7 @@ class Summary(BaseModel):
         except Exception as err:
             raise ValueError(f"summarize failed: {err}") from err
         finally:
-            Summary.__counter = 0
+            self.__counter = 0
 
     def _summarize(self, text: str, prompt: PromptTemplate) -> str:
         return self.llm.chat(prompt.format(text=text), llm_config=self.llm_config)

@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import json
-from typing import List, Optional, Any, Iterator
-
-from pydantic.v1 import Field
+from typing import List, Optional, Any
+from pydantic import ConfigDict, Field
 
 from langchain.llms.base import LLM
 from langchain_core.callbacks import CallbackManagerForLLMRun
-from langchain_core.outputs import GenerationChunk
 from loguru import logger
 
 from mx_rag.llm.text2text import _check_sys_messages
@@ -58,14 +56,12 @@ def _check_image_url(image_url):
 
 
 class Img2TextLLM(LLM):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     base_url: str = Field(min_length=1, max_length=MAX_URL_LENGTH)
     prompt: str = Field(min_length=1, max_length=MAX_PROMPT_LENGTH, default=IMG_TO_TEXT_PROMPT)
     model_name: str = Field(min_length=1, max_length=MAX_MODEL_NAME_LENGTH)
     llm_config: LLMParameterConfig = LLMParameterConfig()
     client_param: ClientParam = ClientParam()
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @property
     def _client(self):

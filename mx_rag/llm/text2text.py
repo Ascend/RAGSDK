@@ -3,7 +3,7 @@
 import json
 from typing import List, Optional, Any, Iterator
 
-from pydantic.v1 import Field
+from pydantic import Field, ConfigDict
 
 from langchain.llms.base import LLM
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -33,13 +33,11 @@ def _check_sys_messages(sys_messages) -> bool:
 
 
 class Text2TextLLM(LLM):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     base_url: str = Field(min_length=1, max_length=MAX_URL_LENGTH)
     model_name: str = Field(min_length=1, max_length=MAX_MODEL_NAME_LENGTH)
     llm_config: LLMParameterConfig = LLMParameterConfig()
     client_param: ClientParam = ClientParam()
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @property
     def _client(self):

@@ -63,15 +63,10 @@ def clean():
                 shutil.rmtree(name)
 
 
-def get_excluded_files():
-    file_list = get_python_files()
-    return [os.path.join("mx_rag", x) for x in file_list]
-
-
-def get_all_so_files():
+def get_all_py_files():
     src_dir = f"{pwd}/mx_rag"
     file_list = []
-    for name in glob.glob(f"{src_dir}/**/*.so", recursive=True):
+    for name in glob.glob(f"{src_dir}/**/*.py", recursive=True):
         file = name[len(src_dir) + 1:]
         file_list.append(file)
     return file_list
@@ -96,9 +91,7 @@ build_dependencies()
 
 required_package = []
 
-package_data = {'': get_all_so_files() + get_all_json_files()}
-
-excluded = get_excluded_files()
+package_data = {'': get_all_py_files() + get_all_json_files()}
 
 
 class BuildBy(build_py_orig):
@@ -106,8 +99,7 @@ class BuildBy(build_py_orig):
         modules = super().find_package_modules(package, package_dir)
         res = []
         for pkg, mod, file in modules:
-            if file not in excluded:
-                res.append((pkg, mod, file))
+            res.append((pkg, mod, file))
         return res
 
 
