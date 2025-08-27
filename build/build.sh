@@ -69,7 +69,6 @@ function build_ops()
 function main()
 {
     clean
-    build_so_package python3.11
     build_wheel_package python3.11 "${PY311_VER}"
     build_ops Ascend310P python3.11
     build_ops Ascend910B python3.11

@@ -3,22 +3,20 @@
 from typing import List, Union, Dict
 from loguru import logger
 
-from langchain_core.pydantic_v1 import Field
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from pydantic import Field, ConfigDict
 
 from mx_rag.utils.common import TEXT_MAX_LEN, validate_params, MAX_TOP_K, MAX_FILTER_SEARCH_ITEM, MAX_STDOUT_STR_LEN
 from mx_rag.storage.document_store import MilvusDocstore, OpenGaussDocstore
 
 
 class FullTextRetriever(BaseRetriever):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     document_store: Union[MilvusDocstore, OpenGaussDocstore]
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
     filter_dict: dict = {}
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,

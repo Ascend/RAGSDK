@@ -4,10 +4,10 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from loguru import logger
-from pydantic.v1 import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 from mx_rag.utils.common import (validate_sequence, MAX_PAGE_CONTENT, MAX_FILTER_SEARCH_ITEM, MAX_CHUNKS_NUM,
-                                MAX_STDOUT_STR_LEN)
+                                 MAX_STDOUT_STR_LEN, STR_MAX_LEN)
 
 
 class StorageError(Exception):
@@ -15,16 +15,14 @@ class StorageError(Exception):
 
 
 class MxDocument(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     page_content: str = Field(max_length=MAX_PAGE_CONTENT)
     metadata: dict = Field(default_factory=dict)
     document_name: str = Field(max_length=1024)
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @validator('metadata')
+    @field_validator('metadata')
     def _validate_metadata(cls, metadata):
-        if not validate_sequence(metadata, 1024*1024):
+        if not validate_sequence(metadata, STR_MAX_LEN):
             raise ValueError("check MxDocument metadata failed")
 
         return metadata

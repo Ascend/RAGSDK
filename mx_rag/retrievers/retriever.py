@@ -3,28 +3,25 @@
 
 from typing import List, Callable, Union, Dict
 
-from langchain_core.pydantic_v1 import Field
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
-from loguru import logger
-import numpy as np
-
 from langchain_core.retrievers import BaseRetriever
+from loguru import logger
+from pydantic import Field, ConfigDict
+
 from mx_rag.storage.document_store import Docstore
 from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.utils.common import MAX_TOP_K, TEXT_MAX_LEN, validate_params, MAX_FILTER_SEARCH_ITEM, MAX_STDOUT_STR_LEN
 
 
 class Retriever(BaseRetriever):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     vector_store: VectorStore
     document_store: Docstore
     embed_func: Callable[[List[str]], Union[List[List[float]], List[Dict[int, float]]]]
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
     score_threshold: float = Field(default=None, ge=0.0, le=1.0)
     filter_dict: dict = {}
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,

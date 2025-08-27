@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 from typing import List, Callable
-from langchain_core.pydantic_v1 import Field, validator
 
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
-from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH, TEXT_MAX_LEN, validate_params
-from mx_rag.llm.llm_parameter import LLMParameterConfig
+from pydantic import field_validator, Field, ConfigDict
 
 from mx_rag.llm import Text2TextLLM
-
+from mx_rag.llm.llm_parameter import LLMParameterConfig
+from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH, TEXT_MAX_LEN, validate_params
 
 _KEY_WORD_TEMPLATE_ZH = PromptTemplate(
     input_variables=["question"],
@@ -34,6 +33,7 @@ def _default_preprocessing_func(text: str) -> List[str]:
 
 
 class BMRetriever(BaseRetriever):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     docs: List[Document]
     llm: Text2TextLLM
     k: int = Field(default=1, ge=1, le=MAX_TOP_K)
@@ -41,10 +41,7 @@ class BMRetriever(BaseRetriever):
     preprocess_func: Callable[[str], List[str]] = None
     prompt: PromptTemplate = _KEY_WORD_TEMPLATE_ZH
 
-    class Config:
-        arbitrary_types_allowed = True
-
-    @validator('prompt')
+    @field_validator('prompt')
     @classmethod
     def _validate_prompt(cls, prompt):
         if set(prompt.input_variables) != {"question"}:

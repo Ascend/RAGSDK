@@ -10,6 +10,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_opengauss import OpenGaussSettings
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from pydantic import ConfigDict
 
 from mx_rag.storage.document_store.base_storage import StorageError
 from mx_rag.storage.vectorstore import VectorStorageFactory
@@ -50,10 +51,8 @@ class GraphRAGError(Exception):
 
 
 class GraphRetriever(BaseRetriever):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     graph_rag_model: GraphRAGModel
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,

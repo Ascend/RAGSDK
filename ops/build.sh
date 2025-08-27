@@ -24,8 +24,9 @@ cd build
 
 export PYTHON_INCLUDE_PATH="$($PY_VERSION -c 'from sysconfig import get_paths; print(get_paths()["include"])')"
 export PYTHON_LIB_PATH="$($PY_VERSION  -c 'from sysconfig import get_paths; print(get_paths()["platlib"])')"
-export PYTORCH_INSTALL_PATH="$($PY_VERSION -c 'import torch, os; print(os.path.dirname(os.path.abspath(torch.__file__)))')"
-export PYTORCH_NPU_INSTALL_PATH="$PYTORCH_INSTALL_PATH/../torch_npu"
+python_location=$(pip3 show torch |grep Location | awk -F ' ' '{print $2}')
+export PYTORCH_INSTALL_PATH="$python_location/torch"
+export PYTORCH_NPU_INSTALL_PATH="$python_location/torch_npu"
 
 cmake -DTARGET_PLATFORM:string=$TARGET_PLATFORM  -DCMAKE_INSTALL_PREFIX=$CUR_DIR/$TARGET_PLATFORM ..
 

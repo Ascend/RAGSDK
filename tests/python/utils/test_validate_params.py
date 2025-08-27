@@ -42,12 +42,10 @@ class Person():
     weight=dict(validator=lambda x: 0 <= x <= 50)
 )
 class Animal(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str
     master: Person
     weight: int = 10
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @property
     def _llm_type(self) -> str:
@@ -69,7 +67,6 @@ class Cat(BaseModel):
     # min_length支持iterables；多层只校验最外层
     multidict: List[Dict[str, str]] = Field(min_length=0, max_length=1, default=None)
 
-    # 继承langchain的都是v1的BaseModel，自定义校验要修改为v1的@validator
     @field_validator('gender')
     def validate_gender(cls, input_value):
         if input_value not in ["male", "female"]:

@@ -3,18 +3,17 @@
 
 import re
 from typing import List
-from langchain_core.pydantic_v1 import validator
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import PromptTemplate
+from pydantic import field_validator, ConfigDict
 
 from mx_rag.llm import Text2TextLLM
-from mx_rag.retrievers.retriever import Retriever
 from mx_rag.llm.llm_parameter import LLMParameterConfig
+from mx_rag.retrievers.retriever import Retriever
 from mx_rag.utils.common import TEXT_MAX_LEN, MAX_PROMPT_LENGTH, validate_params
-
 
 DEFAULT_QUERY_PROMPT_CH = PromptTemplate(
     input_variables=["question"],
@@ -44,15 +43,13 @@ class DefaultOutputParser(BaseOutputParser):
 
 
 class MultiQueryRetriever(Retriever):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     llm: Text2TextLLM
     prompt: PromptTemplate = DEFAULT_QUERY_PROMPT_CH
     parser: BaseOutputParser = DefaultOutputParser()
     llm_config: LLMParameterConfig = LLMParameterConfig()
 
-    class Config:
-        arbitrary_types_allowed = True  # 允许自定义类型
-
-    @validator('prompt')
+    @field_validator('prompt')
     @classmethod
     def _validate_prompt(cls, prompt):
         if set(prompt.input_variables) != {"question"}:
