@@ -28,6 +28,8 @@ class FullTextRetriever(BaseRetriever):
         docs = self.document_store.full_text_search(query, top_k=self.k, filter_dict=self.filter_dict)
         result = []
         for doc in docs:
+            metadata = doc.metadata
+            metadata.update({'retrieval_type': 'sparse'})
             result.append(Document(page_content=doc.page_content, metadata=doc.metadata))
 
         if not result:

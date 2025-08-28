@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 __all__ = [
-    "LocalReranker"
+    "LocalReranker",
+    "MixRetrieveReranker"
 ]
 
 from .reranker import LocalReranker
+from .mix_retrieve_reranker import MixRetrieveReranker
