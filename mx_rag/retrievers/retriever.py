@@ -61,7 +61,7 @@ class Retriever(BaseRetriever):
         docs = []
         for doc, score in result:
             metadata = doc.metadata
-            metadata.update({'score': score})
+            metadata.update({'score': score, 'retrieval_type': 'dense'})
             docs.append(Document(page_content=doc.page_content, metadata=doc.metadata))
         if not docs:
             logger.warning("no relevant documents found!!!")
