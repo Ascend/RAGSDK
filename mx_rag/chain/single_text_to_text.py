@@ -2,13 +2,14 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import copy
-from typing import Union, Iterator, List, Dict
+from typing import Union, Iterator, List, Dict, Callable
 
 from langchain_core.documents import Document
 from loguru import logger
 
 from langchain_core.retrievers import BaseRetriever
 
+from mx_rag.llm.text2text import _check_sys_messages
 from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, TEXT_MAX_LEN
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import Chain
@@ -28,8 +29,25 @@ TEXT_RAG_TEMPLATE = """You are an assistant for question-answering tasks.
 """
 
 
-class SingleText2TextChain(Chain):
+def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
+    final_prompt = ""
     document_separator: str = "\n\n"
+    if len(docs) != 0:
+        if prompt != "":
+            last_doc = docs[-1]
+            last_doc.page_content = (last_doc.page_content
+                                     + f"{document_separator}{prompt}")
+            docs[-1] = last_doc
+        final_prompt = document_separator.join(x.page_content for x in docs)
+
+    if final_prompt != "":
+        final_prompt += document_separator
+
+    final_prompt += query
+    return final_prompt
+
+
+class SingleText2TextChain(Chain):
 
     @validate_params(
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="param must be instance of Text2TextLLM"),
@@ -39,20 +57,30 @@ class SingleText2TextChain(Chain):
                       message="param must be None or instance of Reranker"),
         prompt=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PROMPT_LENGTH,
                     message=f"param must be str and length range [1, {MAX_PROMPT_LENGTH}]"),
-        source=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+        sys_messages=dict(validator=lambda x: _check_sys_messages(x),
+                          message="param must be None or List[dict], and length of dict <= 16, "
+                                  "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),
+        source=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
+        user_content_builder=dict(validator=lambda x: isinstance(x, Callable),
+                                  message="param must be Callable[[str, List[Document], str], str]"),
+
     )
     def __init__(self, llm: Text2TextLLM,
                  retriever: BaseRetriever,
                  reranker: Reranker = None,
                  prompt: str = DEFAULT_RAG_PROMPT,
-                 source: bool = True):
+                 sys_messages: List[dict] = None,
+                 source: bool = True,
+                 user_content_builder: Callable[[str, List[Document], str], str] = _user_content_builder):
         super().__init__()
         self._retriever = retriever
         self._reranker = reranker
         self._llm = llm
         self._prompt = prompt
+        self._sys_messages = sys_messages
         self._source = source
         self._role: str = "user"
+        self._user_content_builder = user_content_builder
 
     @validate_params(
         text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
@@ -65,22 +93,6 @@ class SingleText2TextChain(Chain):
             -> Union[Dict, Iterator[Dict]]:
         return self._query(text, llm_config)
 
-    def _merge_query_prompt(self, query: str, docs: List[Document], prompt: str):
-        final_prompt = ""
-        if len(docs) != 0:
-            if prompt != "":
-                last_doc = docs[-1]
-                last_doc.page_content = (last_doc.page_content
-                                         + f"{self.document_separator}{prompt}")
-                docs[-1] = last_doc
-            final_prompt = self.document_separator.join(x.page_content for x in docs)
-
-        if final_prompt != "":
-            final_prompt += self.document_separator
-
-        final_prompt += query
-        return final_prompt
-
     def _query(self,
                question: str,
                llm_config: LLMParameterConfig) -> Union[Dict, Iterator[Dict]]:
@@ -91,7 +103,7 @@ class SingleText2TextChain(Chain):
             scores = self._reranker.rerank(question, [doc.page_content for doc in q_docs])
             q_docs = self._reranker.rerank_top_k(q_docs, scores)
 
-        q_with_prompt = self._merge_query_prompt(question, copy.deepcopy(q_docs), self._prompt)
+        q_with_prompt = self._user_content_builder(question, copy.deepcopy(q_docs), self._prompt)
 
         if not llm_config.stream:
             return self._do_query(q_with_prompt, llm_config, question=question, q_docs=q_docs)
@@ -104,7 +116,9 @@ class SingleText2TextChain(Chain):
         resp = {"query": question, "result": ""}
         if self._source:
             resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in q_docs]
-        llm_response = self._llm.chat(query=q_with_prompt, role=self._role, llm_config=llm_config)
+
+        llm_response = self._llm.chat(query=q_with_prompt, sys_messages=self._sys_messages,
+                                      role=self._role, llm_config=llm_config)
         resp['result'] = llm_response
         return resp
 
@@ -115,7 +129,8 @@ class SingleText2TextChain(Chain):
         if self._source and q_docs:
             resp['source_documents'] = [{'metadata': x.metadata, 'page_content': x.page_content} for x in q_docs]
 
-        for response in self._llm.chat_streamly(query=q_with_prompt, role=self._role, llm_config=llm_config):
+        for response in self._llm.chat_streamly(query=q_with_prompt, sys_messages=self._sys_messages,
+                                                role=self._role, llm_config=llm_config):
             resp['result'] = response
             yield resp
 

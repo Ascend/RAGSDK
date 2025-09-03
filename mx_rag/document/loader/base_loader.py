@@ -13,7 +13,7 @@ from PIL import Image
 from mx_rag.llm import Img2TextLLM
 from mx_rag.utils import file_check
 from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP_1024, MAX_IMAGE_PIXELS, MIN_IMAGE_WIDTH, \
-    MIN_IMAGE_HEIGHT, MIN_IMAGE_PIXELS, MAX_BASE64_SIZE
+    MIN_IMAGE_HEIGHT, MAX_BASE64_SIZE
 
 
 class BaseLoader(ABC):
