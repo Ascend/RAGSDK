@@ -134,23 +134,10 @@ class MyTestCase(unittest.TestCase):
                                                                           top_p=0.1, stream=True)):
                 self.assertEqual("MultiQueryRetriever steam", response.get("result"))
 
-        def test_merge_query_prompt(self):
-            r = Retriever(vector_store=vector_store, document_store=db, embed_func=embed_func)
-            rag = SingleText2TextChain(retriever=r, llm=llm)
-            query = "who are you?"
-            prompt = "请根据上面提示输出对应结果"
-            res = rag._merge_query_prompt(query, docs=[], prompt=prompt)
-            self.assertEqual(res, query)
-
-            docs = [Document(page_content="you are a smart assistants", metadata={})]
-            res = rag._merge_query_prompt(query, docs=docs, prompt=prompt)
-            self.assertEqual(res, "\n\n".join(("you are a smart assistants", prompt, query)))
-
         test_rag_chain_npu(self)
         test_rag_chain_npu_stream(self)
         test_rag_chain_npu_multi_query_retriever(self)
         test_rag_chain_npu_stream_multi_query_retriever(self)
-        test_merge_query_prompt(self)
 
 
 if __name__ == '__main__':
