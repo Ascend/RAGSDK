@@ -57,21 +57,20 @@ class TestPdfLoader(unittest.TestCase):
         self.assertTrue(pdf_doc[0].metadata["source"].find("files/test.pdf"))
 
     def test_parser(self):
-        loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), layout_recognize=True, lang=Lang.EN)
+        loader = PdfLoader(os.path.join(self.data_dir, "test2.pdf"), enable_ocr=True, lang=Lang.CH)
         pdf_doc = list(loader.lazy_load())
-        self.assertEqual(15, pdf_doc[0].metadata["page_count"])
-        self.assertTrue(pdf_doc[0].metadata["source"].find("files/test.pdf"))
+        self.assertEqual(1, pdf_doc[0].metadata["page_count"])
+        self.assertTrue(pdf_doc[0].metadata["source"].find("files/test2.pdf"))
 
         with mock.patch('mx_rag.document.loader.pdf_loader.PPStructure') as mock_score_scale:
             mock_score_scale.side_effect = Exception("Test other exception")
-            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), layout_recognize=True, lang=Lang.EN)
-            pdf_doc = list(loader.lazy_load())
+            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), enable_ocr=True, lang=Lang.EN)
             self.assertIsNone(loader.ocr_engine)
 
         with mock.patch('mx_rag.document.loader.pdf_loader.PPStructure') as mock_score_scale:
             mock_score_scale.side_effect = AssertionError("Test assertion error")
-            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), layout_recognize=True, lang=Lang.EN)
-            pdf_doc = list(loader.lazy_load())
+            loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), enable_ocr=True, lang=Lang.EN)
             self.assertIsNone(loader.ocr_engine)
 
-
+if __name__ == '__main__':
+    unittest.main()
