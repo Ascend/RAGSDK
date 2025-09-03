@@ -2,7 +2,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import json
 from typing import List, Optional, Any
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from langchain.llms.base import LLM
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -58,10 +58,17 @@ def _check_image_url(image_url):
 class Img2TextLLM(LLM):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     base_url: str = Field(min_length=1, max_length=MAX_URL_LENGTH)
-    prompt: str = Field(min_length=1, max_length=MAX_PROMPT_LENGTH, default=IMG_TO_TEXT_PROMPT)
+    prompt: str = IMG_TO_TEXT_PROMPT
     model_name: str = Field(min_length=1, max_length=MAX_MODEL_NAME_LENGTH)
     llm_config: LLMParameterConfig = LLMParameterConfig()
     client_param: ClientParam = ClientParam()
+
+    @field_validator('prompt')
+    @classmethod
+    def _validate_prompt(cls, prompt):
+        if not (0 < len(prompt) <= MAX_PROMPT_LENGTH):
+            raise ValueError(f'prompt length must be in [1: {MAX_PROMPT_LENGTH}].')
+        return prompt
 
     @property
     def _client(self):

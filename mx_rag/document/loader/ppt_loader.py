@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import itertools
-from enum import Enum
-from typing import Callable
 
 from loguru import logger
 from paddleocr import PaddleOCR
@@ -13,7 +11,7 @@ from tqdm import tqdm
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.llm import Img2TextLLM
-from mx_rag.utils.common import validate_params, Lang, MAX_IMAGE_PIXELS, BOOL_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, Lang, BOOL_TYPE_CHECK_TIP
 from mx_rag.utils.file_check import SecFileCheck
 
 

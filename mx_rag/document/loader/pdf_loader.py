@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-from typing import List, Iterator, Callable
+from typing import List, Iterator
 
 from pathlib import Path
 import fitz
@@ -30,23 +30,15 @@ class PdfLoader(BaseLoader, mxBaseLoader):
         vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM) or x is None,
                  message="param must be instance of Img2TextLLM or None"),
         lang=dict(validator=lambda x: isinstance(x, Lang), message="param must be instance of Lang"),
-        layout_recognize=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+        enable_ocr=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, file_path: str, vlm: Img2TextLLM = None,
-                 lang: Lang = Lang.CH, layout_recognize: bool = False):
+                 lang: Lang = Lang.CH, enable_ocr: bool = False):
         super().__init__(file_path)
-        self.layout_recognize = layout_recognize
+        self.enable_ocr = enable_ocr
         self.ocr_engine = None
         self.lang = lang
         self.vlm = vlm
-
-    @staticmethod
-    def _reconstruct(layout_res):
-        pdf_content: List[str] = []
-        for page_layout in layout_res:
-            for line in page_layout:
-                PdfLoader._reconstruct_line(line, pdf_content)
-        return pdf_content
 
     @staticmethod
     def _reconstruct_line(line, pdf_content):
@@ -58,25 +50,16 @@ class PdfLoader(BaseLoader, mxBaseLoader):
 
     def lazy_load(self) -> Iterator[Document]:
         self._check()
-        return self._parser() if self.layout_recognize else self._plain_parser()
-
-    def _text_merger(self, pdf_content, image_summaries=None, img_base64_list=None):
-        one_text = " ".join(pdf_content)
-        yield Document(page_content=one_text, metadata={"source": self.file_path,
-                                                        "page_count": self._get_pdf_page_count(),
-                                                        "type": "text"
-                                                        })
+        return self._parser() if self.enable_ocr else self._plain_parser()
 
     def _layout_recognize(self, pdf_document):
-        layout_res = []
-        imgs = []
-
         logger.info(f"Processing PDF with {pdf_document.page_count} pages using layout recognition...")
         for page_num in tqdm(range(pdf_document.page_count), desc="Converting PDF pages to images",
                              total=pdf_document.page_count, disable=pdf_document.page_count < 5):
             page = pdf_document.load_page(page_num)
-            mat = fitz.Matrix(2, 2)
+            image_list = page.get_images(full=True) if self.vlm else []
 
+            mat = fitz.Matrix(2, 2)
             # 获取页面的宽高（未放大）
             rect = page.rect
             estimated_width = int(rect.width * 2)  # 放大两倍后的宽度
@@ -90,18 +73,11 @@ class PdfLoader(BaseLoader, mxBaseLoader):
 
             img = Image.frombytes("RGB", [pm.width, pm.height], pm.samples)
             img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-            imgs.append(img)
-            del img
 
-        for idx, img in enumerate(tqdm(imgs, desc="Performing OCR on pages", total=len(imgs), disable=len(imgs) < 5)):
-            try:
-                ocr_res = self.ocr_engine(img)
-                result = sorted_layout_boxes(ocr_res, img.shape[1])
-                layout_res.append(result)
-            except Exception as e:
-                logger.warning(f"Failed to process page {idx + 1}: {str(e)}")
-
-        return layout_res
+            yield {
+                'image_list': image_list,
+                'img': img
+            }
 
     def _parser(self):
         if self.ocr_engine is None:
@@ -110,18 +86,35 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             except AssertionError as e:
                 logger.error(f"Assertion error: {e}")
                 self.ocr_engine = None
-                return self._text_merger([""])
+                yield Document(page_content="", metadata={"source": self.file_path})
             except Exception as e:
                 logger.error(f"paddleOcr init failed, {e}")
                 self.ocr_engine = None
-                return self._text_merger([""])
-
+                yield Document(page_content="", metadata={"source": self.file_path})
         with fitz.open(self.file_path) as pdf_document:
-            layout_res = self._layout_recognize(pdf_document)
+            pdf_content = []
+            for item in self._layout_recognize(pdf_document):
+                img = item['img']
+                try:
+                    ocr_res = self.ocr_engine(img)
+                    result = sorted_layout_boxes(ocr_res, img.shape[1])
+                except Exception as e:
+                    result = []
+                    logger.warning(f"Failed to process: {str(e)}")
+                page_content = []
+                for line in result:
+                    PdfLoader._reconstruct_line(line, page_content)
+                pdf_content.extend(page_content)
 
-        pdf_content = self._reconstruct(layout_res)
+                if self.vlm:
+                    image_list = item['image_list']
+                    yield from self._process_image(pdf_document, image_list)
 
-        return self._text_merger(pdf_content)
+            one_text = " ".join(pdf_content)
+            yield Document(page_content=one_text, metadata={"source": self.file_path,
+                                                            "page_count": self._get_pdf_page_count(),
+                                                            "type": "text"
+                                                            })
 
     def _plain_parser(self):
         pdf_content, img_base64_list, image_summaries = [], [], []
@@ -132,32 +125,48 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             try:
                 page = pdf_document.load_page(page_num)
                 pdf_content.append(page.get_text("text"))
-                image_list = page.get_images(full=True) if self.vlm else []
-                for _, img in enumerate(image_list):
-                    xref = img[0]
-                    base_image = pdf_document.extract_image(xref)
-                    image_data = base_image["image"]
-                    img_base64, img_sumy = self._interpret_image(image_data, self.vlm)
-                    img_base64 and img_sumy and (yield Document(page_content=img_sumy,
-                                                                metadata={"source": self.file_path,
-                                                                          "image_base64": img_base64,
-                                                                          "type": "image"}))
+
+                if self.vlm:
+                    image_list = page.get_images(full=True)
+                    yield from self._process_image(pdf_document, image_list)
+
             except Exception as e:
                 logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
         pdf_document.close()
 
         one_text = " ".join(pdf_content)
         one_text and (yield Document(page_content=one_text, metadata={"source": self.file_path,
-                                                                              "page_count": self._get_pdf_page_count(),
-                                                                              "type": "text"
-                                                                              }))
+                                                                      "page_count": self._get_pdf_page_count(),
+                                                                      "type": "text"
+                                                                      }))
+
+    def _process_image(self, pdf_document, image_list):
+        """
+        处理图像和 OCR 逻辑的公共函数。
+        """
+        for _, img in enumerate(image_list):
+            xref = img[0]
+            base_image = pdf_document.extract_image(xref)
+            image_data = base_image["image"]
+            img_base64, img_sumy = self._interpret_image(image_data, self.vlm)
+            if img_base64 and img_sumy:
+                yield Document(
+                    page_content=img_sumy,
+                    metadata={
+                        "source": self.file_path,
+                        "image_base64": img_base64,
+                        "type": "image"
+                    }
+                )
 
     def _get_pdf_page_count(self):
-        pdf_document = fitz.open(self.file_path)
-        pdf_page_count = pdf_document.page_count
-        pdf_document.close()
-
-        return pdf_page_count
+        try:
+            with fitz.open(self.file_path) as pdf_document:
+                pdf_page_count = pdf_document.page_count
+                return pdf_page_count
+        except Exception as e:
+            logger.error(f"Failed to get PDF page count: {e}")
+            return 0
 
     def _check(self):
         SecFileCheck(self.file_path, self.MAX_SIZE).check()

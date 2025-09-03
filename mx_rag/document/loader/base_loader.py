@@ -163,7 +163,6 @@ class BaseLoader(ABC):
             logger.warning("image size is invalid")
             img_base64, img_summary = "", ""
             return img_base64, img_summary
-
         # vllm解析图像
         image_url = {"url": f"data:image/jpeg;base64,{img_base64}"}
         image_summary = vlm.chat(image_url=image_url)
