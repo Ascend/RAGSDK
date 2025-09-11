@@ -170,7 +170,7 @@ def upload_dir(params: FilesLoadInfo):
             files.append(file.as_posix())
             count += 1
         else:
-            unsupported_files.append(file)
+            unsupported_files.append(file.as_posix())
     if len(unsupported_files) > 0:
         logger.warning(f"These files '{unsupported_files}' are not of supported types "
                        f"because no loader or splitter has been registered.")
