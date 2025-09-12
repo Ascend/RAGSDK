@@ -54,7 +54,7 @@ class Text2TextLLM(LLM):
                         message="param must be None or LLMParameterConfig")
     )
     def chat(self, query: str,
-             sys_messages: List[dict] | None = None,
+             sys_messages: Optional[List[dict]] = None,
              role: str = "user",
              llm_config: Optional[LLMParameterConfig] = None):
         ans = ""
