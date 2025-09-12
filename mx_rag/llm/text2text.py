@@ -50,16 +50,19 @@ class Text2TextLLM(LLM):
                           message="param must be None or List[dict], and length of dict <= 16, "
                                   "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),
         role=dict(validator=lambda x: 1 <= len(x) <= 16, message="param length range [1, 16]"),
-        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
-                        message="param must be LLMParameterConfig")
+        llm_config=dict(validator=lambda x: x is None or isinstance(x, LLMParameterConfig),
+                        message="param must be None or LLMParameterConfig")
     )
     def chat(self, query: str,
-             sys_messages: List[dict] = None,
+             sys_messages: List[dict] | None = None,
              role: str = "user",
-             llm_config: LLMParameterConfig = LLMParameterConfig()):
+             llm_config: Optional[LLMParameterConfig] = None):
         ans = ""
         if sys_messages is None:
             sys_messages = []
+
+        if llm_config is None:
+            llm_config = self.llm_config
         request_body = self._get_request_body(query, sys_messages, role, llm_config)
         request_body["stream"] = False
         response = self._client.post(url=self.base_url, body=json.dumps(request_body),
@@ -88,15 +91,18 @@ class Text2TextLLM(LLM):
                           message="param must be None or List[dict], and length of dict <= 16, "
                                   "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),
         role=dict(validator=lambda x: 0 < len(x) <= 16, message="param length range (0, 16]"),
-        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
-                        message="param must be LLMParameterConfig")
+        llm_config=dict(validator=lambda x: x is None or isinstance(x, LLMParameterConfig),
+                        message="param must be None or LLMParameterConfig")
     )
     def chat_streamly(self, query: str,
-                      sys_messages: List[dict] = None,
+                      sys_messages: Optional[List[dict]] = None,
                       role: str = "user",
-                      llm_config: LLMParameterConfig = LLMParameterConfig()):
+                      llm_config: Optional[LLMParameterConfig] = None):
         if sys_messages is None:
             sys_messages = []
+
+        if llm_config is None:
+            llm_config = self.llm_config
 
         request_body = self._get_request_body(query, sys_messages, role, llm_config)
         request_body["stream"] = True
@@ -146,6 +152,7 @@ class Text2TextLLM(LLM):
         }
         return request_body
 
+    @property
     def _llm_type(self):
         return self.model_name
 
@@ -153,7 +160,7 @@ class Text2TextLLM(LLM):
             self,
             prompt: str,
             stop: Optional[List[str]] = None,
-            callbacks: Optional[CallbackManagerForLLMRun] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
     ) -> str:
         return self.chat(prompt, llm_config=self.llm_config)
