@@ -21,6 +21,9 @@ class TestEvalDataGenerator(unittest.TestCase):
         self.eval_data_generator = EvalDataGenerator(llm, self.file_path)
         if os.path.exists(os.path.join(self.file_path, "evaluate_data.jsonl")):
             os.remove(os.path.join(self.file_path, "evaluate_data.jsonl"))
+        jsonl_path = os.path.join(self.file_path, "origin_train_data.jsonl")
+        if os.path.exists(jsonl_path):
+            os.remove(jsonl_path)
 
     @patch("mx_rag.utils.file_check.FileCheck.dir_check")
     @patch("mx_rag.utils.file_check.FileCheck.check_path_is_exist_and_valid")
