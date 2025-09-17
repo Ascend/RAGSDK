@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import ssl
 from typing import Dict, Iterator
 
 import urllib3
 from urllib3.exceptions import TimeoutError as urllib3_TimeoutError, HTTPError
 from loguru import logger
 
-from glib.checker import HttpUrlChecker, HttpsUrlChecker
-from glib.security import TlsConfig
 from mx_rag.utils.client_param import ClientParam
+from .url_checker import HttpUrlChecker, HttpsUrlChecker
+from .tlsconfing import TlsConfig
 from .cert_check import CertContentsChecker
 from .common import MB
 from .file_check import SecFileCheck, FileCheckError, PathNotFileException
@@ -230,5 +229,3 @@ class RequestUtils:
         if not checker.check_crl():
             logger.error(f"CRL check failed for file: {client_param.crl_file}")
             raise CRLCheckError("CRL check error")
-
-

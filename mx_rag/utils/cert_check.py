@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 from datetime import datetime
-from glib.checker import StringLengthChecker, CheckResult
+from .url_checker import StringLengthChecker, CheckResult
 
 from .common import PubkeyType, ParseCertInfo
 

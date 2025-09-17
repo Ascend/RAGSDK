@@ -1,3 +1,0 @@
-[submodule "mx_rag/libs"]
-	path = mx_rag/libs
-	url = https://codehub-dg-y.huawei.com/mindx_edge/commcomponent/PyGenericLibrary.git
