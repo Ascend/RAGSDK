@@ -28,7 +28,7 @@ python_location=$(pip3 show torch |grep Location | awk -F ' ' '{print $2}')
 export PYTORCH_INSTALL_PATH="$python_location/torch"
 export PYTORCH_NPU_INSTALL_PATH="$python_location/torch_npu"
 
-cmake -DTARGET_PLATFORM:string=$TARGET_PLATFORM  -DCMAKE_INSTALL_PREFIX=$CUR_DIR/$TARGET_PLATFORM ..
+cmake -DCMAKE_C_COMPILER=/opt/rh/devtoolset-7/root/usr/bin/gcc  -DCMAKE_CXX_COMPILER=/opt/rh/devtoolset-7/root/usr/bin/g++ -DTARGET_PLATFORM:string=$TARGET_PLATFORM  -DCMAKE_INSTALL_PREFIX=$CUR_DIR/$TARGET_PLATFORM ..
 
 make -j"$(nproc)"
 make install
