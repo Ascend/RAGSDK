@@ -3,9 +3,9 @@ xlrd~=2.0.1
 loguru==0.7.3
 transformers~=4.41.2
 sentence_transformers~=5.0.0
-accelerate==1.10.0
-torch==2.6.0
-torchvision==0.21.0
+accelerate==0.30.1
+torch==2.1.0
+torchvision==0.16.0
 cn_clip==1.5.1
 numpy==1.26.4
 urllib3~=2.4.0
