@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# The script to run unit test case.
+# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 set -e
 
 CUR_PATH=$(cd "$(dirname "$0")" || { warn "Failed to check path/to/run_py_test.sh" ; exit ; } ; pwd)

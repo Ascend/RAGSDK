@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 """
 MXRAGCache 提供的对外API，用于初始化MXRAGCache的参数，在MXRAGCache运行之前进行调用

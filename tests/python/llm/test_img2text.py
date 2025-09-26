@@ -1,12 +1,13 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import os
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 import json
-import numpy as np
 
 from mx_rag.llm import Img2TextLLM, LLMParameterConfig
 from mx_rag.llm.img2text import _check_image_url
-from mx_rag.utils.url import RequestUtils
 from mx_rag.utils import ClientParam
 
 # 定义一些常量（假设）
