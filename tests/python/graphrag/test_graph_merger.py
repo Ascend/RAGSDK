@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import unittest
 from unittest.mock import Mock, patch
 from mx_rag.graphrag.graph_merger import merge_relations_into_graph
