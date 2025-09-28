@@ -32,7 +32,7 @@ private:
     int64_t ExecuteOutImpl(std::vector<atb::Tensor> &inTensors, std::vector<atb::Tensor> &outTensors,
                         const std::string &param);
     std::string GetSaveTensorDir() const;
-    void* GetWorkSpace(const uint64_t bufferSize);
+    void* GetWorkSpace(const uint64_t bufferSize) const;
     atb::Tensor CreateInternalTensorFromDesc(const atb::TensorDesc &tensorDesc);
     void RunTask(std::string taskName, std::function<int()> task);
 private:

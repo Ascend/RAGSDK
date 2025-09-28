@@ -48,7 +48,7 @@ void *BufferDevice::GetBuffer(uint64_t bufferSize)
     return atTensor_.data_ptr();
 }
 
-torch::Tensor BufferDevice::CreateAtTensor(const uint64_t bufferSize)
+torch::Tensor BufferDevice::CreateAtTensor(const uint64_t bufferSize) const
 {
     atb::TensorDesc tensorDesc;
     tensorDesc.dtype = ACL_UINT8;

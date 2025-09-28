@@ -65,7 +65,7 @@ bool Config::IsSaveTensorForRunner(const std::string &runnerName) const
     return false;
 }
 
-void Config::InitSaveTensor()
+void Config::InitSaveTensor() const
 {
     return;
 }

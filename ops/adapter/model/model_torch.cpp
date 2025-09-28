@@ -22,7 +22,7 @@
 #include "atb_speed/utils/model_factory.h"
 
 namespace atb_speed {
-void *ModelTorch::GetWorkSpace(const uint64_t bufferSize)
+void *ModelTorch::GetWorkSpace(const uint64_t bufferSize) const
 {
     void *workspace = nullptr;
     if (bufferSize > 0) {
