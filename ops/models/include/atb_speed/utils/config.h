@@ -23,7 +23,7 @@ public:
 
 private:
     static bool IsEnable(bool enable = false);
-    void InitSaveTensor();
+    void InitSaveTensor() const;
 
 private:
     bool isSaveTensor_ = false;

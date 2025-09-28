@@ -14,7 +14,7 @@ public:
     ~BufferDevice() override;
     void *GetBuffer(uint64_t bufferSize) override;
 private:
-    torch::Tensor CreateAtTensor(const uint64_t bufferSize);
+    torch::Tensor CreateAtTensor(const uint64_t bufferSize) const;
 
 private:
     void *buffer_ = nullptr;

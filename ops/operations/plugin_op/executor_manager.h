@@ -6,7 +6,6 @@
 
 #include <map>
 #include <string>
-#include <acl/acl.h>
 #include <aclnn/acl_meta.h>
 
 namespace atb_speed {

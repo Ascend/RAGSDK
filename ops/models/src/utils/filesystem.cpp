@@ -227,7 +227,7 @@ void FileSystem::GetDirChildItemsImpl(const std::string &dirPath, bool matchFile
     struct dirent *dp = nullptr;
     while ((dp = readdir(dirHandle)) != nullptr) {
         const int parentDirNameLen = 2;
-        if ((!strncmp(dp->d_name, ".", 1)) || (!strncmp(dp->d_name, "..", parentDirNameLen))) {
+        if ((strncmp(dp->d_name, ".", 1) == 0) || (strncmp(dp->d_name, "..", parentDirNameLen) == 0)) {
             continue;
         }
         std::string itemPath = dirPath + "/" + dp->d_name;

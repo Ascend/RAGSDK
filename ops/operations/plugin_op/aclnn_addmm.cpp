@@ -7,7 +7,6 @@
 #include <securec.h>
 #include <sstream>
 #include <vector>
-#include <syscall.h>
 #include <unistd.h>
 #include "acl/acl.h"
 #include "atb_speed/log.h"
