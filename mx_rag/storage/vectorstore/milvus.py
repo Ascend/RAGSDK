@@ -116,6 +116,7 @@ class MilvusDB(VectorStore):
         self._metric_type = metric_type
         self._filter_dict = None
         self._auto_flush = auto_flush
+        self.score_scale = self.SCALE_MAP.get(self._metric_type)
 
     @property
     def search_mode(self):
@@ -189,7 +190,8 @@ class MilvusDB(VectorStore):
         if (self.search_mode == SearchMode.DENSE or self.search_mode == SearchMode.HYBRID) and x_dim is None:
             raise MilvusError("x_dim can't be None in mode DENSE or HYBRID")
 
-        self.score_scale = self.SCALE_MAP.get(self._metric_type)
+
+        # self.score_scale = self.SCALE_MAP.get(self._metric_type)
         if params is None:
             params = {}
         schema = self._create_schema(x_dim)

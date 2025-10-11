@@ -72,7 +72,7 @@ class GraphRAGPipeline:
                  message="llm must be an instance of Text2TextLLM"),
         embedding_model=dict(validator=lambda x: isinstance(x, Embeddings),
                              message="embedding_model must be an instance of Embeddings"),
-        rerank_model=dict(validator=lambda x: isinstance(x, Reranker),
+        rerank_model=dict(validator=lambda x: isinstance(x, Reranker) or (x is None),
                           message="rerank_model must be an instance of Reranker"),
         dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1024 * 1024,
                  message="dim must be an integer, value range [1, 1024 * 1024]"),
