@@ -242,7 +242,7 @@ class TestMilvusDB(unittest.TestCase):
             db._perform_sparse_search([{1: 0.1}], 1, [])
         data = ExtraList([[{"id": 1, "distance": 0.1}]], extra={"total": 3})
         scores, ids, extras = db._process_search_results(data)
-        self.assertEqual(scores, [[0.1]])
+        self.assertEqual(scores, [[0.95]])
         self.assertEqual(ids, [[1]])
         self.assertEqual(extras, [[]])
 

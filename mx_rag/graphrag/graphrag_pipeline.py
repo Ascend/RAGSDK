@@ -72,8 +72,8 @@ class GraphRAGPipeline:
                  message="llm must be an instance of Text2TextLLM"),
         embedding_model=dict(validator=lambda x: isinstance(x, Embeddings),
                              message="embedding_model must be an instance of Embeddings"),
-        rerank_model=dict(validator=lambda x: isinstance(x, Reranker),
-                          message="rerank_model must be an instance of Reranker"),
+        rerank_model=dict(validator=lambda x: isinstance(x, Reranker) or (x is None),
+                          message="rerank_model must be an instance of Reranker or None"),
         dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1024 * 1024,
                  message="dim must be an integer, value range [1, 1024 * 1024]"),
         graph_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 256 and x.isidentifier(),
@@ -81,7 +81,7 @@ class GraphRAGPipeline:
         graph_type=dict(validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
                         message="graph_type must be 'networkx' or 'opengauss'")
     )
-    def __init__(self, work_dir: str, llm, embedding_model, rerank_model, dim: int,
+    def __init__(self, work_dir: str, llm, embedding_model, dim: int, rerank_model: Reranker = None,
                  graph_type="networkx", graph_name: str = "graph", **kwargs):
         FileCheck.check_input_path_valid(work_dir)
         FileCheck.check_filename_valid(work_dir)
@@ -121,7 +121,7 @@ class GraphRAGPipeline:
                     continue
             except FileCheckError:
                 failed_files.append(file)
-                continue     
+                continue
             file_obj = Path(file)
             loader_info = loader_mng.get_loader(file_obj.suffix)
             loader = loader_info.loader_class(file_path=file_obj.as_posix(), **loader_info.loader_params)
@@ -146,11 +146,11 @@ class GraphRAGPipeline:
         ),
     )
     def build_graph(
-        self,
-        lang: Lang = Lang.EN,
-        pad_token: str = "",
-        conceptualize: bool = False,
-        **kwargs,
+            self,
+            lang: Lang = Lang.EN,
+            pad_token: str = "",
+            conceptualize: bool = False,
+            **kwargs,
     ):
         max_workers = kwargs.pop("max_workers", None)
         top_k = kwargs.pop("top_k", 5)
