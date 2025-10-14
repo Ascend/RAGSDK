@@ -9,7 +9,7 @@ set -e
 # Simple log helper functions
 CUR_PATH=$(cd "$(dirname "$0")" || { echo "Failed to enter current path" ; exit ; } ; pwd)
 
-PACKAGE_LOG_NAME=mxRag
+PACKAGE_LOG_NAME=ragsdk
 info_record_path="${HOME}/log/mxRag"
 info_record_file="deployment.log"
 info_record_file_back="deployment.log.bak"
@@ -43,8 +43,7 @@ function check_path() {
 }
 
 function log_check() {
-    local log_size
-    log_size="$(find $log_file -exec ls -l {} \; | awk '{ print $5 }')"
+    local log_size=$(stat -c%s "$log_file" 2>/dev/null) || log_size=0
     if [[ "${log_size}" -ge "${LOG_SIZE_THRESHOLD}" ]];then
         rotate_log
     fi
@@ -52,12 +51,12 @@ function log_check() {
 # usage log "INFO" "this is message"
 function log() {
     # print log to log file
-    if [ "$log_file" = "" ]; then
-        echo -e "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [$USER_N] [$IP_N]:\n$1" >&2
+    if [ "$log_file" = "" ] || [ "$3" = "y" ]; then
+        echo -e "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [user:$USER_N] [$IP_N] [$1] $2" >&2
     fi
     if [ -f "$log_file" ]; then
         log_check "$log_file"
-        if ! echo -e "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [$USER_N] [$IP_N]:\n$1" >>"$log_file"
+        if ! echo -e "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [user:$USER_N] [$IP_N] [$1] $2" >>"$log_file"
         then
           echo "Can not write log, exiting!"
           exit 1
@@ -96,7 +95,7 @@ real_delete() {
         touch "$log_file"
     fi
     find "$log_file" -type f -exec chmod 640 {} +
-    log "$(cat "${version_info}")"
+    log "INFO" "$(cat "${version_info}")"
 
     python3 -m pip uninstall mx-rag -y
 
@@ -111,8 +110,7 @@ real_delete() {
       rm -rf "$del_real_path"
     fi
 
-    log "Uninstall RAG SDK package successfully."
-    echo 'Uninstall RAG SDK package successfully.'
+    log "INFO" "Uninstall RAG SDK package successfully." "y"
   fi
 }
 
