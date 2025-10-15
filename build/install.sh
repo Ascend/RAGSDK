@@ -263,7 +263,7 @@ function make_file() {
         print "ERROR" "create $1 failed"
         exit 1
     fi
-    safe_change_mode 600 "${1}" T
+    safe_change_mode 640 "${1}" T
 }
 
 function log_init() {
@@ -276,8 +276,12 @@ function log_init() {
     if [[ ! -f "$log_file" ]]; then
         make_file "$log_file"
     fi
-    chmod 700 "${LOG_PATH}"
+    chmod 750 "${LOG_PATH}"
+    # 兼容老包升级
+    chmod 640 "${log_file}"
+
     log "INFO" "LogFile ${log_file}"
+
     log_init_flag=y
 }
 
@@ -289,8 +293,8 @@ function rotate_log() {
     safe_path_exit "$LOG_PATH/deployment.log.bak"
     mv -f "$log_file" "$LOG_PATH/deployment.log.bak"
     touch "$log_file" 2>/dev/null
-    safe_change_mode 400 "$LOG_PATH/deployment.log.bak" "T"
-    safe_change_mode 600 "$log_file" "T"
+    safe_change_mode 440 "$LOG_PATH/deployment.log.bak" "T"
+    safe_change_mode 640 "$log_file" "T"
 }
 
 function log_check() {
@@ -589,32 +593,12 @@ function process() {
     fi
 }
 
-#设置日志文件权限
-function set_log_permission() {
-    if [[ -f "${log_file}" ]];then
-        safe_change_mode 600 "${log_file}" T
-    fi
-}
-
-#设置配置文件权限
-function set_config_permission() {
-    if [[ -f "$1" ]];then
-        if [[ "${install_for_all}" == "y" ]];then
-            safe_change_mode 444 "$1"
-        else
-            safe_change_mode 440 "$1"
-        fi
-        chown -h "${install_username}:${install_usergroup}" "$1"
-    fi
-}
-
 # 程序开始
 function main() {
     parse_script_args "$@"
     check_script_args "$@"
     log_check
     process
-    set_log_permission
 }
 
 main "$@"
