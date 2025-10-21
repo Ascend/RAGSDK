@@ -372,6 +372,10 @@ function parse_script_args() {
             ((paramDict["quiet"]++)) || true
             shift
             ;;
+        --check)
+            print "INFO" "Check successfully, exit with 0"
+            exit 0
+            ;;
         -*)
             print "ERROR" "Unsupported parameters: $1"
             print_usage
@@ -483,6 +487,8 @@ function install_ops() {
 function modify_file_permission()
 {
   local path="$1"
+  find "$path/" -type d -exec chmod 750 {} +
+  find "$path/" -type f -exec chmod 640 {} +
   find "$path/" -maxdepth 1 -type d  -name lib -exec chmod 550 {} +
   find "$path/" -type f -name 'version.info' -exec chmod 440 {} +
   find "$path/" -type f -name '*.so' -exec chmod 440 {} +
@@ -490,8 +496,6 @@ function modify_file_permission()
 
   find "$path/" -type f -name '*.sh' -exec chmod 500 {} +
   find "$path/" -type f -name '*.py' -exec chmod 550 {} +
-  find "$path/" -type f -name '*.conf' -exec chmod 640 {} +
-  find "$path/" -type f -name '*.txt' -exec chmod 640 {} +
 
   find "$path/" -perm /u+x -type f -exec chmod 500 {} +
 }
