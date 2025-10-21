@@ -1,5 +1,8 @@
 #!/bin/bash
 # Copyright © Huawei Technologies Co., Ltd. 2025. All rights reserved.
+
+set -e
+
 readonly PACKAGE_VERSION=%{PACKAGE_VERSION}%
 readonly INSTALL_DIRECTORY=mxRag-"${PACKAGE_VERSION}"
 readonly PACKAGE_ARCH=%{PACKAGE_ARCH}%
@@ -18,7 +21,7 @@ arch=$(uname -m)
 PACKAGE_LOG_NAME=ragsdk
 LOG_SIZE_THRESHOLD=$((10*1024*1024))
 OWNED_CHECK_PATH_WHITELIST=("/var" "/var/log")
-declare -A paramDict=()               # 参数个数统计
+declare -A param_dict=()               # 参数个数统计
 
 install_username=$(id -nu)
 install_usergroup=$(id -ng)
@@ -42,7 +45,7 @@ readonly current_uid
 
 function print() {
     # 将关键信息打印到屏幕上
-    echo "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [user: $user_n] [$ip_n] [$1] $2"
+    echo "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [user: $USER_NAME] [$ip_n] [$1] $2"
 }
 
 function error_exit() {
@@ -79,7 +82,7 @@ function safe_path()
 function is_skip_owned_check() {
    local path=$1
    for whitelist_path in "${OWNED_CHECK_PATH_WHITELIST[@]}"; do
-     if [[ "${path}" == ${whitelist_path} ]]; then
+     if [[ "${path}" == "${whitelist_path}" ]]; then
         return 0
      fi
    done
@@ -91,7 +94,9 @@ function check_path() {
     [[ ${#path} -gt ${MAX_LEN_OF_PATH} ]] || [[ ${#path} -le ${MIN_LEN_OF_PATH} ]] && print "ERROR" "${path} length is invalid, either exceeding ${MAX_LEN_OF_PATH} or less than ${MIN_LEN_OF_PATH}, exiting" "$force_exit" && exit 1
     [[ $(echo "$path" | wc -l) -gt 1 ]]  && print "ERROR" "${path} contains newline characters, exiting"  && exit 1
     [[ -n $(echo "$path" | grep -Ev '^[/~][-_.0-9a-zA-Z/]*$') ]]  && print "ERROR" "${path} must start with '/' or '~' and characters only can contain '-_.0-9a-zA-Z/', exiting"  && exit 1
-    [[ $(echo "$path" | grep -E "\.\.") ]]  && print "ERROR" "${path} contains .. , exiting"  && exit 1
+    if ! echo "$path" | grep -qv "\\.\\."; then
+        print "ERROR" "${path} contains .. , exiting"  && exit 1
+    fi
 }
 
 function is_safe_owned()
@@ -187,10 +192,10 @@ function safe_change_mode() {
     chmod "${mode}" "${path}"
 }
 
-readonly user_n=$(whoami)
-readonly who_path=$(which who)
-readonly cut_path=$(which cut)
-ip_n=$(${who_path} -m | ${cut_path} -d '(' -f 2 | ${cut_path} -d ')' -f 1)
+readonly USER_NAME=$(whoami)
+readonly WHO_PATH=$(which who)
+readonly CUT_PATH=$(which cut)
+ip_n=$(${WHO_PATH} -m | ${CUT_PATH} -d '(' -f 2 | ${CUT_PATH} -d ')' -f 1)
 if [[ "${ip_n}" = "" ]]; then
     ip_n="localhost"
 fi
@@ -199,19 +204,16 @@ readonly ip_n
 function log() {
     # 将日志打印到文件中n
     if [[ "$log_file" = "" ]] || [[ "$quiet_flag" = n ]] || [[ "$3" = "y" ]]; then
-        echo -e "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [user: $user_n] [$ip_n] [$1] $2"
+        echo -e "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [user: $USER_NAME] [$ip_n] [$1] $2"
     fi
     if [[ -f "$log_file" ]]; then
         log_check "$log_file"
         safe_path_exit "$log_file"
-        if ! echo -e "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [user: $user_n] [$ip_n] [$1] $2" >>"$log_file"
+        if ! echo -e "[${PACKAGE_LOG_NAME}] [$(date +%Y%m%d-%H:%M:%S)] [user: $USER_NAME] [$ip_n] [$1] $2" >>"$log_file"
         then
           print "ERROR" "can not write log, exiting!"
           exit 1
         fi
-    else
-        print "ERROR" "log file not exist, exiting!"
-        exit 1
     fi
 }
 
@@ -229,26 +231,26 @@ function check_script_args() {
         print_usage
     fi
     # 重复参数检查
-    for key in "${!paramDict[@]}";do
-      if [[ "${paramDict[$key]}" -gt 1 ]]; then
-          print "ERROR" "parameter error! $key is repeat"
+    for key in "${!param_dict[@]}";do
+      if [[ "${param_dict[$key]}" -gt 1 ]]; then
+          log "ERROR" "parameter error! $key is repeat"
           error_exit "param repeat"
       fi
     done
 
     if [[ "${PACKAGE_ARCH}" != "${arch}" ]];then
-        print "ERROR" "the package is ${PACKAGE_ARCH} but current is ${arch}, exit."
+        log "ERROR" "the package is ${PACKAGE_ARCH} but current is ${arch}, exit."
         error_exit "error"
     fi
 
     if [[ "$install_flag" != "y" ]] && [[ "$upgrade_flag" != "y" ]]; then
-        print "ERROR" "parameter error ! Mode is neither install, upgrade."
+        log "ERROR" "parameter error ! Mode is neither install, upgrade."
         error_exit "error"
     fi
 
     if [[ "$install_path_flag" = "y" ]]; then
         if [[ "$install_flag" = "n" ]] && [[ "$upgrade_flag" = "n" ]]; then
-            print "ERROR" "Unsupported separate 'install-path' used independently"
+            log "ERROR" "Unsupported separate 'install-path' used independently"
             error_exit "error"
         fi
     fi
@@ -258,9 +260,9 @@ function make_file() {
     safe_path "${1}" T T
     if touch "${1}" 2>/dev/null
     then
-        print "INFO" "create $1 success"
+        log "INFO" "create $1 success" "y"
     else
-        print "ERROR" "create $1 failed"
+        log "ERROR" "create $1 failed"  "y"
         exit 1
     fi
     safe_change_mode 640 "${1}" T
@@ -338,18 +340,18 @@ function parse_script_args() {
             ;;
         --install)
             install_flag=y
-            ((paramDict["install"]++)) || true
+            ((param_dict["install"]++)) || true
             shift
             ;;
         --whitelist=*)
             install_whitelist=$(echo "$1" | cut -d"=" -f2)
             install_whitelist_flag=y
-            ((paramDict["whitelist"]++)) || true
+            ((param_dict["whitelist"]++)) || true
             shift
             ;;
           --platform=*)
             chip_type=$(echo "$1" | cut -d"=" -f2)
-            ((paramDict["platform"]++)) || true
+            ((param_dict["platform"]++)) || true
             shift
             ;;
         --install-path=*)
@@ -359,17 +361,17 @@ function parse_script_args() {
             safe_path "$install_path"
             local home_dir="$(echo ~)"
             install_path=$(echo "$install_path" | sed -e "s#^~#${home_dir}#")
-            ((paramDict["install-path"]++)) || true
+            ((param_dict["install-path"]++)) || true
             shift
             ;;
         --upgrade)
             upgrade_flag=y
-            ((paramDict["upgrade"]++)) || true
+            ((param_dict["upgrade"]++)) || true
             shift
             ;;
         --quiet)
             quiet_flag=y
-            ((paramDict["quiet"]++)) || true
+            ((param_dict["quiet"]++)) || true
             shift
             ;;
         -*)
@@ -389,7 +391,7 @@ function parse_script_args() {
     done
 }
 
-function handle_EULA() {
+function handle_eula() {
     local action=$1
     if [[ "$quiet_flag" = "y" ]]; then
         log "INFO" "using quiet option implies acceptance of the EULA, start to ${action}"
@@ -423,8 +425,7 @@ check_python_version()
   python_version_minor=$(python3 --version | awk '{print $2}')
 
   if  [[ -n $(echo "$python_version_minor" | grep -Ev '^3\.11(\.[0-9]+)?$') ]]; then
-      print "ERROR" "RAG SDK only support python3.11"
-      log "ERROR" "RAG SDK only support python3.11"
+      log "ERROR" "RAG SDK only support python3.11" "y"
       exit 1
   fi
 }
@@ -501,7 +502,6 @@ function install_process() {
     log "INFO" "The install path is ${install_path} !"
 
     if [[ -e "$install_path"/mxRag/script/uninstall.sh ]]; then
-        print "ERROR" "can not install twice, you have already installed RAG SDK."
         log "ERROR" "can not install twice, you have already installed RAG SDK." "y"
         exit 1
     fi
@@ -547,8 +547,7 @@ function upgrade_process() {
 
     # check whether the old version is exist
     if [[ ! -e "$install_path"/mxRag/script/uninstall.sh ]]; then
-        log "ERROR" "There is no RAG SDK installed in cur install path, please check it."
-        print "ERROR" "There is no RAG SDK installed in cur install path, please check it."
+        log "ERROR" "There is no RAG SDK installed in cur install path, please check it." "y"
         exit 1
     fi
 
@@ -585,10 +584,10 @@ function upgrade_process() {
 
 function process() {
     if [[ "$install_flag" = "y" ]]; then
-        handle_EULA "install"
+        handle_eula "install"
         install_process
     elif [[ "$upgrade_flag" = "y" ]]; then
-        handle_EULA "upgrade"
+        handle_eula "upgrade"
         upgrade_process
     fi
 }
