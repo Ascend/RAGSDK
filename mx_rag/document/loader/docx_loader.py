@@ -23,8 +23,7 @@ class DocxLoader(BaseLoader, mxBaseLoader):
 
     @validate_params(
         vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM) or x is None,
-                 message="param must be instance of Img2TextLLM or None"),
-        image_inline=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+                 message="param must be instance of Img2TextLLM or None")
     )
     def __init__(self, file_path: str, vlm: Img2TextLLM = None):
         """Initialize with filepath and options."""
