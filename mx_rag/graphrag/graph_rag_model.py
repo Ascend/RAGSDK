@@ -108,6 +108,12 @@ class GraphRAGModel(QABaseModel):
             text_nodes_set = set(self.text_nodes)
             retrieved = [self.node_names[i] for i in idx if self.node_names[i] in text_nodes_set]
             return retrieved
+        except TypeError as e:
+            logger.error(f"Type error in search_index: {e}")
+            raise
+        except ValueError as e:
+            logger.error(f"Value error in search_index: {e}")
+            raise
         except Exception as e:
             logger.error(f"search_index error: {e}")
             raise
@@ -141,6 +147,12 @@ class GraphRAGModel(QABaseModel):
                 return [item for item, _ in Counter(all_nodes).most_common(top_k)]
 
             return retrieved
+        except TypeError as e:
+            logger.error(f"Type error in retrieve: {e}")
+            return []
+        except ValueError as e:
+            logger.error(f"Value error in retrieve: {e}")
+            return []
         except Exception as e:
             logger.error(f"Error: {e}")
             return []

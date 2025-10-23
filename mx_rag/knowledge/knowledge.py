@@ -262,7 +262,10 @@ class KnowledgeStore:
                                                  knowledge_name=knowledge_name, user_id=user_id, role=role)
                 session.add(knowledge_model)
                 session.commit()
-
+        except SQLAlchemyError as db_err:
+            logger.error(f"Database error while add {user_id} to {knowledge_name}: {db_err}")
+            raise KnowledgeError(
+                f"Failed to add {user_id} to {knowledge_name} due to a database error: {db_err}") from db_err
         except Exception as e:
             raise KnowledgeError(f"failed to add {user_id} to {knowledge_name}") from e
 
