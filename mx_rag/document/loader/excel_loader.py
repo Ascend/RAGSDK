@@ -303,6 +303,12 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                     continue
                 for line in lines:
                     yield Document(page_content=line, metadata={"source": self.file_path, "sheet": ws.name, "type": "text"})
+        except xlrd.biffh.XLRDError as e:
+            logger.error(f"Excel parsing error for file '{self.file_path}': {e}")
+            return
+        except IndexError as e:
+            logger.error(f"Sheet index error in file '{self.file_path}': {str(e)}")
+            return
         except Exception as e:
             logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
             return
@@ -326,6 +332,12 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                     continue
                 for line in lines:
                     yield Document(page_content=line, metadata={"source": self.file_path, "sheet": sheet_name})
+        except PermissionError:
+            logger.error(f"Permission denied when accessing file: '{self.file_path}'")
+            return
+        except KeyError as e:
+            logger.error(f"Sheet not found in file '{self.file_path}': {str(e)}")
+            return
         except Exception as e:
             logger.error(f"An error occurred while loading file '{self.file_path}': {e}")
             return

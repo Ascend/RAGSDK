@@ -211,6 +211,10 @@ class RAGEvaluator:
                     logger.error(f"Failed to adapt metric '{metric.name}' via LLM: {result}")
                 elif result:
                     metric.set_prompts(**result)
+        except asyncio.TimeoutError as e:
+            logger.error(f"Operation timed out: {e}")
+        except MemoryError as e:
+            logger.error(f"Memory error occurred: {e}")
         except Exception as e:
             # This catches errors in asyncio.run() itself, e.g., if no event loop can be started.
             logger.error(f"Unexpected error during concurrent metric adaptation: {e}")

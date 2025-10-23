@@ -3,6 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 from typing import Union, Dict, Iterator, Callable
 import json
+from loguru import logger
 
 from mx_rag.chain import Chain
 from mx_rag.cache import MxRAGCache
@@ -65,7 +66,16 @@ class CacheChainChat(Chain):
                 if answer.get("query"):
                     answer["query"] = text
                 return self._convert_data_to_user(answer)
-            except Exception:
+            except json.JSONDecodeError as e:
+                # 当 cache_ans 不是有效的 JSON 时触发
+                logger.error(f"Failed to parse JSON: {e}")
+                return cache_ans
+            except TypeError as e:
+                # 当 cache_ans 不是字符串时触发
+                logger.error(f"Type error: {e}")
+                return cache_ans
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
                 return cache_ans
 
         ans = self._chain.query(text, llm_config)
