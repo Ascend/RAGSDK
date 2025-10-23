@@ -49,7 +49,7 @@ class CacheConfig:
         data_save_folder: (str) 缓存数据存储路径
     """
 
-    DEFAULT_SAVE_FOLDER = os.path.expanduser("~") + "/Ascend/mxRag/cache_save_folder"
+    DEFAULT_SAVE_FOLDER = os.path.expanduser("~") + os.sep + "Ascend/mxRag/cache_save_folder"
 
     @validate_params(
         cache_size=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 100000,
