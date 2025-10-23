@@ -173,8 +173,10 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                 return pdf_page_count
         except fitz.FileDataError:
             logger.error(f"Invalid or corrupted PDF file: {self.file_path}")
+            return 0
         except fitz.PermissionError:
             logger.error(f"PDF is encrypted/protected, cannot read page count: {self.file_path}")
+            return 0
         except Exception as e:
             logger.error(f"Failed to get PDF page count: {e}")
             return 0
