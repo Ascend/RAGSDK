@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sys/stat.h>
+#include <linux/limits.h>
 #include "atb_speed/utils/filesystem.h"
 
 namespace atb_speed {
@@ -29,7 +30,19 @@ LogSinkFile::LogSinkFile(LogLevel level) : LogSink(level)
     std::stringstream filePath;
     filePath << fileDir_ << std::string("atb_speed_") << std::to_string(syscall(SYS_gettid)) << "_" << curTime_ <<
         "_" << fileCount_ << ".log";
-    fileHandle_.open(filePath.str(), std::ios_base::out);
+
+    auto resolvedPath = std::make_unique<char[]>(PATH_MAX);
+    std::string filePathString = filePath.str();
+    char *resolvedPathPtr = realpath(filePathString.c_str(), resolvedPath.get());
+    if (resolvedPathPtr == nullptr) {
+        std::cout << "WARNING: Failed to canonicalize log directory: " << filePath.str() << std::endl;
+    }
+
+    fileHandle_.open(resolvedPath.get(), std::ios_base::out);
+    if (!fileHandle_.is_open()) {
+        std::cerr << "Failed to open file: " << filePath.str() << std::endl;
+        return;
+    }
 }
 
 LogSinkFile::~LogSinkFile()
@@ -60,15 +73,27 @@ void LogSinkFile::LogImpl(const LogEntity &logEntity)
         if (fileCount_ == MAX_LOG_FILE_COUNT) {
             fileCount_ = 0;
         }
+
+        if (!FileSystem::IsPathValid(fileDir_)) {
+            std::cerr << "path:" << fileDir_ << " is invalid";
+            return;
+        }
         std::stringstream filePath;
         filePath << fileDir_ << std::string("atb_speed_") << std::to_string(syscall(SYS_gettid)) << "_" << curTime_ <<
             "_" <<fileCount_ << ".log";
 
-        if (!FileSystem::IsPathValid(filePath.str())) {
-            std::cout<< "path:"<<filePath.str()<< " is invalid";
+        auto resolvedPath = std::make_unique<char[]>(PATH_MAX);
+        std::string filePathString = filePath.str();
+        char *resolvedPathPtr = realpath(filePathString.c_str(), resolvedPath.get());
+        if (resolvedPathPtr == nullptr) {
+            std::cout << "WARNING: Failed to canonicalize log directory: " << filePath.str() << std::endl;
+        }
+
+        fileHandle_.open(resolvedPath.get(), std::ios_base::out);
+        if (!fileHandle_.is_open()) {
+            std::cerr << "Failed to open file: " << filePath.str() << std::endl;
             return;
         }
-        fileHandle_.open(filePath.str(), std::ios_base::out);
     }
 }
 } // namespace AsdOps
