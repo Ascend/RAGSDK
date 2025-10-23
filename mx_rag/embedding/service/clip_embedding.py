@@ -68,14 +68,15 @@ class CLIPEmbedding(Embeddings):
             message=f"param must meets: Type is List[str], list length range [1, {EMBEDDING_TEXT_COUNT}], "
                     f"str length range [1, {STR_MAX_LEN}]"),
         batch_size=dict(
-            validator=lambda x: 1 <= x <= MAX_BATCH_SIZE, message=f"param value range [1, {MAX_BATCH_SIZE}]"))
+            validator=lambda x: 1 <= x <= MAX_BATCH_SIZE and isinstance(x, int),
+            message=f"param must be int and value range [1, {MAX_BATCH_SIZE}]"))
     def embed_documents(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         return self._encode(texts, batch_size=batch_size)
 
     @validate_params(
         text=dict(
-            validator=lambda x: 1 <= len(x) <= STR_MAX_LEN,
-            message=f"param length range [1, {STR_MAX_LEN}]"))
+            validator=lambda x: 1 <= len(x) <= STR_MAX_LEN and (isinstance(x, str)),
+            message=f"param must be str and length range [1, {STR_MAX_LEN}]"))
     def embed_query(self, text: str) -> List[float]:
         embeddings = self.embed_documents([text])
         if not embeddings:
@@ -88,7 +89,8 @@ class CLIPEmbedding(Embeddings):
             message=f"param must meets: Type is List[str], list length range [1, {EMBEDDING_IMG_COUNT}],"
                     f" str length range [1, {10 * MB}]"),
         batch_size=dict(
-            validator=lambda x: 1 <= x <= MAX_BATCH_SIZE, message=f"param value range [1, {MAX_BATCH_SIZE}]"))
+            validator=lambda x: 1 <= x <= MAX_BATCH_SIZE and isinstance(x, int),
+            message=f"param must be int and value range [1, {MAX_BATCH_SIZE}]"))
     def embed_images(self, images: List[str], batch_size: int = 32) -> List[List[float]]:
         if not all(_validate_image_data_uri(image_uri) for image_uri in images):
             raise ValueError("wrong image string, it must match r'^[A-Za-z0-9+/=]+$'")
