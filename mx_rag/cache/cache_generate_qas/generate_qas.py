@@ -80,8 +80,10 @@ class QAGenerationConfig:
                        message="param must be instance of PreTrainedTokenizerBase"),
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM),
                  message="param must be instance of Text2TextLLM"),
-        max_tokens=dict(validator=lambda x: 500 <= x <= 10000, message="param value range [500, 10000]"),
-        qas_num=dict(validator=lambda x: 1 <= x <= 10, message="param value range [1, 10]")
+        max_tokens=dict(validator=lambda x: 500 <= x <= 100000 and isinstance(x, int),
+                        message="param must be int and value range [500, 100000]"),
+        qas_num=dict(validator=lambda x: 1 <= x <= 10 and isinstance(x, int),
+                     message="param must be int and value range [1, 10]")
     )
     def __init__(self, titles: List[str], contents: List[str], tokenizer: PreTrainedTokenizerBase, llm: Text2TextLLM,
                  max_tokens: int = 1000, qas_num: int = 5):

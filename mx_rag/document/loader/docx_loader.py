@@ -3,9 +3,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import os
-import re
-import zipfile
-from dataclasses import dataclass
 from typing import Iterator, Callable
 
 from pathlib import Path

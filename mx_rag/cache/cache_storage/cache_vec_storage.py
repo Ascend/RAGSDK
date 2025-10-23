@@ -7,7 +7,6 @@ MXRAGCache 的vector storage 适配器类
 from typing import List
 
 import numpy as np
-from loguru import logger
 from gptcache.manager.vector_data.base import VectorBase, VectorData
 
 from mx_rag.storage.vectorstore import VectorStore
