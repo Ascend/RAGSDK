@@ -57,7 +57,7 @@ class TEIEmbedding(Embeddings):
         texts=dict(validator=lambda x: validate_list_str(x, [1, EMBEDDING_TEXT_COUNT], [1, STR_MAX_LEN]),
                    message="param must meets: Type is List[str], list length range [1, 1000 * 1000], "
                            "str length range [1, 128 * 1024 * 1024]"),
-        batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE and isinstance(x, int),
+        batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
                         message=f"param must be int and value range [1, {MAX_BATCH_SIZE}]")
     )
     def embed_documents(self,
@@ -102,7 +102,7 @@ class TEIEmbedding(Embeddings):
         return result
 
     @validate_params(
-        text=dict(validator=lambda x: 1 <= len(x) <= STR_MAX_LEN and isinstance(x, str),
+        text=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= STR_MAX_LEN,
                   message="param must be str and length range [1, 128 * 1024 * 1024]")
     )
     def embed_query(self, text: str) -> List[float]:
