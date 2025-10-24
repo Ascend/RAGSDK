@@ -54,7 +54,7 @@ class ImageEmbedding(Embeddings):
     @validate_params(
         model_name=dict(validator=lambda x: x in _CLIP_MODELS,
                         message=f"not supported model: {_CLIP_MODELS.keys()}"),
-        dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID and isinstance(x, int),
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
                     message="param must be int and value range [0, 63]"),
         model_path=dict(validator=lambda x: isinstance(x, str),
                         message=f"param must be str")
