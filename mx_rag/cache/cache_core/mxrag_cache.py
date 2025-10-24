@@ -15,10 +15,9 @@ from typing import Any
 from gptcache.core import Cache
 from loguru import logger
 
-from mx_rag.cache.cache_api.cache_init import _get_data_save_file
 from mx_rag.cache import CacheConfig, SimilarityCacheConfig
 from mx_rag.utils.file_check import SecFileCheck
-from mx_rag.utils.common import validate_params, GB, TEXT_MAX_LEN, MAX_QUERY_LENGTH, STR_TYPE_CHECK_TIP
+from mx_rag.utils.common import validate_params, GB, TEXT_MAX_LEN, MAX_QUERY_LENGTH
 
 
 def _default_dump(data: Any) -> str:
@@ -75,6 +74,11 @@ class MxRAGCache:
         return llm_data
 
     @classmethod
+    @validate_params(
+        verbose=dict(
+            validator=lambda x: isinstance(x, bool),
+            message="param value must be bool")
+    )
     def set_verbose(cls, verbose: bool):
         cls.verbose = verbose
 

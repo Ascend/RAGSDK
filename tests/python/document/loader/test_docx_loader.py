@@ -21,7 +21,7 @@ class DocxLoaderTestCase(unittest.TestCase):
         self.assertEqual(1, len(d))
 
     def test_load_with_image(self):
-        loader = DocxLoader(os.path.join(self.data_dir, "demo.docx"), image_inline=True)
+        loader = DocxLoader(os.path.join(self.data_dir, "demo.docx"))
         d = loader.load()
         self.assertEqual(1, len(d))
 

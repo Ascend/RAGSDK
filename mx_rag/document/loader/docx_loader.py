@@ -3,9 +3,6 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import os
-import re
-import zipfile
-from dataclasses import dataclass
 from typing import Iterator, Callable
 
 from pathlib import Path
@@ -26,13 +23,11 @@ class DocxLoader(BaseLoader, mxBaseLoader):
 
     @validate_params(
         vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM) or x is None,
-                 message="param must be instance of Img2TextLLM or None"),
-        image_inline=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
+                 message="param must be instance of Img2TextLLM or None")
     )
-    def __init__(self, file_path: str, vlm: Img2TextLLM = None, image_inline: bool = False):
+    def __init__(self, file_path: str, vlm: Img2TextLLM = None):
         """Initialize with filepath and options."""
         super().__init__(file_path)
-        self.do_ocr = image_inline
         self.vlm = vlm
         self.table_index = 0
 
@@ -47,7 +42,7 @@ class DocxLoader(BaseLoader, mxBaseLoader):
                 self.table_index += 1
                 all_text.append(table_text)
             elif element.tag.endswith("p"):
-                if "pic:pic" in str(element.xml) and self.do_ocr:
+                if "pic:pic" in str(element.xml):
                     logger.debug("pic:pic set to empty str")
                     pic_texts = ""
                     all_text.extend(pic_texts)

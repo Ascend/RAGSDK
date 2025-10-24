@@ -44,7 +44,9 @@ class CacheChainChat(Chain):
         self._convert_data_to_user = convert_data_to_user
 
     @validate_params(
-        text=dict(validator=lambda x: 0 < len(x) <= MAX_QUERY_LENGTH, message="param length range (0, 128*1024*1024]")
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH, message="param length range (0, 128*1024*1024]"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig) or x is None,
+                        message="param must be None or LLMParameterConfig")
     )
     def query(self, text: str, llm_config: LLMParameterConfig = LLMParameterConfig(), *args, **kwargs) \
             -> Union[Dict, Iterator[Dict]]:

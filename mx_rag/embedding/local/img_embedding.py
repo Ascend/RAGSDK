@@ -54,7 +54,10 @@ class ImageEmbedding(Embeddings):
     @validate_params(
         model_name=dict(validator=lambda x: x in _CLIP_MODELS,
                         message=f"not supported model: {_CLIP_MODELS.keys()}"),
-        dev_id=dict(validator=lambda x: 0 <= x <= MAX_DEVICE_ID, message="param value range [0, 63]")
+        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
+                    message="param must be int and value range [0, 63]"),
+        model_path=dict(validator=lambda x: isinstance(x, str),
+                        message=f"param must be str")
     )
     def __init__(self, model_name: str, model_path: str, dev_id: int = 0):
         self.model_name = model_name
@@ -90,8 +93,8 @@ class ImageEmbedding(Embeddings):
                    message="param must meets: Type is List[str], "
                            "list length range [1, 1000 * 1000], str length range [1, 256]"),
 
-        batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
-                        message=f"param value valid range is [1, {MAX_BATCH_SIZE}]")
+        batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
+                        message=f"param must be int and value valid range is [1, {MAX_BATCH_SIZE}]")
     )
     def embed_documents(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         result = []
@@ -121,8 +124,8 @@ class ImageEmbedding(Embeddings):
         images=dict(
             validator=lambda x: (isinstance(x, list) and len(x) <= EMBEDDING_IMG_COUNT),
             message=f"param must meets: Type is list, list length range [1, {EMBEDDING_IMG_COUNT}]"),
-        batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
-                        message=f"param value range [1, {MAX_BATCH_SIZE}]")
+        batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
+                        message=f"param must be int and value range [1, {MAX_BATCH_SIZE}]")
     )
     def embed_images(self, images: Union[List[str], List[Image.Image]], batch_size: int = 32) -> List[List[float]]:
         image_features = []
@@ -153,6 +156,10 @@ class ImageEmbedding(Embeddings):
 
         for image in images:
             if isinstance(image, Image.Image):
+                image_bytes = image.tobytes()
+                image_size = len(image_bytes)
+                if not 1 <= image_size <= 10 * MB:
+                    raise ValueError(f"image size out of range, size range is [1, {10 * MB}]")
                 tensors_batch.append(self.preprocess(image))
                 continue
 

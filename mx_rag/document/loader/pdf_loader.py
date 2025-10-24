@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-from typing import List, Iterator
+from typing import Iterator
 
 from pathlib import Path
 import fitz
