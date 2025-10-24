@@ -93,7 +93,7 @@ class ImageEmbedding(Embeddings):
                    message="param must meets: Type is List[str], "
                            "list length range [1, 1000 * 1000], str length range [1, 256]"),
 
-        batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE ,
+        batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
                         message=f"param must be int and value valid range is [1, {MAX_BATCH_SIZE}]")
     )
     def embed_documents(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
