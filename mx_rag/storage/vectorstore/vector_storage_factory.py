@@ -26,9 +26,9 @@ class VectorStorageFactory(ABC):
         向量数据库的工厂方法类，用于生产mxrag的向量数据库
 
     Attributes:
-        NPU_SUPPORT_VEC_TYPE 字典，用于映射向量数据库和对应的构造函数
+        _NPU_SUPPORT_VEC_TYPE 字典，用于映射向量数据库和对应的构造函数
     """
-    NPU_SUPPORT_VEC_TYPE = {
+    _NPU_SUPPORT_VEC_TYPE = {
         "opengauss_db": OpenGaussDB.create,
         "npu_faiss_db": MindFAISS.create,
         "milvus_db": MilvusDB.create
@@ -56,10 +56,10 @@ class VectorStorageFactory(ABC):
         if not isinstance(vector_type, str):
             raise VectorStorageError("The 'vector_type' parameter must be of type str.")
 
-        if vector_type not in cls.NPU_SUPPORT_VEC_TYPE:
+        if vector_type not in cls._NPU_SUPPORT_VEC_TYPE:
             raise VectorStorageError(f"The specified 'vector_type' '{vector_type}' is not supported.")
 
-        creator = cls.NPU_SUPPORT_VEC_TYPE.get(vector_type)
+        creator = cls._NPU_SUPPORT_VEC_TYPE.get(vector_type)
         try:
             vector_store = creator(**kwargs)
         except KeyError as e:

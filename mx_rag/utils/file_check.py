@@ -198,6 +198,10 @@ class FileCheck:
     def check_mode(file_path: str, mode_limit=0o755):
         try:
             status = os.stat(file_path)
+        except FileNotFoundError as fnf_error:
+            raise FileCheckError(f"File not found: {file_path}") from fnf_error
+        except PermissionError as pe_error:
+            raise FileCheckError(f"Permission denied when accessing the file: {file_path}") from pe_error
         except Exception as e:
             raise FileCheckError(f"get [{file_path}] status failed: {e}") from e
         mode_a = status.st_mode

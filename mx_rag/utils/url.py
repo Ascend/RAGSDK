@@ -123,8 +123,14 @@ class RequestUtils:
         if response.status == HTTP_SUCCESS:
             try:
                 response_data = response.read(amt=self.response_limit_size)
+            except urllib3.exceptions.TimeoutError as e:
+                logger.error(f"Timeout error while reading response: {e}")
+                return Result(False, "")
+            except urllib3.exceptions.HTTPError as e:
+                logger.error(f"HTTP error while reading response: {e}")
+                return Result(False, "")
             except Exception as e:
-                logger.error(f"Failed to read response: {e}")
+                logger.error(f"An unexpected error occurred while reading response: {e}")
                 return Result(False, "")
 
             return Result(True, response_data)

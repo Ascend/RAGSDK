@@ -19,9 +19,9 @@ class RerankerFactory(ABC):
         reranker的工厂方法类，用于生产mxrag的reranker
 
     Attributes:
-        NPU_SUPPORT_RERANKER 字典，用于映射reranker和对应的构造函数
+        _NPU_SUPPORT_RERANKER 字典，用于映射reranker和对应的构造函数
     """
-    NPU_SUPPORT_RERANKER: Dict[str, Callable[[Dict[str, Any]], Reranker]] = {
+    _NPU_SUPPORT_RERANKER: Dict[str, Callable[[Dict[str, Any]], Reranker]] = {
         "local_reranker": LocalReranker.create,
         "tei_reranker": TEIReranker.create
     }
@@ -50,11 +50,11 @@ class RerankerFactory(ABC):
             logger.error("similarity_type should be str type. ")
             return None
 
-        if similarity_type not in cls.NPU_SUPPORT_RERANKER:
+        if similarity_type not in cls._NPU_SUPPORT_RERANKER:
             logger.error(f"similarity_type is not support. {similarity_type}")
             return None
 
-        creator = cls.NPU_SUPPORT_RERANKER.get(similarity_type)
+        creator = cls._NPU_SUPPORT_RERANKER.get(similarity_type)
 
         try:
             similarity = creator(**kwargs)
