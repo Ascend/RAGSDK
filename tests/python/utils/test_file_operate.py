@@ -182,7 +182,7 @@ class TestSecDirCheck(unittest.TestCase):
         temp_file = "non_existent_file.txt"
         with pytest.raises(FileCheckError) as e:
             FileCheck.check_mode(temp_file, 0o755)
-        assert "get" in str(e.value) and "failed" in str(e.value)
+        assert "File not found" in str(e.value)
 
     # 测试用例5: 文件权限大于mode_limit，应抛出异常（检查所有位）
     def test_check_mode_greater_all_bits(self):

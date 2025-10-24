@@ -5,6 +5,7 @@ import re
 from typing import List, Optional, Callable, Any
 from loguru import logger
 from sqlalchemy import Engine, Index, select, func, bindparam, text, inspect
+from sqlalchemy.exc import SQLAlchemyError
 
 from mx_rag.storage.document_store.models import ChunkModel
 from mx_rag.storage.document_store.base_storage import MxDocument, Docstore
@@ -104,6 +105,9 @@ class OpenGaussDocstore(Docstore):
                 session.execute(text("SET enable_indexscan = on"))
                 session.execute(text("SET enable_seqscan = off"))
                 result = session.execute(data, params).fetchall()
+            except SQLAlchemyError as e:
+                logger.error(f"Database operation failed!! :{e}")
+                return []
             except Exception as e:
                 logger.error(f"openGauss full text search failed!! :{e}")
                 return []

@@ -91,11 +91,8 @@ class TEIReranker(Reranker):
             texts_batch = texts[start_index: start_index + batch_size]
 
             request_body = {'query': query, 'texts': texts_batch, 'truncate': True}
-            try:
-                resp = self.client.post(self.url, json.dumps(request_body), headers=self.headers)
-            except Exception as e:
-                logger.error(f"API request failed with exception: {e}")
-                return np.array([])
+
+            resp = self.client.post(self.url, json.dumps(request_body), headers=self.headers)
             if resp.success:
                 try:
                     scores_json = json.loads(resp.data)

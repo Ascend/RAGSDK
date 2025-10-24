@@ -176,10 +176,14 @@ class _DocStoreHelper(Docstore):
         try:
             yield session
             session.commit()
-        except Exception as e:
+        except SQLAlchemyError as e:
             session.rollback()
             logger.error("Database operation failed: {}", e)
             raise StorageError(f"Database operation failed: {e}") from e
+        except Exception as e:
+            session.rollback()
+            logger.error("An unexpected error occurred: {}", e)
+            raise StorageError(f"Unexpected error occurred: {e}") from e
         finally:
             session.close()
 
@@ -223,6 +227,9 @@ class _DocStoreHelper(Docstore):
                 commit_all(iterable, session)
                 logger.info(f"Successfully processed {total} items {desc}")
                 return total
+        except SQLAlchemyError as e:
+            logger.error(f"Database operation failed at {total}: {str(e)}")
+            raise StorageError(f"Database operation failed: {e}") from e
         except Exception as e:
             logger.error(f"Batch operation failed at {total}: {str(e)}")
             raise StorageError(f"Batch operation failed: {e}") from e

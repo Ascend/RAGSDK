@@ -154,8 +154,11 @@ class OpenGaussDB(VectorStore):
             )
             logger.info("Successfully create database instance")
             return instance
-        except Exception as e:
+        except OpenGaussError as e:
             logger.error(f"Instance creation failed: {str(e)}")
+            return None
+        except Exception as e:
+            logger.error(f"An unexpected error occurred: {str(e)}")
             return None
 
     @validate_params(dense_dim=dict(validator=lambda x: x is None or isinstance(x, int),
@@ -232,6 +235,9 @@ class OpenGaussDB(VectorStore):
             else:
                 logger.warning(f"Table '{table_name}' does not exist. Skipping drop.")
 
+        except SQLAlchemyError as e:
+            logger.error(f"Database operation failed:{e}")
+            raise StorageError(f"Database operation failed: {str(e)}") from e
         except Exception as e:
             raise StorageError(f"Failed to drop collection: {str(e)}") from e
 
@@ -362,10 +368,14 @@ class OpenGaussDB(VectorStore):
         try:
             yield session
             session.commit()
+        except SQLAlchemyError as e:
+            session.rollback()
+            logger.error("Database operation failed: {}", e)
+            raise StorageError(f"Database operation failed: {e}") from e
         except Exception as e:
             session.rollback()
-            logger.error(f"Transaction failed: {str(e)}")
-            raise StorageError("Database operation failed") from e
+            logger.error("Transaction failed: {}", e)
+            raise StorageError(f"Unexpected error occurred: {e}") from e
         finally:
             session.close()
 
@@ -519,6 +529,9 @@ class OpenGaussDB(VectorStore):
             scores = [[score_scale(i) for i in s] for _, s in results]
             ids = [[item.id for item in r] for r, _ in results]
             return scores, ids
+        except SQLAlchemyError as e:
+            logger.error(f"Database operation failed:{e}")
+            raise StorageError(f"Database operation failed: {e}") from e
         except Exception as e:
             logger.error(f"Parallel search failed: {str(e)}")
             raise StorageError("Search operation failed") from e

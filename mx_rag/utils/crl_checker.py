@@ -35,8 +35,10 @@ class CRLChecker:
                 with self.crl_path.open('rb') as f:
                     self._crl = x509.load_pem_x509_crl(f.read())
                     logger.info("Loaded local CRL successfully.")
-            except Exception as e:
+            except (FileNotFoundError, ValueError) as e:
                 logger.error(f"Failed to load local CRL: {e}")
+            except Exception as e:
+                logger.error(f"An unexpected error occurred: {e}")
         return self._crl
 
     @property
@@ -46,8 +48,10 @@ class CRLChecker:
                 with self.issuer_cert_path.open('rb') as f:
                     self._issuer_cert = x509.load_pem_x509_certificate(f.read())
                     logger.info("Loaded CRL issuer certificate successfully.")
-            except Exception as e:
+            except (FileNotFoundError, ValueError) as e:
                 logger.error(f"Failed to load CA certificate: {e}")
+            except Exception as e:
+                logger.error(f"An unexpected error occurred: {e}")
         return self._issuer_cert
 
     def check_crl(self) -> bool:

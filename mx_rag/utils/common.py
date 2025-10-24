@@ -416,8 +416,11 @@ def check_pathlib_path(path) -> bool:
         FileCheck.check_input_path_valid(path.as_posix(), check_blacklist=True)
         FileCheck.check_filename_valid(path.as_posix(), max_length=MAX_SQLITE_FILE_NAME_LEN)
         return True
-    except Exception as e:
+    except (TypeError, ValueError) as e:
         logger.error(f"input path is illegal, exception: {str(e)}")
+        return False
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {str(e)}")
         return False
 
 
