@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-
 import unittest
-import tempfile
-import os
 import networkx as nx
 
 from mx_rag.graphrag.graphs.networkx_graph import NetworkxGraph

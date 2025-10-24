@@ -25,7 +25,7 @@ from mx_rag.llm.llm_parameter import LLMParameterConfig
 
 
 class MyTestCase(unittest.TestCase):
-    sql_db_file = "/tmp/sql.db"
+    sql_db_file = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/sql.db"))
 
     def setUp(self):
         if os.path.exists(MyTestCase.sql_db_file):
@@ -40,13 +40,13 @@ class MyTestCase(unittest.TestCase):
         spliter = RecursiveCharacterTextSplitter()
         res = loader.load_and_split(spliter)
         emb = TextEmbedding("/workspace/bge-large-zh/", 2)
-        db = SQLiteDocstore("/tmp/sql.db")
+        db = SQLiteDocstore(MyTestCase.sql_db_file)
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, devs=[0],
                           load_local_index="./faiss.index")
-        knowledge_store = KnowledgeStore("./sql.db")
+        knowledge_store = KnowledgeStore(MyTestCase.sql_db_file)
         knowledge_store.add_knowledge(knowledge_name='test', user_id='Default')
         vector_store = KnowledgeDB(knowledge_store, db, index, "test", white_paths=["/home"], user_id='Default')
         vector_store.add_file("mxVision.docx",

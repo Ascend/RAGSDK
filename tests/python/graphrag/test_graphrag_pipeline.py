@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import os
-import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
@@ -48,8 +47,8 @@ class TestGraphRAGPipeline(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures."""
-        self.temp_dir = tempfile.mkdtemp()
-        
+        self.temp_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/tmp"))
+        os.makedirs(self.temp_dir)
         # Mock dependencies
         self.mock_llm = Mock(spec=Text2TextLLM)
         self.mock_llm.llm_config = Mock()
