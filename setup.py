@@ -14,8 +14,6 @@ import yaml
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py as build_py_orig
 
-from mx_rag.setup import get_python_files
-
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 build_folder = ('build/bdist*', 'build/lib')
