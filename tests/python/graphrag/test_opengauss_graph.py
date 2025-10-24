@@ -3,7 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import unittest
 from unittest.mock import MagicMock, call, patch
-
+from paddle.base import libpaddle
 from mx_rag.graphrag.graphs.opengauss_graph import OpenGaussGraph
 
 
@@ -492,6 +492,22 @@ class TestOpenGaussGraph(unittest.TestCase):
         result = self.graph._create_single_node_index("CREATE INDEX", False, "index_name")
         self.assertFalse(result)
 
+    def test_create_single_node_index_syntax_error(self):
+        self.mock_adapter.connection = MagicMock()
+        self.graph._execute_regular_index = MagicMock(side_effect=SyntaxError("Syntax Error"))
+        self.graph._execute_concurrent_index = MagicMock()
+
+        result = self.graph._create_single_node_index("CREATE INDEX", False, "index_name")
+        self.assertFalse(result)
+
+    def test_create_single_node_index_value_error(self):
+        self.mock_adapter.connection = MagicMock()
+        self.graph._execute_regular_index = MagicMock(side_effect=ValueError("Value Error"))
+        self.graph._execute_concurrent_index = MagicMock()
+
+        result = self.graph._create_single_node_index("CREATE INDEX", False, "index_name")
+        self.assertFalse(result)
+
     def test_execute_concurrent_index(self):
         mock_conn = MagicMock()
         self.mock_adapter.connection = mock_conn
@@ -510,6 +526,40 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.graph._execute_regular_index("CREATE INDEX")
         mock_cursor.execute.assert_called_once_with("CREATE INDEX")
         self.mock_adapter.connection.commit.assert_called_once()
+
+    def test_execute_regular_index_syntax_error(self):
+        mock_cursor = MagicMock()
+        mock_cursor.execute.side_effect = SyntaxError("Syntax Error")
+        self.mock_adapter.get_cursor.return_value.__enter__.return_value = mock_cursor
+
+        with self.assertRaises(SyntaxError):
+            self.graph._execute_regular_index("CREATE INDEX")
+
+        mock_cursor.execute.assert_called_once_with("CREATE INDEX")
+        self.mock_adapter.connection.rollback.assert_called_once()
+        self.mock_adapter.connection.commit.assert_not_called()
+
+    def test_execute_regular_index_connection_error(self):
+        self.mock_adapter.get_cursor.side_effect = ConnectionError("Connection Error")
+
+        with self.assertRaises(ConnectionError):
+            self.graph._execute_regular_index("CREATE INDEX")
+
+        self.mock_adapter.connection.rollback.assert_called_once()
+        self.mock_adapter.connection.commit.assert_not_called()
+
+    def test_execute_regular_index_general_exception(self):
+        mock_cursor = MagicMock()
+        mock_cursor.execute.side_effect = Exception("General Error")
+        self.mock_adapter.get_cursor.return_value.__enter__.return_value = mock_cursor
+
+        with self.assertRaises(Exception):
+            self.graph._execute_regular_index("CREATE INDEX")
+
+        mock_cursor.execute.assert_called_once_with("CREATE INDEX")
+        self.mock_adapter.connection.rollback.assert_called_once()
+        self.mock_adapter.connection.commit.assert_not_called()
+
 
     def test_generate_safe_index_prefix(self):
         prefix = self.graph._generate_safe_index_prefix("relation-name")
@@ -531,6 +581,26 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(len(successful_indexes), 2)
         self.assertEqual(len(failed_relations), 0)
+
+    def test_create_relation_indexes_value_error(self):
+        self.graph._execute_index_queries = MagicMock(side_effect=ValueError("Invalid value"))
+        successful_indexes = []
+        failed_relations = []
+
+        result = self.graph._create_relation_indexes("relation", successful_indexes, failed_relations)
+        self.assertFalse(result)
+        self.assertEqual(len(successful_indexes), 0)
+        self.assertEqual(len(failed_relations), 1)
+
+    def test_create_relation_indexes_attribute_error(self):
+        self.graph._execute_index_queries = MagicMock(side_effect=AttributeError("Attribute not found"))
+        successful_indexes = []
+        failed_relations = []
+
+        result = self.graph._create_relation_indexes("relation", successful_indexes, failed_relations)
+        self.assertFalse(result)
+        self.assertEqual(len(successful_indexes), 0)
+        self.assertEqual(len(failed_relations), 1)
 
     def test_create_relation_indexes_failure(self):
         self.graph._execute_index_queries = MagicMock(side_effect=Exception("Error"))
@@ -574,3 +644,6 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.assertEqual(len(components), 1)
         self.assertIn("node1", components[0])
         self.assertIn("node2", components[0])
+
+if __name__ == "__main__":
+    unittest.main()
