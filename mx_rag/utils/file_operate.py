@@ -26,7 +26,7 @@ def write_jsonl_to_file(datas: list[dict], file: str, flag: str = 'w'):
         FileCheck.dir_check(file_path)
 
     file_basename = os.path.basename(file)
-    if not re.match(r".*.jsonl", file_basename):
+    if not file_basename.endswith('.jsonl'):
         raise Exception(f"file '{file}' is not a jsonl file name")
 
     try:
