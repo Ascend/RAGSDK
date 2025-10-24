@@ -31,7 +31,7 @@ EMBEDDING_TEXT = """The unshare command creates new namespaces and then executes
 
 
 class MyTestCase(unittest.TestCase):
-    sql_db_file = "/tmp/sql.db"
+    sql_db_file = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/sql.db"))
 
     def setUp(self):
         if os.path.exists(MyTestCase.sql_db_file):
@@ -43,13 +43,13 @@ class MyTestCase(unittest.TestCase):
             return
 
         emb = TextEmbedding("/workspace/bge-large-zh/")
-        db = SQLiteDocstore("/tmp/sql.db")
+        db = SQLiteDocstore(MyTestCase.sql_db_file)
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)
         index = MindFAISS(x_dim=1024, devs=[0],
                           load_local_index="./faiss.index")
-        knowledge_store = KnowledgeStore("./sql.db")
+        knowledge_store = KnowledgeStore(MyTestCase.sql_db_file)
         knowledge_store.add_knowledge(knowledge_name='test', user_id='Default')
         knowledge_db = KnowledgeDB(knowledge_store, db, index, "test", white_paths=["/home"], user_id='Default')
         knowledge_db.add_file("unshare_desc.txt", [EMBEDDING_TEXT], embed_func=emb.embed_documents)
@@ -99,7 +99,7 @@ class MyTestCase(unittest.TestCase):
             return np.random.random((1, 1024))
 
         shutil.disk_usage = MagicMock(return_value=(1, 1, 1000 * 1024 * 1024))
-        db = SQLiteDocstore("sql.db")
+        db = SQLiteDocstore(MyTestCase.sql_db_file)
         os.system = MagicMock(return_value=0)
         vector_store = MindFAISS(x_dim=1024, devs=[0], load_local_index="./faiss.index")
 

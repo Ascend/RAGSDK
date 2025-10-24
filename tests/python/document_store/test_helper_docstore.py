@@ -14,7 +14,7 @@ from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.storage.document_store.models import Base, ChunkModel
 from mx_rag.utils.common import MAX_CHUNKS_NUM, STR_MAX_LEN
 
-SQLITE = "/tmp/sql.db"
+SQLITE = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/sql.db"))
 
 
 class TestHelperDocStore(unittest.TestCase):

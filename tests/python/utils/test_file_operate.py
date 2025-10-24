@@ -132,7 +132,7 @@ class TestCheckFileOwner(unittest.TestCase):
 
 
 class TestSecDirCheck(unittest.TestCase):
-    dir_path = "/tmp/test_dir"
+    dir_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../test_dir"))
 
     def setUp(self) -> None:
         os.makedirs(self.dir_path)
@@ -193,7 +193,6 @@ class TestSecDirCheck(unittest.TestCase):
         os.remove(temp_file)
         assert "greater than" in str(e.value)
 
-
     def test_dir_file_num_1(self):
         # 测试当前目录下有两个文件，期望存在一个文件
         with open(os.path.join(self.dir_path, "1.txt"), "w+") as f:
@@ -212,7 +211,7 @@ class TestSecDirCheck(unittest.TestCase):
         with open(os.path.join(self.dir_path, "1.txt"), "w+") as f:
             f.write("11111")
 
-        os.makedirs("/tmp/test_dir/test")
+        os.makedirs(os.path.join(self.dir_path, "test"))
         with open(os.path.join(self.dir_path, "2.txt"), "w+") as f:
             f.write("2222")
 
@@ -220,15 +219,6 @@ class TestSecDirCheck(unittest.TestCase):
             SecDirCheck(self.dir_path, max_size=1024, max_file_num=1).check()
 
         self.assertTrue("file nums" in cm.exception.__str__())
-
-    def test_dir_depth(self):
-        # 测试当前目录深度，目录深度为2，期望1
-        with open(os.path.join(self.dir_path, "1.txt"), "w+") as f:
-            f.write("11111")
-
-        os.makedirs("/tmp/test_dir/test")
-        with open(os.path.join(self.dir_path, "2.txt"), "w+") as f:
-            f.write("2222")
 
         with self.assertRaises(ValueError) as cm:
             SecDirCheck(self.dir_path, max_size=1024, max_depth=1).check()
@@ -240,7 +230,7 @@ class TestSecDirCheck(unittest.TestCase):
         with open(os.path.join(self.dir_path, "1.txt"), "w+") as f:
             f.write("11111")
 
-        os.makedirs("/tmp/test_dir/test")
+        os.makedirs(os.path.join(self.dir_path, "test"))
         with open(os.path.join(self.dir_path, "2.txt"), "w+") as f:
             f.write("2" * 1025)
 

@@ -23,23 +23,23 @@ from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 
 
 class MyTestCase(unittest.TestCase):
-    sql_db_file = "/tmp/sql.db"
+    sql_db_file = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/sql.db"))
 
     def setUp(self):
         if os.path.exists(MyTestCase.sql_db_file):
             os.remove(MyTestCase.sql_db_file)
 
-        os.makedirs("/tmp/bge-large-zh/")
+        os.makedirs("./bge-large-zh/")
 
     def tearDown(self) -> None:
-        shutil.rmtree("/tmp/bge-large-zh/")
+        shutil.rmtree("./bge-large-zh/")
 
     def test_with_npu(self):
         if not is_torch_npu_available():
             return
 
-        emb = TextEmbedding("/tmp/bge-large-zh/")
-        db = SQLiteDocstore("/tmp/sql.db")
+        emb = TextEmbedding("./bge-large-zh/")
+        db = SQLiteDocstore("./sql.db")
         logger.info("create emb done")
         logger.info("set_device done")
         os.system = MagicMock(return_value=0)

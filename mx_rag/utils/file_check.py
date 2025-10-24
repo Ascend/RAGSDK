@@ -95,6 +95,7 @@ class FileCheck:
         "/sys/",
         "/dev/",
         "/sbin",
+        "/tmp"
     ]
 
     @staticmethod
