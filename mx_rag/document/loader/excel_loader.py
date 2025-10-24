@@ -332,9 +332,6 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                     continue
                 for line in lines:
                     yield Document(page_content=line, metadata={"source": self.file_path, "sheet": sheet_name})
-        except PermissionError:
-            logger.error(f"Permission denied when accessing file: '{self.file_path}'")
-            return
         except KeyError as e:
             logger.error(f"Sheet not found in file '{self.file_path}': {str(e)}")
             return

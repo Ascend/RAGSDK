@@ -3,7 +3,8 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import os
 import unittest
-from unittest.mock import patch
+from unittest import mock
+from unittest.mock import patch, MagicMock
 
 from mx_rag.document.loader.excel_loader import ExcelLoader
 from mx_rag.document.loader.base_loader import BaseLoader
@@ -68,3 +69,5 @@ class TestExcelLoader(unittest.TestCase):
             docs = loader.load()
 
 
+if __name__ == '__main__':
+    unittest.main()

@@ -72,5 +72,6 @@ class TestPdfLoader(unittest.TestCase):
             loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"), enable_ocr=True, lang=Lang.EN)
             self.assertIsNone(loader.ocr_engine)
 
+
 if __name__ == '__main__':
     unittest.main()

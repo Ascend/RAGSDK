@@ -67,6 +67,28 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.mock_adapter.execute_cypher_query.return_value = []
         self.assertFalse(self.graph.has_node("foo"))
 
+    def test_has_node_type_error(self):
+        self.mock_adapter.execute_cypher_query.side_effect = TypeError("Type Error")
+        self.assertFalse(self.graph.has_node("foo"))
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_node_attribute_error(self):
+        self.mock_adapter.execute_cypher_query.side_effect = AttributeError("Attribute Error")
+        self.assertFalse(self.graph.has_node("foo"))
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_node_general_exception(self):
+        error_message = "does not exist"
+        self.mock_adapter.execute_cypher_query.side_effect = Exception(error_message)
+        self.assertFalse(self.graph.has_node("foo"))
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_node_unexpected_exception(self):
+        self.mock_adapter.execute_cypher_query.side_effect = Exception("Unexpected Error")
+        with self.assertRaises(Exception):
+            self.graph.has_node("foo")
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
     def test_get_node_attributes_all_and_key(self):
         self.mock_adapter.execute_cypher_query.side_effect = [
             [{"props": {"a": 1}}],
@@ -255,6 +277,45 @@ class TestOpenGaussGraph(unittest.TestCase):
         query = self.mock_adapter.execute_cypher_query.call_args[0][0]
         self.assertIn("MERGE (a)-[r:`KNOWS`", query)
 
+    def test_add_edge_syntax_error(self):
+        # Mock has_node and has_edge methods
+        self.graph.has_node = MagicMock(side_effect=[True, True])
+        self.graph.has_edge = MagicMock(side_effect=[False])
+        self.mock_adapter.execute_cypher_query.side_effect = SyntaxError("Syntax Error")
+
+        # Call the method and expect it to raise SyntaxError
+        with self.assertRaises(SyntaxError):
+            self.graph.add_edge("node1", "node2", relation="KNOWS")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_add_edge_connection_error(self):
+        # Mock has_node and has_edge methods
+        self.graph.has_node = MagicMock(side_effect=[True, True])
+        self.graph.has_edge = MagicMock(side_effect=[False])
+        self.mock_adapter.execute_cypher_query.side_effect = ConnectionError("Connection Error")
+
+        # Call the method and expect it to raise ConnectionError
+        with self.assertRaises(ConnectionError):
+            self.graph.add_edge("node1", "node2", relation="KNOWS")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_add_edge_general_exception(self):
+        # Mock has_node and has_edge methods
+        self.graph.has_node = MagicMock(side_effect=[True, True])
+        self.graph.has_edge = MagicMock(side_effect=[False])
+        self.mock_adapter.execute_cypher_query.side_effect = Exception("General Error")
+
+        # Call the method and expect it to raise Exception
+        with self.assertRaises(Exception):
+            self.graph.add_edge("node1", "node2", relation="KNOWS")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
     def test_add_edges_from(self):
         # Mock add_edge method
         self.graph.add_edge = MagicMock()
@@ -296,6 +357,40 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.mock_adapter.execute_cypher_query.return_value = []
         result = self.graph.has_edge("node1", "node2")
         self.assertFalse(result)
+
+    def test_has_edge_syntax_error(self):
+        # Mock the adapter's execute_cypher_query to raise SyntaxError
+        self.mock_adapter.execute_cypher_query.side_effect = SyntaxError("Syntax Error")
+
+        # Call the method and expect it to raise SyntaxError
+        with self.assertRaises(SyntaxError):
+            self.graph.has_edge("node1", "node2")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_edge_value_error(self):
+        # Mock the adapter's execute_cypher_query to raise ValueError
+        self.mock_adapter.execute_cypher_query.side_effect = ValueError("Invalid Value")
+
+        # Call the method and expect it to raise ValueError
+        with self.assertRaises(ValueError):
+            self.graph.has_edge("node1", "node2")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_edge_general_exception(self):
+        # Mock the adapter's execute_cypher_query to raise a general Exception
+        error_message = "does not exist"
+        self.mock_adapter.execute_cypher_query.side_effect = Exception(error_message)
+
+        # Call the method and expect it to return False
+        result = self.graph.has_edge("node1", "node2")
+        self.assertFalse(result)
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
 
     def test_get_edge_attributes_with_key(self):
         self.mock_adapter.execute_cypher_query.return_value = [{'value': 'test_value'}]
@@ -644,6 +739,7 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.assertEqual(len(components), 1)
         self.assertIn("node1", components[0])
         self.assertIn("node2", components[0])
+
 
 if __name__ == "__main__":
     unittest.main()
