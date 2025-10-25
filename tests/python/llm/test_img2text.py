@@ -70,6 +70,7 @@ class TestImg2TextLLM(unittest.TestCase):
     @patch("urllib3.PoolManager.request")
     def test_chat_success(self, mock_request_utils):
         # 模拟成功的 HTTP 请求
+        RESPONSE['choices'][0]['finish_reason'] = "stop"
         mock_request_utils.return_value = MockResponse(RESPONSE, {
                     "Content-Type": "application/json",
                     "Content-Length": 200
