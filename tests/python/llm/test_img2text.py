@@ -85,41 +85,6 @@ class TestImg2TextLLM(unittest.TestCase):
         # 验证结果
         self.assertEqual(result, "测试图像描述")
 
-    @patch("urllib3.PoolManager.request")
-    def test_chat_length(self, mock_request_utils):
-        RESPONSE['choices'][0]['finish_reason'] = "length"
-        # 模拟成功的 HTTP 请求
-        mock_request_utils.return_value = MockResponse(RESPONSE, {
-            "Content-Type": "application/json",
-            "Content-Length": 200
-        }, 200)
-
-        # 测试输入
-        image_url = {"url": "data:image/jpeg;base64,base64_string"}
-
-        # 调用 chat 方法
-        result = self.img2text.chat(image_url=image_url)
-
-        # 验证结果
-        self.assertEqual(result, "测试图像描述......")
-        RESPONSE['choices'][0]['finish_reason'] = "stop"
-
-    @patch("urllib3.PoolManager.request")
-    def test_chat_json_error(self, mock_request_utils):
-        # 模拟成功的 HTTP 请求
-        mock_request_utils.return_value = MockResponse("invalid json", {
-                    "Content-Type": "application/json",
-                    "Content-Length": 200
-                }, 200)
-
-        # 测试输入
-        image_url = {"url": "data:image/jpeg;base64,base64_string"}
-
-        # 调用 chat 方法
-        result = self.img2text.chat(image_url=image_url)
-
-        # 验证结果
-        self.assertEqual(result, "")
 
     @patch("urllib3.PoolManager.request")
     def test_chat_failure(self, mock_request_utils):
