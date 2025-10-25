@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import json
+import re
+import base64
 from typing import List, Optional, Any
 from pydantic import ConfigDict, Field, field_validator
 
@@ -34,6 +36,8 @@ description in chinese with two levels of granularity:
   Deliver the description in a clear, organized, and reader-friendly manner, using bullet points or paragraphs
   as appropriate, answer in chinese'''
 
+_BASE64_PATTERN = re.compile(r'^[A-Za-z0-9+/]*={0,2}$')
+
 
 def _check_image_url(image_url):
     # 检查输入是否为字典
@@ -51,6 +55,24 @@ def _check_image_url(image_url):
 
     # 检查字符串长度
     if not 0 < len(url_value) <= 4*MB:
+        return False
+
+    # 检查 url 是否为 base64 格式
+    if not (url_value.startswith('data:image') and ';base64,' in url_value):
+        return False
+
+    base64_value = url_value.split(';base64,', 1)[1]
+
+    if len(base64_value) % 4 != 0 or not _BASE64_PATTERN.match(base64_value):
+        return False
+
+    try:
+        base64_data = base64.b64decode(base64_value, validate=True)
+        if len(base64_data) == 0:
+            return False
+    except base64.binascii.Error:
+        return False
+    except Exception:
         return False
 
     return True

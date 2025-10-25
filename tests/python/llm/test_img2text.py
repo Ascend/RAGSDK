@@ -74,7 +74,7 @@ class TestImg2TextLLM(unittest.TestCase):
                 }, 200)
 
         # 测试输入
-        image_url = {"url": "data:image/jpeg;base64,base64_string"}
+        image_url = {"url": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="}
 
         # 调用 chat 方法
         result = self.img2text.chat(image_url=image_url)
@@ -91,7 +91,7 @@ class TestImg2TextLLM(unittest.TestCase):
         }, 400)
 
         # 测试输入
-        image_url = {"url": "data:image/jpeg;base64,base64_string"}
+        image_url = {"url": "data:image/jpeg;base64,iVBORw0K"}
 
         # 调用 chat 方法
         result = self.img2text.chat(image_url=image_url)
@@ -101,7 +101,7 @@ class TestImg2TextLLM(unittest.TestCase):
 
     def test_check_image_url_valid(self):
         # 测试有效的 image_url
-        image_url = {"url": "data:image/jpeg;base64,base64_string"}
+        image_url = {"url": "data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="}
         self.assertTrue(_check_image_url(image_url))
 
     def test_check_image_url_invalid(self):
