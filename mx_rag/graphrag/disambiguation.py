@@ -158,6 +158,10 @@ class NamedEntityRecognizer:
                         ""
                     )
                     results[idx] = answer
+                except TimeoutError as e:
+                    logger.error(f"LLM call timed out for item {items[idx]}: {e}")
+                except ConnectionError as e:
+                    logger.error(f"LLM call connection error for item {items[idx]}: {e}")
                 except Exception as e:
                     logger.error(f"LLM call failed for item {items[idx]}: {e}")
         
@@ -264,6 +268,10 @@ class EntityDisambiguator:
                         ""
                     )
                     results[idx] = answer
+                except TimeoutError as e:
+                    logger.error(f"LLM call failed for similarity check {idx}: {e}")
+                except ConnectionError as e:
+                    logger.error(f"LLM call failed for similarity check {idx}: {e}")
                 except Exception as e:
                     logger.error(f"LLM call failed for similarity check {idx}: {e}")
         
@@ -341,6 +349,12 @@ class EntityDisambiguator:
                 "relation": self.graph.get_edge_attributes(orig_src, orig_dst, "relation"),
                 "file_id": ",".join(new_relation_file_ids)
             }
+        except KeyError as e:
+            logger.error(f"Key error: Attribute not found - {e}")
+            return None, None, None
+        except ValueError as e:
+            logger.error(f"Value error: Invalid value encountered - {e}")
+            return None, None, None
         except Exception as e:
             logger.error(f"Error building edge: {e}")
             return None, None, None
@@ -387,6 +401,10 @@ class Disambiguation:
                     tail = relation.get(keys["tail_event"])
                 
                 triples.append((head, rel, tail))
+        except KeyError as e:
+            logger.error(f"KeyError extracting triples {e}")
+        except ValueError as e:
+            logger.error(f"ValueError extracting triples {e}")
         except Exception as e:
             logger.error(f"Error extracting triples: {e}")
         

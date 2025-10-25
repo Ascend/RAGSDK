@@ -44,6 +44,15 @@ def _parse_and_repair_json(
     def try_parse(s: str) -> Optional[List[dict]]:
         try:
             return json.loads(s)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON: {e}")
+            return None
+        except TypeError as e:
+            logger.error(f"Type error during parsing: {e}")
+            return None
+        except ValueError as e:
+            logger.error(f"Value error during parsing: {e}")
+            return None
         except Exception:
             return None
 
@@ -53,6 +62,12 @@ def _parse_and_repair_json(
         try:
             repaired = repair_strategy(text)
             return try_parse(repaired)
+        except TypeError as e:
+            logger.error(f"Type error during repair: {e}")
+            return None
+        except ValueError as e:
+            logger.error(f"Value error during repair: {e}")
+            return None
         except Exception:
             return None
 

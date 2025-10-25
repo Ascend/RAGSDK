@@ -422,6 +422,12 @@ class OpenGaussGraph(GraphStore):
         query = CypherQueryBuilder.merge_edge(u_hashed, v_hashed, attributes)
         try:
             self.graph_adapter.execute_cypher_query(query)
+        except SyntaxError as e:
+            logger.error(f"Cypher query syntax error: {e}")
+            raise
+        except ConnectionError as e:
+            logger.error(f"Connection error: {e}")
+            raise
         except Exception as e:
             logger.error(f"Failed to add edge from '{u}' to '{v}': {e}")
             raise
@@ -476,6 +482,12 @@ class OpenGaussGraph(GraphStore):
         try:
             result = self.graph_adapter.execute_cypher_query(query)
             return bool(result)
+        except SyntaxError as e:
+            logger.error(f"Cypher query syntax error: {e}")
+            raise
+        except ValueError as e:
+            logger.error(f"Invalid value encountered: {e}")
+            raise
         except Exception as e:
             # Handle the case where the label does not exist
             if "does not exist" in str(e):
@@ -793,6 +805,12 @@ class OpenGaussGraph(GraphStore):
             else:
                 self._execute_regular_index(query)
             return True
+        except SyntaxError as e:
+            logger.error(f"Syntax error in query: {e}")
+            return False
+        except ValueError as e:
+            logger.error(f"Invalid value encountered: {e}")
+            return False
         except Exception as e:
             logger.error(f"Failed to create index '{index_name}': {e}")
             return False
@@ -814,6 +832,14 @@ class OpenGaussGraph(GraphStore):
             with self.graph_adapter.get_cursor() as curs:
                 curs.execute(query)
             self.graph_adapter.connection.commit()
+        except SyntaxError as e:
+            logger.error(f"Cypher query syntax error: {e}")
+            self.graph_adapter.connection.rollback()
+            raise
+        except ConnectionError as e:
+            logger.error(f"Connection error: {e}")
+            self.graph_adapter.connection.rollback()
+            raise
         except Exception as e:
             self.graph_adapter.connection.rollback()
             raise e
@@ -847,6 +873,16 @@ class OpenGaussGraph(GraphStore):
             self._execute_index_queries(index_queries)
             successful_indexes.extend([f"index_{index_prefix}_start", f"index_{index_prefix}_end"])
             return True
+        except ValueError as e:
+            logger.error(f"Invalid value encountered: {e}")
+            self.graph_adapter.connection.rollback()
+            failed_relations.append(relation)
+            return False
+        except AttributeError as e:
+            logger.error(f"Attribute error: {e}")
+            self.graph_adapter.connection.rollback()
+            failed_relations.append(relation)
+            return False
         except Exception as e:
             self.graph_adapter.connection.rollback()
             logger.error(f"Failed to create index for relation '{relation}': {e}")

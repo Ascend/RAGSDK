@@ -75,7 +75,7 @@ class Text2TextLLM(LLM):
                 logger.error(f"response content cannot convert to json format: {e}")
                 return ans
             except Exception as e:
-                logger.error(f"json load error: {e}")
+                logger.error(f"unexpected error while parsing JSON response. Error: {e}")
                 return ans
 
             ans = safe_get(data, ["choices", 0, "message", "content"], "")
@@ -120,7 +120,6 @@ class Text2TextLLM(LLM):
             try:
                 data = json.loads(chunk[6:].decode("utf-8").strip())
             except json.JSONDecodeError as e:
-                logger.error(f"response content cannot convert to json format:{e}")
                 break
             except Exception as e:
                 logger.error(f"json load error: {e}")

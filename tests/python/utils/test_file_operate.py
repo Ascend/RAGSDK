@@ -10,8 +10,9 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
+from mx_rag.utils.common import MAX_FILE_SIZE
 from mx_rag.utils.file_check import FileCheckError, FileCheck, SecDirCheck
-from mx_rag.utils.file_operate import read_jsonl_from_file
+from mx_rag.utils.file_operate import read_jsonl_from_file, write_jsonl_to_file
 
 
 class TestFileOperate(unittest.TestCase):
@@ -239,6 +240,43 @@ class TestSecDirCheck(unittest.TestCase):
 
         self.assertTrue("FileSizeLimit" in cm.exception.__str__())
 
+    def create_jsonl_file(self, path: str):
+        datas = [
+            {"id": 1, "name": "Alice"},
+            {"id": 2, "name": "Bob"}
+        ]
+        with open(path, "w") as f:
+            for data in datas:
+                f.write(json.dumps(data) + '\n')
+
+    def data(self):
+        return [
+            {"id": 3, "name": "Ali"},
+            {"id": 4, "name": "Lucy"}
+        ]
+
+    def test_write_jsonl_to_file(self):
+        self.create_jsonl_file("test.jsonl")
+        write_jsonl_to_file(self.data(), "test.jsonl")
+
+    def test_write_jsonl_to_file_exception(self):
+
+        self.create_temp_file("test.txt", 0o755)
+        with self.assertRaises(Exception):
+            write_jsonl_to_file(self.data(), "test.txt")
+
+    def test_write_jsonl_to_file_io_error(self):
+        """测试IO错误的情况"""
+        self.create_jsonl_file("test.jsonl")
+        with patch('json.dumps', side_effect=IOError("Simulated IO Error")):
+            with pytest.raises(Exception, match=r"write jsonl to file IO Error"):
+                write_jsonl_to_file(self.data(), "test.jsonl")
+
+        with patch('json.dumps', side_effect=Exception("Exception")):
+            with pytest.raises(Exception, match=r"write jsonl to file failed"):
+                write_jsonl_to_file(self.data(), "test.jsonl")
+
 
 if __name__ == '__main__':
     unittest.main()
+

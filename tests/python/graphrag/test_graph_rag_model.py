@@ -4,7 +4,7 @@
 
 import unittest
 from unittest.mock import Mock, patch
-
+from paddle.base import libpaddle
 from mx_rag.graphrag.graph_rag_model import GraphRAGModel
 
 
@@ -76,6 +76,22 @@ class TestGraphRAGModel(unittest.TestCase):
         self.mock_embed_func.side_effect = Exception("Embedding error")
         
         with self.assertRaises(Exception):
+            self.model.search_index("test query", 3)
+
+    def test_search_index_type_error(self):
+        """Test search_index handling of TypeError."""
+        # Mock embed_func to raise TypeError
+        self.mock_embed_func.side_effect = TypeError("Type Error")
+
+        with self.assertRaises(TypeError):
+            self.model.search_index("test query", 3)
+
+    def test_search_index_value_error(self):
+        """Test search_index handling of ValueError."""
+        # Mock embed_func to raise ValueError
+        self.mock_embed_func.side_effect = ValueError("Value Error")
+
+        with self.assertRaises(ValueError):
             self.model.search_index("test query", 3)
 
     def test_retrieve_basic(self):
@@ -356,3 +372,7 @@ class TestGraphRAGModel(unittest.TestCase):
         result = self.model._extract_entities_from_question("What is entity1?")
         
         self.assertEqual(result, ["entity1", "entity2"])
+
+
+if __name__ == "__main__":
+    unittest.main()

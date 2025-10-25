@@ -180,6 +180,12 @@ class GraphRAGPipeline:
             if conceptualize:
                 self._process_concepts_and_clusters(lang, top_k, threshold)
             logger.info("Graph built successfully")
+        except ConnectionError as e:
+            logger.error(f"Connection error: {e}")
+            raise GraphRAGError("Graph building failed due to connection issue") from e
+        except TimeoutError as e:
+            logger.error(f"Timeout error: {e}")
+            raise GraphRAGError("Graph building failed due to timeout") from e
         except Exception as e:
             raise GraphRAGError("Graph building failed") from e
 

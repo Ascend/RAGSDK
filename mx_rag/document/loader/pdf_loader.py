@@ -99,9 +99,12 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                 try:
                     ocr_res = self.ocr_engine(img)
                     result = sorted_layout_boxes(ocr_res, img.shape[1])
+                except ValueError as e:
+                    result = []
+                    logger.error(f"Value error occurred: {str(e)}")
                 except Exception as e:
                     result = []
-                    logger.warning(f"Failed to process: {str(e)}")
+                    logger.error(f"Failed to process: {str(e)}")
                 page_content = []
                 for line in result:
                     PdfLoader._reconstruct_line(line, page_content)
@@ -130,9 +133,12 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                 if self.vlm:
                     image_list = page.get_images(full=True)
                     yield from self._process_image(pdf_document, image_list)
-
+            except (PermissionError, NotImplementedError) as e:
+                logger.error(f"Page {page_num + 1} access denied: {str(e)}")
+            except (ValueError, RuntimeError) as e:
+                logger.error(f"Page {page_num + 1} corrupted: {str(e)}")
             except Exception as e:
-                logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
+                logger.error(f"Failed to extract text from page {page_num + 1}: {str(e)}")
         pdf_document.close()
 
         one_text = " ".join(pdf_content)
@@ -165,6 +171,12 @@ class PdfLoader(BaseLoader, mxBaseLoader):
             with fitz.open(self.file_path) as pdf_document:
                 pdf_page_count = pdf_document.page_count
                 return pdf_page_count
+        except fitz.FileDataError:
+            logger.error(f"Invalid or corrupted PDF file: {self.file_path}")
+            return 0
+        except fitz.PermissionError:
+            logger.error(f"PDF is encrypted/protected, cannot read page count: {self.file_path}")
+            return 0
         except Exception as e:
             logger.error(f"Failed to get PDF page count: {e}")
             return 0

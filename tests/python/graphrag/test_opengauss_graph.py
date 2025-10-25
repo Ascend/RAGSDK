@@ -3,7 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import unittest
 from unittest.mock import MagicMock, call, patch
-
+from paddle.base import libpaddle
 from mx_rag.graphrag.graphs.opengauss_graph import OpenGaussGraph
 
 
@@ -66,6 +66,28 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.assertTrue(self.graph.has_node("foo"))
         self.mock_adapter.execute_cypher_query.return_value = []
         self.assertFalse(self.graph.has_node("foo"))
+
+    def test_has_node_type_error(self):
+        self.mock_adapter.execute_cypher_query.side_effect = TypeError("Type Error")
+        self.assertFalse(self.graph.has_node("foo"))
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_node_attribute_error(self):
+        self.mock_adapter.execute_cypher_query.side_effect = AttributeError("Attribute Error")
+        self.assertFalse(self.graph.has_node("foo"))
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_node_general_exception(self):
+        error_message = "does not exist"
+        self.mock_adapter.execute_cypher_query.side_effect = Exception(error_message)
+        self.assertFalse(self.graph.has_node("foo"))
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_node_unexpected_exception(self):
+        self.mock_adapter.execute_cypher_query.side_effect = Exception("Unexpected Error")
+        with self.assertRaises(Exception):
+            self.graph.has_node("foo")
+        self.mock_adapter.execute_cypher_query.assert_called_once()
 
     def test_get_node_attributes_all_and_key(self):
         self.mock_adapter.execute_cypher_query.side_effect = [
@@ -255,6 +277,45 @@ class TestOpenGaussGraph(unittest.TestCase):
         query = self.mock_adapter.execute_cypher_query.call_args[0][0]
         self.assertIn("MERGE (a)-[r:`KNOWS`", query)
 
+    def test_add_edge_syntax_error(self):
+        # Mock has_node and has_edge methods
+        self.graph.has_node = MagicMock(side_effect=[True, True])
+        self.graph.has_edge = MagicMock(side_effect=[False])
+        self.mock_adapter.execute_cypher_query.side_effect = SyntaxError("Syntax Error")
+
+        # Call the method and expect it to raise SyntaxError
+        with self.assertRaises(SyntaxError):
+            self.graph.add_edge("node1", "node2", relation="KNOWS")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_add_edge_connection_error(self):
+        # Mock has_node and has_edge methods
+        self.graph.has_node = MagicMock(side_effect=[True, True])
+        self.graph.has_edge = MagicMock(side_effect=[False])
+        self.mock_adapter.execute_cypher_query.side_effect = ConnectionError("Connection Error")
+
+        # Call the method and expect it to raise ConnectionError
+        with self.assertRaises(ConnectionError):
+            self.graph.add_edge("node1", "node2", relation="KNOWS")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_add_edge_general_exception(self):
+        # Mock has_node and has_edge methods
+        self.graph.has_node = MagicMock(side_effect=[True, True])
+        self.graph.has_edge = MagicMock(side_effect=[False])
+        self.mock_adapter.execute_cypher_query.side_effect = Exception("General Error")
+
+        # Call the method and expect it to raise Exception
+        with self.assertRaises(Exception):
+            self.graph.add_edge("node1", "node2", relation="KNOWS")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
     def test_add_edges_from(self):
         # Mock add_edge method
         self.graph.add_edge = MagicMock()
@@ -296,6 +357,40 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.mock_adapter.execute_cypher_query.return_value = []
         result = self.graph.has_edge("node1", "node2")
         self.assertFalse(result)
+
+    def test_has_edge_syntax_error(self):
+        # Mock the adapter's execute_cypher_query to raise SyntaxError
+        self.mock_adapter.execute_cypher_query.side_effect = SyntaxError("Syntax Error")
+
+        # Call the method and expect it to raise SyntaxError
+        with self.assertRaises(SyntaxError):
+            self.graph.has_edge("node1", "node2")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_edge_value_error(self):
+        # Mock the adapter's execute_cypher_query to raise ValueError
+        self.mock_adapter.execute_cypher_query.side_effect = ValueError("Invalid Value")
+
+        # Call the method and expect it to raise ValueError
+        with self.assertRaises(ValueError):
+            self.graph.has_edge("node1", "node2")
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
+
+    def test_has_edge_general_exception(self):
+        # Mock the adapter's execute_cypher_query to raise a general Exception
+        error_message = "does not exist"
+        self.mock_adapter.execute_cypher_query.side_effect = Exception(error_message)
+
+        # Call the method and expect it to return False
+        result = self.graph.has_edge("node1", "node2")
+        self.assertFalse(result)
+
+        # Verify that execute_cypher_query was called
+        self.mock_adapter.execute_cypher_query.assert_called_once()
 
     def test_get_edge_attributes_with_key(self):
         self.mock_adapter.execute_cypher_query.return_value = [{'value': 'test_value'}]
@@ -492,6 +587,22 @@ class TestOpenGaussGraph(unittest.TestCase):
         result = self.graph._create_single_node_index("CREATE INDEX", False, "index_name")
         self.assertFalse(result)
 
+    def test_create_single_node_index_syntax_error(self):
+        self.mock_adapter.connection = MagicMock()
+        self.graph._execute_regular_index = MagicMock(side_effect=SyntaxError("Syntax Error"))
+        self.graph._execute_concurrent_index = MagicMock()
+
+        result = self.graph._create_single_node_index("CREATE INDEX", False, "index_name")
+        self.assertFalse(result)
+
+    def test_create_single_node_index_value_error(self):
+        self.mock_adapter.connection = MagicMock()
+        self.graph._execute_regular_index = MagicMock(side_effect=ValueError("Value Error"))
+        self.graph._execute_concurrent_index = MagicMock()
+
+        result = self.graph._create_single_node_index("CREATE INDEX", False, "index_name")
+        self.assertFalse(result)
+
     def test_execute_concurrent_index(self):
         mock_conn = MagicMock()
         self.mock_adapter.connection = mock_conn
@@ -510,6 +621,40 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.graph._execute_regular_index("CREATE INDEX")
         mock_cursor.execute.assert_called_once_with("CREATE INDEX")
         self.mock_adapter.connection.commit.assert_called_once()
+
+    def test_execute_regular_index_syntax_error(self):
+        mock_cursor = MagicMock()
+        mock_cursor.execute.side_effect = SyntaxError("Syntax Error")
+        self.mock_adapter.get_cursor.return_value.__enter__.return_value = mock_cursor
+
+        with self.assertRaises(SyntaxError):
+            self.graph._execute_regular_index("CREATE INDEX")
+
+        mock_cursor.execute.assert_called_once_with("CREATE INDEX")
+        self.mock_adapter.connection.rollback.assert_called_once()
+        self.mock_adapter.connection.commit.assert_not_called()
+
+    def test_execute_regular_index_connection_error(self):
+        self.mock_adapter.get_cursor.side_effect = ConnectionError("Connection Error")
+
+        with self.assertRaises(ConnectionError):
+            self.graph._execute_regular_index("CREATE INDEX")
+
+        self.mock_adapter.connection.rollback.assert_called_once()
+        self.mock_adapter.connection.commit.assert_not_called()
+
+    def test_execute_regular_index_general_exception(self):
+        mock_cursor = MagicMock()
+        mock_cursor.execute.side_effect = Exception("General Error")
+        self.mock_adapter.get_cursor.return_value.__enter__.return_value = mock_cursor
+
+        with self.assertRaises(Exception):
+            self.graph._execute_regular_index("CREATE INDEX")
+
+        mock_cursor.execute.assert_called_once_with("CREATE INDEX")
+        self.mock_adapter.connection.rollback.assert_called_once()
+        self.mock_adapter.connection.commit.assert_not_called()
+
 
     def test_generate_safe_index_prefix(self):
         prefix = self.graph._generate_safe_index_prefix("relation-name")
@@ -531,6 +676,26 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(len(successful_indexes), 2)
         self.assertEqual(len(failed_relations), 0)
+
+    def test_create_relation_indexes_value_error(self):
+        self.graph._execute_index_queries = MagicMock(side_effect=ValueError("Invalid value"))
+        successful_indexes = []
+        failed_relations = []
+
+        result = self.graph._create_relation_indexes("relation", successful_indexes, failed_relations)
+        self.assertFalse(result)
+        self.assertEqual(len(successful_indexes), 0)
+        self.assertEqual(len(failed_relations), 1)
+
+    def test_create_relation_indexes_attribute_error(self):
+        self.graph._execute_index_queries = MagicMock(side_effect=AttributeError("Attribute not found"))
+        successful_indexes = []
+        failed_relations = []
+
+        result = self.graph._create_relation_indexes("relation", successful_indexes, failed_relations)
+        self.assertFalse(result)
+        self.assertEqual(len(successful_indexes), 0)
+        self.assertEqual(len(failed_relations), 1)
 
     def test_create_relation_indexes_failure(self):
         self.graph._execute_index_queries = MagicMock(side_effect=Exception("Error"))
@@ -574,3 +739,7 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.assertEqual(len(components), 1)
         self.assertIn("node1", components[0])
         self.assertIn("node2", components[0])
+
+
+if __name__ == "__main__":
+    unittest.main()

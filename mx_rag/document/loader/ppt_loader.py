@@ -35,8 +35,12 @@ class PowerPointLoader(BaseLoader, mxBaseLoader):
 
         try:
             self.ocr = PaddleOCR(use_angle_cls=True, lang=lang.value, show_log=False) if enable_ocr else None
+        except ImportError as err:
+            raise ImportError(f"init ocr failed due to import error, {err}") from err
+        except MemoryError as err:
+            raise MemoryError(f"init ocr failed due to memory error, {err}") from err
         except Exception as err:
-            raise ValueError(f"init ocr failed, {err}") from err
+            raise Exception(f"init ocr failed, {err}") from err
 
     def lazy_load(self):
         self._check_file_valid()
