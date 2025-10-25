@@ -71,6 +71,7 @@ void LogSinkFile::LogImpl(const LogEntity &logEntity)
         fileHandle_.close();
         fileCount_++;
         if (fileCount_ == MAX_LOG_FILE_COUNT) {
+            std::cout << "WARNING: Log file has rolled over. Old logs are being overwritten." << std::endl;
             fileCount_ = 0;
         }
 
