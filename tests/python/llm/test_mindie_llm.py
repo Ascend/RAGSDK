@@ -6,8 +6,9 @@ import json
 import os
 import unittest
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, Mock, MagicMock
 from loguru import logger
+from urllib3 import HTTPResponse
 
 from mx_rag.llm import Text2TextLLM
 from mx_rag.llm.llm_parameter import LLMParameterConfig
@@ -31,6 +32,8 @@ class MockResponse:
         yield bytes('data: ' + json.dumps(mock_response), 'utf-8')
 
     def read(self, amt):
+        if isinstance(self.json_data, str):
+            return self.json_data
         return bytes(json.dumps(self.json_data), 'utf-8')
 
 
@@ -67,7 +70,6 @@ RESPONSE_STREAM = {
 
 
 class TestMindieLLM(unittest.TestCase):
-
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
     def test_chat(self):
@@ -76,7 +78,8 @@ class TestMindieLLM(unittest.TestCase):
                     "Content-Type": "application/json",
                     "Content-Length": 200
                 }, 200))):
-            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888", client_param=ClientParam(use_http=True))
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888",
+                                     client_param=ClientParam(use_http=True))
             data = llm_model.chat(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
                 sys_messages=[],
@@ -84,25 +87,137 @@ class TestMindieLLM(unittest.TestCase):
             )
             self.assertEqual(data, CONTENT)
 
-    def test_chat_stream(self):
-        with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse(RESPONSE_STREAM, {
-            "Content-Type": "text/event-stream",
-        }, 200))):
-            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888", client_param=ClientParam(use_http=True))
-            stream_data = llm_model.chat_streamly(
+    def test_chat_finish_reason_length(self):
+        RESPONSE['choices'][0]['finish_reason'] = "length"
+        with patch("urllib3.PoolManager.request", mock.Mock(
+                return_value=MockResponse(RESPONSE, {
+                    "Content-Type": "application/json",
+                    "Content-Length": 200
+                }, 200))):
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888",
+                                     client_param=ClientParam(use_http=True))
+            data = llm_model.chat(
                 query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
                 sys_messages=[],
                 llm_config=LLMParameterConfig(max_tokens=1024)
             )
+            self.assertEqual(data, CONTENT + "......")
+        RESPONSE['choices'][0]['finish_reason'] = "stop"
+
+    def test_chat_json_error(self):
+        with patch("urllib3.PoolManager.request", mock.Mock(
+                return_value=MockResponse(json_data="invalid json", headers={
+                    "Content-Type": "application/json",
+                    "Content-Length": 200
+                }, status=200))):
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888",
+                                     client_param=ClientParam(use_http=True))
+            data = llm_model.chat(
+                query="程婴、公孙杵臼是____中的人物。\nA. 《赵氏孤儿》\nB. 《杀狗记》\nC. 《墙头马上》\nD. 《岳阳楼》",
+                sys_messages=[],
+                llm_config=LLMParameterConfig(max_tokens=1024)
+            )
+            self.assertEqual(data, "")
+
+    def test_chat_stream(self):
+        # 模拟成功的流式响应
+        mock_response = MagicMock(spec=HTTPResponse)
+        mock_response.status = 200
+        mock_response.headers = {"Content-Type": "text/event-stream"}
+
+        # 模拟流式响应的数据块
+        data_blocks = [
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" World\"},\"finish_reason\":null}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n"
+        ]
+
+        # 模拟stream方法，逐步返回数据块
+        def mock_stream(chunk_size):
+            for block in data_blocks:
+                yield block
+
+        mock_response.stream = mock_stream
+
+        with patch("urllib3.PoolManager.request", return_value=mock_response):
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888",
+                                     client_param=ClientParam(use_http=True))
+            stream_data = llm_model.chat_streamly(
+                query="test query",
+                sys_messages=[],
+                llm_config=LLMParameterConfig(max_tokens=1024)
+            )
+            expected_output = ["Hello", "Hello World"]
             for i, data in enumerate(stream_data):
-                self.assertEqual(data, CONTENT[:i + 1])
+                self.assertEqual(data, expected_output[i])
+
+    def test_chat_stream_length(self):
+        # 模拟失败的流式响应
+        mock_response = MagicMock(spec=HTTPResponse)
+        mock_response.status = 200
+        mock_response.headers = {"Content-Type": "text/event-stream"}
+
+        # 模拟流式响应的数据块
+        data_blocks = [
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" World\"},\"finish_reason\":null}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n"
+        ]
+
+        # 模拟stream方法，逐步返回数据块
+        def mock_stream(chunk_size):
+            for block in data_blocks:
+                yield block
+
+        mock_response.stream = mock_stream
+
+        with patch("urllib3.PoolManager.request", return_value=mock_response):
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888",
+                                     client_param=ClientParam(use_http=True))
+            stream_data = llm_model.chat_streamly(
+                query="test query"
+            )
+            expected_output = ["Hello", "Hello World", "Hello World......"]
+            for i, data in enumerate(stream_data):
+                self.assertEqual(data, expected_output[i])
+
+    def test_chat_stream_json_error(self):
+        # 模拟失败的流式响应
+        mock_response = MagicMock(spec=HTTPResponse)
+        mock_response.status = 200
+        mock_response.headers = {"Content-Type": "text/event-stream"}
+
+        # 模拟流式响应的数据块
+        data_blocks = [
+            b"data: invalid json",
+        ]
+
+        # 模拟stream方法，逐步返回数据块
+        def mock_stream(chunk_size):
+            for block in data_blocks:
+                yield block
+
+        mock_response.stream = mock_stream
+
+        with patch("urllib3.PoolManager.request", return_value=mock_response):
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888",
+                                     client_param=ClientParam(use_http=True))
+            stream_data = llm_model.chat_streamly(
+                query="test query",
+                sys_messages=[],
+                llm_config=LLMParameterConfig(max_tokens=1024)
+            )
+            expected_output = ["Hello", "Hello World"]
+            for i, data in enumerate(stream_data):
+                self.assertEqual(data, expected_output[i])
 
     def test_chat_interrupt(self):
         with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse(RESPONSE_STREAM, {
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 404))):
-            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888", client_param=ClientParam(use_http=True))
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888",
+                                     client_param=ClientParam(use_http=True))
             data = llm_model.chat(query="你好", sys_messages=[], llm_config=LLMParameterConfig(max_tokens=1024))
             self.assertEqual(data, "")
 
@@ -110,7 +225,8 @@ class TestMindieLLM(unittest.TestCase):
         with patch("urllib3.PoolManager.request", mock.Mock(return_value=MockResponse(RESPONSE_STREAM, {
             "Content-Type": "text/event-stream",
         }, 404))):
-            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888", client_param=ClientParam(use_http=True))
+            llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="http://test:8888",
+                                     client_param=ClientParam(use_http=True))
             stream_data = llm_model.chat_streamly(query="你好", sys_messages=[],
                                                   llm_config=LLMParameterConfig(max_tokens=1024))
             data = False
@@ -120,7 +236,8 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_max_tokens(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888", client_param=ClientParam(use_http=True))
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888",
+                                 client_param=ClientParam(use_http=True))
         try:
             llm_model.chat(query="你好", llm_config=LLMParameterConfig(max_tokens=0))
         except ValueError:
@@ -129,7 +246,8 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_history(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888", client_param=ClientParam(use_http=True))
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888",
+                                 client_param=ClientParam(use_http=True))
         sys_messages = [{"role": "users", "content": "test"}] * 101
         try:
             llm_model.chat(query="你好", sys_messages=sys_messages)
@@ -139,7 +257,8 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_history_2(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888", client_param=ClientParam(use_http=True))
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888",
+                                 client_param=ClientParam(use_http=True))
         sys_messages = [{"role": "users", "content": "test", "111": "1"}]
         try:
             llm_model.chat(query="你好", sys_messages=sys_messages)
@@ -149,7 +268,8 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_history_3(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888", client_param=ClientParam(use_http=True))
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888",
+                                 client_param=ClientParam(use_http=True))
         sys_messages = [{"role": "user", "contentcontentcontentcontent": "test", "111": "1"}]
         try:
             llm_model.chat(query="你好", sys_messages=sys_messages)
@@ -159,7 +279,8 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_presence_penalty(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888", client_param=ClientParam(use_http=True))
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888",
+                                 client_param=ClientParam(use_http=True))
         try:
             llm_model.chat(query="你好", llm_config=LLMParameterConfig(presence_penalty=-5.0))
         except ValueError:
@@ -168,7 +289,8 @@ class TestMindieLLM(unittest.TestCase):
 
     def test_chat_param_presence_penalty_2(self):
         error = False
-        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888", client_param=ClientParam(use_http=True))
+        llm_model = Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888",
+                                 client_param=ClientParam(use_http=True))
         try:
             llm_model.chat(query="你好", llm_config=LLMParameterConfig(presence_penalty=-5.0))
         except ValueError:
@@ -179,7 +301,8 @@ class TestMindieLLM(unittest.TestCase):
         cart_file = os.path.join(self.current_dir, "../../data/root_ca.crt")
         cart_file = os.path.realpath(cart_file)
         try:
-            Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888", client_param=ClientParam(ca_file=cart_file))
+            Text2TextLLM(model_name="llama2-7b-hf", base_url="https://test:8888",
+                         client_param=ClientParam(ca_file=cart_file))
         except Exception as e:
             logger.info(e)
 

@@ -47,6 +47,8 @@ class MockResponse:
         yield bytes('data: ' + json.dumps(mock_response), 'utf-8')
 
     def read(self, amt):
+        if isinstance(self.json_data, str):
+            return self.json_data
         return bytes(json.dumps(self.json_data), 'utf-8')
 
 class TestImg2TextLLM(unittest.TestCase):
@@ -83,6 +85,42 @@ class TestImg2TextLLM(unittest.TestCase):
         self.assertEqual(result, "测试图像描述")
 
     @patch("urllib3.PoolManager.request")
+    def test_chat_length(self, mock_request_utils):
+        RESPONSE['choices'][0]['finish_reason'] = "length"
+        # 模拟成功的 HTTP 请求
+        mock_request_utils.return_value = MockResponse(RESPONSE, {
+            "Content-Type": "application/json",
+            "Content-Length": 200
+        }, 200)
+
+        # 测试输入
+        image_url = {"url": "data:image/jpeg;base64,base64_string"}
+
+        # 调用 chat 方法
+        result = self.img2text.chat(image_url=image_url)
+
+        # 验证结果
+        self.assertEqual(result, "测试图像描述......")
+        RESPONSE['choices'][0]['finish_reason'] = "stop"
+
+    @patch("urllib3.PoolManager.request")
+    def test_chat_json_error(self, mock_request_utils):
+        # 模拟成功的 HTTP 请求
+        mock_request_utils.return_value = MockResponse("invalid json", {
+                    "Content-Type": "application/json",
+                    "Content-Length": 200
+                }, 200)
+
+        # 测试输入
+        image_url = {"url": "data:image/jpeg;base64,base64_string"}
+
+        # 调用 chat 方法
+        result = self.img2text.chat(image_url=image_url)
+
+        # 验证结果
+        self.assertEqual(result, "")
+
+    @patch("urllib3.PoolManager.request")
     def test_chat_failure(self, mock_request_utils):
         # 模拟失败的 HTTP 请求
         mock_request_utils.return_value = MockResponse(RESPONSE, {
@@ -98,6 +136,25 @@ class TestImg2TextLLM(unittest.TestCase):
 
         # 验证结果
         self.assertEqual(result, "")
+
+        with self.assertRaises(ValueError):
+            image_url = ["data:image/jpeg;base64,base64_string"]
+            self.img2text.chat(image_url=image_url)
+
+        with self.assertRaises(ValueError):
+            image_url = {"url": ""}
+            self.img2text.chat(image_url=image_url)
+        with self.assertRaises(ValueError):
+            img2text = Img2TextLLM(
+                base_url=self.base_url,
+                model_name=self.model_name,
+                llm_config=self.llm_config,
+                client_param=self.client_param,
+                prompt=""
+            )
+            image_url = {"url": "data:image/jpeg;base64,base64_string"}
+            img2text.chat(image_url=image_url)
+
 
     def test_check_image_url_valid(self):
         # 测试有效的 image_url
