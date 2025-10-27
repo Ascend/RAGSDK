@@ -5,7 +5,7 @@ import multiprocessing
 from contextlib import contextmanager
 from multiprocessing.pool import ThreadPool
 from typing import List, Optional, Dict, Union, Any, Iterator, Tuple
-
+import re
 import numpy as np
 from loguru import logger
 from opengauss_sqlalchemy.usertype import Vector, SPARSEVEC, SparseVector
@@ -221,12 +221,7 @@ class OpenGaussDB(VectorStore):
                     """
                 ), {"table_name": quoted_table_name}).fetchall()
 
-                # Drop each index
-                for idx in indexes:
-                    index_name = idx[0]
-                    # Force drop the index and its dependencies
-                    session.execute(text(f"DROP INDEX IF EXISTS {index_name} CASCADE"))
-                    logger.info(f"Dropped index '{index_name}'")
+                self._drop_each_indexes(indexes, session)
 
             # Then drop the table
             metadata = MetaData()
@@ -245,6 +240,18 @@ class OpenGaussDB(VectorStore):
             raise StorageError(f"Database operation failed: {str(e)}") from e
         except Exception as e:
             raise StorageError(f"Failed to drop collection: {str(e)}") from e
+
+    @staticmethod
+    def _drop_each_indexes(indexes, session) -> None:
+        # drop each index
+        for idx in indexes:
+            index_name = idx[0]
+            # Force drop the index and its dependencies
+            if index_name.isidentifier():
+                session.execute(text(f"DROP INDEX IF EXISTS {index_name} CASCADE"))
+                logger.info(f"Dropped index '{index_name}'")
+            else:
+                raise ValueError(f"Invalid index name: '{index_name}'")
 
     @validate_params(
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="param requires to be np.ndarray"),
