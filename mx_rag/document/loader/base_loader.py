@@ -127,13 +127,13 @@ class BaseLoader(ABC):
 
                 return True
         except OSError as err:
-            logger.error(f"Failed to open image file: {err}")
+            logger.warning(f"Failed to open image file: {err}")
             return False
         except ValueError as err:
-            logger.error(f"Invalid image data: {err}")
+            logger.warning(f"Invalid image data: {err}")
             return False
         except MemoryError as err:
-            logger.error(f"Insufficient memory to process image: {err}")
+            logger.warning(f"Insufficient memory to process image: {err}")
             return False
         except Exception as err:
             logger.warning(f"Failed to verify image size: {err}")
