@@ -14,7 +14,7 @@ from loguru import logger
 from mx_rag.utils.file_check import FileCheck, FileCheckError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, BOOL_TYPE_CHECK_TIP, \
-    MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024, _check_sparse_and_dense, validate_embeddings
+    MAX_PATH_LENGTH, STR_LENGTH_CHECK_1024, _check_sparse_and_dense, validate_embeddings, MAX_IDS_SIZE
 
 
 class MindFAISSError(Exception):
@@ -120,8 +120,8 @@ class MindFAISS(VectorStore):
     def get_save_file(self):
         return self.load_local_index
 
-    @validate_params(ids=dict(validator=lambda x: all(isinstance(it, int) for it in x),
-                              message="param must be List[int]"))
+    @validate_params(ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+                 message="param must be List[int]"))
     def delete(self, ids: List[int]):
         if len(ids) == 0:
             logger.warning("no id need be deleted")
@@ -152,8 +152,11 @@ class MindFAISS(VectorStore):
         return self._score_scale(scores.tolist()), indices.tolist()
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
-        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"))
+        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+                 message="param must be List[int]"),
+        embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="embeddings must be np.ndarray type"),
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0")
+    )
     def add(self, ids: List[int], embeddings: np.ndarray, document_id=0):
         self._check_embeddings(embeddings, ids)
         try:
@@ -180,7 +183,8 @@ class MindFAISS(VectorStore):
         return ids
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="ids must be List[int]"),
+        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+                 message="param must be List[int]"),
         dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
                    message="dense must be Optional[np.ndarray]")
     )

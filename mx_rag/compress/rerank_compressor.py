@@ -22,7 +22,7 @@ class RerankCompressor(PromptCompressor):
     )
     def __init__(self,
                  reranker: Reranker,
-                 splitter: Callable[[str], List[str]] = None
+                 splitter: TextSplitter = None
                  ):
         self.reranker = reranker
         self.splitter = splitter
@@ -54,8 +54,8 @@ class RerankCompressor(PromptCompressor):
                      message=f"param must be str, and length range [1, {MAX_PAGE_CONTENT}]"),
         question=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= TEXT_MAX_LEN,
                       message=STR_TYPE_CHECK_TIP + f", and length range [1, {TEXT_MAX_LEN}]"),
-        compress_rate=dict(validator=lambda x: isinstance(x, float) and 0 < x < 1,
-                         message="param must be float, and value range (0, 1)"),
+        compress_rate=dict(validator=lambda x: isinstance(x, (float, int)) and 0 < x < 1,
+                         message="param must be float or int, and value range (0, 1)"),
         context_reorder=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def compress_texts(self,

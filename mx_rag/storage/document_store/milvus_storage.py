@@ -23,9 +23,9 @@ class MilvusDocstore(Docstore):
             message="param must be str and length range (0, 1024]"),
         enable_bm25=dict(validator=lambda x: isinstance(x, bool),
                          message="param must be instance of bool"),
-        bm25_k1=dict(validator=lambda x: isinstance(x, float) and 1.2 <= x <= 2.0,
+        bm25_k1=dict(validator=lambda x: isinstance(x, (float, int)) and 1.2 <= x <= 2.0,
                      message="param must be be range of [1.2, 2]"),
-        bm25_b=dict(validator=lambda x: isinstance(x, float) and 0 <= x <= 1,
+        bm25_b=dict(validator=lambda x: isinstance(x, (float, int)) and 0 <= x <= 1,
                     message="param must be range of [0, 1]"),
         auto_flush=dict(validator=lambda x: isinstance(x, bool) and 0 <= x <= 1,
                         message=BOOL_TYPE_CHECK_TIP),
@@ -64,9 +64,10 @@ class MilvusDocstore(Docstore):
             self.client.drop_collection(self.collection_name)
 
     @validate_params(
-        documents=dict(
-            validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
-            message="param must be List[MxDocument] and length range in (0, 1000 * 1000]")
+        documents=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
+                         message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"),
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
+                         message="param must greater equal than 0")
     )
     def add(self, documents: List[MxDocument], document_id: int) -> List[int]:
         data = []
@@ -86,6 +87,9 @@ class MilvusDocstore(Docstore):
         logger.info(f"Successfully added {res['insert_count']} documents")
         return list(res["ids"])
 
+    @validate_params(
+        chunk_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0")
+    )
     def search(self, chunk_id: int) -> Union[MxDocument, None]:
         res = self.client.get(
             collection_name=self.collection_name,
@@ -107,9 +111,9 @@ class MilvusDocstore(Docstore):
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
             message=f"param must be str and length range (0, {TEXT_MAX_LEN}]"),
         top_k=dict(
-            validator=lambda x: 0 < x <= MAX_TOP_K,
+            validator=lambda x: isinstance(x, int) and 0 < x <= MAX_TOP_K,
             message="param must be int and must in range (0, 10000]"),
-        drop_ratio_search=dict(validator=lambda x: isinstance(x, float) and 0 <= x < 1,
+        drop_ratio_search=dict(validator=lambda x: isinstance(x, (float, int)) and 0 <= x < 1,
                                message="param must be range of [0, 1)"),
         filter_dict=dict(validator=lambda x: x is None or isinstance(x, dict),
                          message="param filter_dict must be None or dict"))
@@ -148,6 +152,9 @@ class MilvusDocstore(Docstore):
             logger.error(f"exception occurred while full text search: {e}")
             return []
 
+    @validate_params(
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0")
+    )
     def delete(self, document_id: int):
         """
         Delete all chunks having document_id `document_id`.
@@ -177,7 +184,7 @@ class MilvusDocstore(Docstore):
         res = self.client.query(self.collection_name, filter="id == 0 or id != 0", output_fields=["document_id"])
         return list(set([x.get("document_id") for x in res]))
 
-    @validate_params(document_id=dict(validator=lambda x: x >= 0, message=f"document_id must >= 0"))
+    @validate_params(document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message=f"document_id must >= 0"))
     def search_by_document_id(self, document_id: int):
         outputs = self.client.query(
             collection_name=self.collection_name,

@@ -43,17 +43,20 @@ class OpenGaussDocstore(Docstore):
         if self.index:
             self.index.drop(self.engine)
 
-    @validate_params(documents=dict(
-        validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
-        message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"))
+    @validate_params(
+        documents=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
+                         message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"),
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
+                         message="param must greater equal than 0")
+    )
     def add(self, documents: List[MxDocument], document_id: int) -> List[int]:
         return self.doc_store.add(documents, document_id)
 
-    @validate_params(document_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
+    @validate_params(document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"))
     def delete(self, document_id: int) -> List[int]:
         return self.doc_store.delete(document_id)
 
-    @validate_params(chunk_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
+    @validate_params(chunk_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"))
     def search(self, chunk_id: int) -> Optional[MxDocument]:
         return self.doc_store.search(chunk_id)
 
@@ -63,7 +66,7 @@ class OpenGaussDocstore(Docstore):
     def get_all_document_id(self) -> List[int]:
         return self.doc_store.get_all_document_id()
 
-    @validate_params(document_id=dict(validator=lambda x: x >= 0, message=f"document_id must >= 0"))
+    @validate_params(document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message=f"document_id must >= 0"))
     def search_by_document_id(self, document_id: int):
         return self.doc_store.search_by_document_id(document_id)
 
@@ -82,7 +85,7 @@ class OpenGaussDocstore(Docstore):
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
             message=f"param must be str and length range (0, {TEXT_MAX_LEN}]"),
         top_k=dict(
-            validator=lambda x: 0 < x <= MAX_TOP_K,
+            validator=lambda x: isinstance(x, int) and 0 < x <= MAX_TOP_K,
             message="param must be int and must in range (0, 10000]"),
         filter_dict=dict(validator=lambda x: x is None or isinstance(x, dict),
                          message="param filter_dict must be None or dict"))

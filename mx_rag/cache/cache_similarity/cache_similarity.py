@@ -28,10 +28,10 @@ class CacheSimilarity(SimilarityEvaluation):
 
     @validate_params(
         similarity=dict(validator=lambda x: isinstance(x, Reranker), message="param must be instance of Reranker"),
-        score_min=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0,
-                       message="param must be float and value range [0.0, 100.0]"),
-        score_max=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 100.0,
-                       message="param must be float and value range [0.0, 100.0]"),
+        score_min=dict(validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 100.0,
+                       message="param must be float or int and value range [0.0, 100.0]"),
+        score_max=dict(validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 100.0,
+                       message="param must be float or int and value range [0.0, 100.0]"),
         reverse=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)
     )
     def __init__(self, similarity: Reranker, score_min: float = 0.0, score_max: float = 1.0,

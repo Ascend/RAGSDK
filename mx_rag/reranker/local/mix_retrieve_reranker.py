@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import (validate_params, validate_list_document, MAX_QUERY_LENGTH,
-                                 MAX_BATCH_SIZE, TEXT_MAX_LEN, STR_MAX_LEN, MAX_TOP_K)
+                                 MAX_BATCH_SIZE, TEXT_MAX_LEN, STR_MAX_LEN, MAX_TOP_K, MB)
 
 
 class MixRetrieveReranker(Reranker):
@@ -77,18 +77,18 @@ class MixRetrieveReranker(Reranker):
             doc.metadata["norm_score"] = norm_score
 
     @validate_params(
-        query=dict(validator=lambda x: 1 <= len(x) <= MAX_QUERY_LENGTH,
-                   message="param length range [1, 128 * 1024 * 1024]"),
-        texts=dict(validator=lambda x: validate_list_document(x, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]),
+        query=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MB,
+                   message="param length range [1, 1024 * 1024]"),
+        texts=dict(validator=lambda x: validate_list_document(x, [1, TEXT_MAX_LEN], [1, MB]),
                   message="param must meets: Type is List[docs], "
-                          "list length range [1, 1000 * 1000], content length range [1, 128 * 1024 * 1024]"),
-        batch_size=dict(validator=lambda x: 1 <= x <= MAX_BATCH_SIZE,
+                          "list length range [1, 1000 * 1000], content length range [1, 1024 * 1024]"),
+        batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
                         message=f"param value range [1, {MAX_BATCH_SIZE}]"),
     )
     def rerank(self,
                query: str,
-               texts: Union[list[str], list[Document]],
-               batch_size: int = 32) -> Union[list[str], list[Document]]:
+               texts: list[Document],
+               batch_size: int = 32) -> list[Document]:
         """
         对合并的 dense + sparse 检索结果进行归一化、加权融合、重排序
         """
