@@ -45,8 +45,8 @@ class ConceptCluster:
             message="param must be an integer, value range [1, 100]",
         ),
         threshold=dict(
-            validator=lambda x: isinstance(x, float) and 0.0 <= x <= 1.0,
-            message="param must be a float number, value range [0.0, 1.0]",
+            validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 1.0,
+            message="param must be float or int and value range [0.0, 1.0]",
         ),
     )
     def find_clusters(

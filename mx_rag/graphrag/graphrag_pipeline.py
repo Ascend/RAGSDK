@@ -29,9 +29,9 @@ from mx_rag.graphrag.graph_rag_model import GraphRAGModel
 from mx_rag.graphrag.vector_stores.vector_store_wrapper import VectorStoreWrapper
 from mx_rag.document import LoaderMng
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import validate_params, FileCheck, TEXT_MAX_LEN
+from mx_rag.utils.common import validate_params, FileCheck, TEXT_MAX_LEN, GRAPH_FILE_LIMIT
 from mx_rag.reranker.reranker import Reranker
-from mx_rag.utils.file_check import check_disk_free_space, FileCheckError
+from mx_rag.utils.file_check import check_disk_free_space, FileCheckError, SecFileCheck
 
 
 def save_to_json(data, file_path: str):
@@ -115,7 +115,7 @@ class GraphRAGPipeline:
         failed_files = []
         for file in file_list:
             try:
-                FileCheck.check_path_is_exist_and_valid(file)
+                SecFileCheck(file, GRAPH_FILE_LIMIT).check()
                 if not os.path.isfile(file):
                     failed_files.append(file)
                     continue

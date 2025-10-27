@@ -34,6 +34,12 @@ class GraphEvaluator:
     Handles precision, recall, and F1 calculation for entity, event-entity, and event relations.
     """
 
+    @validate_params(
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM),
+                 message="llm must be an instance of Text2TextLLM"),
+        llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
+                             message="llm_config must be an instance of LLMParameterConfig")
+    )
     def __init__(self, llm: Text2TextLLM, llm_config: LLMParameterConfig):
         """
         Initialize the GraphEvaluator.
@@ -317,7 +323,7 @@ class GraphEvaluator:
 
         return [len1_incorrect, len2_incorrect, len3_incorrect]
 
-    @validate_params(relations=dict(validator=lambda x: 0 < len(x) < 50000,
+    @validate_params(relations=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) < 50000,
                                     message="Relations cannot be empty or too many."))
     def evaluate(self, relations: List[dict]) -> None:
         """

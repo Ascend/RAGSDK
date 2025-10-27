@@ -61,8 +61,8 @@ class ClusterCompressor(PromptCompressor):
                      message=f"param must be str, and length range [1, {MAX_PAGE_CONTENT}]"),
         question=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= TEXT_MAX_LEN,
                       message=STR_TYPE_CHECK_TIP + f", and length range [1, {TEXT_MAX_LEN}]"),
-        compress_rate=dict(validator=lambda x: isinstance(x, float) and 0 < x < 1,
-                         message=f"param must be float and value range (0, 1)"),
+        compress_rate=dict(validator=lambda x: isinstance(x, (float, int)) and 0 < x < 1,
+                         message=f"param must be float or int and value range (0, 1)"),
     )
     def compress_texts(self,
                        context: str,

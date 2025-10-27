@@ -40,8 +40,8 @@ class GraphRAGModel(QABaseModel):
             message="param must be an integer, value range [1, 5]"
         ),
         similarity_tail_threshold=dict(
-            validator=lambda x: isinstance(x, float) and 0.0 <= x <= 1.0, 
-            message="param must be a float, value range [0.0, 1.0]"
+            validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 1.0, 
+            message="param must be float or int and value range [0.0, 1.0]"
         ),
         use_text=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean")
     )

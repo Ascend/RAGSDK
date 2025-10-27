@@ -62,10 +62,10 @@ class Summary(BaseModel):
 
     @validate_params(
         texts=dict(
-            validator=lambda x: all(isinstance(item, str) for item in x) and 0 < sum(len(item) for item in x) <= 1*MB,
+            validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x) and 0 < sum(len(item) for item in x) <= 1*MB,
             message="param must be List[str], and total length range (0, 1048576]"),
-        not_summarize_threshold=dict(validator=lambda x: 0 < x <= 1 * MB, message="param value range (0, 1048576]"),
-        prompt=dict(validator=lambda x: set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH,
+        not_summarize_threshold=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1 * MB, message="param value range (0, 1048576]"),
+        prompt=dict(validator=lambda x: isinstance(x, PromptTemplate) and set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH,
                     message="prompt must like PromptTemplate(input_variables=['text'], "
                             "template='length range (0, 1048576]')")
     )
@@ -102,13 +102,13 @@ class Summary(BaseModel):
 
     @validate_params(
         texts=dict(
-            validator=lambda x: all(isinstance(item, str) for item in x) and 0 < sum(len(item) for item in x) <= 1*MB,
+            validator=lambda x: isinstance(x, list) and all(isinstance(item, str) for item in x) and 0 < sum(len(item) for item in x) <= 1*MB,
             message="param must be list[str], and all length range in (0, 1048576]"),
-        merge_threshold=dict(validator=lambda x: 1024 <= x <= 1 * MB,
+        merge_threshold=dict(validator=lambda x: isinstance(x, int) and 1024 <= x <= 1 * MB,
                              message="param value range [1024, 1048576]"),
-        not_summarize_threshold=dict(validator=lambda x: 0 < x <= 1 * MB,
+        not_summarize_threshold=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1 * MB,
                                      message="param value range (0, 1048576]"),
-        prompt=dict(validator=lambda x: set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH,
+        prompt=dict(validator=lambda x: isinstance(x, PromptTemplate) and set(x.input_variables) == {"text"} and 0 < len(x.template) <= MAX_PROMPT_LENGTH,
                     message="prompt must like PromptTemplate(input_variables=['text'], "
                             "template='length range (0, 1048576]')")
     )

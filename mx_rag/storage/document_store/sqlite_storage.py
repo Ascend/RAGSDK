@@ -34,8 +34,10 @@ class SQLiteDocstore(Docstore):
 
     @validate_params(
         documents=dict(
-            validator=lambda x: 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
-            message="param must be List[MxDocument] and length range in (0, 1000 * 1000]")
+            validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
+            message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"),
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
+                         message="param must greater equal than 0")
     )
     def add(self, documents: List[MxDocument], document_id: int) -> List[int]:
         FileCheck.check_input_path_valid(self.db_path, check_blacklist=True)
@@ -45,11 +47,11 @@ class SQLiteDocstore(Docstore):
         check_db_file_limit(self.db_path)
         return self.doc_store.add(documents, document_id)
 
-    @validate_params(document_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
+    @validate_params(document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"))
     def delete(self, document_id: int) -> List[int]:
         return self.doc_store.delete(document_id)
 
-    @validate_params(chunk_id=dict(validator=lambda x: x >= 0, message="param must greater equal than 0"))
+    @validate_params(chunk_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"))
     def search(self, chunk_id: int) -> Optional[MxDocument]:
         return self.doc_store.search(chunk_id)
 
@@ -59,7 +61,7 @@ class SQLiteDocstore(Docstore):
     def get_all_document_id(self) -> List[int]:
         return self.doc_store.get_all_document_id()
 
-    @validate_params(document_id=dict(validator=lambda x: x >= 0, message=f"document_id must >= 0"))
+    @validate_params(document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message=f"document_id must >= 0"))
     def search_by_document_id(self, document_id: int):
         return self.doc_store.search_by_document_id(document_id)
 

@@ -5,13 +5,14 @@ import numpy as np
 import unittest
 from unittest.mock import Mock, patch
 from mx_rag.graphrag.graph_evaluator import GraphEvaluator
+from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 
 
 class TestGraphEvaluator(unittest.TestCase):
     def setUp(self):
         """Set up a GraphEvaluator instance with mocked dependencies."""
-        self.mock_llm = Mock()
-        self.mock_llm_config = Mock()
+        self.mock_llm = Mock(spec = Text2TextLLM)
+        self.mock_llm_config = Mock(spec = LLMParameterConfig)
         self.evaluator = GraphEvaluator(self.mock_llm, self.mock_llm_config)
 
     def test_calculate(self):

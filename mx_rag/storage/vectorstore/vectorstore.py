@@ -8,7 +8,7 @@ from typing import List, Dict, Union, Optional
 import numpy as np
 from loguru import logger
 
-from mx_rag.utils.common import MAX_FILTER_SEARCH_ITEM, MAX_STDOUT_STR_LEN
+from mx_rag.utils.common import MAX_FILTER_SEARCH_ITEM, MAX_STDOUT_STR_LEN, validate_params
 
 
 class SearchMode(Enum):
@@ -53,6 +53,12 @@ class VectorStore(ABC):
                sparse: Optional[List[Dict[int, float]]] = None):
         pass
 
+    @validate_params(
+        threshold=dict(
+            validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 1.0,
+            message="param must be float or int and value range [0.0, 1.0]",
+        )
+    )
     def search_with_threshold(self, embeddings: Union[List[List[float]], List[Dict[int, float]]],
                               k: int = 3, threshold: float = 0.1, filter_dict=None):
         """

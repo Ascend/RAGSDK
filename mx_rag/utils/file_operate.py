@@ -50,7 +50,7 @@ def _write_jsonl_file(datas, file, flag):
 
 
 def read_jsonl_from_file(file: str,
-                         file_size: int = 100 * 1024 * 1024 * 1024):
+                         file_size: int = 10 * 1024 * 1024 * 1024):
 
     SecFileCheck(file, file_size).check()
 

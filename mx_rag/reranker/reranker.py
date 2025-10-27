@@ -30,7 +30,7 @@ class Reranker(ABC):
                      objs: List,
                      scores: np.ndarray) -> List:
         check_objs_flag = False
-        if len(objs) > 0:
+        if isinstance(objs, list) and len(objs) > 0:
             if isinstance(objs[0], str) and validate_list_str(objs, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]):
                 check_objs_flag = True
             if isinstance(objs[0], Document) and validate_list_document(objs, [1, TEXT_MAX_LEN], [1, STR_MAX_LEN]):

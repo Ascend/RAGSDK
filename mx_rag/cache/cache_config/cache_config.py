@@ -62,8 +62,8 @@ class CacheConfig:
                             message="param must meets: Type is int, value range [20 * MB, 100 * GB]"),
         auto_flush=dict(validator=lambda x: isinstance(x, int) and x > 0,
                         message="param must meets: Type is int, and must greater than zero"),
-        similarity_threshold=dict(validator=lambda x: isinstance(x, float) and 0.0 <= x <= 1.0,
-                                  message="param must meets: Type is float, value range [0.0, 1.0]"),
+        similarity_threshold=dict(validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 1.0,
+                                  message="param must be float or int and value range [0.0, 1.0]"),
         disable_report=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         lock=dict(
             validator=lambda x: x is None or validate_lock(x),

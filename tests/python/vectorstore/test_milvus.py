@@ -116,7 +116,7 @@ class TestMilvusDB(unittest.TestCase):
 
     def test_add_sparse_with_docs(self):
         db = self.create_milvus_db_sparse()
-        db.add_sparse(self.ids, self.sparse_vecs, self.docs)
+        db.add_sparse(self.ids, self.sparse_vecs, docs = self.docs)
         self.create_milvus_db_dense().client.insert.assert_called_once()
         self.create_milvus_db_dense().client.refresh_load.assert_called_once()
 

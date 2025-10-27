@@ -15,7 +15,8 @@ from sqlalchemy.orm import sessionmaker, scoped_session, declarative_base
 
 from mx_rag.storage.vectorstore import VectorStore, SearchMode
 from mx_rag.storage.document_store.base_storage import StorageError
-from mx_rag.utils.common import (validate_params, validate_embeddings, _check_sparse_and_dense)
+from mx_rag.utils.common import (validate_params, validate_embeddings, _check_sparse_and_dense, validate_sequence,
+                                 MAX_IDS_SIZE)
 from mx_rag.utils.common import MAX_COLLECTION_NAME_LENGTH, MAX_TOP_K
 
 Base = declarative_base()
@@ -141,7 +142,7 @@ class OpenGaussDB(VectorStore):
 
         try:
             instance = cls(
-                engine=kwargs.pop("engine"),
+                engine=kwargs.pop("engine", None),
                 collection_name=kwargs.pop("collection_name", "vectorstore"),
                 search_mode=kwargs.pop("search_mode", SearchMode.DENSE),
                 index_type=kwargs.pop("index_type", "HNSW"),
@@ -161,8 +162,12 @@ class OpenGaussDB(VectorStore):
             logger.error(f"An unexpected error occurred: {str(e)}")
             return None
 
-    @validate_params(dense_dim=dict(validator=lambda x: x is None or isinstance(x, int),
-                                    message="param requires to be None or int")
+    @validate_params(dense_dim=dict(validator=lambda x: x is None or isinstance(x, int) and x >= 0,
+                                    message="param requires to be None or int"),
+                    sparse_dim=dict(validator=lambda x: isinstance(x, int) and x >= 0,
+                                    message="param requires to be int"),
+                    params=dict(validator=lambda x: x is None or isinstance(x, dict) and validate_sequence(x),
+                                message="params requires to be None or dict")
                      )
     def create_collection(
             self,
@@ -243,7 +248,9 @@ class OpenGaussDB(VectorStore):
 
     @validate_params(
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="param requires to be np.ndarray"),
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]")
+        ids=dict(validator=lambda x: isinstance(x,List) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+                 message="param must be List[int]"),
+        document_id=dict(validator=lambda x: isinstance(x,int) and x >= 0, message="param must greater equal than 0")
     )
     def add(self, ids: List[int], embeddings: np.ndarray, document_id: int = 0):
         if self.search_mode != SearchMode.DENSE:
@@ -251,9 +258,11 @@ class OpenGaussDB(VectorStore):
         self._internal_add(ids, embeddings, document_id=document_id)
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
+        ids=dict(validator=lambda x: isinstance(x,List) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+                 message="param must be List[int]"),
         sparse_embeddings=dict(validator=lambda x: validate_embeddings(x)[0],
-                               message="param requires to be List[Dict[int, float]]")
+                               message="param requires to be List[Dict[int, float]]"),
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0")
     )
     def add_sparse(self, ids: List[int], sparse_embeddings: List[Dict[int, float]], document_id: int = 0):
         if self.search_mode != SearchMode.SPARSE:
@@ -261,11 +270,13 @@ class OpenGaussDB(VectorStore):
         self._internal_add(ids, sparse=sparse_embeddings, document_id=document_id)
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"),
+        ids=dict(validator=lambda x: isinstance(x,List) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+                 message="param must be List[int]"),
         dense_embeddings=dict(validator=lambda x: isinstance(x, np.ndarray),
                               message="param requires to be np.ndarray"),
         sparse_embeddings=dict(validator=lambda x: validate_embeddings(x)[0],
-                               message="param requires to be List[Dict[int, float]]")
+                               message="param requires to be List[Dict[int, float]]"),
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0")
     )
     def add_dense_and_sparse(self, ids: List[int],
                              dense_embeddings: np.ndarray,
@@ -276,7 +287,8 @@ class OpenGaussDB(VectorStore):
         self._internal_add(ids, dense_embeddings, sparse_embeddings, document_id)
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="param must be List[int]"))
+        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+                 message="param must be List[int]"))
     def delete(self, ids: List[int]):
         if len(ids) == 0:
             logger.warning("no id need be deleted")

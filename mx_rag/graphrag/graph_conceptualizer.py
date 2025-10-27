@@ -54,8 +54,9 @@ def _check_conceptualizer_prompts(prompts: Optional[dict]) -> bool:
     """
     if prompts is None:
         return True
+
     required_keys = {"event", "entity", "relation"}
-    if set(prompts.keys()) != required_keys:
+    if not isinstance(prompts, dict) or set(prompts.keys()) != required_keys:
         return False
     return all(isinstance(prompts[key], str) and 0 < len(prompts[key]) <= MAX_PROMPT_LENGTH for key in required_keys)
 
@@ -82,7 +83,7 @@ def _check_conceptualizer_prompts(prompts: Optional[dict]) -> bool:
         message="seed must be an integer, value range [0, 65535]",
     ),
     prompts=dict(
-        validator=_check_conceptualizer_prompts,
+        validator=lambda x: _check_conceptualizer_prompts(x),
         message="prompts must be None or a dict with keys: 'event', 'entity', 'relation'",
     ),
 )
