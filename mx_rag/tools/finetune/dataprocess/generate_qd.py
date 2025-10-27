@@ -76,8 +76,13 @@ def make_request(llm, prompt_template, question_number, doc_content):
     )
     llm_config = LLMParameterConfig(max_tokens=MAX_TOKENS)
     try:
-        response = llm.chat(prompt, llm_config=llm_config)
+        return llm.chat(prompt, llm_config=llm_config)
+    except TypeError:
+        logger.error("Invalid argument type in llm.chat")
+        return ''
+    except TimeoutError:
+        logger.error("LLM request timed out")
+        return ''
     except Exception:
-        logger.error(f"llm chat failed")
-        response = ''
-    return response
+        logger.error("llm chat failed")
+        return ''

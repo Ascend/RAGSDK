@@ -19,6 +19,30 @@ class TestLlmPreferred(unittest.TestCase):
 
         self.assertEqual(scores, [62.13])
 
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_make_request_type_error(self, chat):
+        chat.side_effect = TypeError("Invalid argument type")
+        llm = Text2TextLLM(model_name="test_model_name", base_url="test_url", timeout=120)
+        scores = llm_preferred(llm, ["query"], ["document"], SCORING_QD_PROMPT)
+
+        self.assertEqual(scores, [0.0])
+
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_make_request_timeout_error(self, chat):
+        chat.side_effect = TimeoutError("Request timed out")
+        llm = Text2TextLLM(model_name="test_model_name", base_url="test_url", timeout=120)
+        scores = llm_preferred(llm, ["query"], ["document"], SCORING_QD_PROMPT)
+
+        self.assertEqual(scores, [0.0])
+
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_make_request_generic_exception(self, chat):
+        chat.side_effect = Exception("Unknown error occurred")
+        llm = Text2TextLLM(model_name="test_model_name", base_url="test_url", timeout=120)
+        scores = llm_preferred(llm, ["query"], ["document"], SCORING_QD_PROMPT)
+
+        self.assertEqual(scores, [0.0])
+
 
 if __name__ == '__main__':
     unittest.main()
