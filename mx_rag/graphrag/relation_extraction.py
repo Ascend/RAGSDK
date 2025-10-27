@@ -45,13 +45,13 @@ def _parse_and_repair_json(
         try:
             return json.loads(s)
         except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse JSON: {e}")
+            logger.warning(f"Failed to parse JSON: {e}")
             return None
         except TypeError as e:
-            logger.error(f"Type error during parsing: {e}")
+            logger.warning(f"Type error during parsing: {e}")
             return None
         except ValueError as e:
-            logger.error(f"Value error during parsing: {e}")
+            logger.warning(f"Value error during parsing: {e}")
             return None
         except Exception:
             return None
@@ -63,10 +63,10 @@ def _parse_and_repair_json(
             repaired = repair_strategy(text)
             return try_parse(repaired)
         except TypeError as e:
-            logger.error(f"Type error during repair: {e}")
+            logger.warning(f"Type error during repair: {e}")
             return None
         except ValueError as e:
-            logger.error(f"Value error during repair: {e}")
+            logger.warning(f"Value error during repair: {e}")
             return None
         except Exception:
             return None
