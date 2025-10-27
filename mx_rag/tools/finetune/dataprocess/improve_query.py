@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
-import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
@@ -35,7 +34,6 @@ def multi_processing(llm, query_list):
     make_request_partial = partial(make_request, llm)
     with ThreadPoolExecutor() as executor:
         answers = list(tqdm(executor.map(make_request_partial, query_list), total=len(query_list)))
-    # 使用正则表达式提取相关性评分中的小数
     logger.info('end to multi process improve query')
     return answers
 
@@ -45,8 +43,13 @@ def make_request(llm, query):
     prompt = rewriter.get_rewrite_prompts(query, "更改指令语言风格")
     llm_config = LLMParameterConfig(max_tokens=MAX_TOKENS)
     try:
-        response = llm.chat(prompt, llm_config=llm_config)
+        return llm.chat(prompt, llm_config=llm_config)
+    except TypeError:
+        logger.error("Invalid argument type in llm.chat")
+        return ''
+    except TimeoutError:
+        logger.error("LLM request timed out")
+        return ''
     except Exception:
-        logger.error(f"llm chat failed")
-        response = ''
-    return response
+        logger.error("llm chat failed")
+        return ''

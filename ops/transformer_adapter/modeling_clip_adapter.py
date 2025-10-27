@@ -32,6 +32,10 @@ def read_img(image):
         image.save(f, format=image.format)
         f.seek(0)
         prefix = f.read(16)
+    except AttributeError as e:
+        raise ValueError("image object missing required attribute") from e
+    except ValueError as e:
+        raise ValueError("read image value failed") from e
     except Exception as e:
         raise ValueError("parse image failed") from e
 

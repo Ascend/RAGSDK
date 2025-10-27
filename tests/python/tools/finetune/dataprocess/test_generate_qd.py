@@ -18,6 +18,27 @@ class TestGenerateQD(unittest.TestCase):
         qd = generate_qa_embedding_pairs(llm, ["hello"], GENERATE_QD_PROMPT, 1)
         self.assertEqual(qd["hello"], ["question?"])
 
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_make_request_type_error(self, chat):
+        chat.side_effect = TypeError("Invalid type")
+        llm = Text2TextLLM(model_name="test_model_name", base_url="test_url", timeout=120)
+        qd = generate_qa_embedding_pairs(llm, ["hello"], GENERATE_QD_PROMPT, 1)
+        self.assertEqual(qd["hello"], [])
+
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_make_request_timeout_error(self, chat):
+        chat.side_effect = TimeoutError("Request timed out")
+        llm = Text2TextLLM(model_name="test_model_name", base_url="test_url", timeout=120)
+        qd = generate_qa_embedding_pairs(llm, ["hello"], GENERATE_QD_PROMPT, 1)
+        self.assertEqual(qd["hello"], [])
+
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_make_request_generic_exception(self, chat):
+        chat.side_effect = Exception("Unknown error occurred")
+        llm = Text2TextLLM(model_name="test_model_name", base_url="test_url", timeout=120)
+        qd = generate_qa_embedding_pairs(llm, ["hello"], GENERATE_QD_PROMPT, 1)
+        self.assertEqual(qd["hello"], [])
+
 
 if __name__ == '__main__':
     unittest.main()
