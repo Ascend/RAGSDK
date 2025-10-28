@@ -255,7 +255,7 @@ class OpenGaussDB(VectorStore):
 
     @validate_params(
         embeddings=dict(validator=lambda x: isinstance(x, np.ndarray), message="param requires to be np.ndarray"),
-        ids=dict(validator=lambda x: isinstance(x,List) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
                  message="param must be List[int]"),
         document_id=dict(validator=lambda x: isinstance(x,int) and x >= 0, message="param must greater equal than 0")
     )
@@ -265,7 +265,7 @@ class OpenGaussDB(VectorStore):
         self._internal_add(ids, embeddings, document_id=document_id)
 
     @validate_params(
-        ids=dict(validator=lambda x: isinstance(x,List) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
                  message="param must be List[int]"),
         sparse_embeddings=dict(validator=lambda x: validate_embeddings(x)[0],
                                message="param requires to be List[Dict[int, float]]"),
@@ -277,7 +277,7 @@ class OpenGaussDB(VectorStore):
         self._internal_add(ids, sparse=sparse_embeddings, document_id=document_id)
 
     @validate_params(
-        ids=dict(validator=lambda x: isinstance(x,List) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
                  message="param must be List[int]"),
         dense_embeddings=dict(validator=lambda x: isinstance(x, np.ndarray),
                               message="param requires to be np.ndarray"),
@@ -347,7 +347,8 @@ class OpenGaussDB(VectorStore):
             raise OpenGaussError("Failed to get all ids") from e
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x), message="ids must be List[int]"),
+        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+                 message="param must be List[int]"),
         dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
                    message="dense must be Optional[np.ndarray]"),
         sparse=dict(validator=lambda x: x is None or validate_embeddings(x)[0],
