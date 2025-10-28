@@ -12,7 +12,7 @@ from pymilvus.client.types import ExtraList
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
 from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, validate_embeddings, \
-    _check_sparse_and_dense, BOOL_TYPE_CHECK_TIP, MAX_IDS_SIZE
+    _check_sparse_and_dense, BOOL_TYPE_CHECK_TIP, MAX_IDS_SIZE, validate_sequence
 from mx_rag.utils.common import validate_list_str, validate_embeddings
 
 
@@ -182,7 +182,10 @@ class MilvusDB(VectorStore):
 
     @validate_params(
         x_dim=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
-                   message="param value range (0, 1024 * 1024]"))
+                   message="param value range (0, 1024 * 1024]"),
+        params=dict(validator=lambda x: x is None or isinstance(x, dict) and validate_sequence(x),
+                    message="params requires to be None or dict")
+    )
     def create_collection(self, x_dim: Optional[int] = None, params=None):
         if self._client.has_collection(self._collection_name):
             logger.warning(f"Collection {self._collection_name} already exists")
