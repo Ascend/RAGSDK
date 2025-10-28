@@ -62,7 +62,7 @@ class VectorStore(ABC):
     def search_with_threshold(self, embeddings: Union[List[List[float]], List[Dict[int, float]]],
                               k: int = 3, threshold: float = 0.1, filter_dict=None):
         """
-        根据阈值进行查找 过滤调不满足的分数
+        根据阈值进行查找，过滤掉不满足的分数
         Args:
             filter_dict: 检索的过滤条件
             embeddings: 词嵌入之后的查询
@@ -87,7 +87,7 @@ class VectorStore(ABC):
 
     def as_retriever(self, **kwargs):
         """
-        矢量数据库转换为适量检索器
+        向量数据库转换为向量检索器
         Args:
             **kwargs:
 
@@ -111,7 +111,7 @@ class VectorStore(ABC):
         """
         分数量化
         Args:
-            scores: 词嵌入得得分
+            scores: 词嵌入的得分
 
         Returns: 量化之后的分数
 

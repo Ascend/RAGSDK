@@ -17,7 +17,7 @@ from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH, TEXT_MAX_LEN, vali
 _KEY_WORD_TEMPLATE_ZH = PromptTemplate(
     input_variables=["question"],
     template="""根据问题提取关键词，不超过10个。关键词尽量切分为动词、名词、或形容词等单独的词，
-不要长词组（目的是更好的匹配检索到语义相关但表述不同的相关资料）。请根据给定参考资料提前关键词，关键词之间使用逗号分隔，比如{{关键词1, 关键词2}}
+不要长词组（目的是更好的匹配检索到语义相关但表述不同的相关资料）。请根据给定参考资料提取关键词，关键词之间使用逗号分隔，比如{{关键词1, 关键词2}}
 Question: CANN如何安装？
 Keywords: CANN, 安装, install
 
