@@ -20,18 +20,26 @@
         } \
     } while (0)
 
-#define CHECK_PARAM_LT(param, thershold) \
+#define CHECK_PARAM_LT(param, threshold) \
     do { \
-        if ((param) >= (thershold)) { \
-            ATB_LOG(ERROR) << "param should be less than " << (thershold) << ", please check"; \
+        if ((param) >= (threshold)) { \
+            ATB_LOG(ERROR) << "param should be less than " << (threshold) << ", please check"; \
             return atb::ERROR_INVALID_PARAM; \
         } \
     } while (0)
 
-#define CHECK_PARAM_GT(param, thershold) \
+#define CHECK_PARAM_GT(param, threshold) \
     do { \
-        if ((param) <= (thershold)) { \
-            ATB_LOG(ERROR) << "param should be greater than " << (thershold) << ", please check"; \
+        if ((param) <= (threshold)) { \
+            ATB_LOG(ERROR) << "param should be greater than " << (threshold) << ", please check"; \
+            return atb::ERROR_INVALID_PARAM; \
+        } \
+    } while (0)
+
+#define CHECK_PARAM_GE(param, threshold) \
+    do { \
+        if ((param) < (threshold)) { \
+            ATB_LOG(ERROR) << "param should be greater than or equal to " << (threshold) << ", please check"; \
             return atb::ERROR_INVALID_PARAM; \
         } \
     } while (0)

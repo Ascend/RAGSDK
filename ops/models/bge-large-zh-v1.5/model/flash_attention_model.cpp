@@ -372,11 +372,13 @@ atb::Status FlashAttentionModel::ParseParam(const std::string &param)
 
     tokenOffset_.clear();
     for (const auto &tokenOffset : tokenOffsets) {
+        CHECK_PARAM_GE(tokenOffset, 0);
         CHECK_PARAM_LT(tokenOffset, MAX_PARAM_VALUE);
         tokenOffset_.push_back(tokenOffset);
     }
     seqLen_.clear();
     for (const auto &seqLen : seqLens) {
+        CHECK_PARAM_GE(seqLen, 0);
         CHECK_PARAM_LT(seqLen, MAX_PARAM_VALUE);
         seqLen_.push_back(seqLen);
     }
