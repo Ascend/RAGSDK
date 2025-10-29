@@ -101,10 +101,10 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                     result = sorted_layout_boxes(ocr_res, img.shape[1])
                 except ValueError as e:
                     result = []
-                    logger.error(f"Value error occurred: {str(e)}")
+                    logger.warning(f"Value error occurred: {str(e)}")
                 except Exception as e:
                     result = []
-                    logger.error(f"Failed to process: {str(e)}")
+                    logger.warning(f"Failed to process: {str(e)}")
                 page_content = []
                 for line in result:
                     PdfLoader._reconstruct_line(line, page_content)
@@ -134,11 +134,11 @@ class PdfLoader(BaseLoader, mxBaseLoader):
                     image_list = page.get_images(full=True)
                     yield from self._process_image(pdf_document, image_list)
             except (PermissionError, NotImplementedError) as e:
-                logger.error(f"Page {page_num + 1} access denied: {str(e)}")
+                logger.warning(f"Page {page_num + 1} access denied: {str(e)}")
             except (ValueError, RuntimeError) as e:
-                logger.error(f"Page {page_num + 1} corrupted: {str(e)}")
+                logger.warning(f"Page {page_num + 1} corrupted: {str(e)}")
             except Exception as e:
-                logger.error(f"Failed to extract text from page {page_num + 1}: {str(e)}")
+                logger.warning(f"Failed to extract text from page {page_num + 1}: {str(e)}")
         pdf_document.close()
 
         one_text = " ".join(pdf_content)

@@ -146,13 +146,13 @@ class GraphEvaluator:
         try:
             return len(obj)
         except TypeError as e:
-            logger.error(f"Type error: Object is not iterable or has no length - {e}")
+            logger.warning(f"Type error: Object is not iterable or has no length - {e}")
             return 0
         except ValueError as e:
-            logger.error(f"Value error: Invalid value encountered - {e}")
+            logger.warning(f"Value error: Invalid value encountered - {e}")
             return 0
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
+            logger.warning(f"Unexpected error: {e}")
             return 0
 
     def _get_more(self, text: str, entity_relations: Any, event_entity_relations: Any,
