@@ -4,11 +4,14 @@
 import _thread
 import functools
 import inspect
+import json
 import multiprocessing.synchronize
 import os
 import pathlib
+import stat
 from datetime import datetime
 from enum import Enum
+from json import JSONDecodeError
 from typing import List, Union, Callable, Dict, Optional, Tuple, Any
 
 import numpy as np
@@ -536,3 +539,44 @@ def get_model_max_input_length(config):
         return 0
 
     return max_input_length
+
+
+def write_to_json(file_path: str, data: Union[dict, list], encrypt_fn: Callable = None):
+    FileCheck.check_input_path_valid(file_path, check_blacklist=True)
+    FileCheck.check_filename_valid(file_path)
+    W_FLAGS = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+    try:
+        with os.fdopen(os.open(file_path, W_FLAGS, MODES), 'w') as f:
+            if encrypt_fn:
+                data = run_and_check_callback(encrypt_fn, json.dumps(data))
+                f.write(data)
+            else:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+    except (TypeError, ValueError, JSONDecodeError):
+        logger.error(f"Error saving JSON data to {file_path}, invalid json format.")
+    except (OSError, IOError) as e:
+        logger.error(f"Error saving graph to {file_path}: {e}")
+    except Exception as e:
+        logger.error(f"Error saving JSON data to {file_path}: {e}")
+
+
+def read_graph_file(file_path: str, decrypt_fn: Callable = None):
+    FileCheck.check_input_path_valid(file_path, check_blacklist=True)
+    FileCheck.check_filename_valid(file_path)
+    R_FLAGS = os.O_RDONLY
+    MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+    with os.fdopen(os.open(file_path, R_FLAGS, MODES), 'r', encoding="utf-8") as f:
+        data = f.read()
+    if decrypt_fn:
+        data = run_and_check_callback(decrypt_fn, data)
+    return json.loads(data)
+
+
+def run_and_check_callback(callback_fun: Callable, input_str: str):
+    result = callback_fun(input_str)
+    if not isinstance(result, str):
+        raise ValueError("the return value of callback function is not str.")
+    if len(result) > GRAPH_FILE_LIMIT:
+        raise ValueError(f"the length of return value of callback function is too long, exceeding {GRAPH_FILE_LIMIT}.")
+    return result

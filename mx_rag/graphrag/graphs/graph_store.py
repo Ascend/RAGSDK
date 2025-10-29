@@ -3,7 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union, Callable
 
 
 class GraphStore(ABC):
@@ -71,25 +71,25 @@ class GraphStore(ABC):
 
     @abstractmethod
     def get_edge_attributes(
-        self, u: str, v: str, key: Optional[str] = None
+            self, u: str, v: str, key: Optional[str] = None
     ) -> Union[Dict[str, Any], Any]:
         pass
 
     @abstractmethod
     def update_edge_attributes_batch(
-        self, edge_updates: List[Tuple[str, str, Dict[str, Any]]], batch_size: int = 1024, append: bool = False
+            self, edge_updates: List[Tuple[str, str, Dict[str, Any]]], batch_size: int = 1024, append: bool = False
     ) -> None:
         pass
 
     @abstractmethod
     def update_edge_attribute(
-        self, u: str, v: str, key: str, value: Any, append: bool = False
+            self, u: str, v: str, key: str, value: Any, append: bool = False
     ) -> None:
         pass
 
     @abstractmethod
     def get_edges(
-        self, with_data: bool = True
+            self, with_data: bool = True
     ) -> Union[List[Tuple[str, str]], List[Tuple[str, str, Dict[str, Any]]]]:
         pass
 
@@ -139,10 +139,10 @@ class GraphStore(ABC):
 
     @abstractmethod
     def get_subgraph_edges(
-        self, nodes: Iterable[str], with_data: bool = True
+            self, nodes: Iterable[str], with_data: bool = True
     ) -> Union[List[Tuple[str, str]], List[Tuple[str, str, Dict[str, Any]]]]:
         pass
 
     @abstractmethod
-    def save(self, output_path: str):
+    def save(self, output_path: str, encrypt_fn: Callable = None):
         pass

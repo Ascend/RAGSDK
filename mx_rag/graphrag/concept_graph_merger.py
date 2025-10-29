@@ -3,7 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 
 from collections import Counter
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Callable
 from loguru import logger
 from tqdm import tqdm
 
@@ -36,17 +36,17 @@ class ConceptGraphMerger:
         return [c for c in dict.fromkeys(map(str.strip, concepts_str.split(","))) if c]
 
     def merge_concepts_and_synset(
-        self, concept_data: List[Dict[str, Any]], synset_list: List[List[str]]
+            self, concept_data: List[Dict[str, Any]], synset_list: List[List[str]]
     ) -> None:
         self._process_concept_data(concept_data)
         self._process_synset(synset_list)
         self._update_graph_attributes()
 
-    def save_graph(self, output_path: str):
+    def save_graph(self, output_path: str, encrypt_fn: Callable):
         """
         Saves the graph database to the specified output path.
         """
-        self.graph.save(output_path)
+        self.graph.save(output_path, encrypt_fn)
 
     def _process_concept_data(self, concept_data: List[Dict[str, Any]]) -> None:
         """
@@ -76,11 +76,11 @@ class ConceptGraphMerger:
             logger.warning(f"Unknown node type: {node_type}")
 
     def _update_concept_mappings(
-        self,
-        concept_dict: Dict[str, List[str]],
-        concept_counter: Counter,
-        node_text: str,
-        concepts: List[str]
+            self,
+            concept_dict: Dict[str, List[str]],
+            concept_counter: Counter,
+            node_text: str,
+            concepts: List[str]
     ) -> None:
         """
         Updates concept mappings and counters for a node.
@@ -117,20 +117,20 @@ class ConceptGraphMerger:
         edge_updates = []
 
         graph_edges = self.graph.get_edges()
-        
+
         # Process each edge once: O(E)
         for u, v, data in tqdm(graph_edges, desc="Preparing graph attributes"):
             # Process both nodes using the helper method
             self._process_node_if_not_seen(u, processed_nodes, node_updates)
             self._process_node_if_not_seen(v, processed_nodes, node_updates)
-            
+
             # Process edge relation concepts
             concepts_r = self.relation_concepts.get(data.get("relation", ""), [])
             synset_r = self._get_synset_strings(concepts_r)
-            
+
             concept_r_string = ",".join(concepts_r) if concepts_r else ""
             synset_r_string = ",".join(synset_r) if synset_r else ""
-            
+
             edge_updates.append((u, v, {"concepts": concept_r_string, "synset": synset_r_string}))
 
         # Batch update nodes and edges
@@ -145,10 +145,10 @@ class ConceptGraphMerger:
             node_type = self.graph.get_node_attributes(node, "type")
             concepts = self._get_concepts_by_type(node, node_type)
             synset = self._get_synset_strings(concepts)
-            
+
             concept_string = ",".join(concepts) if concepts else ""
             synset_string = ",".join(synset) if synset else ""
-            
+
             node_updates.append((node, {"concepts": concept_string, "synset": synset_string}))
             processed_nodes.add(node)
 

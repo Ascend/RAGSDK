@@ -121,7 +121,6 @@ class TestGraphRAGPipeline(unittest.TestCase):
         expected_graph_path = os.path.join(self.temp_dir, f"{self.test_graph_name}.json")
         expected_relations_path = os.path.join(self.temp_dir, f"{self.test_graph_name}_relations.json")
         expected_concepts_path = os.path.join(self.temp_dir, f"{self.test_graph_name}_concepts.json")
-        expected_cluster_path = os.path.join(self.temp_dir, f"{self.test_graph_name}_concept_clusters.json")
         expected_synset_path = os.path.join(self.temp_dir, f"{self.test_graph_name}_synset.json")
         expected_node_vectors_path = os.path.join(self.temp_dir, f"{self.test_graph_name}_node_vectors.index")
         expected_concept_vectors_path = os.path.join(self.temp_dir, f"{self.test_graph_name}_concept_vectors.index")
@@ -129,7 +128,6 @@ class TestGraphRAGPipeline(unittest.TestCase):
         self.assertEqual(pipeline.graph_save_path, expected_graph_path)
         self.assertEqual(pipeline.relations_save_path, expected_relations_path)
         self.assertEqual(pipeline.concepts_save_path, expected_concepts_path)
-        self.assertEqual(pipeline.concept_cluster_path, expected_cluster_path)
         self.assertEqual(pipeline.synset_save_path, expected_synset_path)
         self.assertEqual(pipeline.node_vectors_path, expected_node_vectors_path)
         self.assertEqual(pipeline.concept_vectors_path, expected_concept_vectors_path)
@@ -186,12 +184,12 @@ class TestGraphRAGPipeline(unittest.TestCase):
         self.assertEqual(len(pipeline.docs), 4)  # 2 files × 2 documents each
     
     @patch('mx_rag.graphrag.graphrag_pipeline.check_disk_free_space')
-    @patch('mx_rag.graphrag.graphrag_pipeline.save_to_json')
+    @patch('mx_rag.graphrag.graphrag_pipeline.write_to_json')
     @patch('mx_rag.graphrag.graphrag_pipeline.LLMRelationExtractor')
     @patch('mx_rag.graphrag.graphrag_pipeline.GraphMerger')
     @patch('mx_rag.graphrag.graphrag_pipeline.logger')
     def test_build_graph_success(self, mock_logger, mock_graph_merger, mock_extractor_class,
-                                 mock_save_json, mock_check_space):
+                                 write_to_json, mock_check_space):
         """Test successful graph building."""
         mock_check_space.return_value = False
         
@@ -228,7 +226,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
         mock_merger.save_graph.assert_called_once()
         
         # Verify JSON was saved
-        mock_save_json.assert_called()
+        write_to_json.assert_called_once()
         
         # Verify docs were cleared
         self.assertEqual(len(pipeline.docs), 0)
@@ -266,7 +264,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
         mock_rag_model = Mock(spec=GraphRAGModel)
         mock_graph_rag_model.return_value = mock_rag_model
         
-        retriever = pipeline.as_retriever("test_graph", "networkx")
+        retriever = pipeline.as_retriever("test_graph")
         
         # Verify retriever was created
         self.assertIsInstance(retriever, GraphRetriever)
@@ -291,11 +289,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
             
             # Test invalid graph_name
             with self.assertRaises(ValueError):
-                pipeline.as_retriever("", "networkx")
-            
-            # Test invalid graph_type
-            with self.assertRaises(ValueError):
-                pipeline.as_retriever("test_graph", "invalid_type")
+                pipeline.as_retriever("")
 
 
 if __name__ == '__main__':

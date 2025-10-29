@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import os
-import json
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
+from json import JSONDecodeError
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union, Callable
 
 import networkx as nx
 from loguru import logger
 from mx_rag.graphrag.graphs.graph_store import GraphStore
 from mx_rag.storage.document_store.base_storage import StorageError
-from mx_rag.utils.common import check_db_file_limit
-from mx_rag.utils.file_check import FileCheck, check_disk_free_space
+from mx_rag.utils.common import check_db_file_limit, write_to_json, read_graph_file
+from mx_rag.utils.file_check import check_disk_free_space
 
 
 class NetworkxGraph(GraphStore):
@@ -19,37 +19,29 @@ class NetworkxGraph(GraphStore):
     """
     FREE_SPACE_LIMIT = 5 * 1024 * 1024 * 1024  # 5GB
 
-    def __init__(self, is_digraph: bool = True, path: Optional[str] = None) -> None:
+    def __init__(self, is_digraph: bool = True, path: Optional[str] = None, decrypt_fn: Callable = None) -> None:
         """
         Initialize the graph, optionally loading from file.
         """
         self.is_digraph = is_digraph
         self.graph: Union[nx.Graph, nx.DiGraph] = nx.DiGraph() if self.is_digraph else nx.Graph()
         if path:
-            self._load_graph(path)
+            self._load_graph(path, decrypt_fn)
 
-    def save(self, output_path: str):
+    def save(self, output_path: str, encrypt_fn: Callable = None):
         """
         Save the graph to a file.
         """
-        FileCheck.check_input_path_valid(output_path, check_blacklist=True)
-        FileCheck.check_filename_valid(output_path)
-        try:
-            data = nx.node_link_data(self.graph)
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            logger.info(f"Graph saved to: {output_path}")
-        except (OSError, IOError) as e:
-            logger.error(f"Error saving graph to {output_path}: {e}")
-        except (TypeError, ValueError) as e:
-            logger.error(f"Error serializing graph data to {output_path}: {e}")
+        data = nx.node_link_data(self.graph)
+        write_to_json(output_path, data, encrypt_fn)
+        logger.info(f"Graph saved to: {output_path}")
 
     def add_node(self, node: str, **attrs: Any) -> None:
         """
         Add a node with optional attributes.
         """
         if not self.has_node(node):
-            self.graph.add_node(node, **attrs) 
+            self.graph.add_node(node, **attrs)
 
     def add_nodes_from(self, nodes: Iterable[str], **attrs: Any) -> None:
         """
@@ -89,7 +81,7 @@ class NetworkxGraph(GraphStore):
         nx.set_node_attributes(self.graph, attributes, name)
 
     def update_node_attribute(
-        self, node: str, key: str, value: Any, append: bool = False
+            self, node: str, key: str, value: Any, append: bool = False
     ) -> None:
         """
         Update or append a node attribute.
@@ -107,7 +99,7 @@ class NetworkxGraph(GraphStore):
             logger.warning(f"Node '{node}' not found.")
 
     def update_node_attributes_batch(
-        self, node_updates: List[Tuple[str, Dict[str, Any]]], batch_size: int = 1024, append: bool = False
+            self, node_updates: List[Tuple[str, Dict[str, Any]]], batch_size: int = 1024, append: bool = False
     ) -> None:
         """
         Update attributes for multiple nodes in batch.
@@ -174,7 +166,7 @@ class NetworkxGraph(GraphStore):
         return self.graph.has_edge(u, v)
 
     def get_edge_attributes(
-        self, u: str, v: str, key: Optional[str] = None
+            self, u: str, v: str, key: Optional[str] = None
     ) -> Union[Dict[str, Any], Any]:
         """
         Get attributes of an edge, or a specific attribute.
@@ -185,7 +177,7 @@ class NetworkxGraph(GraphStore):
         return self.graph.edges[u, v].get(key) if key else dict(self.graph.edges[u, v])
 
     def update_edge_attribute(
-        self, u: str, v: str, key: str, value: Any, append: bool = False
+            self, u: str, v: str, key: str, value: Any, append: bool = False
     ) -> None:
         """
         Update or append an edge attribute.
@@ -203,7 +195,7 @@ class NetworkxGraph(GraphStore):
             logger.warning(f"Edge '{u}', '{v}' not found.")
 
     def update_edge_attributes_batch(
-        self, edge_updates: List[Tuple[str, str, Dict[str, Any]]], batch_size: int = 1024, append: bool = False
+            self, edge_updates: List[Tuple[str, str, Dict[str, Any]]], batch_size: int = 1024, append: bool = False
     ) -> None:
         """
         Update attributes for multiple edges in batch.
@@ -221,7 +213,7 @@ class NetworkxGraph(GraphStore):
                 logger.warning(f"Edge '{u}', '{v}' not found.")
 
     def get_edges(
-        self, with_data: bool = True
+            self, with_data: bool = True
     ) -> Union[List[Tuple[str, str]], List[Tuple[str, str, Dict[str, Any]]]]:
         """
         Return all edges, optionally with attributes.
@@ -229,7 +221,7 @@ class NetworkxGraph(GraphStore):
         return list(self.graph.edges(data=with_data)) if with_data else list(self.graph.edges)
 
     def get_edge_attribute_values(
-        self, key: str
+            self, key: str
     ) -> List[str]:
         """
         Get all values for a specific edge attribute.
@@ -319,7 +311,7 @@ class NetworkxGraph(GraphStore):
         return NetworkxGraph(is_digraph=self.graph.is_directed()).set_graph(subgraph)
 
     def get_subgraph_edges(
-        self, nodes: Iterable[str], with_data: bool = True
+            self, nodes: Iterable[str], with_data: bool = True
     ) -> Union[List[Tuple[str, str]], List[Tuple[str, str, Dict[str, Any]]]]:
         """
         Return edges of the subgraph induced by given nodes.
@@ -333,24 +325,22 @@ class NetworkxGraph(GraphStore):
         """
         self.graph = graph
         return self
-    
-    def _load_graph(self, path: str) -> None:
+
+    def _load_graph(self, path: str, decrypt_fn: Callable) -> None:
         """
         Load the graph from a file.
         """
         try:
-            FileCheck.check_input_path_valid(path, check_blacklist=True)
-            FileCheck.check_filename_valid(path)
             dirname = os.path.dirname(path)
             if check_disk_free_space(dirname if dirname else "./", self.FREE_SPACE_LIMIT):
                 raise StorageError("Insufficient remaining space, please clear disk space")
             check_db_file_limit(path)
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                self.graph = nx.node_link_graph(data)
+            data = read_graph_file(path, decrypt_fn)
+            self.graph = nx.node_link_graph(data)
             logger.info(f"Graph loaded from: {path}")
+        except (TypeError, ValueError, JSONDecodeError):
+            logger.warning(f"Failed to load graph: {path}, invalid json format.")
         except FileNotFoundError:
             logger.warning(f"Graph file not found at: {path}. Creating an empty graph.")
         except Exception as e:
-            logger.error(f"Error loading graph from {path}: {e}")
-            self.graph = nx.DiGraph() if self.is_digraph else nx.Graph()
+            logger.warning(f"Error loading graph from {path}: {e}")

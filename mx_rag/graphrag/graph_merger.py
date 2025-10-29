@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Callable
 from loguru import logger
 from tqdm import tqdm
 
@@ -302,11 +302,12 @@ class GraphMerger:
         """
         merge_relations_into_graph(self.graph, relations, language)
 
-    def save_graph(self, output_path: str) -> None:
+    def save_graph(self, output_path: str, encrypt_fn: Callable) -> None:
         """
         Save the graph to the specified output path.
 
         Args:
+            encrypt_fn: function to encrypt text
             output_path (str): Path to save the graph.
         """
-        self.graph.save(output_path)
+        self.graph.save(output_path, encrypt_fn)
