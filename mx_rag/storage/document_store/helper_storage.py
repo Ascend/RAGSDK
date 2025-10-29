@@ -11,7 +11,7 @@ from loguru import logger
 from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import StorageError, Docstore
 from mx_rag.storage.document_store.models import Base, ChunkModel
-from mx_rag.utils.common import MAX_CHUNKS_NUM
+from mx_rag.utils.common import MAX_CHUNKS_NUM, STR_MAX_LEN, MAX_PAGE_CONTENT
 
 
 class _DocStoreHelper(Docstore):
@@ -236,12 +236,23 @@ class _DocStoreHelper(Docstore):
 
     def _encrypt(self, text):
         if self.encrypt_fn is not None:
-            return self.encrypt_fn(text)
+            result = self.encrypt_fn(text)
+            if isinstance(result, str) and 0 < len(result) <= STR_MAX_LEN:
+                return result
+            else:
+                raise ValueError(f"callback function {self.encrypt_fn.__name__} returned invalid result. "
+                                 f"Expected: str with length 0 < len <= {STR_MAX_LEN}.")
         else:
             return text
 
     def _decrypt(self, text):
         if self.decrypt_fn is not None:
-            return self.decrypt_fn(text)
+            result = self.decrypt_fn(text)
+            if isinstance(result, str) and 0 < len(result) <= MAX_PAGE_CONTENT:
+                return result
+            else:
+                raise ValueError(f"callback function {self.decrypt_fn.__name__} returned invalid result. "
+                                 f"Expected: str with length 0 < len <= {MAX_PAGE_CONTENT}.")
+
         else:
             return text

@@ -15,6 +15,7 @@ from mx_rag.graphrag.graphs.opengauss_graph import OpenGaussGraph
 from mx_rag.graphrag.prompts.evaluate_qa import TEXT_RAG_TEMPLATE
 from mx_rag.graphrag.qa_base_model import QABaseModel
 from mx_rag.graphrag.vector_stores.vector_store_wrapper import VectorStoreWrapper
+from mx_rag.knowledge.knowledge import _check_embedding
 from mx_rag.llm import LLMParameterConfig, Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import validate_params
@@ -99,9 +100,19 @@ class GraphRAGModel(QABaseModel):
 
         return retrieved_nodes
 
+    def _safe_embed_func(self, *args, **kwargs):
+        embeddings = self.embed_func(*args, **kwargs)
+        if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0 and
+                isinstance(embeddings[0], (List, np.ndarray)) and len(embeddings[0]) > 0
+                and isinstance(embeddings[0][0], (float, np.floating))):
+            raise ValueError(f"callback function {self.embed_func.__name__}"
+                             f" returned invalid result, should be List[List[float]]")
+        return embeddings
+
     def search_index(self, query, top_k) -> List[str]:
         try:
-            query_embedding = np.asarray(self.embed_func([query]))
+
+            query_embedding = np.asarray(self._safe_embed_func([query]))
             _, idx = self.vector_store.search(query_embedding, top_k)
             idx = idx[0] if idx is not None and len(idx) > 0 else []
             
@@ -132,7 +143,7 @@ class GraphRAGModel(QABaseModel):
             List of retrieved node names.
         """
         try:
-            query_embedding = np.asarray(self.embed_func([query]))
+            query_embedding = np.asarray(self._safe_embed_func([query]))
             _, idx = self.vector_store.search(query_embedding, top_k)
             retrieved = [self.node_names[i] for i in idx[0] if i != -1] if idx and len(idx[0]) > 0 else []
 
@@ -337,7 +348,7 @@ class GraphRAGModel(QABaseModel):
         if self.vector_store.ntotal() != node_count:
             logger.info("Building node embedding database...")
             # Batch embedding for efficiency
-            embeddings = self.embed_func(self.node_names, batch_size=self.batch_size)
+            embeddings = self._safe_embed_func(self.node_names, batch_size=self.batch_size)
             # Efficiently clear and add to vector store
             self.vector_store.clear()
             self.vector_store.add(np.asarray(embeddings), np.arange(node_count).tolist())
@@ -360,7 +371,7 @@ class GraphRAGModel(QABaseModel):
 
         if self.vector_store_concept and self.vector_store_concept.ntotal() != len(self.concepts):
             logger.info("Building concept embedding database...")
-            embeddings = self.embed_func(self.concepts, batch_size=self.batch_size)
+            embeddings = self._safe_embed_func(self.concepts, batch_size=self.batch_size)
             self.vector_store_concept.clear()
             self.vector_store_concept.add(np.array(embeddings), list(range(len(embeddings))))
             self.vector_store_concept.save()
@@ -368,8 +379,8 @@ class GraphRAGModel(QABaseModel):
     def _rerank(self, text_nodes, query):
         if self.use_text:
             if self.reranker is None:
-                query_emb = np.asarray(self.embed_func([query])[0])
-                text_embs = np.asarray(self.embed_func(text_nodes))
+                query_emb = np.asarray(self._safe_embed_func([query])[0])
+                text_embs = np.asarray(self._safe_embed_func(text_nodes))
                 text_embs_norm = text_embs / np.linalg.norm(text_embs, axis=1, keepdims=True)
                 query_emb_norm = query_emb / np.linalg.norm(query_emb)
                 sims = np.dot(text_embs_norm, query_emb_norm)

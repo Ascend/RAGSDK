@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 import re
-from typing import List, Optional, Callable, Any
+from typing import List, Optional, Callable
 from loguru import logger
 from sqlalchemy import Engine, Index, select, func, bindparam, text, inspect
 from sqlalchemy.exc import SQLAlchemyError

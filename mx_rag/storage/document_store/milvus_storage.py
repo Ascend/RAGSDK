@@ -11,7 +11,7 @@ from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import Docstore
 from mx_rag.storage.vectorstore import MilvusDB
 from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, KB, TEXT_MAX_LEN, MAX_TOP_K, validate_list_str, \
-    STR_MAX_LEN, BOOL_TYPE_CHECK_TIP
+    STR_MAX_LEN, BOOL_TYPE_CHECK_TIP, MAX_PAGE_CONTENT
 
 
 class MilvusDocstore(Docstore):
@@ -297,12 +297,22 @@ class MilvusDocstore(Docstore):
 
     def _encrypt(self, text):
         if self.encrypt_fn is not None and not self._enable_bm25:
-            return self.encrypt_fn(text)
+            result = self.encrypt_fn(text)
+            if isinstance(result, str) and 0 < len(result) <= STR_MAX_LEN:
+                return result
+            else:
+                raise ValueError(f"callback function {self.encrypt_fn.__name__} returned invalid result. "
+                                 f"Expected: str with length 0 < len <= {STR_MAX_LEN}.")
         else:
             return text
 
     def _decrypt(self, text):
         if self.decrypt_fn is not None and not self._enable_bm25:
-            return self.decrypt_fn(text)
+            result = self.decrypt_fn(text)
+            if isinstance(result, str) and 0 < len(result) <= MAX_PAGE_CONTENT:
+                return result
+            else:
+                raise ValueError(f"callback function {self.decrypt_fn.__name__} returned invalid result. "
+                                 f"Expected: str with length 0 < len <= {MAX_PAGE_CONTENT}.")
         else:
             return text
