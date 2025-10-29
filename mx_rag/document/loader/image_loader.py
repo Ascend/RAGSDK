@@ -3,6 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import base64
 import os
+import stat
 from pathlib import Path
 from typing import Iterator
 from PIL import Image
@@ -34,7 +35,9 @@ class ImageLoader(BaseLoader, mxBaseLoader):
             if total_pixels > MAX_IMAGE_PIXELS:
                 raise ValueError(f"Image too large: {width}x{height} pixels.")
 
-        with open(self.file_path, "rb") as fi:
+        R_FLAGS = os.O_RDONLY
+        MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+        with os.fdopen(os.open(self.file_path, R_FLAGS, MODES), 'rb') as fi:
             encode_content = str(base64.b64encode(fi.read()).decode())
 
         yield Document(page_content=encode_content, metadata={"source": os.path.basename(self.file_path),

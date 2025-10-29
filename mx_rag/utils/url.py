@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+import os
+import stat
 from typing import Dict, Iterator
 
 import urllib3
@@ -69,7 +71,9 @@ class RequestUtils:
     @staticmethod
     def _check_ca_content(ca_file: str):
         try:
-            with open(ca_file, "r") as f:
+            R_FLAGS = os.O_RDONLY
+            MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+            with os.fdopen(os.open(ca_file, R_FLAGS, MODES), 'r') as f:
                 ca_data = f.read()
         except FileNotFoundError as e:
             logger.error(f"Certificate file '{ca_file}' not found.")

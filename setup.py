@@ -32,7 +32,9 @@ def get_ci_version_info():
     version = '6.0.RC2'
     logging.info("get version from %s", ci_version_file)
     try:
-        with open(ci_version_file, 'r') as f:
+        R_FLAGS = os.O_RDONLY
+        MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+        with os.fdopen(os.open(ci_version_file, R_FLAGS, MODES), 'r') as f:
             config = yaml.safe_load(f)
             version = config['version']['mindx_sdk']
     except Exception as ex:
