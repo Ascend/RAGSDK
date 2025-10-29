@@ -3,6 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import io
 import os
+import stat
 from abc import ABC
 import zipfile
 import psutil
@@ -56,7 +57,9 @@ class BaseLoader(ABC):
                     return True
 
             # 嵌套深度检测
-            with open(self.file_path, "rb") as f:
+            R_FLAGS = os.O_RDONLY
+            MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+            with os.fdopen(os.open(self.file_path, R_FLAGS, MODES), 'rb') as f:
                 data = f.read()
                 depth = self._check_nested_depth(data)
                 if depth > self.MAX_NESTED_DEPTH:

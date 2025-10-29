@@ -4,6 +4,7 @@
 import json
 import os.path
 import random
+import stat
 
 from loguru import logger
 
@@ -23,7 +24,9 @@ class RuleComplexInstructionRewriter:
 
         SecFileCheck(requirement_path, MAX_FILE_SIZE_100M).check()
         try:
-            with open(requirement_path, encoding='utf-8') as out:
+            R_FLAGS = os.O_RDONLY
+            MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+            with os.fdopen(os.open(requirement_path, R_FLAGS, MODES), 'r', encoding='utf-8') as out:
                 self.requirements = json.load(out)
         except json.JSONDecodeError as json_err:
             logger.error(f"unable to load requirements, find JSONDecodeError: {json_err}")
@@ -37,7 +40,9 @@ class RuleComplexInstructionRewriter:
 
         SecFileCheck(paraphrase_path, MAX_FILE_SIZE_100M).check()
         try:
-            with open(paraphrase_path, encoding='utf-8') as out:
+            R_FLAGS = os.O_RDONLY
+            MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+            with os.fdopen(os.open(paraphrase_path, R_FLAGS, MODES), 'r', encoding='utf-8') as out:
                 requirement_paraphrase = json.load(out)
                 self.org2paraphrase = {}
                 for item in requirement_paraphrase:
