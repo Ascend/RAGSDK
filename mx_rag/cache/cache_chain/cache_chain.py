@@ -7,12 +7,8 @@ from loguru import logger
 
 from mx_rag.chain import Chain
 from mx_rag.cache import MxRAGCache
-from mx_rag.utils.common import validate_params, MAX_QUERY_LENGTH
+from mx_rag.utils.common import validate_params, MAX_QUERY_LENGTH, validate_sequence
 from mx_rag.llm.llm_parameter import LLMParameterConfig
-
-
-def _default_data_convert(data):
-    return data
 
 
 class CacheChainChat(Chain):
@@ -29,23 +25,24 @@ class CacheChainChat(Chain):
     @validate_params(
         cache=dict(validator=lambda x: isinstance(x, MxRAGCache), message="param must be instance of MxRAGCache"),
         chain=dict(validator=lambda x: isinstance(x, Chain), message="param must be instance of Chain"),
-        convert_data_to_cache=dict(validator=lambda x: isinstance(x, Callable),
-                                   message="param must be callable function"),
-        convert_data_to_user=dict(validator=lambda x: isinstance(x, Callable),
-                                  message="param must be callable function")
+        convert_data_to_cache=dict(validator=lambda x: isinstance(x, Callable) or x is None,
+                                   message="param must be callable function or None"),
+        convert_data_to_user=dict(validator=lambda x: isinstance(x, Callable) or x is None,
+                                  message="param must be callable function or None")
     )
     def __init__(self,
                  cache: MxRAGCache,
                  chain: Chain,
-                 convert_data_to_cache=_default_data_convert,
-                 convert_data_to_user=_default_data_convert):
+                 convert_data_to_cache=None,
+                 convert_data_to_user=None):
         self._cache = cache
         self._chain = chain
         self._convert_data_to_cache = convert_data_to_cache
         self._convert_data_to_user = convert_data_to_user
 
     @validate_params(
-        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH, message="param length range (0, 128*1024*1024]"),
+        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH,
+                  message=f"param length range (0, {MAX_QUERY_LENGTH}]"),
         llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig) or x is None,
                         message="param must be None or LLMParameterConfig")
     )
@@ -67,13 +64,11 @@ class CacheChainChat(Chain):
                 answer = json.loads(cache_ans)
                 if answer.get("query"):
                     answer["query"] = text
-                return self._convert_data_to_user(answer)
+                return self._data_to_user(answer)
             except json.JSONDecodeError as e:
-                # 当 cache_ans 不是有效的 JSON 时触发
                 logger.error(f"Failed to parse JSON: {e}")
                 return cache_ans
             except TypeError as e:
-                # 当 cache_ans 不是字符串时触发
                 logger.error(f"Type error: {e}")
                 return cache_ans
             except Exception as e:
@@ -88,6 +83,30 @@ class CacheChainChat(Chain):
             result = None
             for res in ans:
                 result = res
+        try:
+            res = json.dumps(self._data_to_cache(result))
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON:{e}")
+            return result
+        except Exception as e:
+            logger.error(f"Unexpected error:{e}")
+            return result
 
-        self._cache.update(query=text, answer=json.dumps(self._convert_data_to_cache(result)))
+        self._cache.update(query=text, answer=res)
         return result
+
+    def _data_to_cache(self, data):
+        if self._convert_data_to_cache is not None:
+            result = self._convert_data_to_cache(data)
+            return result
+
+        else:
+            return data
+
+    def _data_to_user(self, data):
+        if self._convert_data_to_user is not None:
+            result = self._convert_data_to_user(data)
+            return result
+
+        else:
+            return data

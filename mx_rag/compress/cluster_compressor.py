@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 from typing import List, Callable
+
 from langchain_text_splitters.base import TextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_core.embeddings import Embeddings
@@ -10,7 +11,8 @@ import numpy as np
 from loguru import logger
 
 from mx_rag.compress import PromptCompressor
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_DEVICE_ID, TEXT_MAX_LEN
+from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_DEVICE_ID, TEXT_MAX_LEN, \
+    MAX_CHUNKS_NUM
 
 
 class ClusterCompressor(PromptCompressor):
@@ -62,7 +64,7 @@ class ClusterCompressor(PromptCompressor):
         question=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= TEXT_MAX_LEN,
                       message=STR_TYPE_CHECK_TIP + f", and length range [1, {TEXT_MAX_LEN}]"),
         compress_rate=dict(validator=lambda x: isinstance(x, (float, int)) and 0 < x < 1,
-                         message=f"param must be float or int and value range (0, 1)"),
+                           message=f"param must be float or int and value range (0, 1)"),
     )
     def compress_texts(self,
                        context: str,
@@ -94,6 +96,15 @@ class ClusterCompressor(PromptCompressor):
         # 社区划分
         logger.info("Starting community division ")
         label = self.cluster_func(sentences_embedding)
+        if not isinstance(label, (np.ndarray, list)):
+            raise TypeError(f"callback function {self.cluster_func.__name__} "
+                            f"returned invalid result, must be np.ndarray")
+        if len(label) > MAX_CHUNKS_NUM:
+            raise ValueError(f"callback function {self.cluster_func.__name__} "
+                             f"returned invalid result, length exceeds {MAX_CHUNKS_NUM}.")
+        if not len(label) == len(sentences):
+            raise ValueError(f"callback function {self.cluster_func.__name__} returned invalid result."
+                             f" length must match sentences length {len(sentences)}.")
         # 压缩文本
         logger.info("Starting text compression ")
         compress_context = self._assemble_result(sentences, label, similarity, compress_rate)

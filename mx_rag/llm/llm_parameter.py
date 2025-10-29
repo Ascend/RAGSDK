@@ -28,8 +28,8 @@ class LLMParameterConfig:
                                message="param must be float or int and value range [-2.0, 2.0]"),
         temperature=dict(validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 2.0,
                          message="param must be float or int and value range [0.0, 2.0]"),
-        top_p=dict(validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 1.0,
-                   message="param must be float or int and value range [0.0, 1.0]"),
+        top_p=dict(validator=lambda x: isinstance(x, (float, int)) and 0.0 < x <= 1.0,
+                   message="param must be float or int and value range (0.0, 1.0]"),
         seed=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 <= x <= INT_32_MAX),
                   message="param must be None or int, and int value range [0, 2 ** 31 - 1]"),
         stream=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP)

@@ -18,13 +18,14 @@ class ClusterCompressorTestCase(unittest.TestCase):
     @patch('mx_rag.compress.ClusterCompressor._get_similarity')
     def test_success(self, mock_get_similarity):
         similarity = [0.3193, 0.4229, 0.453, 0.4077, 0.4092, 0.3833, 0.424, 0.4119, 0.381, 0.3884,
-                      0.3835, 0.4226, 0.4028, 0.445, 0.4233]
+                      0.3835, 0.4226, 0.4028, 0.445, 0.4233, 0.35]
         similarity = torch.Tensor(similarity)
         mock_get_similarity.return_value = similarity
         mock_embed = MagicMock(spec=Embeddings)
         mock_embed.embed_documents.return_value = [[random.random() for _ in range(4)] for _ in range(16)]
         mock_cluster_func = Mock()
-        mock_cluster_func.return_value = [-1, 0, -1, 0, -1, -1, 1, -1, -1, 0, 0, 1, -1, -1, -1]
+        mock_cluster_func.__name__ = "mock_cluster_func"
+        mock_cluster_func.return_value = [-1, 0, -1, 0, -1, -1, 1, -1, -1, 0, 0, 1, -1, -1, -1, 1]
 
         compressor = ClusterCompressor(mock_cluster_func, mock_embed)
         context = """近平指出，巴林是中国在海湾地区的好朋友、好伙伴。两国虽然国情不同，但始终以诚相待、友好相处。近年来，在我们共同引领下，中巴关系平稳健康发展。今年是中巴建交35周年，双方一致同意将中巴关系提升为全面战

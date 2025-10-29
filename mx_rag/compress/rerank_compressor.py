@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 
-from typing import List, Callable
 from langchain_text_splitters.base import TextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from loguru import logger

@@ -284,12 +284,23 @@ class BaseGenerator:
 
     def _encrypt(self, text):
         if self.encrypt_fn is not None:
-            return self.encrypt_fn(text)
+            result = self.encrypt_fn(text)
+            if isinstance(result, str) and 0 < len(result) <= STR_MAX_LEN:
+                return result
+            else:
+                raise ValueError(f"callback function {self.encrypt_fn.__name__} returned invalid result. "
+                                 f"Expected: str with length 0 < len <= {STR_MAX_LEN}.")
         else:
             return text
 
     def _decrypt(self, text):
         if self.decrypt_fn is not None:
-            return self.decrypt_fn(text)
+            result = self.decrypt_fn(text)
+            if isinstance(result, str) and 0 < len(result) <= STR_MAX_LEN:
+                return result
+            else:
+                raise ValueError(f"callback function {self.decrypt_fn.__name__} returned invalid result. "
+                                 f"Expected: str with length 0 < len <= {STR_MAX_LEN}.")
+
         else:
             return text

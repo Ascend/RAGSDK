@@ -4,6 +4,7 @@
 
 from typing import List, Callable, Union, Dict
 
+import numpy as np
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -30,7 +31,7 @@ class Retriever(BaseRetriever):
     )
     def _get_relevant_documents(self, query: str, *,
                                 run_manager: CallbackManagerForRetrieverRun = None) -> List[Document]:
-        embeddings = self.embed_func([query])
+        embeddings = self._safe_embed_func([query])
 
         if self.score_threshold is None:
             scores, indices = self.vector_store.search(embeddings, k=self.k, filter_dict=self.filter_dict)[:2]
@@ -67,3 +68,12 @@ class Retriever(BaseRetriever):
         if not docs:
             logger.warning("no relevant documents found!!!")
         return docs[:self.k]
+
+    def _safe_embed_func(self, *args, **kwargs):
+        embeddings = self.embed_func(*args, **kwargs)
+        if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0 and
+                isinstance(embeddings[0], (List, np.ndarray)) and len(embeddings[0]) > 0
+                and isinstance(embeddings[0][0], (float, np.floating))):
+            raise ValueError(f"callback function {self.embed_func.__name__} "
+                             f"returned invalid result, should be List[List[float]]")
+        return embeddings

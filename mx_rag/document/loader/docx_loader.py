@@ -3,7 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 
 import os
-from typing import Iterator, Callable
+from typing import Iterator
 
 from pathlib import Path
 import docx

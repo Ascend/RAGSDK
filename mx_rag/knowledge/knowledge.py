@@ -346,8 +346,8 @@ def _check_metadatas(metadatas) -> bool:
 
 def _check_embedding(embed_type, embeddings, texts, metadatas):
     if embed_type == "dense":
-        if not (isinstance(embeddings, List) and len(embeddings) > 0 and
-                isinstance(embeddings[0], List) and len(embeddings[0]) > 0
+        if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0 and
+                isinstance(embeddings[0], (List, np.ndarray)) and len(embeddings[0]) > 0
                 and isinstance(embeddings[0][0], (float, np.floating))):
             raise KnowledgeError("The data type of dense embedding should be List[List[float]]")
     if embed_type == "sparse":

@@ -11,7 +11,7 @@ from loguru import logger
 from langchain_core.retrievers import BaseRetriever
 
 from mx_rag.llm.text2text import _check_sys_messages
-from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, TEXT_MAX_LEN
+from mx_rag.utils.common import validate_params, BOOL_TYPE_CHECK_TIP, TEXT_MAX_LEN, MB
 from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.chain import Chain
 from mx_rag.llm import Text2TextLLM
@@ -31,6 +31,29 @@ TEXT_RAG_TEMPLATE = """You are an assistant for question-answering tasks.
 
 
 def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
+    """
+       默认的用户输入拼接逻辑。
+
+       参数说明：
+       ----------
+       query : str
+           用户原始提问内容。
+           例如：“请根据以下材料总结关键要点。”
+
+       docs : List[Document]
+           从检索器（retriever）返回的文档对象列表。
+           每个 Document 通常包含：
+           - page_content：文档内容文本；
+           - metadata：元信息（如来源、标题、分数等）。
+
+       prompt : str
+           系统预设提示词（例如 RAG 模板、任务指令）。
+           会追加到最后一个文档后面，用于指导模型生成更精确的回答。
+
+       返回：
+       -----
+       str : 拼接后的完整 prompt 文本，作为大模型输入内容。
+       """
     final_prompt = ""
     document_separator: str = "\n\n"
     if len(docs) != 0:
@@ -48,6 +71,18 @@ def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
     return final_prompt
 
 
+def _safe_call_builder(builder: Callable, *args, **kwargs) -> str:
+    """
+    安全地调用用户自定义的 content builder。
+    """
+    result = builder(*args, **kwargs)
+    if isinstance(result, str) and 0 < len(result) <= 4 * MB:
+        return result
+    else:
+        raise ValueError(f"callback function {builder.__name__} returned invalid result. "
+                         f"Expected: str with length 0 < len <= 4MB. fallback to default builder.")
+
+
 class SingleText2TextChain(Chain):
 
     @validate_params(
@@ -63,7 +98,7 @@ class SingleText2TextChain(Chain):
                                   "k-v of dict: len(k) <=16 and len(v) <= 4 * MB"),
         source=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
         user_content_builder=dict(validator=lambda x: isinstance(x, Callable),
-                                  message="param must be Callable[[str, List[Document], str], str]"),
+                                  message="param must be Callable"),
 
     )
     def __init__(self, llm: Text2TextLLM,
@@ -72,7 +107,7 @@ class SingleText2TextChain(Chain):
                  prompt: str = DEFAULT_RAG_PROMPT,
                  sys_messages: List[dict] = None,
                  source: bool = True,
-                 user_content_builder: Callable[[str, List[Document], str], str] = _user_content_builder):
+                 user_content_builder: Callable = _user_content_builder):
         super().__init__()
         self._retriever = retriever
         self._reranker = reranker
@@ -104,7 +139,10 @@ class SingleText2TextChain(Chain):
             scores = self._reranker.rerank(question, [doc.page_content for doc in q_docs])
             q_docs = self._reranker.rerank_top_k(q_docs, scores)
 
-        q_with_prompt = self._user_content_builder(question, copy.deepcopy(q_docs), self._prompt)
+        q_with_prompt = _safe_call_builder(self._user_content_builder,
+                                           question,
+                                           copy.deepcopy(q_docs),
+                                           self._prompt)
 
         if not llm_config.stream:
             return self._do_query(q_with_prompt, llm_config, question=question, q_docs=q_docs)

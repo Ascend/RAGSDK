@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-from typing import Callable
 from sqlalchemy import Column, Integer, String, JSON, DateTime, text, Index, TEXT
 from sqlalchemy.orm import declarative_base
-from loguru import logger
 
 Base = declarative_base()
 
