@@ -3,7 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import os
 import json
-from typing import List, Optional
+from typing import List, Optional, Callable
 from pathlib import Path
 
 from loguru import logger
@@ -29,22 +29,9 @@ from mx_rag.graphrag.graph_rag_model import GraphRAGModel
 from mx_rag.graphrag.vector_stores.vector_store_wrapper import VectorStoreWrapper
 from mx_rag.document import LoaderMng
 from mx_rag.llm import Text2TextLLM
-from mx_rag.utils.common import validate_params, FileCheck, TEXT_MAX_LEN, GRAPH_FILE_LIMIT
+from mx_rag.utils.common import validate_params, FileCheck, TEXT_MAX_LEN, GRAPH_FILE_LIMIT, write_to_json
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.file_check import check_disk_free_space, FileCheckError, SecFileCheck
-
-
-def save_to_json(data, file_path: str):
-    try:
-        FileCheck.check_input_path_valid(file_path)
-        FileCheck.check_filename_valid(file_path)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4, ensure_ascii=False)
-    except OSError as e:
-        logger.error(f"Error creating directory or writing file {file_path}: {e}")
-    except Exception as e:
-        logger.error(f"Error saving JSON data to {file_path}: {e}")
 
 
 class GraphRAGError(Exception):
@@ -79,10 +66,15 @@ class GraphRAGPipeline:
         graph_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 256 and x.isidentifier(),
                         message="graph_name must be a str and length range [1, 255]"),
         graph_type=dict(validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
-                        message="graph_type must be 'networkx' or 'opengauss'")
+                        message="graph_type must be 'networkx' or 'opengauss'"),
+        encrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                        message="encrypt_fn must be None or callable function"),
+        decrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
+                        message="decrypt_fn must be None or callable function")
     )
     def __init__(self, work_dir: str, llm, embedding_model, dim: int, rerank_model: Reranker = None,
-                 graph_type="networkx", graph_name: str = "graph", **kwargs):
+                 graph_type="networkx", graph_name: str = "graph", encrypt_fn=None,
+                 decrypt_fn=None, **kwargs):
         FileCheck.check_input_path_valid(work_dir)
         FileCheck.check_filename_valid(work_dir)
         if check_disk_free_space(work_dir, self.FREE_SPACE_LIMIT):
@@ -91,7 +83,10 @@ class GraphRAGPipeline:
         self.graph_name = graph_name
         self.graph_conf = None
         self._setup_save_path(self.graph_name)
-        self._setup_graph(self.graph_name, graph_type, **kwargs)
+        self.graph_type = graph_type
+        self.encrypt_fn = encrypt_fn
+        self.decrypt_fn = decrypt_fn
+        self._setup_graph(self.graph_name, **kwargs)
         self.llm = llm
         self.embedding_model = embedding_model
         self.rerank_model = rerank_model
@@ -170,12 +165,12 @@ class GraphRAGPipeline:
             )
             relations = extractor.query(self.docs)
             self.docs = []
-            save_to_json(relations, self.relations_save_path)
+            write_to_json(self.relations_save_path, relations, self.encrypt_fn)
             logger.info(f"Relations saved: {self.relations_save_path}")
 
             merger = GraphMerger(self.graph)
             merger.merge(relations, lang)
-            merger.save_graph(self.graph_save_path)
+            merger.save_graph(self.graph_save_path, self.encrypt_fn)
 
             if conceptualize:
                 self._process_concepts_and_clusters(lang, top_k, threshold)
@@ -192,26 +187,22 @@ class GraphRAGPipeline:
     @validate_params(
         question=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
                       message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"))
-    def retrieve_graph(self, graph_name, graph_type, question: str, **kwargs):
+    def retrieve_graph(self, graph_name, question: str, **kwargs):
         if self.graph.number_of_nodes() == 0:
             raise GraphRAGError("Empty graph, first build the graph")
 
-        return self.as_retriever(graph_name, graph_type, **kwargs).invoke(question)
+        return self.as_retriever(graph_name, **kwargs).invoke(question)
 
     @validate_params(
         graph_name=dict(
             validator=lambda x: isinstance(x, str) and x.isidentifier() and 0 < len(x) < 256,
             message="param must be a str and its length meets [1, 255], "
                     "and only contains letters, _ and digits."
-        ),
-        graph_type=dict(
-            validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
-            message="param only takes from 'networkx' or 'opengauss'"
         )
     )
-    def as_retriever(self, graph_name, graph_type, **kwargs):
+    def as_retriever(self, graph_name, **kwargs):
         self._setup_save_path(graph_name)
-        self._setup_graph(graph_name, graph_type)
+        self._setup_graph(graph_name)
 
         use_text = kwargs.pop("use_text", True)
         batch_size = kwargs.pop("batch_size", 512)
@@ -264,12 +255,10 @@ class GraphRAGPipeline:
         elif not isinstance(self.concept_vector_store, VectorStore):
             raise GraphRAGError("concept_vector_store must be an instance of VectorStore")
 
-    def _setup_graph(self, graph_name, graph_type, **kwargs):
-        if not isinstance(graph_type, str) or graph_type not in ["networkx", "opengauss"]:
-            raise GraphRAGError("graph client supports only networkx or opengauss")
-        if graph_type == "networkx":
-            self.graph = NetworkxGraph(path=self.graph_save_path)
-        elif self.graph_conf is None:
+    def _setup_graph(self, graph_name, **kwargs):
+        if self.graph_type == "networkx":
+            self.graph = NetworkxGraph(path=self.graph_save_path, decrypt_fn=self.decrypt_fn)
+        else:
             if "graph_conf" not in kwargs:
                 raise GraphRAGError("graph_conf must be specified in case of opengauss graph")
             self.graph_conf = kwargs.pop("graph_conf")
@@ -281,7 +270,6 @@ class GraphRAGPipeline:
         self.graph_save_path = os.path.join(self.work_dir, f"{graph_name}.json")
         self.relations_save_path = os.path.join(self.work_dir, f"{graph_name}_relations.json")
         self.concepts_save_path = os.path.join(self.work_dir, f"{graph_name}_concepts.json")
-        self.concept_cluster_path = os.path.join(self.work_dir, f"{graph_name}_concept_clusters.json")
         self.synset_save_path = os.path.join(self.work_dir, f"{graph_name}_synset.json")
         self.node_vectors_path = os.path.join(self.work_dir, f"{graph_name}_node_vectors.index")
         self.concept_vectors_path = os.path.join(self.work_dir, f"{graph_name}_concept_vectors.index")
@@ -297,7 +285,7 @@ class GraphRAGPipeline:
             lang=lang,
             prompts=self.conceptualizer_prompts,
         ).conceptualize()
-        save_to_json(concepts, self.concepts_save_path)
+        write_to_json(self.concepts_save_path, concepts, self.encrypt_fn)
         logger.info(f"Concepts saved: {self.concepts_save_path}")
 
         embeddings = self.concept_embedding.embed(concepts)
@@ -305,9 +293,9 @@ class GraphRAGPipeline:
         graph = NetworkxGraph(is_digraph=False)
         cluster = ConceptCluster(vector_store=vector_store_wrapper, graph=graph)
         clusters = cluster.find_clusters(embeddings, top_k=top_k, threshold=threshold)
-        save_to_json([list(c) for c in clusters], self.synset_save_path)
+        write_to_json(self.synset_save_path, [list(c) for c in clusters], self.encrypt_fn)
         logger.info(f"Clusters saved: {self.synset_save_path}")
 
         merger = ConceptGraphMerger(self.graph)
         merger.merge_concepts_and_synset(concepts, clusters)
-        merger.save_graph(self.graph_save_path)
+        merger.save_graph(self.graph_save_path, self.encrypt_fn)

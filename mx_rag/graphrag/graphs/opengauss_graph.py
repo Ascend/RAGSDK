@@ -5,7 +5,7 @@
 import json
 import re
 import hashlib
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, Callable
 from typing import Any
 
 import networkx as nx
@@ -15,8 +15,7 @@ from tqdm import tqdm
 
 from mx_rag.graphrag.graphs.graph_store import GraphStore
 from mx_rag.graphrag.graphs.graph_util import OpenGaussAGEAdapter, CypherQueryBuilder, cypher_value
-from mx_rag.utils.file_check import FileCheck
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, write_to_json
 
 
 class OpenGaussGraph(GraphStore):
@@ -50,11 +49,12 @@ class OpenGaussGraph(GraphStore):
         query = CypherQueryBuilder.merge_node(attributes)
         self.graph_adapter.execute_cypher_query(query)
 
-    def save(self, output_path: str) -> None:
+    def save(self, output_path: str, encrypt_fn: Callable = None) -> None:
         """
         Export the graph's nodes and edges in node-link format to a JSON file.
 
         Args:
+            encrypt_fn: function to encrypt text
             output_path: Path to the output JSON file.
         """
         # Get all nodes with data
@@ -88,19 +88,12 @@ class OpenGaussGraph(GraphStore):
             "nodes": node_list,
             "links": edges,
         }
-        FileCheck.check_input_path_valid(output_path, check_blacklist=True)
-        FileCheck.check_filename_valid(output_path)
-        try:
-            with open(output_path, "w", encoding="utf-8") as f:
-                json.dump(graph_data, f, ensure_ascii=False, indent=2)
-        except (OSError, IOError) as e:
-            logger.error(f"Error saving graph to {output_path}: {e}")
-        except (TypeError, ValueError) as e:
-            logger.error(f"Error serializing graph data to {output_path}: {e}")
+        write_to_json(output_path, graph_data, encrypt_fn)
+        logger.info(f"Graph saved to: {output_path}")
 
     @validate_params(nodes=dict(validator=lambda x: len(x) < 10000, message="Node label list is too long."))
     def add_nodes_from(
-        self, nodes: Iterable[Union[str, Tuple[str, Dict[str, Any]]]], **common_attrs: Any
+            self, nodes: Iterable[Union[str, Tuple[str, Dict[str, Any]]]], **common_attrs: Any
     ) -> None:
         """
         Add multiple nodes, optionally with attributes.
@@ -161,7 +154,7 @@ class OpenGaussGraph(GraphStore):
         query = CypherQueryBuilder.match_node_attribute(label, key)
         result = self.graph_adapter.execute_cypher_query(query)
         return result[0]['value'] if result else None
-    
+
     def set_node_attributes(self, attributes: Dict[Any, Any], name: str) -> None:
         """
         Set node attributes for multiple nodes.
@@ -181,7 +174,7 @@ class OpenGaussGraph(GraphStore):
             "{" + f'label: "{item["label"]}", value: {json.dumps(item["value"])}' + "}" for item in props
         ) + "]"
         query = CypherQueryBuilder.set_node_attributes(name, cypher_list)
-        self.graph_adapter.execute_cypher_query(query) 
+        self.graph_adapter.execute_cypher_query(query)
 
     def update_node_attribute(self, node: str, key: str, value: Any, append: bool = False) -> None:
         """
@@ -241,7 +234,7 @@ class OpenGaussGraph(GraphStore):
         current_attrs = {}
         if append:
             current_attrs = {nid: self.get_node_attributes(node_label) or {}
-                            for node_label, nid in zip([n for n, _ in node_updates], node_ids)}
+                             for node_label, nid in zip([n for n, _ in node_updates], node_ids)}
 
         unwind_data = []
         for (node_label, attrs), nid in zip(node_updates, node_ids):
@@ -261,7 +254,7 @@ class OpenGaussGraph(GraphStore):
         # Batch processing
         total_batches = (len(unwind_data) + batch_size - 1) // batch_size
         for i in tqdm(range(0, len(unwind_data), batch_size), total=total_batches, desc="Updating node attributes"):
-            batch = unwind_data[i:i+batch_size]
+            batch = unwind_data[i:i + batch_size]
             cypher_list = "[" + ", ".join(
                 "{" + ", ".join(f"{k}: {json.dumps(v)}" for k, v in d.items()) + "}"
                 for d in batch
@@ -325,7 +318,7 @@ class OpenGaussGraph(GraphStore):
 
         unwind_data = []
         for (_, _, attrs), (uid, vid) in tqdm(
-            zip(edge_updates, edge_ids), total=len(edge_ids), desc="Preparing unwind data"
+                zip(edge_updates, edge_ids), total=len(edge_ids), desc="Preparing unwind data"
         ):
             edge_dict = {"start_id": uid, "end_id": vid}
             current = current_attrs.get((uid, vid), {})
@@ -342,7 +335,7 @@ class OpenGaussGraph(GraphStore):
         # Batch processing
         total_batches = (len(unwind_data) + batch_size - 1) // batch_size
         for i in tqdm(range(0, len(unwind_data), batch_size), total=total_batches, desc="Updating edge attributes"):
-            batch = unwind_data[i:i+batch_size]
+            batch = unwind_data[i:i + batch_size]
             cypher_list = "[" + ", ".join(
                 "{" + ", ".join(f"{k}: {json.dumps(v)}" for k, v in d.items()) + "}"
                 for d in batch
@@ -434,8 +427,8 @@ class OpenGaussGraph(GraphStore):
 
     @validate_params(edges=dict(validator=lambda x: len(x) < 10000, message="Too many edges."))
     def add_edges_from(
-        self,
-        edges: Iterable[Union[Tuple[str, str], Tuple[str, str, Optional[Dict[str, Any]]]]]
+            self,
+            edges: Iterable[Union[Tuple[str, str], Tuple[str, str, Optional[Dict[str, Any]]]]]
     ) -> None:
         """
         Add multiple edges.
@@ -495,7 +488,7 @@ class OpenGaussGraph(GraphStore):
             raise
 
     def get_edge_attributes(
-        self, u: str, v: str, key: Optional[str] = None
+            self, u: str, v: str, key: Optional[str] = None
     ) -> Union[Dict[str, Any], Any, None]:
         """
         Retrieve edge attributes or a specific attribute.
@@ -517,7 +510,7 @@ class OpenGaussGraph(GraphStore):
         return result[0]['props'] if result else None
 
     def update_edge_attribute(
-        self, u: str, v: str, key: str, value: Any, append: bool = False
+            self, u: str, v: str, key: str, value: Any, append: bool = False
     ) -> None:
         """
         Update or append an edge attribute.
@@ -536,7 +529,7 @@ class OpenGaussGraph(GraphStore):
             self.graph_adapter.execute_cypher_query(query)
 
     def get_edges(
-        self, with_data: bool = True
+            self, with_data: bool = True
     ) -> Union[List[Tuple[Any, Any]], List[Tuple[Any, Any, Dict[str, Any]]]]:
         """
         Return all edges, optionally with attributes.
@@ -616,7 +609,7 @@ class OpenGaussGraph(GraphStore):
         """
         query = CypherQueryBuilder.neighbors(hashlib.sha256(node.encode("utf-8")).hexdigest())
         result = self.graph_adapter.execute_cypher_query(query)
-        return [row['label']for row in result]
+        return [row['label'] for row in result]
 
     def successors(self, node: str) -> List[str]:
         """
@@ -693,7 +686,7 @@ class OpenGaussGraph(GraphStore):
             return self._find_weakly_connected_components()
         else:
             return self._find_strongly_connected_components()
-        
+
     def create_index_for_edge(self):
         """
         Efficiently create indexes on the start_id and end_id columns for a given edge relation.
@@ -703,15 +696,15 @@ class OpenGaussGraph(GraphStore):
         if not relations:
             logger.info("No edge relations found, skipping index creation")
             return
-            
+
         successful_indexes = []
         failed_relations = []
-        
+
         for relation in relations:
             success = self._create_relation_indexes(relation, successful_indexes, failed_relations)
             if not success:
                 logger.warning(f"Failed to create indexes for relation '{relation}'")
-        
+
         logger.info(f"Index creation completed. Success: {len(successful_indexes)}, Failed: {len(failed_relations)}")
 
     def create_index_for_node(self):
@@ -720,12 +713,12 @@ class OpenGaussGraph(GraphStore):
         Handles CREATE INDEX CONCURRENTLY outside of a transaction block.
         """
         index_definitions = self._get_node_index_definitions()
-        
+
         for index_name, query, is_concurrent in index_definitions:
             success = self._create_single_node_index(query, is_concurrent, index_name)
             if not success:
                 logger.warning(f"Failed to create index: {index_name}")
-        
+
     def reset(self) -> None:
         """
         Efficiently reset the graph: drop and recreate all nodes and edges, with logging.
@@ -769,12 +762,12 @@ class OpenGaussGraph(GraphStore):
             return []
 
         return [(row['source'], row['relation'], row['target']) for row in edge_rows]
-    
+
     def get_subgraph_edges(
-        self, nodes: Iterable[str], with_data: bool = True
+            self, nodes: Iterable[str], with_data: bool = True
     ) -> Union[List[Tuple[str, str]], List[Tuple[str, str, Dict[str, Any]]]]:
         raise NotImplementedError
-    
+
     def _get_node_index_definitions(self) -> List[Tuple[str, str, bool]]:
         """Get all node index definitions with their configurations."""
         return [
@@ -784,7 +777,7 @@ class OpenGaussGraph(GraphStore):
                 False
             ),
             (
-                "index_graph_node_prop", 
+                "index_graph_node_prop",
                 f"CREATE INDEX IF NOT EXISTS index_graph_node_prop ON {self.graph_name}.\"Node\" "
                 f"USING gin (properties);",
                 False
@@ -843,7 +836,7 @@ class OpenGaussGraph(GraphStore):
         except Exception as e:
             self.graph_adapter.connection.rollback()
             raise e
-    
+
     def _generate_safe_index_prefix(self, relation: str) -> str:
         """Generate a safe and unique index prefix for a relation."""
         safe_prefix = re.sub(r'\W|^(?=\d)', '_', relation.lower())
@@ -860,15 +853,15 @@ class OpenGaussGraph(GraphStore):
         ]
 
     def _create_relation_indexes(
-        self, 
-        relation: str, 
-        successful_indexes: List[str], 
-        failed_relations: List[str]
+            self,
+            relation: str,
+            successful_indexes: List[str],
+            failed_relations: List[str]
     ) -> bool:
         """Create indexes for a single relation. Returns True if successful."""
         index_prefix = self._generate_safe_index_prefix(relation)
         index_queries = self._build_index_queries(relation, index_prefix)
-        
+
         try:
             self._execute_index_queries(index_queries)
             successful_indexes.extend([f"index_{index_prefix}_start", f"index_{index_prefix}_end"])
@@ -923,7 +916,7 @@ class OpenGaussGraph(GraphStore):
             visited.update(component)
 
         return components
-    
+
     def _find_strongly_connected_components(self) -> List[Set[Any]]:
         """
         Find strongly connected components in the directed graph.

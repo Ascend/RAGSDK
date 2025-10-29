@@ -33,7 +33,7 @@ class TestOpenGaussGraph(unittest.TestCase):
     def test_save_writes_json(self):
         self.graph.get_nodes = MagicMock(return_value=[("foo", {"id": "id1", "text": "foo"})])
         self.graph.get_edges = MagicMock(return_value=[("foo", "bar", {"start_id": "id1", "end_id": "id2"})])
-        with patch("builtins.open", unittest.mock.mock_open()) as m:
+        with patch("os.fdopen", unittest.mock.mock_open()) as m:
             self.graph.save("dummy.json")
             handle = m()
             written = "".join(call.args[0] for call in handle.write.call_args_list)
