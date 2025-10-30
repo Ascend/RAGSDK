@@ -3,7 +3,7 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
 
 from collections import Counter
-from typing import Any, Dict, List, Callable
+from typing import Any, Dict, List, Callable, Set
 from loguru import logger
 from tqdm import tqdm
 
@@ -36,7 +36,7 @@ class ConceptGraphMerger:
         return [c for c in dict.fromkeys(map(str.strip, concepts_str.split(","))) if c]
 
     def merge_concepts_and_synset(
-            self, concept_data: List[Dict[str, Any]], synset_list: List[List[str]]
+            self, concept_data: List[Dict[str, Any]], synset_list: List[Set[str]]
     ) -> None:
         self._process_concept_data(concept_data)
         self._process_synset(synset_list)

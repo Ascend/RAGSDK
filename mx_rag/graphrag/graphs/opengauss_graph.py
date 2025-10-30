@@ -910,7 +910,7 @@ class OpenGaussGraph(GraphStore):
                 f"RETURN DISTINCT n.text AS label"
             )
             result = self.graph_adapter.execute_cypher_query(query)
-            component = set([node])
+            component = {node}
             component.update(row['label'] for row in result)
             components.append(component)
             visited.update(component)

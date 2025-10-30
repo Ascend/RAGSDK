@@ -58,7 +58,7 @@ class GraphStore(ABC):
         pass
 
     @abstractmethod
-    def add_edges_from(self, edges: Iterable[Tuple[str, str, Optional[Dict[str, Any]]]]) -> None:
+    def add_edges_from(self, edges: Iterable[Tuple[str, str]]) -> None:
         pass
 
     @abstractmethod
