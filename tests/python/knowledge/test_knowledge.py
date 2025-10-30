@@ -72,11 +72,11 @@ class TestKnowledge(unittest.TestCase):
                                     white_paths=[top_path, ], user_id="user123")
         self.assertEqual(knowledge_db1.get_all_documents()[0].knowledge_name, "test_knowledge")
         self.assertEqual(knowledge_db1.get_all_documents()[0].document_name, "doc_name")
-        self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), ["test_knowledge"])
+        self.assertEqual(knowledge_store._get_all_knowledge_name('user123'), ["test_knowledge"])
 
         # 删除文档后, 只剩下空的knowledge
         knowledge.delete_file("test.md")
-        self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), ["test_knowledge"])
+        self.assertEqual(knowledge_store._get_all_knowledge_name('user123'), ["test_knowledge"])
         self.assertEqual(knowledge_store.get_all_usr_role_by_knowledge("test_knowledge"),
                          {'user000': 'member', 'user123': 'admin', 'user124': 'admin'})
         self.assertEqual(knowledge_store.get_all_usr_role_by_knowledge("test_knowledge001"), {})
@@ -89,7 +89,7 @@ class TestKnowledge(unittest.TestCase):
             knowledge_store.delete_usr_id_from_knowledge("test_knowledge001", "user123", 'admin')
 
         knowledge_db1.delete_all()
-        self.assertEqual(knowledge_store.get_all_knowledge_name('user123'), [])
+        self.assertEqual(knowledge_store._get_all_knowledge_name('user123'), [])
 
     def test_check_embedding(self):
         dense = [[0.1, 0.2], [0.3, 0.4]]

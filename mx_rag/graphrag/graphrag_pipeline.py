@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 import os
-import json
 from typing import List, Optional, Callable
 from pathlib import Path
 
@@ -47,8 +46,15 @@ class GraphRetriever(BaseRetriever):
                    message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]")
     )
     def _get_relevant_documents(self, query: str, *,
-                                run_manager: Optional[CallbackManagerForRetrieverRun] = None) -> List:
+                                run_manager: Optional[CallbackManagerForRetrieverRun] = None) -> str:
         return self.graph_rag_model.generate([query])[0]
+
+
+def _validate_devs_int(devs):
+    if not isinstance(devs, list):
+        raise ValueError("devs must be list[int]")
+    if not (len(devs) == 1 and isinstance(devs[0], int)):
+        raise ValueError("devs must be a list and contain one int.")
 
 
 class GraphRAGPipeline:
@@ -99,6 +105,7 @@ class GraphRAGPipeline:
         self.concept_vector_store = None
         self.node_vector_store = None
         self.devs: List[int] = kwargs.pop("devs", [0])
+        _validate_devs_int(self.devs)
         self._init_vector_store(**kwargs)
 
     @validate_params(

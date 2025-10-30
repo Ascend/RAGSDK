@@ -94,7 +94,7 @@ class KnowledgeStore:
                     raise KnowledgeError(f"knowledge_name={knowledge_name}, user_id={user_id} does not exist in "
                                          f"knowledge_table, please use add_knowledge or add_usr_id_to_knowledge"
                                          f" function to add them")
-                if not self.check_usr_role_is_admin(knowledge_name, user_id):
+                if not self._check_usr_role_is_admin(knowledge_name, user_id):
                     raise KnowledgeError(f"(user_id={user_id}) is not admin, can not add document")
                 knowledge_id = knowledge.knowledge_id
                 # 创建新的文档
@@ -125,7 +125,7 @@ class KnowledgeStore:
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_-]{6,64}$'")
     )
     def delete_doc_info(self, knowledge_name: str, doc_name: str, user_id: str):
-        if not self.check_usr_role_is_admin(knowledge_name, user_id):
+        if not self._check_usr_role_is_admin(knowledge_name, user_id):
             raise KnowledgeError(f"(user_id={user_id}) is not admin, can not delete document")
         with self.session() as session:
             try:
@@ -198,7 +198,7 @@ class KnowledgeStore:
         knowledge_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= 1024,
                             message=STR_TYPE_CHECK_TIP_1024)
     )
-    def check_usr_role_is_admin(self, knowledge_name: str, user_id: str) -> bool:
+    def _check_usr_role_is_admin(self, knowledge_name: str, user_id: str) -> bool:
         with self.session() as session:
             knowledge = session.query(KnowledgeModel).filter_by(knowledge_name=knowledge_name, user_id=user_id).first()
             if not knowledge:
@@ -305,13 +305,13 @@ class KnowledgeStore:
                             message=STR_TYPE_CHECK_TIP_1024)
     )
     def check_knowledge_exist(self, knowledge_name: str, user_id: str) -> bool:
-        return knowledge_name in self.get_all_knowledge_name(user_id)
+        return knowledge_name in self._get_all_knowledge_name(user_id)
 
     @validate_params(
         user_id=dict(validator=lambda x: isinstance(x, str) and bool(re.fullmatch(r'^[a-zA-Z0-9_-]{6,64}$', x)),
                      message="param must meets: Type is str, match '^[a-zA-Z0-9_-]{6,64}$'")
     )
-    def get_all_knowledge_name(self, user_id: str) -> List[str]:
+    def _get_all_knowledge_name(self, user_id: str) -> List[str]:
         knowledge_list = self.get_all_knowledge_info(user_id)
         knowledge_name_list = [knowledge.knowledge_name for knowledge in knowledge_list]
         return knowledge_name_list
