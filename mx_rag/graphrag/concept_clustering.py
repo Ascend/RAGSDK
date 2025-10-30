@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Set
 import numpy as np
 from loguru import logger
 from tqdm import tqdm
@@ -54,7 +54,7 @@ class ConceptCluster:
         concept_embeddings: Dict[str, np.ndarray],
         top_k: int = 5,
         threshold: float = 0.5,
-    ) -> List[List[str]]:
+    ) -> List[Set[str]]:
         if not concept_embeddings:
             logger.warning("No concept embeddings provided.")
             return []
