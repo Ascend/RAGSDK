@@ -71,9 +71,7 @@ class Retriever(BaseRetriever):
 
     def _safe_embed_func(self, *args, **kwargs):
         embeddings = self.embed_func(*args, **kwargs)
-        if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0 and
-                isinstance(embeddings[0], (List, np.ndarray)) and len(embeddings[0]) > 0
-                and isinstance(embeddings[0][0], (float, np.floating))):
+        if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0):
             raise ValueError(f"callback function {self.embed_func.__name__} "
-                             f"returned invalid result, should be List[List[float]]")
+                             f"returned invalid result, should be Union[List[List[float]], List[Dict[int, float]]]")
         return embeddings

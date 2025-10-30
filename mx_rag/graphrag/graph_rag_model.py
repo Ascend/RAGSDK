@@ -15,7 +15,6 @@ from mx_rag.graphrag.graphs.opengauss_graph import OpenGaussGraph
 from mx_rag.graphrag.prompts.evaluate_qa import TEXT_RAG_TEMPLATE
 from mx_rag.graphrag.qa_base_model import QABaseModel
 from mx_rag.graphrag.vector_stores.vector_store_wrapper import VectorStoreWrapper
-from mx_rag.knowledge.knowledge import _check_embedding
 from mx_rag.llm import LLMParameterConfig, Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.utils.common import validate_params
@@ -102,11 +101,9 @@ class GraphRAGModel(QABaseModel):
 
     def _safe_embed_func(self, *args, **kwargs):
         embeddings = self.embed_func(*args, **kwargs)
-        if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0 and
-                isinstance(embeddings[0], (List, np.ndarray)) and len(embeddings[0]) > 0
-                and isinstance(embeddings[0][0], (float, np.floating))):
+        if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0):
             raise ValueError(f"callback function {self.embed_func.__name__}"
-                             f" returned invalid result, should be List[List[float]]")
+                             f" returned invalid result, should be List[Any]]")
         return embeddings
 
     def search_index(self, query, top_k) -> List[str]:
