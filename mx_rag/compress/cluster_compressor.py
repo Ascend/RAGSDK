@@ -27,7 +27,7 @@ class ClusterCompressor(PromptCompressor):
                       message="param must be instance of LangChain's TextSplitter or None"),
     )
     def __init__(self,
-                 cluster_func: Callable[[List[List[float]]],  Union[List[int], np.ndarray]],
+                 cluster_func: Callable[[List[List[float]]], Union[List[int], np.ndarray]],
                  embed: Embeddings,
                  splitter: TextSplitter = None,
                  dev_id: int = 0,
