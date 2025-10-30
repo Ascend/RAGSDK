@@ -103,7 +103,7 @@ class GraphRAGModel(QABaseModel):
         embeddings = self.embed_func(*args, **kwargs)
         if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0):
             raise ValueError(f"callback function {self.embed_func.__name__}"
-                             f" returned invalid result, should be List[Any]]")
+                             f" returned invalid result, should be List[Any]")
         return embeddings
 
     def search_index(self, query, top_k) -> List[str]:
