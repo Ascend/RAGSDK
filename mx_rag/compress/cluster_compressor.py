@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-from typing import List, Callable
+from typing import List, Callable, Union
 
 from langchain_text_splitters.base import TextSplitter
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -22,12 +22,12 @@ class ClusterCompressor(PromptCompressor):
         embed=dict(validator=lambda x: isinstance(x, Embeddings),
                    message="param must be instance of LangChain's Embeddings"),
         cluster_func=dict(validator=lambda x: isinstance(x, Callable),
-                          message="param must be Callable[[List[List[float]]], List[int]] function"),
+                          message="param must be Callable[[List[List[float]]], Union[List[int], np.ndarray]] function"),
         splitter=dict(validator=lambda x: isinstance(x, TextSplitter) or x is None,
                       message="param must be instance of LangChain's TextSplitter or None"),
     )
     def __init__(self,
-                 cluster_func: Callable[[List[List[float]]], List[int]],
+                 cluster_func: Callable[[List[List[float]]], Union[List[int], np.ndarray]],
                  embed: Embeddings,
                  splitter: TextSplitter = None,
                  dev_id: int = 0,
@@ -98,7 +98,7 @@ class ClusterCompressor(PromptCompressor):
         label = self.cluster_func(sentences_embedding)
         if not isinstance(label, (np.ndarray, list)):
             raise TypeError(f"callback function {self.cluster_func.__name__} "
-                            f"returned invalid result, must be np.ndarray")
+                            f"returned invalid result, must be List[int] or np.ndarray")
         if len(label) > MAX_CHUNKS_NUM:
             raise ValueError(f"callback function {self.cluster_func.__name__} "
                              f"returned invalid result, length exceeds {MAX_CHUNKS_NUM}.")
