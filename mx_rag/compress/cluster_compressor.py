@@ -22,7 +22,7 @@ class ClusterCompressor(PromptCompressor):
         embed=dict(validator=lambda x: isinstance(x, Embeddings),
                    message="param must be instance of LangChain's Embeddings"),
         cluster_func=dict(validator=lambda x: isinstance(x, Callable),
-                          message="param must be Callable[[List[List[float]]],  Union[List[int], np.ndarray]] function"),
+                          message="param must be Callable[[List[List[float]]], Union[List[int], np.ndarray]] function"),
         splitter=dict(validator=lambda x: isinstance(x, TextSplitter) or x is None,
                       message="param must be instance of LangChain's TextSplitter or None"),
     )
