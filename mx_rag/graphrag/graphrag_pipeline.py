@@ -81,7 +81,7 @@ class GraphRAGPipeline:
     def __init__(self, work_dir: str, llm, embedding_model, dim: int, rerank_model: Reranker = None,
                  graph_type="networkx", graph_name: str = "graph", encrypt_fn=None,
                  decrypt_fn=None, **kwargs):
-        FileCheck.check_input_path_valid(work_dir)
+        FileCheck.check_input_path_valid(work_dir, check_blacklist=True)
         FileCheck.check_filename_valid(work_dir)
         if check_disk_free_space(work_dir, self.FREE_SPACE_LIMIT):
             raise StorageError("Insufficient remaining space, please clear disk space")
