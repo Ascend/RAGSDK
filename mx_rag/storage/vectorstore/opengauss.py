@@ -166,9 +166,9 @@ class OpenGaussDB(VectorStore):
                                     message="param requires to be None or int"),
                     sparse_dim=dict(validator=lambda x: isinstance(x, int) and x >= 0,
                                     message="param requires to be int"),
-                    params=dict(validator=lambda x: x is None or isinstance(x, dict) and validate_sequence(x),
+                    params=dict(validator=lambda x: x is None or (isinstance(x, dict) and validate_sequence(x, max_check_depth=2)),
                                 message="params requires to be None or dict")
-                     )
+    )
     def create_collection(
             self,
             dense_dim: Optional[int] = None,
