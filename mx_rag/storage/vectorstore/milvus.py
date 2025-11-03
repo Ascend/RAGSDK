@@ -183,7 +183,7 @@ class MilvusDB(VectorStore):
     @validate_params(
         x_dim=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
                    message="param value range (0, 1024 * 1024]"),
-        params=dict(validator=lambda x: x is None or isinstance(x, dict) and validate_sequence(x),
+        params=dict(validator=lambda x: x is None or (isinstance(x, dict) and validate_sequence(x, max_check_depth=2)),
                     message="params requires to be None or dict")
     )
     def create_collection(self, x_dim: Optional[int] = None, params=None):
