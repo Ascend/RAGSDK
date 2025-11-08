@@ -408,7 +408,7 @@ function handle_eula() {
         eula_file=./eula_en.conf
     fi
     cat "${eula_file}" 1>&2
-    read -t 60 -n1 -r -p "Do you accept the EULA to ${action} Toolbox?[Y/N]" answer
+    read -t 60 -n1 -r -p "Do you accept the EULA to ${action} RAG SDK?[Y/N]" answer
     case "${answer}" in
         Y|y)
             log "INFO" "accept EULA, start to ${action}"
@@ -583,7 +583,7 @@ function upgrade_process() {
 
     install_process
 
-    log "INFO" "upgrade package successfully" "y"
+    log "INFO" "Upgrade package successfully" "y"
 }
 
 function process() {
