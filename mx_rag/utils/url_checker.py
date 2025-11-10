@@ -161,11 +161,11 @@ class RegexStringChecker(StringLengthChecker, ABC):
 
 class HttpUrlChecker(RegexStringChecker):
     def __init__(self, attr_name: str = None, min_len: int = 0, max_len: int = 2048, required: bool = True):
-        super().__init__(attr_name, "(http|HTTP)://[-A-Za-z0-9+&#/%?=~_|!:,.;]*[-A-Za-z0-9+&#/%=~_|]", min_len,
+        super().__init__(attr_name, "(http|HTTP)://[-A-Za-z0-9+&/%=~_|!:,.;]*[-A-Za-z0-9+&/%=~_|]", min_len,
                          max_len, required)
 
 
 class HttpsUrlChecker(RegexStringChecker):
     def __init__(self, attr_name: str = None, min_len: int = 0, max_len: int = 2048, required: bool = True):
-        super().__init__(attr_name, "(https|HTTPS)://[-A-Za-z0-9+&#/%?=~_|!:,.;]*[-A-Za-z0-9+&#/%=~_|]", min_len,
+        super().__init__(attr_name, "(https|HTTPS)://[-A-Za-z0-9+&/%=~_|!:,.;]*[-A-Za-z0-9+&/%=~_|]", min_len,
                          max_len, required)
