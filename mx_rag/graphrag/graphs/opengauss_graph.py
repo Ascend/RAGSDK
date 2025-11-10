@@ -265,7 +265,7 @@ class OpenGaussGraph(GraphStore):
                 f"SET {set_clause}"
             )
             self.graph_adapter.execute_cypher_query(query)
-        logger.info(f"Successfully updated node attributes")
+        logger.info("Successfully updated node attributes")
 
     @validate_params(edge_updates=dict(validator=lambda x: len(x) < 10000, message="Edge updates are too long."))
     def update_edge_attributes_batch(self, edge_updates: list, batch_size: int = 2048, append: bool = False) -> None:
@@ -725,12 +725,12 @@ class OpenGaussGraph(GraphStore):
         """
         # Drop the entire graph (including all nodes/edges/labels)
         with self.graph_adapter.get_cursor() as cursor:
-            cursor.execute(f"SELECT * FROM ag_catalog.drop_graph(%s, true)", (self.graph_name,))
+            cursor.execute("SELECT * FROM ag_catalog.drop_graph(%s, true)", (self.graph_name,))
             self.graph_adapter.connection.commit()
         # Re-initialize the graph object and recreate the default node label
         self.graph_adapter = OpenGaussAGEAdapter(self.graph_name, self.conf)
         with self.graph_adapter.get_cursor() as cursor:
-            cursor.execute(f"SELECT * FROM ag_catalog.create_vlabel(%s, 'Node')", (self.graph_name,))
+            cursor.execute("SELECT * FROM ag_catalog.create_vlabel(%s, 'Node')", (self.graph_name,))
             self.graph_adapter.connection.commit()
         logger.info(f"Graph '{self.graph_name}' has been reset and is ready for use.")
 
@@ -847,9 +847,9 @@ class OpenGaussGraph(GraphStore):
         """Build the SQL queries for creating start_id and end_id indexes."""
         return [
             f"CREATE INDEX IF NOT EXISTS index_{index_prefix}_start ON "
-            f"{self.graph_name}.\"{relation}\"(start_id);",
+            f"{self.graph_name}.\"{cypher_value(relation)}\"(start_id);",
             f"CREATE INDEX IF NOT EXISTS index_{index_prefix}_end ON "
-            f"{self.graph_name}.\"{relation}\"(end_id);"
+            f"{self.graph_name}.\"{cypher_value(relation)}\"(end_id);"
         ]
 
     def _create_relation_indexes(

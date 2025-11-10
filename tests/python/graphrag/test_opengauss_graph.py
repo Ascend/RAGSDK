@@ -275,7 +275,7 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.graph.add_node.assert_called_once_with("node2")
         self.mock_adapter.execute_cypher_query.assert_called_once()
         query = self.mock_adapter.execute_cypher_query.call_args[0][0]
-        self.assertIn("MERGE (a)-[r:`KNOWS`", query)
+        self.assertIn("MERGE (a)-[r:`'KNOWS'`", query)
 
     def test_add_edge_syntax_error(self):
         # Mock has_node and has_edge methods

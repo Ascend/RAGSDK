@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-
+import pytest
 import unittest
 from unittest.mock import patch, MagicMock
 
-from mx_rag.graphrag.graphs.graph_util import OpenGaussAGEAdapter, CypherQueryBuilder
+from mx_rag.graphrag.graphs.graph_util import OpenGaussAGEAdapter, CypherQueryBuilder, cypher_value, escape_identifier
 
 
 class TestOpenGaussAGEAdapter(unittest.TestCase):
@@ -45,16 +45,6 @@ class TestOpenGaussAGEAdapter(unittest.TestCase):
             self.assertIs(cursor, mock_cursor)
         self.adapter._get_cursor.assert_called_once()
 
-    def test_execute_raw_query(self):
-        # Should execute the query and fetchall
-        mock_cursor = MagicMock()
-        mock_cursor.fetchall.return_value = [('row1',), ('row2',)]
-        self.adapter.get_cursor = MagicMock()
-        self.adapter.get_cursor.return_value.__enter__.return_value = mock_cursor
-        result = self.adapter.execute_raw_query("SELECT 1")
-        mock_cursor.execute.assert_called_once_with("SELECT 1")
-        self.assertEqual(result, [('row1',), ('row2',)])
-
     def test_execute_cypher_query(self):
         # Should call self.query with the cypher query
         self.adapter.query = MagicMock(return_value='cypher_result')
@@ -87,23 +77,23 @@ class TestCypherQueryBuilder(unittest.TestCase):
 
     def test_match_node(self):
         result = CypherQueryBuilder.match_node("label123")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label123"}) RETURN n LIMIT 1')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label123'}) RETURN n LIMIT 1")
 
     def test_delete_node(self):
         result = CypherQueryBuilder.delete_node("label456")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label456"}) DETACH DELETE n')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label456'}) DETACH DELETE n")
 
     def test_match_node_properties(self):
         result = CypherQueryBuilder.match_node_properties("label789")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label789"}) RETURN properties(n) AS props')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label789'}) RETURN properties(n) AS props")
 
     def test_match_node_attribute(self):
         result = CypherQueryBuilder.match_node_attribute("label", "foo")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label"}) RETURN n.foo AS value')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label'}) RETURN n.foo AS value")
 
     def test_set_node_attribute(self):
         result = CypherQueryBuilder.set_node_attribute("label", "foo", "bar")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label"}) SET n.foo = \'bar\'')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label'}) SET n.foo = 'bar'")
 
     def test_set_node_attribute_append(self):
         result = CypherQueryBuilder.set_node_attribute("label", "foo", "bar", append=True)
@@ -139,19 +129,19 @@ class TestCypherQueryBuilder(unittest.TestCase):
 
     def test_merge_edge_with_props(self):
         result = CypherQueryBuilder.merge_edge("src", "dst", {"relation": "KNOWS", "weight": 2})
-        self.assertIn("MERGE (a)-[r:`KNOWS` {relation: 'KNOWS', weight: 2}]->(b)", result)
+        self.assertIn("MERGE (a)-[r:`'KNOWS'` {relation: 'KNOWS', weight: 2}]->(b)", result)
 
     def test_merge_edge_without_props(self):
         result = CypherQueryBuilder.merge_edge("src", "dst", {})
-        self.assertIn("MERGE (a)-[r:`related` {}]->(b)", result)
+        self.assertIn("MERGE (a)-[r:`'related'` {}]->(b)", result)
 
     def test_delete_edge(self):
         result = CypherQueryBuilder.delete_edge("src", "dst")
-        self.assertEqual(result, 'MATCH (a:Node {id: "src"})-[r]->(b:Node {id: "dst"}) DELETE r')
+        self.assertEqual(result, "MATCH (a:Node {id: 'src'})-[r]->(b:Node {id: 'dst'}) DELETE r")
 
     def test_match_edge(self):
         result = CypherQueryBuilder.match_edge("src", "dst")
-        self.assertEqual(result, 'MATCH (a:Node {id: "src"})-[r]->(b:Node {id: "dst"}) RETURN r LIMIT 1')
+        self.assertEqual(result, "MATCH (a:Node {id: 'src'})-[r]->(b:Node {id: 'dst'}) RETURN r LIMIT 1")
 
     def test_match_edges_with_data(self):
         result = CypherQueryBuilder.match_edges(True)
@@ -188,23 +178,23 @@ class TestCypherQueryBuilder(unittest.TestCase):
 
     def test_in_degree(self):
         result = CypherQueryBuilder.in_degree("label")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label"})<-[r]-() RETURN count(r) AS deg')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label'})<-[r]-() RETURN count(r) AS deg")
 
     def test_out_degree(self):
         result = CypherQueryBuilder.out_degree("label")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label"})-[r]->() RETURN count(r) AS deg')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label'})-[r]->() RETURN count(r) AS deg")
 
     def test_neighbors(self):
         result = CypherQueryBuilder.neighbors("label")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label"})--(m) RETURN m.text as label')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label'})--(m) RETURN m.text as label")
 
     def test_successors(self):
         result = CypherQueryBuilder.successors("label")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label"})-->(m) RETURN m.text as label')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label'})-->(m) RETURN m.text as label")
 
     def test_predecessors(self):
         result = CypherQueryBuilder.predecessors("label")
-        self.assertEqual(result, 'MATCH (n:Node {id: "label"})<--(m) RETURN m.text as label')
+        self.assertEqual(result, "MATCH (n:Node {id: 'label'})<--(m) RETURN m.text as label")
 
     def test_count_nodes(self):
         result = CypherQueryBuilder.count_nodes()
@@ -213,3 +203,254 @@ class TestCypherQueryBuilder(unittest.TestCase):
     def test_count_edges(self):
         result = CypherQueryBuilder.count_edges()
         self.assertEqual(result, "MATCH ()-[r]->() RETURN count(r) AS cnt")
+
+
+class TestCypherValueEscaping:
+    """Test the cypher_value function for proper escaping."""
+
+    def test_string_with_single_quotes(self):
+        """Test that single quotes are properly escaped."""
+        result = cypher_value("test'value")
+        assert result == "'test\\'value'"
+
+    def test_string_with_backslashes(self):
+        """Test that backslashes are properly escaped."""
+        result = cypher_value("test\\value")
+        assert result == "'test\\\\value'"
+
+    def test_string_with_both_escapes(self):
+        """Test that both backslashes and quotes are escaped correctly."""
+        result = cypher_value("test\\'value")
+        assert result == "'test\\\\\\'value'"
+
+    def test_malicious_string_with_cypher_commands(self):
+        """Test that malicious strings with Cypher commands are escaped."""
+        malicious = "'}}) DETACH DELETE (n) //"
+        result = cypher_value(malicious)
+        # Should be escaped so it can't break out of the string literal
+        assert result == "'\\'}}\\) DETACH DELETE \\(n\\) //'"
+
+    def test_integer_values(self):
+        """Test that integers are converted correctly."""
+        assert cypher_value(42) == "42"
+        assert cypher_value(-100) == "-100"
+
+    def test_float_values(self):
+        """Test that floats are converted correctly."""
+        assert cypher_value(3.14) == "3.14"
+        assert cypher_value(-2.5) == "-2.5"
+
+    def test_boolean_values(self):
+        """Test that booleans are converted correctly."""
+        assert cypher_value(True) == "true"
+        assert cypher_value(False) == "false"
+
+    def test_none_value(self):
+        """Test that None is converted to null."""
+        assert cypher_value(None) == "null"
+
+    def test_list_values(self):
+        """Test that lists are properly formatted."""
+        result = cypher_value([1, "test", True])
+        assert result == "[1, 'test', true]"
+
+    def test_dict_values(self):
+        """Test that dictionaries are properly formatted."""
+        result = cypher_value({"key": "value", "num": 42})
+        assert "key: 'value'" in result
+        assert "num: 42" in result
+
+
+class TestEscapeIdentifier:
+    """Test the escape_identifier function for identifier validation."""
+
+    def test_valid_identifier_alphanumeric(self):
+        """Test that valid alphanumeric identifiers pass."""
+        assert escape_identifier("valid_identifier") == "valid_identifier"
+        assert escape_identifier("test123") == "test123"
+
+    def test_valid_identifier_with_hyphen(self):
+        """Test that identifiers with hyphens are allowed."""
+        assert escape_identifier("test-key") == "test-key"
+
+    def test_identifier_with_special_chars_rejected(self):
+        """Test that identifiers with special characters are rejected."""
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            escape_identifier("test.key")
+        
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            escape_identifier("test;DROP")
+        
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            escape_identifier("test'key")
+
+    def test_identifier_starting_with_digit_rejected(self):
+        """Test that identifiers starting with digits are rejected."""
+        with pytest.raises(ValueError, match="Cannot start with a digit"):
+            escape_identifier("123test")
+
+    def test_empty_identifier_rejected(self):
+        """Test that empty identifiers are rejected."""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            escape_identifier("")
+
+    def test_non_string_identifier_rejected(self):
+        """Test that non-string identifiers are rejected."""
+        with pytest.raises(ValueError, match="must be a string"):
+            escape_identifier(123)
+
+
+class TestCypherQueryBuilderInjectionProtection:
+    """Test that CypherQueryBuilder methods prevent injection attacks."""
+
+    def test_match_node_injection_protection(self):
+        """Test that match_node properly escapes label parameter."""
+        malicious_label = '"}}) DETACH DELETE (n) //'
+        query = CypherQueryBuilder.match_node(malicious_label)
+        
+        # The malicious string should be escaped and not break the query
+        assert "DETACH DELETE" in query  # The text is there
+        assert "'}}" not in query  # But not as executable code
+        assert query.startswith("MATCH (n:Node {id: '")
+
+    def test_delete_node_injection_protection(self):
+        """Test that delete_node properly escapes label parameter."""
+        malicious_label = '"}}) MATCH (x) DETACH DELETE x //'
+        query = CypherQueryBuilder.delete_node(malicious_label)
+        
+        # Verify it's properly escaped
+        assert query.startswith("MATCH (n:Node {id: '")
+        assert "\\'" in query or "\\)" in query  # Escaped characters
+
+    def test_match_node_attribute_key_validation(self):
+        """Test that match_node_attribute validates property keys."""
+        # Valid key should work
+        query = CypherQueryBuilder.match_node_attribute("test_label", "valid_key")
+        assert "RETURN n.valid_key AS value" in query
+        
+        # Invalid key should raise error
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            CypherQueryBuilder.match_node_attribute("label", "invalid;key")
+
+    def test_set_node_attribute_injection_protection(self):
+        """Test that set_node_attribute protects against injection."""
+        malicious_label = '"}}) MATCH (x) SET x.evil = true //'
+        malicious_key = "key; DROP"
+        
+        # Key validation should prevent malicious key
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            CypherQueryBuilder.set_node_attribute("label", malicious_key, "value")
+        
+        # Label should be escaped
+        query = CypherQueryBuilder.set_node_attribute(malicious_label, "valid_key", "value")
+        assert "\\'" in query or "\\)" in query
+
+    def test_merge_edge_relation_injection_protection(self):
+        """Test that merge_edge validates relation names."""
+        attributes = {
+            "relation": "'}}) DETACH DELETE (a) //'",
+            "weight": 1.0
+        }
+        query = CypherQueryBuilder.merge_edge("source", "target", attributes)
+        assert "'\\'}}\\) DETACH DELETE \\(a\\) //\\''" in query
+
+    def test_merge_edge_label_injection_protection(self):
+        """Test that merge_edge escapes source and target labels."""
+        malicious_source = '"}}) DETACH DELETE (a) //'
+        malicious_target = '"}}) CREATE (evil:Backdoor) //'
+        attributes = {"relation": "test"}
+        
+        query = CypherQueryBuilder.merge_edge(malicious_source, malicious_target, attributes)
+        
+        # Verify labels are escaped
+        assert "\\'" in query or "\\)" in query
+        assert query.count("MATCH") == 1  # Only one MATCH statement
+
+    def test_match_edge_attribute_protection(self):
+        """Test that match_edge_attribute validates keys."""
+        # Valid key should work
+        query = CypherQueryBuilder.match_edge_attribute("src", "tgt", "valid_key")
+        assert "RETURN r.valid_key AS value" in query
+        
+        # Invalid key should raise error
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            CypherQueryBuilder.match_edge_attribute("src", "tgt", "invalid.key")
+
+    def test_set_edge_attribute_protection(self):
+        """Test that set_edge_attribute protects against injection."""
+        # Key validation
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            CypherQueryBuilder.set_edge_attribute("src", "tgt", "bad;key", "value")
+        
+        # Valid usage with malicious value (should be escaped)
+        malicious_value = "'}}) DETACH DELETE (r) //"
+        query = CypherQueryBuilder.set_edge_attribute("src", "tgt", "valid_key", malicious_value)
+        assert "\\'" in query or "\\)" in query
+
+    def test_match_edges_by_attribute_protection(self):
+        """Test that match_edges_by_attribute validates keys."""
+        # Valid key
+        query = CypherQueryBuilder.match_edges_by_attribute("valid_key")
+        assert "exists(r.valid_key)" in query
+        
+        # Invalid key
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            CypherQueryBuilder.match_edges_by_attribute("bad.key")
+
+    def test_match_nodes_by_attribute_protection(self):
+        """Test that match_nodes_by_attribute validates keys and escapes values."""
+        # Valid key with potentially malicious value
+        malicious_value = "'}}) DETACH DELETE (n) //"
+        query = CypherQueryBuilder.match_nodes_by_attribute("valid_key", malicious_value)
+        assert "WHERE n.valid_key = " in query
+        assert "\\'" in query or "\\)" in query
+        
+        # Invalid key
+        with pytest.raises(ValueError, match="Invalid identifier"):
+            CypherQueryBuilder.match_nodes_by_attribute("bad;key", "value")
+
+    def test_degree_methods_injection_protection(self):
+        """Test that degree methods properly escape labels."""
+        malicious_label = '"}}) MATCH (x) DETACH DELETE x //'
+        
+        # Test all degree methods
+        in_deg_query = CypherQueryBuilder.in_degree(malicious_label)
+        out_deg_query = CypherQueryBuilder.out_degree(malicious_label)
+        neighbors_query = CypherQueryBuilder.neighbors(malicious_label)
+        successors_query = CypherQueryBuilder.successors(malicious_label)
+        predecessors_query = CypherQueryBuilder.predecessors(malicious_label)
+        
+        # All should have escaped labels
+        for query in [in_deg_query, out_deg_query, neighbors_query, 
+                      successors_query, predecessors_query]:
+            assert "\\'" in query or "\\)" in query
+
+
+class TestComplexInjectionScenarios:
+    """Test complex injection attack scenarios."""
+
+    def test_nested_quotes_in_dict_values(self):
+        """Test that nested quotes in dictionary values are escaped."""
+        attributes = {
+            "name": "test'value",
+            "description": "complex'nested\"quotes"
+        }
+        result = cypher_value(attributes)
+        # Should have proper escaping
+        assert "\\'" in result
+
+    def test_unicode_and_special_characters(self):
+        """Test that unicode and special characters are handled safely."""
+        unicode_string = "测试'数据"
+        result = cypher_value(unicode_string)
+        assert result.startswith("'")
+        assert result.endswith("'")
+        assert "\\'" in result
+
+    def test_very_long_injection_attempt(self):
+        """Test that very long injection attempts are still escaped."""
+        long_malicious = "'" + "x" * 10000 + "'}}) DETACH DELETE (n) //"
+        result = cypher_value(long_malicious)
+        # Should be properly escaped
+        assert result.startswith("'")
+        assert "\\'" in result

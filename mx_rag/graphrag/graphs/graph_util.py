@@ -41,8 +41,11 @@ def cypher_value(v, depth=0, seen=None):
         elif isinstance(v, (int, float)):
             return str(v)
         elif isinstance(v, str):
-            # Escape single quotes and enclose in single quotes
-            escaped = v.replace("'", "''")
+            # Escape single quotes, backslashes, and special Cypher characters for string literals
+            # This prevents injection attacks by escaping characters that could break out of strings
+            escaped = v.replace("\\", "\\\\").replace("'", "\\'")
+            # Escape parentheses to prevent Cypher command injection
+            escaped = escaped.replace("(", "\\(").replace(")", "\\)")
             return f"'{escaped}'"
         elif isinstance(v, (list, tuple, dict)):
             new_seen = set(seen)
@@ -56,6 +59,40 @@ def cypher_value(v, depth=0, seen=None):
             raise ValueError(f"Unsupported type for Cypher value: {type(v)}")
     finally:
         seen.remove(id(v))
+
+
+def escape_identifier(identifier: str) -> str:
+    """
+    Validate and escape an identifier for safe use in Cypher.
+
+    Identifiers must only contain alphanumeric characters, underscores, and hyphens.
+    This prevents injection attacks through identifiers.
+
+    Parameters:
+        identifier: The identifier to validate and escape
+
+    Returns:
+        str: The validated identifier
+
+    Raises:
+        ValueError: If the identifier is invalid or contains unsafe characters
+    """
+    if not isinstance(identifier, str):
+        raise ValueError("Identifier must be a string")
+
+    if not identifier:
+        raise ValueError("Identifier cannot be empty")
+
+    # Allow only alphanumeric characters, underscores, and hyphens
+    # This prevents Cypher injection through identifiers
+    if not all(c.isalnum() or c in ('_', '-') for c in identifier):
+        raise ValueError(f"Invalid identifier: {identifier}. Only alphanumeric, underscore, and hyphen allowed.")
+
+    # Identifiers cannot start with a number in Cypher
+    if identifier[0].isdigit():
+        raise ValueError(f"Invalid identifier: {identifier}. Cannot start with a digit.")
+
+    return identifier
 
 
 class OpenGaussAGEAdapter(openGaussAGEGraph):
@@ -94,20 +131,6 @@ class OpenGaussAGEAdapter(openGaussAGEGraph):
         with self._get_cursor() as cursor:
             yield cursor
 
-    def execute_raw_query(self, query: str) -> Any:
-        """
-        Execute a raw SQL query using the exposed cursor.
-
-        Args:
-            query (str): The SQL query to execute
-
-        Returns:
-            Query results
-        """
-        with self.get_cursor() as cursor:
-            cursor.execute(query)
-            return cursor.fetchall()
-
     def execute_cypher_query(self, cypher_query: str) -> Any:
         """
         Execute a Cypher query through the graph instance.
@@ -136,37 +159,40 @@ class CypherQueryBuilder:
 
     @staticmethod
     def match_node(label: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}}) RETURN n LIMIT 1"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}}) RETURN n LIMIT 1"
 
     @staticmethod
     def delete_node(label: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}}) DETACH DELETE n"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}}) DETACH DELETE n"
 
     @staticmethod
     def match_node_properties(label: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}}) RETURN properties(n) AS props"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}}) RETURN properties(n) AS props"
 
     @staticmethod
     def match_node_attribute(label: str, key: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}}) RETURN n.{key} AS value"
+        safe_key = escape_identifier(key)
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}}) RETURN n.{safe_key} AS value"
 
     @staticmethod
     def set_node_attribute(label: str, key: str, value, append: bool = False) -> str:
+        safe_key = escape_identifier(key)
         val = cypher_value(value)
         if append:
             return (
-                f"MATCH (n:Node {{id: \"{label}\"}}) "
-                f"WITH n, CASE WHEN coalesce(n.{key}, '') = '' THEN {val} else n.{key} + ',' + {val} END AS new_value "
-                f"SET n.{key} = new_value"
+                f"MATCH (n:Node {{id: {cypher_value(label)}}}) "
+                f"WITH n, CASE WHEN coalesce(n.{safe_key}, '') = '' THEN {val} else n.{safe_key} + ',' + {val} END AS new_value "
+                f"SET n.{safe_key} = new_value"
             )
-        return f"MATCH (n:Node {{id: \"{label}\"}}) SET n.{key} = {cypher_value(value)}"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}}) SET n.{safe_key} = {cypher_value(value)}"
 
     @staticmethod
     def set_node_attributes(name: str, props) -> str:
+        safe_name = escape_identifier(name)
         return (
-            f"UNWIND {props} AS item "
+            f"UNWIND {cypher_value(props)} AS item "
             f"MATCH (n:Node) WHERE n.id = item.label "
-            f"SET n.{name} = item.value"
+            f"SET n.{safe_name} = item.value"
         )
 
     @staticmethod
@@ -177,38 +203,40 @@ class CypherQueryBuilder:
 
     @staticmethod
     def match_nodes_by_attribute(key: str, value) -> str:
-        return f"MATCH (n:Node) WHERE n.{key} = {cypher_value(value)} RETURN properties(n) AS props"
+        safe_key = escape_identifier(key)
+        return f"MATCH (n:Node) WHERE n.{safe_key} = {cypher_value(value)} RETURN properties(n) AS props"
 
     @staticmethod
     def match_nodes_containing_attribute(key: str, value: str) -> str:
+        safe_key = escape_identifier(key)
         return (
-            f"MATCH (n:Node) WHERE toString(n.{key}) CONTAINS {cypher_value(value)} "
+            f"MATCH (n:Node) WHERE toString(n.{safe_key}) CONTAINS {cypher_value(value)} "
             "RETURN properties(n) AS props"
         )
 
     @staticmethod
     def merge_edge(source_label: str, target_label: str, attributes: Dict[str, Any]) -> str:
         props = cypher_value(attributes)
-        relation = attributes.get("relation", "related")
+        relation = cypher_value(attributes.get("relation", "related"))
         if props:
             query = (
-                f"MATCH (a:Node {{id: \"{source_label}\"}}), (b:Node {{id: \"{target_label}\"}}) "
+                f"MATCH (a:Node {{id: {cypher_value(source_label)}}}), (b:Node {{id: {cypher_value(target_label)}}}) "
                 f"MERGE (a)-[r:`{relation}` {props}]->(b)"
             )
         else:
             query = (
-                f"MATCH (a:Node {{id: \"{source_label}\"}}), (b:Node {{id: \"{target_label}\"}}) "
+                f"MATCH (a:Node {{id: {cypher_value(source_label)}}}), (b:Node {{id: {cypher_value(target_label)}}}) "
                 f"MERGE (a)-[r:`{relation}`]->(b)"
             )
         return query
 
     @staticmethod
     def delete_edge(source_label: str, target_label: str) -> str:
-        return f"MATCH (a:Node {{id: \"{source_label}\"}})-[r]->(b:Node {{id: \"{target_label}\"}}) DELETE r"
+        return f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->(b:Node {{id: {cypher_value(target_label)}}}) DELETE r"
 
     @staticmethod
     def match_edge(source_label: str, target_label: str) -> str:
-        return f"MATCH (a:Node {{id: \"{source_label}\"}})-[r]->(b:Node {{id: \"{target_label}\"}}) RETURN r LIMIT 1"
+        return f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->(b:Node {{id: {cypher_value(target_label)}}}) RETURN r LIMIT 1"
 
     @staticmethod
     def match_edges(with_data: bool = True) -> str:
@@ -223,53 +251,56 @@ class CypherQueryBuilder:
     @staticmethod
     def match_edge_attribute(source_label: str, target_label: str, key: Optional[str] = None) -> str:
         if key:
+            safe_key = escape_identifier(key)
             return (
-                f"MATCH (:Node {{id: \"{source_label}\"}})-[r]->(:Node {{id: \"{target_label}\"}}) "
-                f"RETURN r.{key} AS value"
+                f"MATCH (:Node {{id: {cypher_value(source_label)}}})-[r]->(:Node {{id: {cypher_value(target_label)}}}) "
+                f"RETURN r.{safe_key} AS value"
             )
         return (
-            f"MATCH (:Node {{id: \"{source_label}\"}})-[r]->(:Node {{id: \"{target_label}\"}}) "
+            f"MATCH (:Node {{id: {cypher_value(source_label)}}})-[r]->(:Node {{id: {cypher_value(target_label)}}}) "
             f"RETURN properties(r) AS props"
         )
 
     @staticmethod
     def set_edge_attribute(source_label: str, target_label: str, key: str, value, append: bool = False) -> str:
+        safe_key = escape_identifier(key)
         if append:
             return (
-                f"MATCH (a:Node {{id: \"{source_label}\"}})-[r]->(b:Node {{id: \"{target_label}\"}}) "
-                f"SET r.{key} = coalesce(r.{key}, []) + {cypher_value(value)}"
+                f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->(b:Node {{id: {cypher_value(target_label)}}}) "
+                f"SET r.{safe_key} = coalesce(r.{safe_key}, []) + {cypher_value(value)}"
             )
         return (
-            f"MATCH (a:Node {{id: \"{source_label}\"}})-[r]->(b:Node {{id: \"{target_label}\"}}) "
-            f"SET r.{key} = {cypher_value(value)}"
+            f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->(b:Node {{id: {cypher_value(target_label)}}}) "
+            f"SET r.{safe_key} = {cypher_value(value)}"
         )
 
     @staticmethod
     def match_edges_by_attribute(key: str) -> str:
+        safe_key = escape_identifier(key)
         return (
-            f"MATCH (a:Node)-[r]->(b:Node) WHERE exists(r.{key}) "
+            f"MATCH (a:Node)-[r]->(b:Node) WHERE exists(r.{safe_key}) "
             "RETURN a.id as source, b.id as target, properties(r) AS props"
         )
 
     @staticmethod
     def in_degree(label: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}})<-[r]-() RETURN count(r) AS deg"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}})<-[r]-() RETURN count(r) AS deg"
 
     @staticmethod
     def out_degree(label: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}})-[r]->() RETURN count(r) AS deg"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}})-[r]->() RETURN count(r) AS deg"
 
     @staticmethod
     def neighbors(label: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}})--(m) RETURN m.text as label"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}})--(m) RETURN m.text as label"
 
     @staticmethod
     def successors(label: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}})-->(m) RETURN m.text as label"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}})-->(m) RETURN m.text as label"
 
     @staticmethod
     def predecessors(label: str) -> str:
-        return f"MATCH (n:Node {{id: \"{label}\"}})<--(m) RETURN m.text as label"
+        return f"MATCH (n:Node {{id: {cypher_value(label)}}})<--(m) RETURN m.text as label"
 
     @staticmethod
     def count_nodes() -> str:
