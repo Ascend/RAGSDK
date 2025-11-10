@@ -30,6 +30,7 @@ EMBEDDING_TEXT_COUNT = 1000 * 1000
 EMBEDDING_IMG_COUNT = 1000
 IMG_EMBEDDING_TEXT_LEN = 256
 MAX_FILE_SIZE = 100 * 1024 * 1024
+MAX_SPLIT_SIZE = 100 * 1024 * 1024
 TEXT_MAX_LEN = 1000 * 1000
 STR_MAX_LEN = 128 * 1024 * 1024
 MAX_VEC_DIM = 1024 * 1024
@@ -69,6 +70,8 @@ STR_TYPE_CHECK_TIP_1024 = "param must be str, length range [1, 1024]"
 EMBED_FUNC_TIP = ("embed_func must be callable or {'dense': x, 'sparse': y}, "
                   "and xy is callable or None, and cannot be None at the same time.")
 NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
+IMAGE_TYPE = (".jpg", ".png")
+HEADER_MARK = "#"
 DB_FILE_LIMIT = 100 * 1024 * 1024 * 1024
 GRAPH_FILE_LIMIT = 10 * 1024 * 1024 * 1024
 MAX_CHUNKS_NUM = 1000 * 1000
