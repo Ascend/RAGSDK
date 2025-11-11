@@ -4,7 +4,6 @@
 # Author: Mind SDK
 # Create: 2024
 # History: NA
-set -e
 
 # Simple log helper functions
 CUR_PATH=$(cd "$(dirname "$0")" || { echo "Failed to enter current path" ; exit ; } ; pwd)
