@@ -212,7 +212,7 @@ class GraphRAGPipeline:
         self._setup_graph(graph_name)
 
         use_text = kwargs.pop("use_text", True)
-        batch_size = kwargs.pop("batch_size", 512)
+        batch_size = kwargs.pop("batch_size", 4)
         similarity_tail_threshold = kwargs.pop("similarity_tail_threshold", 0.0)
         retrieval_top_k = kwargs.pop("retrieval_top_k", 40)
         reranker_top_k = kwargs.pop("reranker_top_k", 20)
@@ -266,9 +266,10 @@ class GraphRAGPipeline:
         if self.graph_type == "networkx":
             self.graph = NetworkxGraph(path=self.graph_save_path, decrypt_fn=self.decrypt_fn)
         else:
-            if "graph_conf" not in kwargs:
-                raise GraphRAGError("graph_conf must be specified in case of opengauss graph")
-            self.graph_conf = kwargs.pop("graph_conf")
+            if self.graph_conf is None:
+                if "graph_conf" not in kwargs:
+                    raise GraphRAGError("graph_conf must be specified in case of opengauss graph")
+                self.graph_conf = kwargs.pop("graph_conf")
             if not isinstance(self.graph_conf, OpenGaussSettings):
                 raise GraphRAGError("graph_conf must be an instance of OpenGaussSettings")
             self.graph = OpenGaussGraph(graph_name, self.graph_conf)

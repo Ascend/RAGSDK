@@ -59,7 +59,7 @@ class GraphRAGModel(QABaseModel):
         reranker_top_k: int = 10,
         subgraph_depth: int = 1,
         use_text: bool = False,
-        batch_size=1024,
+        batch_size=4,
         similarity_tail_threshold=0.3,
         min_number_texts=3
     ):
