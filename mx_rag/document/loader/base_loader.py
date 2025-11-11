@@ -3,11 +3,10 @@
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
 import io
 import os
-import stat
 from abc import ABC
 import zipfile
-import psutil
 import base64
+import psutil
 
 from loguru import logger
 from PIL import Image
@@ -56,16 +55,6 @@ class BaseLoader(ABC):
                                  f' only {remain_size} bytes of disk space available')
                     return True
 
-            # 嵌套深度检测
-            R_FLAGS = os.O_RDONLY
-            MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-            with os.fdopen(os.open(self.file_path, R_FLAGS, MODES), 'rb') as f:
-                data = f.read()
-                depth = self._check_nested_depth(data)
-                if depth > self.MAX_NESTED_DEPTH:
-                    logger.error(f"{self.file_path} nested depth exceeds limit {self.MAX_NESTED_DEPTH}")
-                    return True
-
             return False
         except zipfile.BadZipfile as e:
             logger.error(f"The provided path '{self.file_path}' is not a valid zip file or is corrupted: {e}")
@@ -73,47 +62,6 @@ class BaseLoader(ABC):
         except Exception as e:
             logger.error(f"Unexpected error occurred while checking zip bomb: {e}")
             return True
-
-    def _check_nested_depth(self, data: bytes, current_depth=1) -> int:
-        """递归检查嵌套深度"""
-        if current_depth > self.MAX_NESTED_DEPTH:
-            return current_depth
-
-        max_depth = current_depth
-        try:
-            zf = zipfile.ZipFile(io.BytesIO(data))
-            for zinfo in zf.infolist():
-                if zinfo.file_size == 0:
-                    continue
-
-                file_data = self._read_file_from_zip(zf, zinfo)
-                if file_data is None:
-                    continue
-
-                depth = self._process_file(file_data, current_depth)
-                max_depth = max(max_depth, depth)
-                if max_depth > self.MAX_NESTED_DEPTH:
-                    return max_depth
-
-        except zipfile.BadZipfile as e:
-            logger.error(f"The provided path '{self.file_path}' is not a valid zip file or is corrupted: {e}")
-
-        return max_depth
-
-    def _read_file_from_zip(self, zf: zipfile.ZipFile, zinfo: zipfile.ZipInfo):
-        """从ZIP文件中读取文件数据"""
-        try:
-            return zf.read(zinfo)
-        except zipfile.BadZipfile as e:
-            logger.warning(f"Error processing {zinfo.filename}: {e}")
-            return None
-
-    def _process_file(self, file_data: bytes, current_depth: int) -> int:
-        """处理文件数据"""
-        if b'PK\x03\x04' in file_data:
-            return self._check_nested_depth(file_data, current_depth + 1)
-        else:
-            return current_depth
 
     def _verify_image_size(self, image_bytes):
         """Verify if the image dimensions are within acceptable limits."""
