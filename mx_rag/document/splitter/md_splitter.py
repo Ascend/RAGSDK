@@ -29,7 +29,7 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter, MarkdownHeaderTextSpl
         header_level=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= 6,
                           message="header_level must be an integer between 0 and 6")
     )
-    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200, header_level: int = 3, **kwargs):
+    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 50, header_level: int = 3, **kwargs):
         """Initialize the text splitter with chunk size and overlap settings."""
         RecursiveCharacterTextSplitter.__init__(
             self,
@@ -63,7 +63,7 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter, MarkdownHeaderTextSpl
             current_chunk = header_chunks[i]
 
             # Merge small chunks with following chunks
-            if len(current_chunk.page_content) < self._chunk_size:
+            if len(current_chunk.page_content) <= self._chunk_size:
                 merged_content = current_chunk.page_content
                 merged_metadata = current_chunk.metadata.copy()
                 j = i + 1
