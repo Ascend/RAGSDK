@@ -1,8 +1,6 @@
 #!/bin/bash
 # Copyright © Huawei Technologies Co., Ltd. 2025. All rights reserved.
 
-set -e
-
 readonly PACKAGE_VERSION=%{PACKAGE_VERSION}%
 readonly INSTALL_DIRECTORY=mxRag-"${PACKAGE_VERSION}"
 readonly PACKAGE_ARCH=%{PACKAGE_ARCH}%
