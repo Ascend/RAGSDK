@@ -81,6 +81,8 @@ MAX_STDOUT_STR_LEN = 1024
 MAX_EMBEDDINGS_SIZE = 1024 * 1024
 MAX_IDS_SIZE = 1000 * 10000
 
+MAX_RECURSION_LIMIT = 256
+
 
 def safe_get(data, keys, default=None):
     """

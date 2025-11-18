@@ -7,6 +7,8 @@ from typing import Any, Dict, Optional
 
 from langchain_opengauss import openGaussAGEGraph, OpenGaussSettings
 
+from mx_rag.utils.common import MAX_RECURSION_LIMIT
+
 
 def cypher_value(v, depth=0, seen=None):
     """
@@ -26,7 +28,7 @@ def cypher_value(v, depth=0, seen=None):
     if seen is None:
         seen = set()
 
-    if depth > sys.getrecursionlimit():
+    if depth > MAX_RECURSION_LIMIT:
         raise ValueError("Structure too deep - possible circular reference")
 
     if id(v) in seen:
