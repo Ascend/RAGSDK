@@ -129,7 +129,8 @@ class OpenGaussDB(VectorStore):
         self._index_type = index_type
         self._metric_type = metric_type
         self._filter_dict = None
-
+        if self.engine.name != "opengauss":
+            raise StorageError("engine only support OpenGauss dialect.")
         self.session_factory = scoped_session(
             sessionmaker(bind=self.engine, autoflush=False, expire_on_commit=False)
         )
@@ -486,7 +487,7 @@ class OpenGaussDB(VectorStore):
         if isinstance(emb, list):
             emb = np.array(emb)
         elif isinstance(emb, dict):
-            emb = {k+1: v for k, v in emb.items()}
+            emb = {k + 1: v for k, v in emb.items()}
         self._validate_filter_dict(self._filter_dict)
         doc_filter = self._filter_dict.get("document_id", []) if self._filter_dict else []
         with (self._transaction() as session):

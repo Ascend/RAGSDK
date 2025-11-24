@@ -31,6 +31,7 @@ class TestOpenGaussDB(unittest.TestCase):
         self.mock_dialect = Mock()
         self.mock_dialect.has_table.return_value = False
         self.mock_engine.dialect = self.mock_dialect
+        self.mock_engine.name = "opengauss"
 
         # Create a mock connection
         self.mock_connection = Mock()
@@ -412,6 +413,11 @@ class TestOpenGaussDB(unittest.TestCase):
         with self.assertRaises(StorageError):
             self.db.update([1, 2, 3], np.array([[1.0], [2.0], [3.0]]), [{1: 0.5}, {2: 0.3}, {3: 0.4}])
 
+    def test_fake_engine(self):
+        mock_engine = MagicMock(spec=Engine)
+        mock_engine.name = "mysql"
+        with self.assertRaises(StorageError):
+            OpenGaussDB(engine=mock_engine)
 
 
 if __name__ == '__main__':

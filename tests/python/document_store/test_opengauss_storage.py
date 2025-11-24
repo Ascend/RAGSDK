@@ -4,9 +4,9 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from sqlalchemy import URL, Engine
+from sqlalchemy import Engine
 
-from mx_rag.storage.document_store.base_storage import MxDocument
+from mx_rag.storage.document_store.base_storage import MxDocument, StorageError
 from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.storage.document_store.opengauss_storage import OpenGaussDocstore
 from mx_rag.utils.common import MAX_CHUNKS_NUM
@@ -18,6 +18,7 @@ class TestOpenGaussDocstore(unittest.TestCase):
     def setUp(self, mock_create_engine, MockDocStoreHelper):
         # Mock the engine and connection
         self.mock_engine = MagicMock(spec=Engine)
+        self.mock_engine.name = "opengauss"
         mock_create_engine.return_value = self.mock_engine  # Make create_engine return the mock_engine
         self.mock_helper = MagicMock(spec=_DocStoreHelper)  # mock HelperDocStore
         MockDocStoreHelper.return_value = self.mock_helper
@@ -109,6 +110,12 @@ class TestOpenGaussDocstore(unittest.TestCase):
         self.mock_helper.update.return_value = None
         self.docstore.update([1, 2], ["test1", "test2"])
         self.mock_helper.update.assert_called_once()
+
+    def test_fake_engine(self):
+        mock_engine = MagicMock(spec=Engine)
+        mock_engine.name = "mysql"
+        with self.assertRaises(StorageError):
+            OpenGaussDocstore(engine=mock_engine, enable_bm25=False)
 
 
 if __name__ == "__main__":
