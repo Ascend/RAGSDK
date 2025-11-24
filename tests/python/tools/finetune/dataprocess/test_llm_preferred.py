@@ -13,11 +13,19 @@ class TestLlmPreferred(unittest.TestCase):
 
     @patch("mx_rag.llm.Text2TextLLM.chat")
     def test_run_success(self, chat):
-        chat.return_value = "得分是62.13"
+        chat.return_value = "得分是0.13"
         llm = Text2TextLLM(model_name="test_model_name", base_url="test_url", timeout=120)
         scores = llm_preferred(llm, ["query"], ["document"], SCORING_QD_PROMPT)
 
-        self.assertEqual(scores, [62.13])
+        self.assertEqual(scores, [0.13])
+
+    @patch("mx_rag.llm.Text2TextLLM.chat")
+    def test_run_border_success(self, chat):
+        chat.return_value = "得分是1分"
+        llm = Text2TextLLM(model_name="test_model_name", base_url="test_url", timeout=120)
+        scores = llm_preferred(llm, ["query"], ["document"], SCORING_QD_PROMPT)
+
+        self.assertEqual(scores, [1.0])
 
     @patch("mx_rag.llm.Text2TextLLM.chat")
     def test_make_request_type_error(self, chat):

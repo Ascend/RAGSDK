@@ -70,7 +70,7 @@ def multi_processing(llm, query_list, doc_list, prompt):
     # 使用正则表达式提取相关性评分中的小数
     score_list = []
     for answer in answers:
-        match = re.search(r"\d+\.\d+", answer)
+        match = re.search(r"(1(\.0{1,2})?|0(\.\d{1,2})?)", answer)
         score = float(0)
         if match:
             try:
