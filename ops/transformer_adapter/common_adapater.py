@@ -28,6 +28,8 @@ def load_acl_transformer():
 
 
 def init_ascend_operations_boost(self, config):
+    if not isinstance(config.num_attention_heads, int) or config.num_attention_heads <= 0:
+        raise ValueError("num_attention_heads must be a positive integer")
     self.head_size = config.hidden_size // config.num_attention_heads
     self.head_num = config.num_attention_heads
     if hasattr(config, 'world_size'):
