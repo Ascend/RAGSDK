@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 
 import os
 import re
@@ -27,8 +27,6 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
     """Loader for loading and processing Markdown documents."""
     EXTENSION = (".md", ".markdown")
 
-
-
     @validate_params(
         vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM) or x is None,
                  message="param must be instance of Img2TextLLM or None"),
@@ -48,6 +46,7 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
 
         self._is_document_valid()
         elements = partition_md(filename=self.file_path)
+        logger.info(f"Total markdown elements count: {len(elements)}")
 
         content_parts = []
         for element in elements:
@@ -90,8 +89,8 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
         table_html = element.metadata.text_as_html
         soup = BeautifulSoup(table_html, 'html.parser')
         rows = soup.find_all('tr')
-
         if not rows:
+            logger.warning("The table is empty.")
             return ""
 
         header_cells = rows[0].find_all(['td', 'th'])
