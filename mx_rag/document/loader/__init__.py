@@ -9,10 +9,12 @@ __all__ = [
     "PdfLoader",
     "PowerPointLoader",
     "ImageLoader",
+    "MarkdownLoader",
     "BaseLoader"
 ]
 
 from mx_rag.document.loader.docx_loader import DocxLoader
+from mx_rag.document.loader.md_loader import MarkdownLoader
 from mx_rag.document.loader.pdf_loader import PdfLoader
 from mx_rag.document.loader.excel_loader import ExcelLoader
 from mx_rag.document.loader.ppt_loader import PowerPointLoader

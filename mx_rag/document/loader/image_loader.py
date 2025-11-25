@@ -10,10 +10,10 @@ from PIL import Image
 from langchain_core.documents import Document
 from langchain_community.document_loaders.base import BaseLoader
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
-from mx_rag.utils.common import MAX_PAGE_CONTENT, MAX_IMAGE_PIXELS
+from mx_rag.utils.common import MAX_PAGE_CONTENT, MAX_IMAGE_PIXELS, IMAGE_TYPE
 from mx_rag.utils.file_check import SecFileCheck
 
-IMAGE_TYPE = (".jpg", ".png")
+
 
 
 class ImageLoader(BaseLoader, mxBaseLoader):

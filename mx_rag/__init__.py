@@ -14,3 +14,5 @@ os.environ["RAGAS_DO_NOT_TRACK"] = "true"
 os.environ["HF_HUB_OFFLINE"] = "1"
 # 默认datasets离线模式
 os.environ["HF_DATASETS_OFFLINE"] = "1"
+# 默认不自动下载nltk资源
+os.environ["AUTO_DOWNLOAD_NLTK"] = "false"

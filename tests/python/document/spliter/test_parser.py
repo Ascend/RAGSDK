@@ -8,7 +8,8 @@ from typing import List, Tuple, Dict
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from mx_rag.document.loader import DocxLoader, ExcelLoader, PdfLoader
+from mx_rag.document.loader import DocxLoader, ExcelLoader, PdfLoader, MarkdownLoader
+from mx_rag.document.splitter import MarkdownTextSplitter
 
 DOC_PARSER_MAP = {
     ".docx": (DocxLoader, RecursiveCharacterTextSplitter),
@@ -16,6 +17,7 @@ DOC_PARSER_MAP = {
     ".xls": (ExcelLoader, RecursiveCharacterTextSplitter),
     ".csv": (ExcelLoader, RecursiveCharacterTextSplitter),
     ".pdf": (PdfLoader, RecursiveCharacterTextSplitter),
+    ".md": (MarkdownLoader, MarkdownTextSplitter),
 }
 
 

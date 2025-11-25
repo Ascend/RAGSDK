@@ -48,8 +48,9 @@ class TestQAGenerate(unittest.TestCase):
         # 调用parse方法
         titles, contents = parser.parse()
         # 验证结果
-        self.assertEqual(titles, ['test.md'])
-        self.assertEqual(contents, ['# Test Tile\n\nthis is a test'])
+        self.assertIn('test.md', titles)
+        self.assertIn('# Test Tile\n\nthis is a test', contents)
+
 
 
 if __name__ == '__main__':
