@@ -15,7 +15,7 @@ class ConceptGraphMerger:
     Merges conceptual and synset information into a graph database, updating node and edge attributes accordingly.
     """
 
-    def __init__(self, graph: GraphStore) -> None:
+    def __init__(self, graph: GraphStore, batch_size: int = 4) -> None:
         """
         Initializes the ConceptGraphMerger with a graph database object.
         """
@@ -30,6 +30,7 @@ class ConceptGraphMerger:
         self.node_type_counter: Dict[str, int] = {"entity": 0, "relation": 0, "event": 0}
         self.concept_to_synset: Dict[str, List[str]] = {}
         self.synset_counter: Counter = Counter()
+        self.batch_size = batch_size
 
     @staticmethod
     def parse_concept_string(concepts_str: str) -> List[str]:
@@ -134,8 +135,8 @@ class ConceptGraphMerger:
             edge_updates.append((u, v, {"concepts": concept_r_string, "synset": synset_r_string}))
 
         # Batch update nodes and edges
-        self.graph.update_node_attributes_batch(node_updates)
-        self.graph.update_edge_attributes_batch(edge_updates)
+        self.graph.update_node_attributes_batch(node_updates, self.batch_size)
+        self.graph.update_edge_attributes_batch(edge_updates, self.batch_size)
 
     def _process_node_if_not_seen(self, node: str, processed_nodes: set, node_updates: list) -> None:
         """
@@ -156,6 +157,9 @@ class ConceptGraphMerger:
         """
         Retrieves concepts for a node based on its type.
         """
+        if node_type is None:
+            return []
+
         if "entity" in node_type:
             return self.entity_concepts.get(node, [])
         elif node_type == "event":

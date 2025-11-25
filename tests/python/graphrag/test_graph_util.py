@@ -228,7 +228,7 @@ class TestCypherValueEscaping:
         malicious = "'}}) DETACH DELETE (n) //"
         result = cypher_value(malicious)
         # Should be escaped so it can't break out of the string literal
-        assert result == "'\\'}}\\) DETACH DELETE \\(n\\) //'"
+        assert result == "'\\'}}\\\\) DETACH DELETE \\\\(n\\\\) //'"
 
     def test_integer_values(self):
         """Test that integers are converted correctly."""
@@ -352,7 +352,7 @@ class TestCypherQueryBuilderInjectionProtection:
             "weight": 1.0
         }
         query = CypherQueryBuilder.merge_edge("source", "target", attributes)
-        assert "'\\'}}\\) DETACH DELETE \\(a\\) //\\''" in query
+        assert "'\\'}}\\\\) DETACH DELETE \\\\(a\\\\) //\\''" in query
 
     def test_merge_edge_label_injection_protection(self):
         """Test that merge_edge escapes source and target labels."""

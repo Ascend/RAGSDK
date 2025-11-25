@@ -373,23 +373,15 @@ class GraphRAGModel(QABaseModel):
             self.vector_store_concept.add(np.array(embeddings), list(range(len(embeddings))))
             self.vector_store_concept.save()
 
-    def _rerank(self, text_nodes, query):
+    def _rerank(self, contexts, query):
         if self.use_text:
             if self.reranker is None:
-                query_emb = np.asarray(self._safe_embed_func([query])[0])
-                text_embs = np.asarray(self._safe_embed_func(text_nodes))
-                text_embs_norm = text_embs / np.linalg.norm(text_embs, axis=1, keepdims=True)
-                query_emb_norm = query_emb / np.linalg.norm(query_emb)
-                sims = np.dot(text_embs_norm, query_emb_norm)
-                idx = np.argsort(sims)[::-1][:self.reranker_top_k]
-                # Prune low-similarity tail
-                idx = [i for i in idx if sims[i] > self.similarity_tail_threshold or len(idx) <= self.min_number_text]
-                items = [text_nodes[i] for i in idx]
+                return contexts
             else:
-                scores = self.reranker.rerank(query, text_nodes)
-                items = self.reranker.rerank_top_k(text_nodes, scores)
+                scores = self.reranker.rerank(query, contexts)
+                items = self.reranker.rerank_top_k(contexts, scores)
         else:
-            items = [item for item, _ in Counter(text_nodes).most_common(self.reranker_top_k)]
+            items = [item for item, _ in Counter(contexts).most_common(self.reranker_top_k)]
         return items
 
     def _add_neighbors_to_subgraph(
