@@ -28,13 +28,12 @@ class ConceptCluster:
             threshold: float,
     ) -> List[Tuple[str, str]]:
         edges = []
-        for i in tqdm(range(len(indices)), desc="Building edges"):
-            for j, neighbor_idx in enumerate(indices[i]):
-                if (
-                        distances[i][j] > threshold
-                        and concept_names[i] != concept_names[neighbor_idx]
-                ):
-                    edges.append((concept_names[i], concept_names[neighbor_idx]))
+        index = 0
+        for distance, indice in zip(distances, indices):
+            for j, neighbor_idx in enumerate(indice):
+                if distance[j] > threshold and concept_names[index] != concept_names[neighbor_idx]:
+                    edges.append((concept_names[index], concept_names[neighbor_idx]))
+            index += 1
         return edges
 
     @validate_params(
@@ -68,7 +67,7 @@ class ConceptCluster:
             ids = list(range(start_index, min(start_index + batch_size, embeddings.shape[0])))
             self.vector_store.add(embeddings[start_index:start_index + batch_size], ids)
 
-        for start_index in range(0, embeddings.shape[0], batch_size):
+        for start_index in tqdm(range(0, embeddings.shape[0], batch_size), desc="Building edges"):
             distances, indices = self.vector_store.search(embeddings[start_index:start_index + batch_size], top_k)
             edges = self._build_edges(concept_names, distances, indices, threshold)
             self.graph.add_edges_from(edges)

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from loguru import logger
 from langchain_core.embeddings import Embeddings
-from langchain_opengauss import OpenGaussSettings
+from langchain_opengauss import openGaussAGEGraph
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from pydantic import ConfigDict
@@ -87,12 +87,12 @@ class GraphRAGPipeline:
             raise StorageError("Insufficient remaining space, please clear disk space")
         self.work_dir = work_dir
         self.graph_name = graph_name
-        self.graph_conf = None
+        self.age_graph = None
         self._setup_save_path(self.graph_name)
         self.graph_type = graph_type
         self.encrypt_fn = encrypt_fn
         self.decrypt_fn = decrypt_fn
-        self._setup_graph(self.graph_name, **kwargs)
+        self._setup_graph(**kwargs)
         self.llm = llm
         self.embedding_model = embedding_model
         self.rerank_model = rerank_model
@@ -156,7 +156,7 @@ class GraphRAGPipeline:
     ):
         max_workers = kwargs.pop("max_workers", 5)
         top_k = kwargs.pop("top_k", 5)
-        batch_size = kwargs.pop("batch_size", 4)
+        batch_size = kwargs.pop("batch_size", 32)
         threshold = kwargs.pop("threshold", 0.5)
         self.triple_instructions = kwargs.pop("triple_instructions", self.triple_instructions)
         self.conceptualizer_prompts = kwargs.pop("conceptualizer_prompts", self.conceptualizer_prompts)
@@ -195,22 +195,15 @@ class GraphRAGPipeline:
     @validate_params(
         question=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
                       message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"))
-    def retrieve_graph(self, graph_name, question: str, **kwargs):
+    def retrieve_graph(self, question: str, **kwargs):
         if self.graph.number_of_nodes() == 0:
             raise GraphRAGError("Empty graph, first build the graph")
 
-        return self.as_retriever(graph_name, **kwargs).invoke(question)
+        return self.as_retriever(**kwargs).invoke(question)
 
-    @validate_params(
-        graph_name=dict(
-            validator=lambda x: isinstance(x, str) and x.isidentifier() and 0 < len(x) < 256,
-            message="param must be a str and its length meets [1, 255], "
-                    "and only contains letters, _ and digits."
-        )
-    )
-    def as_retriever(self, graph_name, **kwargs):
-        self._setup_save_path(graph_name)
-        self._setup_graph(graph_name)
+    def as_retriever(self, **kwargs):
+        self._setup_save_path(self.graph_name)
+        self._setup_graph()
 
         use_text = kwargs.pop("use_text", True)
         batch_size = kwargs.pop("batch_size", 4)
@@ -263,17 +256,17 @@ class GraphRAGPipeline:
         elif not isinstance(self.concept_vector_store, VectorStore):
             raise GraphRAGError("concept_vector_store must be an instance of VectorStore")
 
-    def _setup_graph(self, graph_name, **kwargs):
+    def _setup_graph(self, **kwargs):
         if self.graph_type == "networkx":
             self.graph = NetworkxGraph(path=self.graph_save_path, decrypt_fn=self.decrypt_fn)
         else:
-            if self.graph_conf is None:
-                if "graph_conf" not in kwargs:
+            if self.age_graph is None:
+                if "age_graph" not in kwargs:
                     raise GraphRAGError("graph_conf must be specified in case of opengauss graph")
-                self.graph_conf = kwargs.pop("graph_conf")
-            if not isinstance(self.graph_conf, OpenGaussSettings):
+                self.age_graph = kwargs.pop("age_graph")
+            if not isinstance(self.age_graph, openGaussAGEGraph):
                 raise GraphRAGError("graph_conf must be an instance of OpenGaussSettings")
-            self.graph = OpenGaussGraph(graph_name, self.graph_conf)
+            self.graph = OpenGaussGraph(self.age_graph.graph_name, self.age_graph)
 
     def _setup_save_path(self, graph_name):
         self.graph_save_path = os.path.join(self.work_dir, f"{graph_name}.json")

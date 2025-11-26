@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+from langchain_opengauss import openGaussAGEGraph
 import pytest
 import unittest
 from unittest.mock import patch, MagicMock
@@ -25,8 +26,9 @@ class TestOpenGaussAGEAdapter(unittest.TestCase):
         self.conf.user = "user"
         self.conf.password = "pass"
         self.conf.database = "db"
-        self.adapter = OpenGaussAGEAdapter(
-            'test_graph', self.conf, create=False)
+        self.age_graph = openGaussAGEGraph('test_graph', self.conf)
+        self.age_graph.graph_name = 'test_graph'
+        self.adapter = OpenGaussAGEAdapter(self.age_graph)
 
     def test_context_manager(self):
         # __enter__ returns self, __exit__ calls close
@@ -39,29 +41,29 @@ class TestOpenGaussAGEAdapter(unittest.TestCase):
     def test_get_cursor_yields_cursor(self):
         # _get_cursor should be called and yield its cursor
         mock_cursor = MagicMock()
-        self.adapter._get_cursor = MagicMock()
-        self.adapter._get_cursor.return_value.__enter__.return_value = mock_cursor
+        self.adapter.age_graph.connection = mock_cursor
+        cursor_mock = MagicMock()
+        self.adapter.age_graph.connection.cursor.return_value = cursor_mock
         with self.adapter.get_cursor() as cursor:
-            self.assertIs(cursor, mock_cursor)
-        self.adapter._get_cursor.assert_called_once()
+            self.assertIs(cursor, cursor_mock)
 
     def test_execute_cypher_query(self):
         # Should call self.query with the cypher query
-        self.adapter.query = MagicMock(return_value='cypher_result')
+        self.adapter.age_graph.query = MagicMock(return_value='cypher_result')
         result = self.adapter.execute_cypher_query("MATCH (n) RETURN n")
-        self.adapter.query.assert_called_once_with("MATCH (n) RETURN n")
+        self.adapter.age_graph.query.assert_called_once_with("MATCH (n) RETURN n")
         self.assertEqual(result, 'cypher_result')
 
     def test_close_closes_connection(self):
         # Should close connection if present
         mock_conn = MagicMock()
-        self.adapter.connection = mock_conn
+        self.adapter.age_graph.connection = mock_conn
         self.adapter.close()
         mock_conn.close.assert_called_once()
 
     def test_close_no_connection(self):
         # Should not fail if no connection
-        self.adapter.connection = None
+        self.adapter.age_graph.connection = None
         try:
             self.adapter.close()
         except Exception as e:
@@ -277,10 +279,10 @@ class TestEscapeIdentifier:
         """Test that identifiers with special characters are rejected."""
         with pytest.raises(ValueError, match="Invalid identifier"):
             escape_identifier("test.key")
-        
+
         with pytest.raises(ValueError, match="Invalid identifier"):
             escape_identifier("test;DROP")
-        
+
         with pytest.raises(ValueError, match="Invalid identifier"):
             escape_identifier("test'key")
 
@@ -307,7 +309,7 @@ class TestCypherQueryBuilderInjectionProtection:
         """Test that match_node properly escapes label parameter."""
         malicious_label = '"}}) DETACH DELETE (n) //'
         query = CypherQueryBuilder.match_node(malicious_label)
-        
+
         # The malicious string should be escaped and not break the query
         assert "DETACH DELETE" in query  # The text is there
         assert "'}}" not in query  # But not as executable code
@@ -317,7 +319,7 @@ class TestCypherQueryBuilderInjectionProtection:
         """Test that delete_node properly escapes label parameter."""
         malicious_label = '"}}) MATCH (x) DETACH DELETE x //'
         query = CypherQueryBuilder.delete_node(malicious_label)
-        
+
         # Verify it's properly escaped
         assert query.startswith("MATCH (n:Node {id: '")
         assert "\\'" in query or "\\)" in query  # Escaped characters
@@ -327,7 +329,7 @@ class TestCypherQueryBuilderInjectionProtection:
         # Valid key should work
         query = CypherQueryBuilder.match_node_attribute("test_label", "valid_key")
         assert "RETURN n.valid_key AS value" in query
-        
+
         # Invalid key should raise error
         with pytest.raises(ValueError, match="Invalid identifier"):
             CypherQueryBuilder.match_node_attribute("label", "invalid;key")
@@ -336,11 +338,11 @@ class TestCypherQueryBuilderInjectionProtection:
         """Test that set_node_attribute protects against injection."""
         malicious_label = '"}}) MATCH (x) SET x.evil = true //'
         malicious_key = "key; DROP"
-        
+
         # Key validation should prevent malicious key
         with pytest.raises(ValueError, match="Invalid identifier"):
             CypherQueryBuilder.set_node_attribute("label", malicious_key, "value")
-        
+
         # Label should be escaped
         query = CypherQueryBuilder.set_node_attribute(malicious_label, "valid_key", "value")
         assert "\\'" in query or "\\)" in query
@@ -359,9 +361,9 @@ class TestCypherQueryBuilderInjectionProtection:
         malicious_source = '"}}) DETACH DELETE (a) //'
         malicious_target = '"}}) CREATE (evil:Backdoor) //'
         attributes = {"relation": "test"}
-        
+
         query = CypherQueryBuilder.merge_edge(malicious_source, malicious_target, attributes)
-        
+
         # Verify labels are escaped
         assert "\\'" in query or "\\)" in query
         assert query.count("MATCH") == 1  # Only one MATCH statement
@@ -371,7 +373,7 @@ class TestCypherQueryBuilderInjectionProtection:
         # Valid key should work
         query = CypherQueryBuilder.match_edge_attribute("src", "tgt", "valid_key")
         assert "RETURN r.valid_key AS value" in query
-        
+
         # Invalid key should raise error
         with pytest.raises(ValueError, match="Invalid identifier"):
             CypherQueryBuilder.match_edge_attribute("src", "tgt", "invalid.key")
@@ -381,7 +383,7 @@ class TestCypherQueryBuilderInjectionProtection:
         # Key validation
         with pytest.raises(ValueError, match="Invalid identifier"):
             CypherQueryBuilder.set_edge_attribute("src", "tgt", "bad;key", "value")
-        
+
         # Valid usage with malicious value (should be escaped)
         malicious_value = "'}}) DETACH DELETE (r) //"
         query = CypherQueryBuilder.set_edge_attribute("src", "tgt", "valid_key", malicious_value)
@@ -392,7 +394,7 @@ class TestCypherQueryBuilderInjectionProtection:
         # Valid key
         query = CypherQueryBuilder.match_edges_by_attribute("valid_key")
         assert "exists(r.valid_key)" in query
-        
+
         # Invalid key
         with pytest.raises(ValueError, match="Invalid identifier"):
             CypherQueryBuilder.match_edges_by_attribute("bad.key")
@@ -404,7 +406,7 @@ class TestCypherQueryBuilderInjectionProtection:
         query = CypherQueryBuilder.match_nodes_by_attribute("valid_key", malicious_value)
         assert "WHERE n.valid_key = " in query
         assert "\\'" in query or "\\)" in query
-        
+
         # Invalid key
         with pytest.raises(ValueError, match="Invalid identifier"):
             CypherQueryBuilder.match_nodes_by_attribute("bad;key", "value")
@@ -412,16 +414,16 @@ class TestCypherQueryBuilderInjectionProtection:
     def test_degree_methods_injection_protection(self):
         """Test that degree methods properly escape labels."""
         malicious_label = '"}}) MATCH (x) DETACH DELETE x //'
-        
+
         # Test all degree methods
         in_deg_query = CypherQueryBuilder.in_degree(malicious_label)
         out_deg_query = CypherQueryBuilder.out_degree(malicious_label)
         neighbors_query = CypherQueryBuilder.neighbors(malicious_label)
         successors_query = CypherQueryBuilder.successors(malicious_label)
         predecessors_query = CypherQueryBuilder.predecessors(malicious_label)
-        
+
         # All should have escaped labels
-        for query in [in_deg_query, out_deg_query, neighbors_query, 
+        for query in [in_deg_query, out_deg_query, neighbors_query,
                       successors_query, predecessors_query]:
             assert "\\'" in query or "\\)" in query
 
