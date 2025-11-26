@@ -8,7 +8,7 @@ from sqlalchemy import Engine, Index, select, func, bindparam, text, inspect
 from sqlalchemy.exc import SQLAlchemyError
 
 from mx_rag.storage.document_store.models import ChunkModel
-from mx_rag.storage.document_store.base_storage import MxDocument, Docstore
+from mx_rag.storage.document_store.base_storage import MxDocument, Docstore, StorageError
 from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, TEXT_MAX_LEN, MAX_TOP_K, validate_list_str, STR_MAX_LEN
 
@@ -24,6 +24,8 @@ class OpenGaussDocstore(Docstore):
     def __init__(self, engine: Engine, encrypt_fn: Callable = None, decrypt_fn: Callable = None, enable_bm25=True,
                  index_name: str = "chunks_content_bm25"):
         super().__init__()
+        if engine.name != "opengauss":
+            raise StorageError("engine only support OpenGauss dialect.")
         self.doc_store = _DocStoreHelper(engine, encrypt_fn, decrypt_fn)
         self.engine = engine
         self.index_name = "idx_" + index_name
