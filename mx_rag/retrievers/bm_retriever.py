@@ -12,7 +12,7 @@ from pydantic import field_validator, Field, ConfigDict
 
 from mx_rag.llm import Text2TextLLM
 from mx_rag.llm.llm_parameter import LLMParameterConfig
-from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH, TEXT_MAX_LEN, validate_params
+from mx_rag.utils.common import MAX_TOP_K, MAX_PROMPT_LENGTH, TEXT_MAX_LEN, validate_params, MAX_DOCS_COUNT
 
 _KEY_WORD_TEMPLATE_ZH = PromptTemplate(
     input_variables=["question"],
@@ -50,6 +50,18 @@ class BMRetriever(BaseRetriever):
         if not (0 < len(prompt.template) <= MAX_PROMPT_LENGTH):
             raise ValueError(f'prompt.template length must be between 1 and {MAX_PROMPT_LENGTH}.')
         return prompt
+
+    @field_validator('docs')
+    @classmethod
+    def _validate_docs(cls, docs: List[Document]) -> List[Document]:
+        if not isinstance(docs, list):
+            raise ValueError("'docs' must be a list of Document objects.")
+        if len(docs) > MAX_DOCS_COUNT:
+            raise ValueError(f"'docs' length must not exceed {MAX_DOCS_COUNT}. Got {len(docs)}.")
+        for i, doc in enumerate(docs):
+            if not isinstance(doc, Document):
+                raise ValueError(f"docs[{i}] is not a Document instance.")
+        return docs
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
