@@ -125,7 +125,7 @@ class GraphEvaluator:
         Returns:
             List[str]: List of extracted entities.
         """
-        pattern = r'\[(.*?)\]'
+        pattern = r'\[([^[\]]*)\]'
         match = re.search(pattern, text)
         if not match:
             return []
