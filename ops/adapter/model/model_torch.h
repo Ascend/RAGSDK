@@ -21,10 +21,7 @@ public:
     ~ModelTorch() override;
     int64_t SetParam(std::string param);
     int64_t SetWeight(std::vector<torch::Tensor> atWeightTensors);
-    int64_t SetKVCache(std::vector<torch::Tensor> atKCacheTensors, std::vector<torch::Tensor> atVCacheTensors);
     std::vector<torch::Tensor> Execute(std::vector<torch::Tensor> atInTensors, std::string param);
-    int64_t ExecuteOut(std::vector<torch::Tensor> atInTensors, std::vector<torch::Tensor> atOutTensors,
-        std::string param);
     c10::intrusive_ptr<ModelTorch> clone() const { return c10::make_intrusive<ModelTorch>(modelName_); }
 
 private:
