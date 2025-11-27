@@ -10,6 +10,7 @@ from langchain_opengauss import openGaussAGEGraph, OpenGaussSettings
 from mx_rag.utils.common import MAX_RECURSION_LIMIT
 
 
+
 def cypher_value(v, depth=0, seen=None):
     """
     Convert a Python value to a safe representation for Cypher queries
@@ -47,7 +48,7 @@ def cypher_value(v, depth=0, seen=None):
             # This prevents injection attacks by escaping characters that could break out of strings
             escaped = v.replace("\\", "\\\\").replace("'", "\\'")
             # Escape parentheses to prevent Cypher command injection
-            escaped = escaped.replace("(", "\\(").replace(")", "\\)")
+            escaped = escaped.replace("(", "\\\\(").replace(")", "\\\\)")
             return f"'{escaped}'"
         elif isinstance(v, (list, tuple, dict)):
             new_seen = set(seen)

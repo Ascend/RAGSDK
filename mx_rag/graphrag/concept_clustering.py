@@ -15,23 +15,24 @@ class ConceptCluster:
     """
     Clusters concepts based on embedding similarity using a vector store and a graph wrapper.
     """
+
     def __init__(self, vector_store: VectorStoreWrapper, graph: GraphStore) -> None:
         self.vector_store = vector_store
         self.graph = graph
 
     @staticmethod
     def _build_edges(
-        concept_names: List[str],
-        distances: np.ndarray,
-        indices: np.ndarray,
-        threshold: float,
+            concept_names: List[str],
+            distances: np.ndarray,
+            indices: np.ndarray,
+            threshold: float,
     ) -> List[Tuple[str, str]]:
         edges = []
         for i in tqdm(range(len(indices)), desc="Building edges"):
             for j, neighbor_idx in enumerate(indices[i]):
                 if (
-                    distances[i][j] > threshold
-                    and concept_names[i] != concept_names[neighbor_idx]
+                        distances[i][j] > threshold
+                        and concept_names[i] != concept_names[neighbor_idx]
                 ):
                     edges.append((concept_names[i], concept_names[neighbor_idx]))
         return edges
@@ -50,10 +51,11 @@ class ConceptCluster:
         ),
     )
     def find_clusters(
-        self,
-        concept_embeddings: Dict[str, np.ndarray],
-        top_k: int = 5,
-        threshold: float = 0.5,
+            self,
+            concept_embeddings: Dict[str, np.ndarray],
+            top_k: int = 5,
+            threshold: float = 0.5,
+            batch_size: int = 4,
     ) -> List[Set[str]]:
         if not concept_embeddings:
             logger.warning("No concept embeddings provided.")
@@ -62,12 +64,15 @@ class ConceptCluster:
         concept_names = list(concept_embeddings.keys())
         embeddings = np.array(list(concept_embeddings.values()), dtype=np.float32)
 
-        self.vector_store.normalize_vectors_l2(embeddings)
-        self.vector_store.add(embeddings, list(range(embeddings.shape[0])))
+        for start_index in range(0, embeddings.shape[0], batch_size):
+            ids = list(range(start_index, min(start_index + batch_size, embeddings.shape[0])))
+            self.vector_store.add(embeddings[start_index:start_index + batch_size], ids)
 
-        distances, indices = self.vector_store.search(embeddings, top_k)
-        edges = self._build_edges(concept_names, distances, indices, threshold)
-        self.graph.add_edges_from(edges)
+        for start_index in range(0, embeddings.shape[0], batch_size):
+            distances, indices = self.vector_store.search(embeddings[start_index:start_index + batch_size], top_k)
+            edges = self._build_edges(concept_names, distances, indices, threshold)
+            self.graph.add_edges_from(edges)
+
         clusters = list(self.graph.connected_components())
         logger.info(f"Total connected components (clusters) found: {len(clusters)}")
         return clusters

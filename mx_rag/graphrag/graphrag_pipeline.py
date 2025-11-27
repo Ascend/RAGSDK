@@ -154,8 +154,9 @@ class GraphRAGPipeline:
             conceptualize: bool = False,
             **kwargs,
     ):
-        max_workers = kwargs.pop("max_workers", None)
+        max_workers = kwargs.pop("max_workers", 5)
         top_k = kwargs.pop("top_k", 5)
+        batch_size = kwargs.pop("batch_size", 4)
         threshold = kwargs.pop("threshold", 0.5)
         self.triple_instructions = kwargs.pop("triple_instructions", self.triple_instructions)
         self.conceptualizer_prompts = kwargs.pop("conceptualizer_prompts", self.conceptualizer_prompts)
@@ -180,7 +181,7 @@ class GraphRAGPipeline:
             merger.save_graph(self.graph_save_path, self.encrypt_fn)
 
             if conceptualize:
-                self._process_concepts_and_clusters(lang, top_k, threshold)
+                self._process_concepts_and_clusters(lang, top_k, threshold, max_workers, batch_size)
             logger.info("Graph built successfully")
         except ConnectionError as e:
             logger.error(f"Connection error: {e}")
@@ -282,7 +283,7 @@ class GraphRAGPipeline:
         self.node_vectors_path = os.path.join(self.work_dir, f"{graph_name}_node_vectors.index")
         self.concept_vectors_path = os.path.join(self.work_dir, f"{graph_name}_concept_vectors.index")
 
-    def _process_concepts_and_clusters(self, lang, top_k, threshold):
+    def _process_concepts_and_clusters(self, lang, top_k, threshold, max_workers, batch_size):
         if self.concept_embedding is None:
             self.concept_embedding = ConceptEmbedding(
                 self.embedding_model.embed_documents
@@ -292,18 +293,19 @@ class GraphRAGPipeline:
             self.graph,
             lang=lang,
             prompts=self.conceptualizer_prompts,
+            max_workers=max_workers,
         ).conceptualize()
         write_to_json(self.concepts_save_path, concepts, self.encrypt_fn)
         logger.info(f"Concepts saved: {self.concepts_save_path}")
 
-        embeddings = self.concept_embedding.embed(concepts)
+        embeddings = self.concept_embedding.embed(concepts, batch_size)
         vector_store_wrapper = VectorStoreWrapper(self.concept_vector_store)
         graph = NetworkxGraph(is_digraph=False)
         cluster = ConceptCluster(vector_store=vector_store_wrapper, graph=graph)
-        clusters = cluster.find_clusters(embeddings, top_k=top_k, threshold=threshold)
+        clusters = cluster.find_clusters(embeddings, top_k=top_k, threshold=threshold, batch_size=batch_size)
         write_to_json(self.synset_save_path, [list(c) for c in clusters], self.encrypt_fn)
         logger.info(f"Clusters saved: {self.synset_save_path}")
 
-        merger = ConceptGraphMerger(self.graph)
+        merger = ConceptGraphMerger(self.graph, batch_size)
         merger.merge_concepts_and_synset(concepts, clusters)
         merger.save_graph(self.graph_save_path, self.encrypt_fn)

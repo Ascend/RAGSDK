@@ -93,19 +93,20 @@ class GraphConceptualizer:
     """
 
     def __init__(
-        self,
-        llm: Text2TextLLM,
-        graph: GraphStore,
-        sample_num: Optional[int] = None,
-        lang: Lang = Lang.CH,
-        seed: int = 4096,
-        prompts: Optional[dict] = None,
+            self,
+            llm: Text2TextLLM,
+            graph: GraphStore,
+            sample_num: Optional[int] = None,
+            lang: Lang = Lang.CH,
+            seed: int = 4096,
+            prompts: Optional[dict] = None,
+            max_workers=None
     ) -> None:
         random.seed(seed)
         self.llm = llm
         self.graph = graph
         self.sample_num = sample_num
-
+        self.max_workers = max_workers
         self.prompts = prompts or {
             "event": (EVENT_PROMPT_CN if lang == Lang.CH else EVENT_PROMPT_EN),
             "entity": (ENTITY_PROMPT_CN if lang == Lang.CH else ENTITY_PROMPT_EN),
@@ -136,10 +137,10 @@ class GraphConceptualizer:
 
         def run_parallel(items, func, desc):
             outputs = []
-            with ThreadPoolExecutor() as executor:
+            with ThreadPoolExecutor(self.max_workers) as executor:
                 future_to_item = {executor.submit(func, item): item for item in items}
                 for future in tqdm(
-                    as_completed(future_to_item), total=len(items), desc=desc
+                        as_completed(future_to_item), total=len(items), desc=desc
                 ):
                     outputs.append(future.result())
             return outputs
