@@ -198,7 +198,7 @@ class GraphConceptualizer:
 
         if isinstance(self.graph, OpenGaussGraph):
             # Multi-thread case: each thread gets its connection
-            local_graph = OpenGaussGraph(self.graph.graph_name, self.graph.conf)
+            local_graph = OpenGaussGraph(self.graph.graph_name, self.graph.age_graph)
         else:
             local_graph = self.graph
         entity_predecessors = list(local_graph.predecessors(entity))

@@ -98,22 +98,19 @@ def escape_identifier(identifier: str) -> str:
     return identifier
 
 
-class OpenGaussAGEAdapter(openGaussAGEGraph):
+class OpenGaussAGEAdapter:
     """
     Adapter class that extends openGaussAGEGraph to expose additional utility methods
     for database operations while maintaining full compatibility with the parent class.
     """
 
-    def __init__(self, graph_name: str, conf: OpenGaussSettings, create: bool = True):
+    def __init__(self, age_graph: openGaussAGEGraph):
         """
         Initialize the adapter by calling the parent constructor.
-
         Args:
-            graph_name (str): The name of the graph to connect to or create
-            conf (OpenGaussSettings): The openGauss connection configuration
-            create (bool): If True and graph doesn't exist, attempt to create it
+            age_graph: openGaussAGEGraph instance
         """
-        super().__init__(graph_name, conf, create)
+        self.age_graph = age_graph
 
     def __enter__(self):
         """Context manager entry."""
@@ -131,8 +128,8 @@ class OpenGaussAGEAdapter(openGaussAGEGraph):
         Returns:
             A database cursor context manager
         """
-        with self._get_cursor() as cursor:
-            yield cursor
+        cursor = self.age_graph.connection.cursor()
+        yield cursor
 
     def execute_cypher_query(self, cypher_query: str) -> Any:
         """
@@ -144,12 +141,16 @@ class OpenGaussAGEAdapter(openGaussAGEGraph):
         Returns:
             Query results
         """
-        return self.query(cypher_query)
+        return self.age_graph.query(cypher_query)
 
     def close(self):
         """Close the database connection."""
-        if hasattr(self, 'connection') and self.connection:
-            self.connection.close()
+        if hasattr(self.age_graph, 'connection') and self.age_graph.connection:
+            self.age_graph.connection.close()
+
+    @property
+    def connection(self):
+        return self.age_graph.connection
 
 
 class CypherQueryBuilder:

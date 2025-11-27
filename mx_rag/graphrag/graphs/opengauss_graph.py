@@ -9,7 +9,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple, Union, Callable
 from typing import Any
 
 import networkx as nx
-from langchain_opengauss import OpenGaussSettings
+from langchain_opengauss import openGaussAGEGraph
 from loguru import logger
 from tqdm import tqdm
 
@@ -23,7 +23,7 @@ class OpenGaussGraph(GraphStore):
     Adapter for openGaussAGEGraph, providing a NetworkX-like interface for graph operations.
     """
 
-    def __init__(self, graph_name: str, conf: OpenGaussSettings):
+    def __init__(self, graph_name: str, age_graph: openGaussAGEGraph):
         """
         Initialize an OpenGaussGraph instance.
 
@@ -35,8 +35,8 @@ class OpenGaussGraph(GraphStore):
             raise ValueError(f"Invalid graph name: {graph_name}")
 
         self.graph_name = graph_name
-        self.conf = conf
-        self.graph_adapter = OpenGaussAGEAdapter(self.graph_name, self.conf)
+        self.age_graph = age_graph
+        self.graph_adapter = OpenGaussAGEAdapter(age_graph)
 
     def add_node(self, node: str, **attributes: Any) -> None:
         """
@@ -727,12 +727,7 @@ class OpenGaussGraph(GraphStore):
         with self.graph_adapter.get_cursor() as cursor:
             cursor.execute("SELECT * FROM ag_catalog.drop_graph(%s, true)", (self.graph_name,))
             self.graph_adapter.connection.commit()
-        # Re-initialize the graph object and recreate the default node label
-        self.graph_adapter = OpenGaussAGEAdapter(self.graph_name, self.conf)
-        with self.graph_adapter.get_cursor() as cursor:
-            cursor.execute("SELECT * FROM ag_catalog.create_vlabel(%s, 'Node')", (self.graph_name,))
-            self.graph_adapter.connection.commit()
-        logger.info(f"Graph '{self.graph_name}' has been reset and is ready for use.")
+        logger.info(f"Graph '{self.graph_name}' has been reset, please reconnect.")
 
     @validate_params(nodes=dict(validator=lambda x: len(x) < 10000, message="Too many nodes."))
     def subgraph(self, nodes: Iterable[str], depth: int = 2) -> list:

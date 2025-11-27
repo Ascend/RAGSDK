@@ -264,7 +264,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
         mock_rag_model = Mock(spec=GraphRAGModel)
         mock_graph_rag_model.return_value = mock_rag_model
         
-        retriever = pipeline.as_retriever("test_graph")
+        retriever = pipeline.as_retriever()
         
         # Verify retriever was created
         self.assertIsInstance(retriever, GraphRetriever)
@@ -286,10 +286,6 @@ class TestGraphRAGPipeline(unittest.TestCase):
                 rerank_model=self.mock_rerank_model,
                 dim=self.test_dim
             )
-            
-            # Test invalid graph_name
-            with self.assertRaises(ValueError):
-                pipeline.as_retriever("")
 
 
 if __name__ == '__main__':

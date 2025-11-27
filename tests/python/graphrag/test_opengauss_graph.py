@@ -11,15 +11,15 @@ class TestOpenGaussGraph(unittest.TestCase):
     def setUp(self):
         # Patch OpenGaussAGEAdapter and CypherQueryBuilder for isolation
         patcher_adapter = patch('mx_rag.graphrag.graphs.opengauss_graph.OpenGaussAGEAdapter', autospec=True)
-        patcher_settings = patch('mx_rag.graphrag.graphs.opengauss_graph.OpenGaussSettings', autospec=True)
+        patcher_settings = patch('mx_rag.graphrag.graphs.opengauss_graph.openGaussAGEGraph', autospec=True)
         self.mock_adapter_cls = patcher_adapter.start()
         self.mock_settings_cls = patcher_settings.start()
         self.addCleanup(patcher_adapter.stop)
         self.addCleanup(patcher_settings.stop)
         self.mock_adapter = self.mock_adapter_cls.return_value
         self.mock_adapter.connection = MagicMock() 
-        self.conf = self.mock_settings_cls.return_value
-        self.graph = OpenGaussGraph('test_graph', self.conf)
+        self.age_graph = self.mock_settings_cls.return_value
+        self.graph = OpenGaussGraph('test_graph', self.age_graph)
 
     def test_add_node_calls_adapter(self):
         self.mock_adapter.execute_cypher_query.reset_mock()
@@ -550,9 +550,8 @@ class TestOpenGaussGraph(unittest.TestCase):
         self.mock_adapter.connection = mock_connection  # Assign the mocked connection
         self.graph.reset()
         mock_cursor.execute.assert_any_call("SELECT * FROM ag_catalog.drop_graph(%s, true)", ('test_graph',))
-        mock_cursor.execute.assert_any_call("SELECT * FROM ag_catalog.create_vlabel(%s, 'Node')", ('test_graph',))
-        self.assertEqual(mock_connection.commit.call_count, 2)
-        self.assertEqual(mock_cursor.execute.call_count, 2)
+        self.assertEqual(mock_connection.commit.call_count, 1)
+        self.assertEqual(mock_cursor.execute.call_count, 1)
 
     def test_subgraph(self):
         self.mock_adapter.execute_cypher_query.return_value = [
