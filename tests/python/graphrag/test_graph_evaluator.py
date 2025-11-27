@@ -85,3 +85,7 @@ class TestGraphEvaluator(unittest.TestCase):
         with patch("mx_rag.graphrag.graph_evaluator.logger.info") as mock_logger:
             self.evaluator.evaluate(relations)
             mock_logger.assert_called()  # Ensure logging is called
+        relations = [{"raw_text": "text"*1025, "entity_relations": [], "event_entity_relations": [], "event_relations": []}]
+        with self.assertRaises(ValueError):
+            self.evaluator.evaluate(relations)
+

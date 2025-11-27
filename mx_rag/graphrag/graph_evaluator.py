@@ -11,7 +11,14 @@ from loguru import logger
 from tqdm import tqdm
 
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
-from mx_rag.utils.common import validate_params
+from mx_rag.utils.common import validate_params, validate_sequence
+
+
+def _check_relations(relations):
+    if (isinstance(relations, list) and 0 < len(relations) < 50000 and
+            validate_sequence(relations, max_str_length=4096, max_check_depth=5)):
+        return True
+    return False
 
 
 @dataclass
@@ -38,7 +45,7 @@ class GraphEvaluator:
         llm=dict(validator=lambda x: isinstance(x, Text2TextLLM),
                  message="llm must be an instance of Text2TextLLM"),
         llm_config=dict(validator=lambda x: isinstance(x, LLMParameterConfig),
-                             message="llm_config must be an instance of LLMParameterConfig")
+                        message="llm_config must be an instance of LLMParameterConfig")
     )
     def __init__(self, llm: Text2TextLLM, llm_config: LLMParameterConfig):
         """
@@ -100,7 +107,7 @@ class GraphEvaluator:
                     entities.append(entity)
         len_2 = GraphEvaluator._safe_len(entities)
         return [len_1, len_2, len_3]
-    
+
     @staticmethod
     def _remove_empty_lines(text: str) -> str:
         """
@@ -323,8 +330,9 @@ class GraphEvaluator:
 
         return [len1_incorrect, len2_incorrect, len3_incorrect]
 
-    @validate_params(relations=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) < 50000,
-                                    message="Relations cannot be empty or too many."))
+    @validate_params(
+        relations=dict(validator=lambda x: _check_relations(x),
+                       message="Relations cannot be empty or too many."))
     def evaluate(self, relations: List[dict]) -> None:
         """
         Run the evaluation process, compute metrics, and log results.
@@ -374,8 +382,8 @@ class GraphEvaluator:
         results = []
         with concurrent.futures.ThreadPoolExecutor() as executor:
             for result in tqdm(
-                executor.map(process_item, enumerate(relations)),
-                total=len(relations), desc="Evaluating relations"
+                    executor.map(process_item, enumerate(relations)),
+                    total=len(relations), desc="Evaluating relations"
             ):
                 results.append(result)
 
