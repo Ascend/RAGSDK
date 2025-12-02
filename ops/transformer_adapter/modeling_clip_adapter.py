@@ -86,7 +86,7 @@ def new_load_from_name(name: str, device: Union[str, torch.device] = "cuda" if t
 
         tmp_preprocess = preprocess
         device_name = torch.npu.get_device_name()
-        if "910B" in device_name:
+        if "910" in device_name:
             torch.ops.torchvision._dvpp_init()
             torchvision.set_image_backend('npu')
             tmp_preprocess = new_image_transform(model.visual.input_resolution)
