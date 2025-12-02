@@ -465,6 +465,8 @@ function install_ops() {
         check_ret=$(npu-smi info | awk '{print $3}' | grep 310P | sed -n 1p)
     elif [[ "$chip_type" == "910B" ]]; then
         check_ret=$(npu-smi info | awk '{print $3}' | grep 910B | sed -n 1p)
+    elif [[ "$chip_type" == "A3" ]]; then
+        check_ret=$(npu-smi info | awk '{print $3}' | grep Ascend910 | sed -n 1p)
     fi
 
     if [[ -z "$check_ret" ]]; then
