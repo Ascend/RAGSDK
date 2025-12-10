@@ -20,16 +20,16 @@ class TEIReranker(Reranker):
     TEXT_MAX_LEN = 1000 * 1000
 
     @validate_params(
-        url=dict(validator=lambda x: isinstance(x, str) and 0 <= len(x) <= MAX_URL_LENGTH,
-                 message="param must be str and str length range [0, 128]"),
+        url=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_URL_LENGTH,
+                 message=f"param must be str and str length range [1, {MAX_URL_LENGTH}]"),
         k=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_TOP_K,
-               message="param must be int and value range [1, 10000]"),
+               message=f"param must be int and value range [1, {MAX_TOP_K}]"),
         client_param=dict(validator=lambda x: isinstance(x, ClientParam),
                           message="param must be instance of ClientParam")
     )
     def __init__(self, url: str, k: int = 1, client_param=ClientParam()):
         super(TEIReranker, self).__init__(k)
-        self.url = url
+        self.url = url.rstrip("/")
         self.client = None
         self.headers = {'Content-Type': 'application/json'}
         try:
@@ -50,15 +50,12 @@ class TEIReranker(Reranker):
         return TEIReranker(**kwargs)
 
     @staticmethod
-    def _process_data(scores_json, scores_len):
-        if len(scores_json) != scores_len:
-            raise ValueError('tei response has different data length with request')
-
+    def _calculate_score(scores_info, scores_len):
         scores = [0.0] * scores_len
         visited = [False] * scores_len
-        for score_json in scores_json:
-            idx = score_json['index']
-            sco = score_json['score']
+        for score_json in scores_info:
+            idx = score_json[0]
+            sco = score_json[1]
             if not isinstance(idx, int):
                 raise TypeError('index in tei response is not int value')
             if not isinstance(sco, float):
@@ -70,14 +67,45 @@ class TEIReranker(Reranker):
 
             visited[idx] = True
             scores[idx] = sco
+
         return scores
+
+    def _process_data(self, resp_data, scores_len):
+        if not isinstance(resp_data, (list, dict)):
+            raise TypeError('tei response is not list or dict')
+
+        scores_info = []
+
+        if self.url.endswith('/v1/rerank'):
+            if 'results' not in resp_data:
+                raise ValueError('tei response has no results field')
+
+            for info in resp_data["results"]:
+                if not isinstance(info, dict) or 'index' not in info or 'relevance_score' not in info:
+                    raise ValueError('results field must be dict with index and relevance_score field')
+
+                scores_info.append((info.get('index'), info.get('relevance_score')))
+
+        elif self.url.endswith('/rerank'):
+            for info in resp_data:
+                if not isinstance(info, dict) or 'index' not in info or 'score' not in info:
+                    raise ValueError('tei response must be dict with index and value field')
+
+                scores_info.append((info.get('index'), info.get('score')))
+        else:
+            raise ValueError('url is not supported')
+
+        if len(scores_info) != scores_len:
+            raise ValueError('tei response has different data length with request')
+
+        return self._calculate_score(scores_info, scores_len)
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MB,
-                   message="param length range [1, 1024 * 1024]"),
+                   message=f"param length range [1, {MB}"),
         texts=dict(validator=lambda x: validate_list_str(x, [1, TEXT_MAX_LEN], [1, MB]),
-                   message="param must meets: Type is List[str], "
-                           "list length range [1, 1000 * 1000], str length range [1, 1024 * 1024]"),
+                   message="param must meet: Type is List[str], "
+                           f"list length range [1, {TEXT_MAX_LEN}], str length range [1, f{MB}]"),
         batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
                         message=f"param value range [1, {MAX_BATCH_SIZE}]")
     )
@@ -90,13 +118,19 @@ class TEIReranker(Reranker):
         for start_index in range(0, texts_len, batch_size):
             texts_batch = texts[start_index: start_index + batch_size]
 
-            request_body = {'query': query, 'texts': texts_batch, 'truncate': True}
+            request_body = {}
+
+            if self.url.endswith('/v1/rerank'):
+                request_body = {'query': query, 'documents': texts_batch}
+            elif self.url.endswith('/rerank'):
+                request_body = {'query': query, 'texts': texts_batch, 'truncate': True}
 
             resp = self.client.post(self.url, json.dumps(request_body), headers=self.headers)
             if resp.success:
                 try:
-                    scores_json = json.loads(resp.data)
-                    scores = self._process_data(scores_json, len(texts_batch))
+                    resp_data = json.loads(resp.data)
+
+                    scores = self._process_data(resp_data, len(texts_batch))
                     result.extend(scores)
                 except json.JSONDecodeError as json_err:
                     logger.error(f"Failed to decode JSON response from API: {json_err}")
