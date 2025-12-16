@@ -78,6 +78,7 @@ class BaseGenerator:
         doc_set = set()
 
         for file_type in loader_mng.loaders:
+            logger.info(f"load {file_type} file")
             for doc_file in Path(document_path).glob(f"*{file_type}"):
                 if doc_cnt > MAX_FILE_PROCESS_TIMES:
                     logger.warning(f"unable to process files over {MAX_FILE_PROCESS_TIMES} times")
@@ -91,6 +92,8 @@ class BaseGenerator:
                     unique_docs = [x for x in texts if x not in doc_set and not doc_set.add(x)]
                     split_doc_list.extend(unique_docs)
                 doc_cnt = doc_cnt + 1
+        if doc_cnt == 0:
+            logger.warning("no valid file found, please check your file type")
 
         return split_doc_list
 
