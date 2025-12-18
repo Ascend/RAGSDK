@@ -18,5 +18,6 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
+
 def sorted_layout_boxes(res, w):
     return []
