@@ -1,6 +1,21 @@
 #!/bin/bash
 # The script to run unit test case.
-# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+# -------------------------------------------------------------------------
+# This file is part of the RAGSDK project.
+# Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+#
+# RAGSDK is licensed under Mulan PSL v2.
+# You can use this software according to the terms and conditions of the Mulan PSL v2.
+# You may obtain a copy of Mulan PSL v2 at:
+#
+#          http://license.coscl.org.cn/MulanPSL2
+#
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+# See the Mulan PSL v2 for more details.
+# -------------------------------------------------------------------------
+
 set -e
 
 CUR_PATH=$(cd "$(dirname "$0")" || { warn "Failed to check path/to/run_py_test.sh" ; exit ; } ; pwd)
