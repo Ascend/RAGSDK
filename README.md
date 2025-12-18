@@ -219,7 +219,7 @@ API参考详见：[API参考](https://www.hiascend.com/document/detail/zh/mindsd
 
 # License
 
-RAGSDK以Apache 2.0许可证许可，对应许可证文本可查阅[RAGSDK根目录]()。
+RAGSDK以Mulan PSL v2许可证许可，对应许可证文本可查阅[RAGSDK根目录]()。
 
 # 建议与交流
 
