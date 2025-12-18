@@ -38,7 +38,7 @@ _KEY_WORD_TEMPLATE_ZH = PromptTemplate(
 Question: CANN如何安装？
 Keywords: CANN, 安装, install
 
-Question: RAGSDK 容器镜像怎么制作
+Question: MindStudio 容器镜像怎么制作
 Keywords: MindStudio, 容器镜像, Docker build
 
 Question: {question}
