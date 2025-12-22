@@ -53,7 +53,7 @@ class MyTestCase(unittest.TestCase):
             return
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
-        loader = DocxLoader(os.path.realpath(os.path.join(current_dir, "../../data/mxVision.docx")))
+        loader = DocxLoader(os.path.realpath(os.path.join(current_dir, "../../data/test.docx")))
         spliter = RecursiveCharacterTextSplitter()
         res = loader.load_and_split(spliter)
         emb = TextEmbedding("/workspace/bge-large-zh/", 2)
@@ -66,7 +66,7 @@ class MyTestCase(unittest.TestCase):
         knowledge_store = KnowledgeStore(MyTestCase.sql_db_file)
         knowledge_store.add_knowledge(knowledge_name='test', user_id='Default')
         vector_store = KnowledgeDB(knowledge_store, db, index, "test", white_paths=["/home"], user_id='Default')
-        vector_store.add_file("mxVision.docx",
+        vector_store.add_file("test.docx",
                               [d.page_content for d in res],
                               embed_func=emb.embed_documents,
                               metadatas=[d.metadata for d in res]
@@ -81,23 +81,23 @@ class MyTestCase(unittest.TestCase):
             """
             r = Retriever(vector_store=vector_store, k=1, score_threshold=0.5, embed_func=emb.embed_documents)
             rag = SingleText2TextChain(retriever=r, llm=llm)
-            good_prompt = "mxVision软件架构包含哪些模块？"
+            good_prompt = "2024年高考语文作文题目？"
 
             # 非流式输出，结果不包含source_documents
             query_response = rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1, top_p=1.0))
             logger.debug(f"response {query_response}")
-            self.assertEqual(query_response.get('query', None), "mxVision软件架构包含哪些模块？")
+            self.assertEqual(query_response.get('query', None), "2024年高考语文作文题目？")
             self.assertTrue(query_response.get('result', None) is not None)
             self.assertTrue(query_response.get('source_documents', None) is None)
 
             rag.source = True
             # 非流式输出，结果包含source_documents
             query_response = rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1, top_p=1.0))
-            self.assertTrue(query_response.get('query', None) == "mxVision软件架构包含哪些模块？")
+            self.assertTrue(query_response.get('query', None) == "2024年高考语文作文题目？")
             self.assertTrue(query_response.get('result', None) is not None)
             source_documents = query_response.get('source_documents', None)
             self.assertTrue(source_documents is not None and len(source_documents) == 1)
-            self.assertEqual(source_documents[0]['metadata']['source'], "mxVision.docx")
+            self.assertEqual(source_documents[0]['metadata']['source'], "test.docx")
             logger.debug(f"response {query_response}")
 
             # 流式输出，结果不包含source_documents
@@ -105,7 +105,7 @@ class MyTestCase(unittest.TestCase):
             for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
                                                                       top_p=1.0, stream=True)):
                 query_response = response
-                self.assertEqual(response.get('query', None), "mxVision软件架构包含哪些模块？")
+                self.assertEqual(response.get('query', None), "2024年高考语文作文题目？")
                 self.assertTrue(response.get('result', None) is not None)
                 self.assertTrue(response.get('source_documents', None) is None)
             logger.debug(f"response {query_response}")
@@ -115,16 +115,16 @@ class MyTestCase(unittest.TestCase):
             for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
                                                                       top_p=1.0, stream=True)):
                 query_response = response
-                self.assertEqual(response.get('query', None), "mxVision软件架构包含哪些模块？")
+                self.assertEqual(response.get('query', None), "2024年高考语文作文题目？")
                 self.assertTrue(response.get('result', None) is not None)
                 source_documents = query_response.get('source_documents', None)
                 self.assertTrue(source_documents is not None and len(source_documents) == 1)
-                self.assertEqual(source_documents[0]['metadata']['source'], "mxVision.docx")
+                self.assertEqual(source_documents[0]['metadata']['source'], "test.docx")
             rag.source = False
             logger.debug(f"response {query_response}")
 
         def test_rag_chain_npu_multi_doc(self):
-            multi_sr_prompt = "mxVision软件包介绍"
+            multi_sr_prompt = "2024年高考语文作文题目"
             r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, k=5, score_threshold=0.7)
             rag = SingleText2TextChain(retriever=r, llm=llm)
             rag.source = True
@@ -133,14 +133,14 @@ class MyTestCase(unittest.TestCase):
                                                                           top_p=1.0, stream=True)):
                 query_response = response
                 logger.trace(f"response {response}")
-                self.assertEqual(response.get('query', None), "mxVision软件包介绍")
+                self.assertEqual(response.get('query', None), "2024年高考语文作文题目")
                 self.assertTrue(response.get('result', None) is not None)
                 source_documents = response.get('source_documents', None)
                 self.assertTrue(type(source_documents) is list and len(source_documents) == 5)
             logger.debug(f"response {query_response}")
 
         def test_rag_chain_npu_multi_doc_query_rewrite(self):
-            multi_sr_prompt = "mxVision软件包介绍"
+            multi_sr_prompt = "2024年高考语文作文题目"
 
             class Parse(BaseOutputParser):
                 def parse(self, output: str) -> List[str]:
