@@ -105,7 +105,7 @@ class MyTestCase(unittest.TestCase):
             for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
                                                                       top_p=1.0, stream=True)):
                 query_response = response
-                self.assertEqual(response.get('query', None), "2024年高考语文语文题目？")
+                self.assertEqual(response.get('query', None), "2024年高考语文作文题目？")
                 self.assertTrue(response.get('result', None) is not None)
                 self.assertTrue(response.get('source_documents', None) is None)
             logger.debug(f"response {query_response}")
