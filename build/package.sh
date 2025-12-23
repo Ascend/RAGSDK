@@ -22,12 +22,12 @@ warn() { echo >&2 -e "\033[1;31m[WARN ][Depend  ] $1\033[1;37m" ; }
 ARCH=$(uname -m)
 CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
-PKG_DIR=mindxsdk-mxrag
+PKG_DIR=ragsdk
 
-VERSION_FILE="${ROOT_PATH}"/../mindxsdk/build/conf/config.yaml
+VERSION_FILE="${ROOT_PATH}"/../build/conf/config.yaml
 get_version() {
   if [ -f "$VERSION_FILE" ]; then
-    VERSION=$(sed '/.*mindxsdk:/!d;s/.*: //' "$VERSION_FILE")
+    VERSION=$(sed '/.*:/!d;s/.*: //' "$VERSION_FILE")
     if [[ "$VERSION" == *.[b/B]* ]] && [[ "$VERSION" != *.[RC/rc]* ]]; then
       VERSION=${VERSION%.*}
     fi
