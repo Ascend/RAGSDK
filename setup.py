@@ -28,7 +28,7 @@ def get_ci_version_info():
     :return: version number
     """
     src_path = this_directory.parent
-    ci_version_file = src_path.joinpath('mindxsdk', 'build', 'conf', 'config.yaml')
+    ci_version_file = src_path.joinpath('build', 'conf', 'config.yaml')
     version = '6.0.RC2'
     logging.info("get version from %s", ci_version_file)
     try:
@@ -36,7 +36,7 @@ def get_ci_version_info():
         MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
         with os.fdopen(os.open(ci_version_file, R_FLAGS, MODES), 'r') as f:
             config = yaml.safe_load(f)
-            version = config['version']['mindx_sdk']
+            version = config['version']
     except Exception as ex:
         logging.warning("get version failed, %s", str(ex))
     return version
@@ -108,7 +108,7 @@ setup(
     name='mx_rag',
     version=get_ci_version_info(),
     platforms=['linux', ],
-    description='MindX RAG is library to build RAG system',
+    description='RAGSDK is library to build RAG system',
     python_requires='>= 3.10, <3.12',
     long_description=long_description,
     long_description_content_type="text/markdown",
