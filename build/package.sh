@@ -46,8 +46,8 @@ get_version() {
 get_version
 
 {
-  echo "MindX SDK mxrag:${VERSION}"
-  echo "mxrag version:${B_VERSION}"
+  echo "RAGSDK:${VERSION}"
+  echo "ragsdk version:${B_VERSION}"
   echo "Plat: linux $(uname -m)"
 } >> "$ROOT_PATH"/version.info
 
