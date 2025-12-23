@@ -133,23 +133,11 @@
 
 # 版本说明
 
-RAGSDK版本配套详情请参考：[版本配套详情](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0001.html)
+RAGSDK版本配套详情请参考：[版本配套详情]()
 
 # 环境部署
 
 RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
-
-- 容器化部署流程如下图所示，具体方法请参见[容器内部署RAG SDK](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0009.html)。
-
-![img](https://www.hiascend.com/doc_center/source/zh/mindsdk/72rc1/rag/ragug/figure/zh-cn_image_0000002489157284.png)
-
-- 物理机内部署流程如下图所示，具体方法请参见[物理机内部署RAG SDK](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0010.html)。
-
-![img](https://www.hiascend.com/doc_center/source/zh/mindsdk/72rc1/rag/ragug/figure/zh-cn_image_0000002503657473.png)
-
-
-
-
 
 # 快速入门
 
@@ -160,27 +148,27 @@ RAG SDK提供快速构建基于昇腾平台问答系统的能力，提供多模�
 - 多模态解析：支持文档、表格、PDF、图片等多种类型文件的解析，为大模型提供多样性语料。
 - 高性能推理：提供昇腾亲和模型优化加速，实现更高的吞吐和更短的响应时间。
 
-具体的操作请参考：[快速入门](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0001.html)。
+具体的操作请参考：[快速入门]()。
 
 # 特性介绍
 
 RAGSDK组件提供多模态文档解析、知识库管理等能力，降低用户大模型应用开发门槛，支持对接开源生态。具体特性介绍如下：
 
-| 特性名称            | 介绍                                                         | Released |
-| ------------------- | ------------------------------------------------------------ | -------- |
-| 文生文场景          | [link](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0019.html) | ✅        |
-| 文本检索图片        | [link](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0019.html) | ✅        |
-| 多轮对话            | [link](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0019.html) | ✅        |
-| 调用Agentic RAG样例 | [link](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0019.html) | ✅        |
-| chat with ragsdk    | [link](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0019.html) | ✅        |
+| 特性名称            | 介绍                                                        | Released |
+| ------------------- | ----------------------------------------------------------- | -------- |
+| 文生文场景          | [link]() | ✅        |
+| 文本检索图片        | [link]() | ✅        |
+| 多轮对话            | [link]() | ✅        |
+| 调用Agentic RAG样例 | [link]() | ✅        |
+| chat with ragsdk    | [link]() | ✅        |
 
 # API参考
 
-API参考详见：[API参考](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0395.html)。
+API参考详见：[API参考]()。
 
 # FAQ
 
-相关FAQ请参考：[FAQ](https://www.hiascend.com/document/detail/zh/mindsdk/72rc1/rag/ragug/mxragug_0395.html)。
+相关FAQ请参考：[FAQ]()。
 
 # 安全声明
 
