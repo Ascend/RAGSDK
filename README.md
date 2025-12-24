@@ -213,7 +213,7 @@ API参考详见：[API参考]()。
 
 # License
 
-RAGSDK以Mulan PSL v2许可证许可，对应许可证文本可查阅[RAGSDK根目录](./LICENSE.md)。
+RAGSDK以Mulan PSL v2许可证许可，对应许可证文本可查阅[LICENSE](./LICENSE.md)。
 
 # 建议与交流
 
