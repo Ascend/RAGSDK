@@ -55,7 +55,6 @@
 │  │  ├─utils
 │  │  └─vector_stores
 │  ├─knowledge
-│  ├─libs
 │  ├─llm
 │  ├─reranker
 │  │  ├─local
