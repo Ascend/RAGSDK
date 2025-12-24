@@ -5,6 +5,7 @@
 -   [目录结构](#目录结构)
 -   [版本说明](#版本说明)
 -   [环境部署](#环境部署)
+-   [编译流程](#编译流程)
 -   [快速入门](#快速入门)
 -   [特性介绍](#特性介绍)
 -   [API参考](#API参考)
@@ -54,7 +55,6 @@
 │  │  ├─utils
 │  │  └─vector_stores
 │  ├─knowledge
-│  ├─libs
 │  ├─llm
 │  ├─reranker
 │  │  ├─local
@@ -139,6 +139,12 @@ RAGSDK版本配套详情请参考：[版本配套详情]()
 
 RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
+# 编译流程
+1. 执行编译 
+   - source /path/to/Ascend/ascend-toolkit/set_env.sh
+   - bash build/build.sh
+2. 生成的run包在build/output下
+
 # 快速入门
 
 RAG SDK提供快速构建基于昇腾平台问答系统的能力，提供多模态文档解析、知识库管理等能力，降低用户大模型应用开发门槛，支持对接开源生态。
@@ -207,7 +213,7 @@ API参考详见：[API参考]()。
 
 # License
 
-RAGSDK以Mulan PSL v2许可证许可，对应许可证文本可查阅[RAGSDK根目录]()。
+RAGSDK以Mulan PSL v2许可证许可，对应许可证文本可查阅[RAGSDK根目录](./LICENSE.md)。
 
 # 建议与交流
 
