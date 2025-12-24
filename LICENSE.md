@@ -54,7 +54,6 @@
 
 ```
 Copyright (c) Huawei Technologies Co., Ltd. [Year of First Publication]-[Year of Latest Update]. All Rights Reserved.
-MEF is licensed under Mulan PSL v2.
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
