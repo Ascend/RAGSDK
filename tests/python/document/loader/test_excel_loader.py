@@ -45,12 +45,12 @@ class TestExcelLoader(unittest.TestCase):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.xls"))
         docs = loader.load()
         contents = [
-            ':中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;',
-            ':中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;',
-            ':中文资讯;source:新智元;link:https://www.zhihu.com/org/xin-zhi-yuan-88-3;count(3月15日为例):4篇;SUM:24篇;',
-            ':中文资讯;source:极客公园;link:行业资讯 | 极客公园 (geekpark.net);count(3月15日为例):7篇;SUM:24篇;',
-            ':英文文献;source:huggingFace;link:日报 - 拥抱脸部 (huggingface.co);count(3月15日为例):14篇;SUM:55篇;',
-            ':英文文献;source:PaperWithCode;link:带代码的最新论文 |带代码的论文 (paperswithcode.com);count(3月15日为例):41篇;SUM:55篇;']
+            ':中文资讯;source:测试1;link:www.test1.com;count(3月15日为例):9篇;SUM:24篇;',
+            ':中文资讯;source:测试3;link:www.test3.com;count(3月15日为例):4篇;SUM:24篇;',
+            ':中文资讯;source:测试4;link:www.test4.com;count(3月15日为例):4篇;SUM:24篇;',
+            ':中文资讯;source:测试5;link:行业资讯 | 公园 (test.net);count(3月15日为例):7篇;SUM:24篇;',
+            ':英文文献;source:测试6;link:行业资讯 | 公园 (test.net);count(3月15日为例):14篇;SUM:55篇;',
+            ':英文文献;source:测试7;link:行业资讯 | 公园 (test.net);count(3月15日为例):41篇;SUM:55篇;']
         self.assertEqual(len(contents), len(docs))
         self.assertEqual(contents[0], docs[0].page_content)
         self.assertEqual(docs[0].metadata["sheet"], '不需要订阅')
@@ -66,12 +66,12 @@ class TestExcelLoader(unittest.TestCase):
         loader = ExcelLoader(os.path.join(self.data_dir, "test.xlsx"))
         docs = loader.load()
         contents = [
-            ':中文资讯;source:机器之心;link:入门 | 机器之心 (jiqizhixin.com);count(3月15日为例):9篇;SUM:24篇;',
-            ':中文资讯;source:量子位;link:https://www.zhihu.com/org/liang-zi-wei-48/posts;count(3月15日为例):4篇;SUM:24篇;',
-            ':中文资讯;source:新智元;link:https://www.zhihu.com/org/xin-zhi-yuan-88-3;count(3月15日为例):4篇;SUM:24篇;',
-            ':中文资讯;source:极客公园;link:行业资讯 | 极客公园 (geekpark.net);count(3月15日为例):7篇;SUM:24篇;',
-            ':英文文献;source:huggingFace;link:日报 - 拥抱脸部 (huggingface.co);count(3月15日为例):14篇;SUM:55篇;',
-            ':英文文献;source:PaperWithCode;link:带代码的最新论文 |带代码的论文 (paperswithcode.com);count(3月15日为例):41篇;SUM:55篇;']
+            ':中文资讯;source:test1;link:www.test1.com;count(3月15日为例):9篇;SUM:24篇;',
+            ':中文资讯;source:test3;link:www.test3.com;count(3月15日为例):4篇;SUM:24篇;',
+            ':中文资讯;source:test4;link:www.test4.com;count(3月15日为例):4篇;SUM:24篇;',
+            ':中文资讯;source:test5;link:www.test5.com;count(3月15日为例):7篇;SUM:24篇;',
+            ':英文文献;source:test6;link:www.test6.com;count(3月15日为例):14篇;SUM:55篇;',
+            ':英文文献;source:test7;link:www.test7.com;count(3月15日为例):41篇;SUM:55篇;']
         self.assertEqual(len(docs), len(contents))
         for idx, content in enumerate(contents):
             self.assertEqual(docs[idx].page_content, content)
