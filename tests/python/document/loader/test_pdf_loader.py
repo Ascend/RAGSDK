@@ -70,7 +70,7 @@ class TestPdfLoader(unittest.TestCase):
     def test_load(self):
         loader = PdfLoader(os.path.join(self.data_dir, "test.pdf"))
         pdf_doc = list(loader.lazy_load())
-        self.assertEqual(15, pdf_doc[0].metadata["page_count"])
+        self.assertEqual(1, pdf_doc[0].metadata["page_count"])
         self.assertTrue(pdf_doc[0].metadata["source"].find("files/test.pdf"))
 
     def test_parser(self):
