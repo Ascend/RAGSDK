@@ -31,104 +31,26 @@
 ├─build
 ├─mx_rag
 │  ├─cache
-│  │  ├─cache_api
-│  │  ├─cache_chain
-│  │  ├─cache_config
-│  │  ├─cache_core
-│  │  ├─cache_emb
-│  │  ├─cache_generate_qas
-│  │  ├─cache_similarity
-│  │  └─cache_storage
 │  ├─chain
 │  ├─compress
 │  ├─document
-│  │  ├─loader
-│  │  └─splitter
 │  ├─embedding
-│  │  ├─local
-│  │  └─service
 │  ├─evaluate
-│  │  └─prompts
 │  ├─graphrag
-│  │  ├─graphs
-│  │  ├─prompts
-│  │  ├─utils
-│  │  └─vector_stores
 │  ├─knowledge
 │  ├─llm
 │  ├─reranker
-│  │  ├─local
-│  │  └─service
 │  ├─retrievers
 │  ├─storage
-│  │  ├─document_store
-│  │  └─vectorstore
 │  ├─summary
 │  ├─tools
-│  │  └─finetune
-│  │      ├─dataprocess
-│  │      ├─generator
-│  │      └─instruction
-│  │          └─prompt
 │  ├─utils
 ├─ops
-│  ├─adapter
-│  │  ├─model
-│  │  ├─operation
-│  │  ├─utils
-│  │  └─workspace
-│  ├─models
-│  │  ├─bge-large-zh-v1.5
-│  │  │  ├─layer
-│  │  │  └─model
-│  │  ├─include
-│  │  │  └─atb_speed
-│  │  │      ├─base
-│  │  │      ├─log
-│  │  │      └─utils
-│  │  └─src
-│  │      ├─base
-│  │      ├─log
-│  │      └─utils
-│  ├─operations
-│  │  └─plugin_op
-│  └─transformer_adapter
 ├─output
 ├─script
 ├─tests
 │  ├─data
-│  │  └─files
-│  ├─fake_package
-│  │  └─paddleocr
-│  │      └─ppstructure
-│  │          └─recovery
 │  └─python
-│      ├─cache
-│      ├─chain
-│      ├─compress
-│      ├─document
-│      │  ├─loader
-│      │  └─spliter
-│      ├─document_store
-│      ├─embedding
-│      │  ├─local
-│      │  └─service
-│      ├─evaluate
-│      ├─graphrag
-│      ├─knowledge
-│      ├─llm
-│      ├─reranker
-│      │  ├─local
-│      │  └─service
-│      ├─retrivers
-│      ├─summary
-│      ├─tools
-│      │  └─finetune
-│      │      ├─dataprocess
-│      │      ├─generator
-│      │      └─instruction
-│      ├─utils
-│      └─vectorstore
 ```
 
 # 版本说明
