@@ -23,6 +23,7 @@ ARCH=$(uname -m)
 CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 PKG_DIR=ragsdk
+package_name=Ascend-mindxsdk
 
 VERSION_FILE="${ROOT_PATH}"/../build/conf/config.yaml
 get_version() {
@@ -103,9 +104,34 @@ function package()
     rm -f .gitkeep
 }
 
+function patch_makeself() {
+    cd "${ROOT_PATH}/opensource" || exit
+
+    if ls *.patch >/dev/null 2>&1; then
+        cd makeself-release-2.5.0 || exit
+        patch -p1 < ../*.patch
+        rm -f ../*.patch
+    fi
+
+}
+
+function build_run() {
+    cd "${ROOT_PATH}/output" || exit
+
+    bash ../opensource/makeself-release-2.5.0/makeself.sh --chown --nomd5 --sha256 --nocrc \
+            --header ../opensource/makeself-release-2.5.0/makeself-header.sh \
+            --help-header help.info \
+            --packaging-date "" \
+            --tar-extra '--owner=root --group=root' \
+            ${ROOT_PATH}/output ../${package_name}-mxrag_${VERSION}_linux-${ARCH}.run "ASCEND RAG SDK RUN PACKAGE" ./install.sh
+
+}
+
 function main()
 {
     package "$1"
+    patch_makeself
+    build_run
 }
 
 main "$@"
