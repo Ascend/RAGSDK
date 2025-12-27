@@ -65,7 +65,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 1. 执行编译 
    - source /path/to/Ascend/ascend-toolkit/set_env.sh
    - bash build/build.sh
-2. 生成的whl包在build/output下
+2. 生成的run包在./output下
 
 # 快速入门
 
