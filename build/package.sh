@@ -23,7 +23,7 @@ ARCH=$(uname -m)
 CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 PKG_DIR=ragsdk
-package_name=Ascend-mindxsdk
+package_name=Ascend
 
 VERSION_FILE="${ROOT_PATH}"/../ci/config/config.ini
 get_version() {
@@ -123,7 +123,7 @@ function build_run() {
             --help-header help.info \
             --packaging-date "" \
             --tar-extra '--owner=root --group=root' \
-            ${ROOT_PATH}/output ./${package_name}-mxrag_${VERSION}_linux-${ARCH}.run "ASCEND RAG SDK RUN PACKAGE" ./install.sh
+            ${ROOT_PATH}/output ./${package_name}-ragsdk_${VERSION}_linux-${ARCH}.run "ASCEND RAG SDK RUN PACKAGE" ./install.sh
 
 }
 
