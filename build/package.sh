@@ -123,7 +123,7 @@ function build_run() {
             --help-header help.info \
             --packaging-date "" \
             --tar-extra '--owner=root --group=root' \
-            ${ROOT_PATH}/output ../${package_name}-mxrag_${VERSION}_linux-${ARCH}.run "ASCEND RAG SDK RUN PACKAGE" ./install.sh
+            ${ROOT_PATH}/output ./${package_name}-mxrag_${VERSION}_linux-${ARCH}.run "ASCEND RAG SDK RUN PACKAGE" ./install.sh
 
 }
 
