@@ -25,7 +25,7 @@ ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 PKG_DIR=ragsdk
 package_name=Ascend-mindxsdk
 
-VERSION_FILE="${ROOT_PATH}"/../build/conf/config.yaml
+VERSION_FILE="${ROOT_PATH}"/../ci/config/config.ini
 get_version() {
   if [ -f "$VERSION_FILE" ]; then
     VERSION=$(sed '/.*:/!d;s/.*: //' "$VERSION_FILE")
