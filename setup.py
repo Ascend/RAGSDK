@@ -44,15 +44,24 @@ def get_ci_version_info():
     :return: version number
     """
     src_path = this_directory.parent
-    ci_version_file = src_path.joinpath('build', 'conf', 'config.yaml')
-    version = '6.0.RC2'
+    ci_version_file = src_path.joinpath('build', 'conf', 'config.ini')
+    version = '7.0.RC1'
     logging.info("get version from %s", ci_version_file)
     try:
         R_FLAGS = os.O_RDONLY
         MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
         with os.fdopen(os.open(ci_version_file, R_FLAGS, MODES), 'r') as f:
-            config = yaml.safe_load(f)
-            version = config['version']
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if ':' in line:
+                    key, value = line.split(':', 1)
+                else:
+                    continue
+                if key.strip() == 'version':
+                    version = value.strip()
+                    break
     except Exception as ex:
         logging.warning("get version failed, %s", str(ex))
     return version
