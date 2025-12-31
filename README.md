@@ -73,7 +73,7 @@ cd RAGSDK
 ```
 3. 执行构建脚本
 ```
-cd ../build
+cd build
 bash build.sh
 ```
 4. 构建完之后，run包在./ouput/目录下，安装run包

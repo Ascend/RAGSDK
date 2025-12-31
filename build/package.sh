@@ -24,21 +24,15 @@ CUR_PATH=$(dirname "$(readlink -f "$0")")
 ROOT_PATH=$(readlink -f "${CUR_PATH}"/..)
 PKG_DIR=mindxsdk-mxrag
 
-VERSION_FILE="${ROOT_PATH}"/../ci/config/config.ini
+VERSION_FILE="${ROOT_PATH}"/ci/config/config.ini
 get_version() {
   if [ -f "$VERSION_FILE" ]; then
-    VERSION=$(sed '/.*:/!d;s/.*: //' "$VERSION_FILE")
+    VERSION=$(sed -n 's/^version:[[:space:]]*//p' "$VERSION_FILE")
     if [[ "$VERSION" == *.[b/B]* ]] && [[ "$VERSION" != *.[RC/rc]* ]]; then
       VERSION=${VERSION%.*}
     fi
   else
     VERSION="7.0.RC1"
-  fi
-
-  if [ -f "$VERSION_FILE" ]; then
-    B_VERSION=$(sed '/.*version_info:/!d;s/.*: //' "$VERSION_FILE")
-  else
-    B_VERSION="7.0.RC1.B010"
   fi
 
 }
@@ -47,7 +41,6 @@ get_version
 
 {
   echo "MindX SDK mxrag:${VERSION}"
-  echo "mxrag version:${B_VERSION}"
   echo "Plat: linux $(uname -m)"
 } >> "$ROOT_PATH"/version.info
 

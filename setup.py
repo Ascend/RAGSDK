@@ -43,8 +43,7 @@ def get_ci_version_info():
     Get version information from ci config file
     :return: version number
     """
-    src_path = this_directory.parent
-    ci_version_file = src_path.joinpath('build', 'conf', 'config.ini')
+    ci_version_file = this_directory.joinpath('ci', 'config', 'config.ini')
     version = '7.0.RC1'
     logging.info("get version from %s", ci_version_file)
     try:
