@@ -408,31 +408,6 @@ function parse_script_args() {
     done
 }
 
-function handle_eula() {
-    local action=$1
-    if [[ "$quiet_flag" = "y" ]]; then
-        log "INFO" "using quiet option implies acceptance of the EULA, start to ${action}"
-        return
-    fi
-    log "INFO" "How the EULA is displayed depends on the value of environment variable LANG: zh_CN.UTF-8 for Chinese"
-    if echo "${LANG}" | grep -q "zh_CN"; then
-        eula_file=./eula_cn.conf
-    else
-        eula_file=./eula_en.conf
-    fi
-    cat "${eula_file}" 1>&2
-    read -t 60 -n1 -r -p "Do you accept the EULA to ${action} RAG SDK?[Y/N]" answer
-    case "${answer}" in
-        Y|y)
-            log "INFO" "accept EULA, start to ${action}"
-            ;;
-        *)
-            log "ERROR" "reject EULA, quit to ${action}"
-            exit 1
-            ;;
-    esac
-}
-
 function set_env() {
   sed -i "s!export RAG_SDK_HOME=.*!export RAG_SDK_HOME="${install_path}/mxRag"!g" "${install_path}"/mxRag/script/set_env.sh
 }
@@ -603,10 +578,8 @@ function upgrade_process() {
 
 function process() {
     if [[ "$install_flag" = "y" ]]; then
-        handle_eula "install"
         install_process
     elif [[ "$upgrade_flag" = "y" ]]; then
-        handle_eula "upgrade"
         upgrade_process
     fi
 }
