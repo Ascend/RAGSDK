@@ -33,7 +33,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base, scoped_session
 
 from mx_rag.knowledge.base_knowledge import KnowledgeBase, KnowledgeError
 from mx_rag.storage.document_store import Docstore, MxDocument
-from mx_rag.storage.vectorstore import VectorStore, MindFAISS
+from mx_rag.storage.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params, FILE_COUNT_MAX, MAX_SQLITE_FILE_NAME_LEN, \
     check_db_file_limit, validate_list_str, TEXT_MAX_LEN, STR_TYPE_CHECK_TIP_1024, validate_sequence, STR_MAX_LEN, \
     check_pathlib_path, validate_lock, BOOL_TYPE_CHECK_TIP, check_embed_func
@@ -503,6 +503,7 @@ class KnowledgeDB(KnowledgeBase):
         elif dense_vector:
             self._vector_store.add(ids, np.array(dense_vector), document_id)
         else:
+            from mx_rag.storage.vectorstore import MindFAISS
             if isinstance(self._vector_store, MindFAISS):
                 raise KnowledgeError("MindFAISS does not support sparse embeddings")
             self._vector_store.add_sparse(ids, sparse_vector)

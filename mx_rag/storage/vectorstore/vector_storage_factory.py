@@ -26,7 +26,6 @@ from typing import Optional
 from loguru import logger
 
 from mx_rag.storage.vectorstore import VectorStore, OpenGaussDB
-from mx_rag.storage.vectorstore import MindFAISS
 from mx_rag.storage.vectorstore import MilvusDB
 
 
@@ -35,6 +34,14 @@ class VectorStorageError(Exception):
     向量数据库错误
     """
     pass
+
+
+try:
+    import ascendfaiss
+    from mx_rag.storage.vectorstore import MindFAISS
+    MIND_FAISS_AVAILABLE = True
+except ImportError as e:
+    MIND_FAISS_AVAILABLE = False
 
 
 class VectorStorageFactory(ABC):
@@ -47,9 +54,11 @@ class VectorStorageFactory(ABC):
     """
     _NPU_SUPPORT_VEC_TYPE = {
         "opengauss_db": OpenGaussDB.create,
-        "npu_faiss_db": MindFAISS.create,
         "milvus_db": MilvusDB.create
     }
+    if MIND_FAISS_AVAILABLE:
+        _NPU_SUPPORT_VEC_TYPE["npu_faiss_db"] = MindFAISS.create
+
 
     @classmethod
     def create_storage(cls, **kwargs) -> Optional[VectorStore]:

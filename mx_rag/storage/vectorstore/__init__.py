@@ -20,7 +20,6 @@ See the Mulan PSL v2 for more details.
 
 
 __all__ = [
-    "MindFAISS",
     "VectorStore",
     "MilvusDB",
     "OpenGaussDB",
@@ -28,7 +27,12 @@ __all__ = [
     "SearchMode"
 ]
 
-from .faiss_npu import MindFAISS
+try:
+    from .faiss_npu import MindFAISS
+    __all__.append("MindFAISS")
+except ImportError as e:
+    MindFAISS = None
+
 from .vectorstore import VectorStore, SearchMode
 from .milvus import MilvusDB
 from .opengauss import OpenGaussDB
