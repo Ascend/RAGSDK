@@ -184,10 +184,10 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         ```
 
         > [!NOTE] 说明 
-        >-   <_device\_id__\>_：表示NPU设备ID，默认从0开始。如果有多个，中间用英文","隔开。每个容器使用的NPU卡只能独占，否则会报错。可通过执行**ls /dev/davinci\* |grep -v /dev/davinci\_manager |tr -d /dev/davinci**命令查询。
-        >-   <_mxrag\_demo__\>_：表示运行后的容器名称，默认为mxrag\_demo。
+        >-   <_device\_id_\>：表示NPU设备ID，默认从0开始。如果有多个，中间用英文","隔开。每个容器使用的NPU卡只能独占，否则会报错。可通过执行**ls /dev/davinci\* |grep -v /dev/davinci\_manager |tr -d /dev/davinci**命令查询。
+        >-   <_mxrag\_demo_\>：表示运行后的容器名称，默认为mxrag\_demo。
         >-   <port\>：表示需要映射的端口。
-        >-   <_model\_dir__\>_：表示RAG SDK使用的模型存放的上级目录，如/home/data，不能配置为/home和/home/HwHiAiUser，防止宿主机文件挂载覆盖容器中HwHiAiUser家目录文件，导致RAG SDK功能异常。
+        >-   <_model\_dir_\>：表示RAG SDK使用的模型存放的上级目录，如/home/data，不能配置为/home和/home/HwHiAiUser，防止宿主机文件挂载覆盖容器中HwHiAiUser家目录文件，导致RAG SDK功能异常。
         >-   对于Atlas 800I A2设备使用clip向量模型加速时，需添加--device=/dev/dvpp\_cmdlist:/dev/dvpp\_cmdlist:rw 参数支持对dvpp对图片预处理，并且需保证容器运行用户对/dev/dvpp\_cmdlist有访问权限。
 
     2.  进入容器。
