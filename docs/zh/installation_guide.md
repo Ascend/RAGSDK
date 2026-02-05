@@ -153,7 +153,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         1.  获取Dockerfile。Dockerfile中默认指定的安装和运行RAG SDK及相关依赖软件包的用户为普通用户“HwHiAiUser”，如果需要指定为其他用户，请在Dockerfile文件中适配修改。
         2.  在Dockerfile同级目录下创建package目录，并在package目录下存放[安装依赖](#安装依赖)章节中获取的依赖包，和[获取RAG SDK软件包](#获取rag-sdk软件包)章节中获取的RAG SDK软件包。
 
-            文件存放结构如下示例，其中driver目录为npu-driver驱动安装后的目录，driver默认安装路径为“/usr/local/Ascend/driver/“。
+            文件存放结构如下示例，其中driver目录为npu-driver驱动安装后的目录，driver默认安装路径为“/usr/local/Ascend/driver/”。
 
             ```
             $ tree -L 2
@@ -263,7 +263,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 **操作步骤<a name="section539219178112"></a>**
 
-1.  切换用户至HwHiAiUser，并进入“/home/HwHiAiUser“目录。
+1.  切换用户至HwHiAiUser，并进入“/home/HwHiAiUser”目录。
 2.  安装torch和torch-npu。
 
     ```
@@ -405,7 +405,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     3.  创建软件包的安装路径。
         -   **若用户未指定安装路径**，软件会默认安装到软件包所在的路径。
-        -   **若用户想指定安装路径**，需要先创建安装路径。以安装路径“/home/HwHiAiUser/Ascend“为例：
+        -   **若用户想指定安装路径**，需要先创建安装路径。以安装路径“/home/HwHiAiUser/Ascend”为例：
 
             ```
             mkdir -p /home/HwHiAiUser/Ascend

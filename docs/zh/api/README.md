@@ -18,12 +18,12 @@ RAG SDK接口遵循异常处理机制，故用户必须在try/except语句块内
 |向量化|[embedding](./embedding.md)|
 |排序|[reranker](./reranker.md)|
 |模型推理加速|[model_inference_acceleration](./model_inference_acceleration.md)|
-|embeddi模型微调|[embedding_model_fine_tuning](./embedding_model_fine_tuning.md)|
+|embedding模型微调|[embedding_model_fine_tuning](./embedding_model_fine_tuning.md)|
 |评估模块|[evaluation_module](./evaluation_module.md#评估模块)|
 |缓存模块|[cache_module](./cache_module.md#缓存模块)|
 |检索|[retrieval](./retrieval.md)|
 |文档总结|[document_summary](./document_summary.md#文档总结)|
 |Prompt压缩|[prompt_compression](./prompt_compression.md)|
-|大模型Chian|[llm_chains](./llm_chains.md)|
+|大模型Chain|[llm_chains](./llm_chains.md)|
 |知识图谱|[knowledge_graph](./knowledge_graph.md)|
 

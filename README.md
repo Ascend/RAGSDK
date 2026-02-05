@@ -117,7 +117,7 @@ RAGSDK组件提供多模态文档解析、知识库管理等能力，降低用�
 
 # API参考
 
-API参考详见，[接口参考](./docs/zh/api)。
+API参考详见，[接口参考](./docs/zh/api/README.md)。
 
 # FAQ
 
@@ -158,6 +158,7 @@ API参考详见，[接口参考](./docs/zh/api)。
 
 RAGSDK以Mulan PSL v2许可证许可，对应许可证文本可查阅[LICENSE](./LICENSE.md)。
 
+介绍RAGSDK docs目录下的文档适用CC-BY 4.0许可证，具体请参见[LICENSE](./docs/LICENSE)文件。
 # 建议与交流
 
 欢迎大家为社区做贡献。如果有任何疑问或建议，请提交[issue](https://gitcode.com/Ascend/RAGSDK/issues)，我们会尽快回复。感谢您的支持。
