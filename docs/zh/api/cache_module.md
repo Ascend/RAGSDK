@@ -138,7 +138,7 @@ SimilarityCacheConfig(vector_config, cache_config, emb_config, similarity_config
 
 > [!NOTE] 说明 
 >-   本接口内部使用了pickle模块，有被恶意构造的数据在unpickle期间攻击的风险。需要保证在被加载的落盘数据data\_save\_folder是安全存储，仅可加载可信的落盘数据。
->-   vector\_config和cache\_config必须同时为none或同时不为none。如果vector\_config和cache\_config同时为None，则等同于memory cache。
+>-   vector\_config和cache\_config必须同时为None或同时不为None。如果vector\_config和cache\_config同时为None，则等同于memory cache。
 >-   对于sqlite数据库来说，它的落盘文件不能超过30GB，对于矢量数据库来说，它的落盘文件不能超过20GB。
 
 **表 1**  vector\_config<a id="vector_config"></a>
@@ -402,7 +402,7 @@ def clear()
 
 **功能描述<a name="section292317486370"></a>**
 
-该函数主要是将用户的缓存数据强制从内存中刷新至磁盘空间，刷新地址为[类功能](#ZH-CN_TOPIC_0000002020105781)中的配置参数“data\_save\_folder“。
+该函数主要是将用户的缓存数据强制从内存中刷新至磁盘空间，刷新地址为[类功能](#ZH-CN_TOPIC_0000002020105781)中的配置参数“data\_save\_folder”。
 
 必须在初始化之后进行调用。
 

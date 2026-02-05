@@ -2240,7 +2240,7 @@ MindFAISS(x_dim, devs, load_local_index, index_type, metric_type, auto_save)
 
 
 > [!NOTE] 说明 
->若“auto\_save“设置为“False“，则MindFAISS不会自动保存向量到离线知识库，需要手动调用[save\_local\(\)](#save_local-1)来保存向量数据库到离线知识库，否则程序退出后未保存的向量将丢失，有可能导致关系数据库和向量数据库的数据不一致，从而造成程序运行失败的问题。
+>若“auto\_save”设置为“False”，则MindFAISS不会自动保存向量到离线知识库，需要手动调用[save\_local\(\)](#save_local-1)来保存向量数据库到离线知识库，否则程序退出后未保存的向量将丢失，有可能导致关系数据库和向量数据库的数据不一致，从而造成程序运行失败的问题。
 
 **调用示例<a name="section87272117253"></a>**
 

@@ -68,7 +68,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     > [!NOTE] 说明
     >-   MX\_INDEX\_INSTALL\_PATH、MX\_INDEX\_MODELPATH变量已在\~/.bashrc中配置，无需单独配置。具体配置值请查看\~/.bashrc。
-    >-   **-d** <dim\>_表示embedding模型向量化后的维度，因acge\_text\_embedding嵌入模型向量维度为1024，这里设置为-d 1024。
+    >-   **-d** <dim\>表示embedding模型向量化后的维度，因acge\_text\_embedding嵌入模型向量维度为1024，这里设置为-d 1024。
     >-   **-t** <i><chip\_type\></i>表示芯片类型。对于Atlas 300I Duo 推理卡，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删掉，即是<i><chip\_type\></i>的取值。对于Atlas 800I A2 推理服务器，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，取“Name”对应的字段。对于Atlas 800I A3 超节点服务器，可以通过**npu-smi info -t board -i 0 -c 0**命令进行查询，获取**NPU Name**信息，910\_<b><i><NPU Name\></i></b>即是<i><chip\_type\></i>的取值。
 
 2.  创建领域知识文档。
@@ -134,7 +134,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 > [!NOTE] 说明 
 >-   “构建知识库”和“检索回答”过程使用的embedding模型、关系数据库路径、向量数据库路径需对应保持一致，才能正常执行样例。
->-   执行样例代码时，当参数<b>"tei\_emb"</b>为“False“，表示本地启动embedding模型，embedding\_path传入本地模型存放目录；当参数<b>"tei\_emb"</b>为“True“，表示启动服务化模型，embedding_url传入服务化模型URI地址；reranker同理。
+>-   执行样例代码时，当参数<b>"tei\_emb"</b>为“False”，表示本地启动embedding模型，embedding\_path传入本地模型存放目录；当参数<b>"tei\_emb"</b>为“True”，表示启动服务化模型，embedding_url传入服务化模型URI地址；reranker同理。
 
 
 
