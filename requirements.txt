@@ -20,8 +20,8 @@ paddlepaddle==2.6.2
 opencv-python~=4.6.0.66
 scikit-learn==1.6.1
 umap-learn~=0.5.6
-pyOpenSSL==24.2.1
-cryptography==42.0.8
+pyOpenSSL==25.3.0
+cryptography==46.0.5
 tqdm==4.66.5
 jieba==0.42.1
 python-pptx==0.6.23
