@@ -26,14 +26,8 @@ echo "PRESMOKE_DIR: $PRESMOKE_DIR"
 echo "CODE_PATH: $CODE_PATH"
 
 cd $CODE_PATH
-list_dir=$(ls -l "$CODE_PATH")
-echo "parent_dir: $list_dir"
-
 changed=$(git diff master --no-commit-id --name-only)
 echo "$changed" > changed_files.txt
-
-list_dir1=$(ls -l "$CODE_PATH/tests/presmoke")
-echo "parent_dir1: $list_dir1"
 
 # 设置环境变量
 source /usr/local/Ascend/ascend-toolkit/set_env.sh 
@@ -63,5 +57,4 @@ sleep 1
 export MX_INDEX_FINALIZE=0
 python3 tests/presmoke/map_presmoke_list.py
 cat map_presmoke_list.txt | xargs python3 -m pytest -s
-#pytest -m pytest -s
 kill $API_PID 2>/dev/null

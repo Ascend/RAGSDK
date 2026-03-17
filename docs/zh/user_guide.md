@@ -351,5 +351,3 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 启动WEB服务，进行参数配置、文档上传、删除、问答等操作，详细流程见：[chat\_with\_ragsdk](https://gitcode.com/printSSS/mindsdk-referenceapps_9751/blob/cache01/RAGSDK/MainRepo/Samples/RagDemo/chat_with_ascend/readme.md)
 
-test
-

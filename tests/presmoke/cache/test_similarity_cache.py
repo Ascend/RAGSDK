@@ -130,7 +130,7 @@ class TestSimilarityCacheDemo(unittest.TestCase):
         cache_chain = CacheChainChat(chain=text2text_chain, cache=cache)
         res1 = cache_chain.query("请描述2024年高考作文题目")
         res2 = cache_chain.query("2024年的高考作文题目?")
-        # 运行不稳定
+        # 运行不稳定，不一定能命中缓存，只判断部分字符串
         self.assertEqual(res1.get("result")[:160], res2.get("result")[:160])
 
 

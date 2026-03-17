@@ -389,7 +389,7 @@ cache.clear()
 
 **功能描述<a name="section292317486370"></a>**
 
-删除已落盘的数据和文件，对于memory cache，由于关闭时会flush再次写入缓存，需要用户程序中再次清理。
+删除data_save_folder下已落盘的缓存文件，对于memory cache，由于关闭时会自动flush再次写入缓存，需要用户程序中再次清理。
 
 **函数原型<a name="section725633832220"></a>**
 
