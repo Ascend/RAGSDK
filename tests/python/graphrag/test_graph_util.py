@@ -18,10 +18,11 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-from langchain_opengauss import openGaussAGEGraph
-import pytest
 import unittest
 from unittest.mock import patch, MagicMock
+
+import pytest
+from langchain_opengauss import openGaussAGEGraph
 
 from mx_rag.graphrag.graphs.graph_util import OpenGaussAGEAdapter, CypherQueryBuilder, cypher_value, escape_identifier
 
