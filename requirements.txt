@@ -38,3 +38,5 @@ json-repair==0.44.1
 einops~=0.8.0
 unstructured==0.18.11
 Markdown==3.9
+langchain_opengauss==0.1.5
+rank_bm25==0.2.2

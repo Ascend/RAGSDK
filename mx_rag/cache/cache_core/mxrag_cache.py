@@ -71,7 +71,7 @@ class MxRAGCache:
         self.__cache_obj = Cache()
         self.config = config
         self.cache_name = cache_name
-
+        self.next_cache = None
         try:
             from mx_rag.cache.cache_api.cache_init import _init_mxrag_cache
 
@@ -109,24 +109,18 @@ class MxRAGCache:
         cls.cache_limit = cache_limit
 
     def clear(self):
+        next_cache = self.next_cache
+        while next_cache is not None:
+            next_cache.clear()
+            next_cache = next_cache.next_cache
         if "vector_db" in self.data_save_path:
             self.data_save_path["vector_db"].delete_all()
         if "txt_file" in self.data_save_path and os.path.exists(self.data_save_path["txt_file"]):
             os.remove(self.data_save_path["txt_file"])
         if "vector_file" in self.data_save_path and os.path.exists(self.data_save_path["vector_file"]):
             os.remove(self.data_save_path["vector_file"])
-        if "sql_file" in self.data_save_path:
-            import sqlite3
-            conn = sqlite3.connect(self.data_save_path["sql_file"])
-            curses = conn.cursor()
-            curses.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            tables = curses.fetchall()
-            for table in tables:
-                table_name = table[0]
-                safe_table_name = conn.execute("SELECT quote(?)", (table_name,)).fetchone()[0]
-                curses.execute(f"DELETE FROM {safe_table_name};")
-                conn.commit()
-            conn.commit()
+        if "sql_file" in self.data_save_path and os.path.exists(self.data_save_path["sql_file"]):
+            os.remove(self.data_save_path["sql_file"])
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH),
@@ -209,7 +203,8 @@ class MxRAGCache:
         """
         if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
-        if os.path.exists(self.__cache_obj.data_manager.data_path):
+        if (hasattr(self.__cache_obj.data_manager, "data_path") and
+                os.path.exists(self.__cache_obj.data_manager.data_path)):
             SecFileCheck(self.__cache_obj.data_manager.data_path, 100 * GB).check()
         self.__cache_obj.flush()
         self._verbose_log("Flush!")
@@ -245,6 +240,7 @@ class MxRAGCache:
 
         self.__cache_obj.next_cache = next_cache.get_obj()
         MxRAGCache.current_join_size = MxRAGCache.current_join_size + 1
+        self.next_cache = next_cache
 
     def _join_check(self, next_cache):
         logger.debug(f"cache deepth:{MxRAGCache.current_join_size} cache_limit:{MxRAGCache.cache_join_size_limit}")

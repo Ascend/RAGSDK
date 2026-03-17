@@ -18,7 +18,6 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-import sys
 from contextlib import contextmanager
 from typing import Any, Dict, Optional
 

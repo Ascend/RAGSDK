@@ -21,8 +21,8 @@ See the Mulan PSL v2 for more details.
 
 from typing import Optional, List
 import numpy as np
+from loguru import logger
 
-from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
 from mx_rag.utils.common import validate_params
 
@@ -89,9 +89,13 @@ class VectorStoreWrapper:
         Returns:
             int: Number of vectors.
         """
-        if isinstance(self.vector_store, MindFAISS):
-            return self.vector_store.get_ntotal()
-        return len(self.vector_store.get_all_ids())
+        try:
+            from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+            if isinstance(self.vector_store, MindFAISS):
+                return self.vector_store.get_ntotal()
+            return len(self.vector_store.get_all_ids())
+        except ImportError:
+            return len(self.vector_store.get_all_ids())
 
     def clear(self) -> None:
         """
@@ -104,5 +108,9 @@ class VectorStoreWrapper:
         Save the index to disk.
         """
         # only MindFAISS needs to call save_local
-        if isinstance(self.vector_store, MindFAISS):
-            self.vector_store.save_local()
+        try:
+            from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
+            if isinstance(self.vector_store, MindFAISS):
+                self.vector_store.save_local()
+        except ImportError:
+            logger.warning("Import MindFAISS failed.")

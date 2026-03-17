@@ -116,7 +116,7 @@ class GraphRAGPipeline:
         self.concept_embedding = None
         self.docs = []
         self.dim = dim
-
+        self.conceptualize = kwargs.pop("conceptualize", False)
         self.triple_instructions: Optional[dict] = None
         self.conceptualizer_prompts: Optional[dict] = None
         self.concept_vector_store = None
@@ -159,16 +159,12 @@ class GraphRAGPipeline:
         pad_token=dict(
             validator=lambda x: isinstance(x, str) and len(x) < 256,
             message="param must be a string, range [0, 255]",
-        ),
-        conceptualize=dict(
-            validator=lambda x: isinstance(x, bool), message="param must be a boolean"
-        ),
+        )
     )
     def build_graph(
             self,
             lang: Lang = Lang.EN,
             pad_token: str = "",
-            conceptualize: bool = False,
             **kwargs,
     ):
         max_workers = kwargs.pop("max_workers", 5)
@@ -197,7 +193,7 @@ class GraphRAGPipeline:
             merger.merge(relations, lang)
             merger.save_graph(self.graph_save_path, self.encrypt_fn)
 
-            if conceptualize:
+            if self.conceptualize:
                 self._process_concepts_and_clusters(lang, top_k, threshold, max_workers, batch_size)
             logger.info("Graph built successfully")
         except ConnectionError as e:
@@ -229,7 +225,7 @@ class GraphRAGPipeline:
         reranker_top_k = kwargs.pop("reranker_top_k", 20)
         subgraph_depth = kwargs.pop("subgraph_depth", 2)
         node_vector_store_wrapper = VectorStoreWrapper(vector_store=self.node_vector_store)
-        if self.concept_vector_store is not None:
+        if self.conceptualize:
             concept_vector_store_wrapper = VectorStoreWrapper(vector_store=self.concept_vector_store)
         else:
             concept_vector_store_wrapper = None
@@ -263,15 +259,16 @@ class GraphRAGPipeline:
             )
         elif not isinstance(self.node_vector_store, VectorStore):
             raise GraphRAGError("node_vector_store must be an instance of VectorStore")
-        if self.concept_vector_store is None:
-            self.concept_vector_store = VectorStorageFactory.create_storage(
-                vector_type="npu_faiss_db",
-                x_dim=self.dim,
-                load_local_index=self.concept_vectors_path,
-                devs=self.devs
-            )
-        elif not isinstance(self.concept_vector_store, VectorStore):
-            raise GraphRAGError("concept_vector_store must be an instance of VectorStore")
+        if self.conceptualize:
+            if self.concept_vector_store is None:
+                self.concept_vector_store = VectorStorageFactory.create_storage(
+                    vector_type="npu_faiss_db",
+                    x_dim=self.dim,
+                    load_local_index=self.concept_vectors_path,
+                    devs=self.devs
+                )
+            elif not isinstance(self.concept_vector_store, VectorStore):
+                raise GraphRAGError("concept_vector_store must be an instance of VectorStore")
 
     def _setup_graph(self, **kwargs):
         if self.graph_type == "networkx":

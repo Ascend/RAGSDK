@@ -20,11 +20,9 @@ See the Mulan PSL v2 for more details.
 
 import os
 import unittest
-from unittest import mock
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from mx_rag.document.loader.excel_loader import ExcelLoader
-from mx_rag.document.loader.base_loader import BaseLoader
 
 class TestExcelLoader(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
