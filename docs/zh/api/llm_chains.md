@@ -18,7 +18,6 @@ from mx_rag.chain.base import Chain
 Chain()
 ```
 
-
 #### query<a name="ZH-CN_TOPIC_0000002020148565"></a>
 
 **功能描述<a name="section177691234412"></a>**
@@ -40,9 +39,6 @@ def query(text, llm_config, *args, **kwargs)
 |args|-|可选|传入的有效参数根据具体的Chain而定。|
 |kwargs|-|可选|传入的有效参数根据具体的Chain而定。|
 
-
-
-
 ### Text2ImgChain<a name="ZH-CN_TOPIC_0000001981995532"></a>
 
 #### 类功能<a name="ZH-CN_TOPIC_0000002018595501"></a>
@@ -63,8 +59,6 @@ Text2ImgChain(multi_model)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |multi_model|Text2ImgMultiModel|必选|对接大模型对象，传入[Text2ImgMultiModel](./llm_client.md#text2imgmultimodel)实例。|
-
-
 
 #### query<a name="ZH-CN_TOPIC_0000002018595241"></a>
 
@@ -88,13 +82,11 @@ def query(text, llm_config, *args, **kwargs)
 |kwargs["output_format"]|str|可选|输出的图片格式，通过kwargs["output_format"]获取，支持["png", "jpeg", "jpg", "webp"]，默认取值为png。|
 |kwargs["size"]|str|可选|图片生成尺寸，表示为"height*width"，由入参kwargs传递，具体支持的尺寸由对应的大模型决定，正则匹配格式为"^\d{1,5}\*\d{1,5}$"，默认为512*512。|
 
-
 **返回值说明<a name="section5555330124016"></a>**
 
 |数据类型|说明|
 |--|--|
 |Dict,{<br>"prompt": prompt, "result": data}|其中data为图片base64编码后的数据。|
-
 
 **调用示例<a name="section17535145902914"></a>**
 
@@ -108,8 +100,6 @@ text2img_chain = Text2ImgChain(multi_model=multi_model)
 llm_data = text2img_chain.query("dog wearing black glasses", output_format="jpg")
 print(llm_data)
 ```
-
-
 
 ### Img2ImgChain<a name="ZH-CN_TOPIC_0000002018714905"></a>
 
@@ -133,8 +123,6 @@ Img2ImgChain(multi_model, retriever)
 |multi_model|Img2ImgMultiModel|必选|对接大模型对象，[Img2ImgMultiModel](./llm_client.md#img2imgmultimodel)实例。|
 |retriever|BaseRetriever|必选|相似检索器，[Retriever](./retrieval.md#retriever)实例。|
 
-
-
 #### query<a name="ZH-CN_TOPIC_0000001982155060"></a>
 
 **功能描述<a name="section1945141620153"></a>**
@@ -151,19 +139,17 @@ def query(text, llm_config, *args, **kwargs)
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|text|str|必选|检索图片的描述文字，长度取值：(0, 1* 1000 * 1000]。|
+|text|str|必选|检索图片的描述文字，长度取值：(0, 1 \* 1000 \* 1000]。|
 |llm_config|LLMParameterConfig|可选|继承父类方法，此处未使用。|
 |args|list|可选|当前chain未使用。|
-|kwargs["prompt"]|str|必选|图片生成提示词，由入参kwargs传递，长度取值：(0, 1* 1024 * 1024]。|
+|kwargs["prompt"]|str|必选|图片生成提示词，由入参kwargs传递，长度取值：(0, 1 \* 1024 \* 1024]。|
 |kwargs["size"]|str|可选|图片生成尺寸，表示为"height*width"，由入参kwargs传递，具体支持的尺寸由对应的大模型决定，正则匹配格式为: "^\d{1,5}\\\*\d{1,5}$"，默认512\*512。|
-
 
 **返回值说明<a name="section57446519215"></a>**
 
 |数据类型|说明|
 |--|--|
 |Dict,{"prompt": prompt, "result": data}|其中data为图片base64编码后的数据。|
-
 
 **调用示例<a name="section055181421218"></a>**
 
@@ -195,8 +181,6 @@ llm_data = img2img_chain.query("查找小男孩图片",
 print(llm_data)
 ```
 
-
-
 ### SingleText2TextChain<a name="ZH-CN_TOPIC_0000002018595485"></a>
 
 #### 类功能<a name="ZH-CN_TOPIC_0000001981995500"></a>
@@ -219,13 +203,12 @@ SingleText2TextChain(llm, retriever, reranker, prompt, sys_messages, source, use
 |llm|Text2TextLLM|必选|大模型对象，具体可参见[Text2TextLLM](./llm_client.md#text2textllm)。|
 |retriever|Retriever|必选|Retriever对象，具体可参见[Retriever](./retrieval.md#retriever)。|
 |reranker|Reranker|可选|Reranker对象，实现对检索的文档进行精排，默认为None，具体可参见Reranker。|
-|prompt|str|可选|添加知识检索内容同时可以添加系统prompt，对大模型进行更精确的控制，默认值是："根据上述已知信息，简洁和专业地回答用户的问题。如果无法从已知信息中得到答案，请根据自身经验做出回答"。如果用户需要自定义prompt，请参考大模型的提示词工程增加。长度取值范围：[1, 1024*1024]|
-|sys_messages|List[dict]|可选|系统消息，默认值为None，列表最大长度为16，列表每个字典长度最大为16，字典key字符串长度最大为16，value字符串最大长度为4 * 1024* 1024，参考格式：[{"role": "system", "content":"你是一个友好助手" }]|
+|prompt|str|可选|添加知识检索内容同时可以添加系统prompt，对大模型进行更精确的控制，默认值是："根据上述已知信息，简洁和专业地回答用户的问题。如果无法从已知信息中得到答案，请根据自身经验做出回答"。如果用户需要自定义prompt，请参考大模型的提示词工程增加。长度取值范围：[1, 1024 \* 1024]|
+|sys_messages|List[dict]|可选|系统消息，默认值为None，列表最大长度为16，列表每个字典长度最大为16，字典key字符串长度最大为16，value字符串最大长度为4 \* 1024 \* 1024，参考格式：[{"role": "system", "content":"你是一个友好助手" }]|
 |source|bool|可选|在对话过程中，是否返回检索到的相关文档，Chain返回字典中key值为source_documents，默认为True。|
 |user_content_builder|Callable|可选|回调函数，返回值必须为字符串且长度最大为4*1024*1024，默认函数为_user_content_builder，功能是整合「原始问题、检索到的文档列表、用户提示词」这三类信息，生成可直接作为大模型对话中 user 角色消息 content 字段的文本（即 {"role": "user", "content": 生成结果}）。|
 
-
--   <a name="li19440111017591"></a>参数user\_content\_builder的默认函数：
+- <a name="li19440111017591"></a>参数user\_content\_builder的默认函数：
 
 ```
 def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
@@ -263,7 +246,6 @@ def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
     return final_prompt
 ```
 
-
 #### query<a name="ZH-CN_TOPIC_0000002018714737"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -285,17 +267,15 @@ def query(text, llm_config, *args, **kwargs)
 |args|列表|可选|继承父类方法签名，此处未使用。|
 |kwargs|字典|可选|继承父类方法签名，此处未使用。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Union[Dict, Iterator[Dict]]|大模型返回结果，其中Dict内容为：带知识来源：{"query": query, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}不带知识来源：{"query": query, "result": data}|
 
-
 **调用示例<a id="section175571825169"></a>**
 
--   **基本对话功能**
+- **基本对话功能**
 
 ```
 from paddle.base import libpaddle
@@ -361,7 +341,7 @@ print(response)
 
 ```
 
--   **图文并茂对话功能**
+- **图文并茂对话功能**
 
 ```
 from paddle.base import libpaddle
@@ -491,8 +471,6 @@ response = rag.query("mxVision软件架构包含哪些模块？", LLMParameterCo
 print(response)
 ```
 
-
-
 ### ParallelText2TextChain<a name="ZH-CN_TOPIC_0000001987173374"></a>
 
 #### 类功能<a name="ZH-CN_TOPIC_0000002023612945"></a>
@@ -515,13 +493,12 @@ class ParallelText2TextChain(SingleText2TextChain)
 |llm|Text2TextLLM|必选|大模型对象，具体可参见[Text2TextLLM](./llm_client.md#text2textllm)。|
 |retriever|Retriever|必选|Retriever对象，具体可参见[Retriever](./retrieval.md#retriever)。|
 |reranker|Reranker|可选|Reranker对象，实现对检索的文档进行精排，默认为None，具体可参见[Reranker](./reranker.md#reranker)。|
-|prompt|str|可选|添加知识检索内容同时可以添加系统prompt，对大模型进行更精确的控制，默认值是："根据上述已知信息，简洁和专业地回答用户的问题。如果无法从已知信息中得到答案，请根据自身经验做出回答"。如果用户需要自定义prompt，请参考大模型的提示词工程增加。长度取值范围：[1, 1024*1024]|
-|sys_messages|List[dict]|可选|系统消息，默认值为None，列表最大长度为16，列表每个字典长度最大为16，字典key字符串长度最大为16，value字符串最大长度为4 * 1024* 1024，参考格式：[{"role": "system", "content":"你是一个友好助手" }]|
+|prompt|str|可选|添加知识检索内容同时可以添加系统prompt，对大模型进行更精确的控制，默认值是："根据上述已知信息，简洁和专业地回答用户的问题。如果无法从已知信息中得到答案，请根据自身经验做出回答"。如果用户需要自定义prompt，请参考大模型的提示词工程增加。长度取值范围：[1, 1024 \*1024]|
+|sys_messages|List[dict]|可选|系统消息，默认值为None，列表最大长度为16，列表每个字典长度最大为16，字典key字符串长度最大为16，value字符串最大长度为4 \* 1024 \* 1024，参考格式：[{"role": "system", "content":"你是一个友好助手" }]|
 |source|bool|可选|在对话过程中，是否返回检索到的相关文档，Chain返回字典中key值为source_documents，默认为True。|
 |user_content_builder|Callable|可选|回调函数，返回值必须为字符串且长度最大为4*1024*1024，默认函数为_user_content_builder，功能是整合「原始问题、检索到的文档列表、用户提示词」这三类信息，生成可直接作为大模型对话中 user 角色消息 content 字段的文本（即 {"role": "user", "content": 生成结果}）。|
 
-
--   <a name="zh-cn_topic_0000001981995500_li19440111017591"></a>参数user\_content\_builder的默认函数：
+- 参数user\_content\_builder的默认函数：
 
 ```
 def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
@@ -559,7 +536,6 @@ def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
     return final_prompt
 ```
 
-
 #### query<a name="ZH-CN_TOPIC_0000002023613429"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -581,13 +557,11 @@ def query(text: str, llm_config, *args, **kwargs)
 |args|列表|可选|继承父类方法签名，此处未使用。|
 |kwargs|字典|可选|继承父类方法签名，此处未使用。|
 
-
 **返回值说明<a name="section15414449287"></a>**
 
 |数据类型|说明|
 |--|--|
 |Union[Dict, Iterator[Dict]]|返回字典或者迭代器，stream设置成True表示返回迭代器，否则返回字典。其中Dict内容为：<li>带知识来源：{"prompt": prompt, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}<li>不带知识来源：{"prompt": prompt, "result": data}|
-
 
 **调用示例<a name="section352434893611"></a>**
 
@@ -615,8 +589,6 @@ answer = parallel_chain.query(text="123456")
 print(answer)
 ```
 
-
-
 ### GraphRagText2TextChain<a name="ZH-CN_TOPIC_0000002195845708"></a>
 
 #### 类功能<a name="ZH-CN_TOPIC_0000002195686116"></a>
@@ -640,9 +612,7 @@ GraphRagText2TextChain(llm, retriever, reranker)
 |retriever|GraphRetriever|必选|GraphRetriever对象，由[GraphRAGPipeline](./knowledge_graph.md#graphragpipeline)的[as_retriever](./knowledge_graph.md#as_retriever)方法返回。|
 |reranker|Reranker|可选|Reranker对象，实现对检索的文档进行精排，默认为None，具体可参见[Reranker](./reranker.md#reranker)。|
 
-
 其余参数见父类。
-
 
 #### 函数query<a name="ZH-CN_TOPIC_0000002231091445"></a>
 
@@ -665,13 +635,8 @@ def query(text, llm_config, *args, **kwargs)
 |args|列表|可选|继承父类方法签名，此处未使用。|
 |kwargs|字典|可选|继承父类方法签名，此处未使用。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |dict|返回大模型回答，格式{'query': "who is Teutberga's parents?", 'result': "Teutberga's parents are Bosonid Boso the Elder and an unknown mother."}|
-
-
-
-

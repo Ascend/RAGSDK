@@ -23,7 +23,6 @@ class KnowledgeModel(Base):
     )
 ```
 
-
 ##### DocumentModel类<a name="ZH-CN_TOPIC_0000002088760430"></a>
 
 ```
@@ -41,7 +40,6 @@ class DocumentModel(Base):
         {"sqlite_autoincrement": True}
     )
 ```
-
 
 ##### ChunkModel类<a name="ZH-CN_TOPIC_0000002088920278"></a>
 
@@ -63,13 +61,10 @@ class ChunkModel(Base):
     )
 ```
 
-
-
 #### 文本数据库继承关系<a name="ZH-CN_TOPIC_0000002237897244"></a>
 
 **图 1**  文本数据库继承关系<a name="fig1947119335531"></a>  
 ![](../figures/文本数据库继承关系.png "文本数据库继承关系")
-
 
 #### Docstore<a name="ZH-CN_TOPIC_0000002018714733"></a>
 
@@ -86,7 +81,6 @@ from mx_rag.storage.document_store import Docstore
 class Docstore(ABC)
 ```
 
-
 ##### add<a name="ZH-CN_TOPIC_0000001982155232"></a>
 
 **功能描述<a name="section1031631414920"></a>**
@@ -99,7 +93,6 @@ class Docstore(ABC)
 @abstractmethod
 def add(documents, document_id)
 ```
-
 
 ##### delete<a name="ZH-CN_TOPIC_0000002018595269"></a>
 
@@ -114,7 +107,6 @@ def add(documents, document_id)
 def delete(document_id)
 ```
 
-
 ##### search<a name="ZH-CN_TOPIC_0000002018714785"></a>
 
 **功能描述<a name="section126871434117"></a>**
@@ -127,7 +119,6 @@ def delete(document_id)
 @abstractmethod
 def search(chunk_id) -> MxDocument
 ```
-
 
 ##### get\_all\_chunk\_id<a name="ZH-CN_TOPIC_0000002230991353"></a>
 
@@ -142,7 +133,6 @@ def search(chunk_id) -> MxDocument
 def get_all_chunk_id(self) -> List[int]
 ```
 
-
 ##### get\_all\_document\_id<a name="ZH-CN_TOPIC_0000002195791126"></a>
 
 **功能描述<a name="section126871434117"></a>**
@@ -155,7 +145,6 @@ def get_all_chunk_id(self) -> List[int]
 @abstractmethod
 def get_all_document_id(self) -> List[int]
 ```
-
 
 ##### update<a name="ZH-CN_TOPIC_0000002286901430"></a>
 
@@ -170,7 +159,6 @@ def get_all_document_id(self) -> List[int]
 def update(chunk_ids: List[int], texts: List[str])
 ```
 
-
 ##### search\_by\_document\_id<a name="ZH-CN_TOPIC_0000002321460913"></a>
 
 **功能描述<a name="section126871434117"></a>**
@@ -183,8 +171,6 @@ def update(chunk_ids: List[int], texts: List[str])
 @abstractmethod
 def search_by_document_id(document_id: int)
 ```
-
-
 
 #### OpenGaussDocstore<a name="ZH-CN_TOPIC_0000002174665966"></a>
 
@@ -210,7 +196,6 @@ OpenGaussDocstore(engine, encrypt_fn, decrypt_fn, enable_bm25, index_name)
 |decrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过16*1024*1024，对ChunkModel类的chunk内容解密，输出为字符串。search返回时，返回的是chunk字段经过decrypt_fn方法处理后的数据。|
 |enable_bm25|bool|可选|配置数据库是否支持bm25稀疏检索，若此参数配置为False，则全文检索功能不可用(full_text_search方法始终返回[ ])，默认为True。|
 |index_name|str|可选|创建的bm25检索的名称，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$，即只能由大小写字母、数字、下划线组成，且长度为6-64，默认为"chunks_content_bm25"。|
-
 
 **调用示例<a name="section139398168249"></a>**
 
@@ -261,7 +246,6 @@ print(chunk_store.delete(document_id))
 chunk_store.search_by_document_id(document_id)
 ```
 
-
 ##### add<a name="ZH-CN_TOPIC_0000002209906697"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -281,14 +265,11 @@ def add(documents, document_id)
 |documents|List[MxDocument]，MxDocument参见[MxDocument](#mxdocument)|必选|文档切片对象列表，不能为空列表，列表长度不能超过1000 * 1000。|
 |document_id|int|必选|文档ID，参见数据库模型[DocumentModel类](#documentmodel类)。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[int]|文档存储后的ID列表。|
-
-
 
 ##### delete<a name="ZH-CN_TOPIC_0000002209832349"></a>
 
@@ -308,14 +289,11 @@ def delete(document_id)
 |--|--|--|--|
 |document_id|int|必选|文档ID，参见数据库模型[DocumentModel类](#documentmodel类)。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[int]|被删除的文档ID列表。|
-
-
 
 ##### search<a name="ZH-CN_TOPIC_0000002174665970"></a>
 
@@ -335,14 +313,11 @@ def search(chunk_id)
 |--|--|--|--|
 |chunk_id|int|必选|文档索引，取值范围为大于等于0。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Optional[MxDocument]|查询到结果时返回MxDocument类实例，无结果时返回None。MxDocument参见[MxDocument](#mxdocument)。|
-
-
 
 ##### get\_all\_chunk\_id<a name="ZH-CN_TOPIC_0000002174506270"></a>
 
@@ -362,8 +337,6 @@ def get_all_chunk_id()
 |--|--|
 |List[int]|返回关系数据库所有文档片段ID组成的List。|
 
-
-
 ##### get\_all\_document\_id<a name="ZH-CN_TOPIC_0000002195631538"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -381,8 +354,6 @@ def get_all_document_id()
 |数据类型|说明|
 |--|--|
 |List[int]|返回关系数据库所有文档ID组成的List。|
-
-
 
 ##### full\_text\_search<a name="ZH-CN_TOPIC_0000002265065250"></a>
 
@@ -404,14 +375,11 @@ def full_text_search(query, top_k, filter_dict) -> List[MxDocument]
 |top_k|int|可选|返回检索到的最匹配的chunk数量，默认值为3，若该参数的值大于实际检索到的有效chunk数量，则只返回有效的chunk，取值范围(0, 10000]|
 |filter_dict|Dict|必选|由检索条件组成的字典，当前只支持对document_id进行过滤，过滤的文档id以列表形式传入，id列表长度不超过1000*1000。例如，需要在document_id为1，2，4这几篇文档中过滤，则传入的字典为{"document_id": [1, 2, 4]}。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[MxDocument]|查询到结果时返回MxDocument类实例组成的列表，无结果时返回空列表。MxDocument参见[MxDocument](#mxdocument)。enable_bm25为False返回值为[]。|
-
-
 
 ##### drop<a name="ZH-CN_TOPIC_0000002265008298"></a>
 
@@ -424,7 +392,6 @@ def full_text_search(query, top_k, filter_dict) -> List[MxDocument]
 ```
 def drop()
 ```
-
 
 ##### search\_by\_document\_id<a name="ZH-CN_TOPIC_0000002321478693"></a>
 
@@ -444,14 +411,11 @@ def search_by_document_id(document_id: int)
 |--|--|--|--|
 |document_id|int|必选|文档索引，取值范围为大于等于0。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[MxDocument]|查询到结果时返回MxDocument类实例组成的列表，无结果时返回空列表。MxDocument参见[MxDocument](#mxdocument)。|
-
-
 
 ##### update<a name="ZH-CN_TOPIC_0000002286919214"></a>
 
@@ -471,9 +435,6 @@ def update(chunk_ids: List[int], texts: List[str])
 |--|--|--|--|
 |chunk_ids|List[int]|必选|文档待更新id列表，列表长度范围(0, 1000000]|
 |texts|List[str]|必选|更新文档内容列表，列表长度范围(0, 1000000], 字符串长度范围[1, 128*1024*1024]。chunk_ids列表和texts列表一一对应。|
-
-
-
 
 #### MilvusDocstore<a name="ZH-CN_TOPIC_0000002195480665"></a>
 
@@ -503,7 +464,6 @@ MilvusDocstore(client, collection_name, enable_bm25, bm25_k1, bm25_b, auto_flush
 |encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，enable_bm25为False时生效，当调用add或update时，使用encrypt_fn方法对文档page_content加密后入库。<br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过16*1024*1024，enable_bm25为False时生效，调用查询类接口时对使用decrypt_fn对page_content解密后返回。|
 
-
 **调用示例<a name="section139398168249"></a>**
 
 ```
@@ -528,7 +488,6 @@ print(chunk_store.delete(document_id))
 chunk_store.search_by_document_id(document_id)
 ```
 
-
 ##### add<a name="ZH-CN_TOPIC_0000002160114186"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -548,14 +507,11 @@ def add(documents, document_id)
 |documents|List[MxDocument]，MxDocument参见[MxDocument](#mxdocument)|必选|文档切片对象列表，不能为空列表，列表长度不能超过1000 * 1000。|
 |document_id|int|必选|文档ID，参见数据库模型[DocumentModel类](#documentmodel类)。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[int]|文档存储后的ID列表。|
-
-
 
 ##### delete<a name="ZH-CN_TOPIC_0000002195515009"></a>
 
@@ -575,14 +531,11 @@ def delete(document_id)
 |--|--|--|--|
 |document_id|int|必选|文档ID，参见数据库模型[DocumentModel类](#documentmodel类)|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |int|被删除的文档计数。|
-
-
 
 ##### search<a name="ZH-CN_TOPIC_0000002195480669"></a>
 
@@ -602,14 +555,11 @@ def search(chunk_id)
 |--|--|--|--|
 |chunk_id|int|必选|文档索引，取值范围为大于等于0。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Optional[MxDocument]|查询到结果时返回MxDocument类实例，无结果时返回None。MxDocument参见[MxDocument](#mxdocument)。|
-
-
 
 ##### get\_all\_chunk\_id<a name="ZH-CN_TOPIC_0000002195492801"></a>
 
@@ -629,8 +579,6 @@ def get_all_chunk_id()
 |--|--|
 |List[int]|返回关系数据库所有文档片段ID组成的List。|
 
-
-
 ##### get\_all\_document\_id<a name="ZH-CN_TOPIC_0000002230991357"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -648,8 +596,6 @@ def get_all_document_id()
 |数据类型|说明|
 |--|--|
 |List[int]|返回关系数据库所有文档ID组成的List。|
-
-
 
 ##### full\_text\_search<a name="ZH-CN_TOPIC_0000002256361794"></a>
 
@@ -672,14 +618,11 @@ def full_text_search(query, top_k, drop_ratio_search, filter_dict)
 |drop_ratio_search|float|可选|在bm25稀疏向量搜索过程中排除的小向量值的比例。该选项可通过指定忽略查询向量中最小值的比例，对搜索过程进行微调。它有助于平衡搜索精度和性能。drop_ratio_search的值越小，这些小值对最终得分的贡献就越小。通过忽略一些小值，可以提高搜索性能，同时将对精确度的影响降到最低。取值范围[0, 1)，默认为0.2，具体说明请参考<a href="https://milvus.io/docs/zh/index.md?tab=sparse">Milvus稀疏嵌入</a>相关部分|
 |filter_dict|Dict|必选|由检索条件组成的字典，当前只支持对document_id进行过滤，过滤的文档id以列表形式传入，id列表长度不超过1000*1000。例如，需要在document_id为1，2，4这几篇文档中过滤，则传入的字典为{"document_id": [1, 2, 4]}。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[MxDocument]|查询到结果时返回MxDocument类实例组成的列表，无结果时返回空列表。MxDocument参见[MxDocument](#mxdocument)。|
-
-
 
 ##### client<a name="ZH-CN_TOPIC_0000002293680285"></a>
 
@@ -700,8 +643,6 @@ def client()
 |--|--|
 |MilvusClient|实例的Milvus代理。|
 
-
-
 ##### collection\_name<a name="ZH-CN_TOPIC_0000002293753349"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -721,8 +662,6 @@ def collection_name()
 |--|--|
 |str|实例的Milvus服务器的collection名字。|
 
-
-
 ##### drop\_collection<a name="ZH-CN_TOPIC_0000002259183232"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -734,7 +673,6 @@ def collection_name()
 ```
 def drop_collection()
 ```
-
 
 ##### search\_by\_document\_id<a name="ZH-CN_TOPIC_0000002287022500"></a>
 
@@ -754,14 +692,11 @@ def search_by_document_id(document_id: int)
 |--|--|--|--|
 |document_id|int|必选|文档索引，取值范围为大于等于0。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[MxDocument]|查询到结果时返回MxDocument类实例组成的列表，无结果时返回空列表。MxDocument参见[MxDocument](#mxdocument)。|
-
-
 
 ##### update<a name="ZH-CN_TOPIC_0000002321591745"></a>
 
@@ -782,11 +717,9 @@ def update(chunk_ids: List[int], texts: List[str])
 |chunk_ids|List[int]|必选|文档待更新id列表，列表长度范围(0, 1000000]|
 |texts|List[str]|必选|更新文档内容列表，列表长度范围(0, 1000000], 字符串长度范围[1, 128*1024*1024]。chunk_ids列表和texts列表一一对应。|
 
-
 **返回值说明<a name="section12421614192614"></a>**
 
 无
-
 
 ##### flush<a name="ZH-CN_TOPIC_0000002334293685"></a>
 
@@ -807,8 +740,6 @@ def flush()
 **返回值说明<a name="section12421614192614"></a>**
 
 无
-
-
 
 #### SQLiteDocstore<a name="ZH-CN_TOPIC_0000002018595457"></a>
 
@@ -832,7 +763,6 @@ SQLiteDocstore(db_path, encrypt_fn, decrypt_fn)
 |db_path|str|必选|关系型数据库存储路径，必须为有效路径，路径的长度最大为1024，文件名长度不能超过200，不能包含".."，存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
 |encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容加密，输出为字符串。add保存时，数据库保存的是chunk字段经过encrypt_fn方法处理后的数据。<br>> [!NOTICE] 须知如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过16*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容解密，输出为字符串。search返回时，返回的是chunk字段经过decrypt_fn方法处理后的数据。|
-
 
 **调用示例<a name="section139398168249"></a>**
 
@@ -858,7 +788,6 @@ print(chunk_store.delete(document_id))
 chunk_store.search_by_document_id(document_id)
 ```
 
-
 ##### add<a name="ZH-CN_TOPIC_0000002018714881"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -878,14 +807,11 @@ def add(documents, document_id)
 |documents|List[MxDocument]，MxDocument参见[MxDocument](#mxdocument)|必选|文档切片对象列表，不能为空列表，列表长度不能超过1000 * 1000。|
 |document_id|int|必选|文档ID，参见数据库模型[DocumentModel类](#documentmodel类)|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[int]|文档存储后的ID列表。|
-
-
 
 ##### delete<a name="ZH-CN_TOPIC_0000001981995368"></a>
 
@@ -905,14 +831,11 @@ def delete(document_id)
 |--|--|--|--|
 |document_id|int|必选|文档ID，参见数据库模型[DocumentModel类](#documentmodel类)。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[int]|被删除的文档ID列表。|
-
-
 
 ##### search<a name="ZH-CN_TOPIC_0000002018595225"></a>
 
@@ -932,14 +855,11 @@ def search(chunk_id)
 |--|--|--|--|
 |chunk_id|int|必选|文档索引，取值范围为大于等于0。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Optional[MxDocument]|查询到结果时返回MxDocument类实例，无结果时返回None。MxDocument参见[MxDocument](#mxdocument)。|
-
-
 
 ##### get\_all\_chunk\_id<a name="ZH-CN_TOPIC_0000002047005589"></a>
 
@@ -959,8 +879,6 @@ def get_all_chunk_id()
 |--|--|
 |List[int]|返回关系数据库所有文档片段id组成的List。|
 
-
-
 ##### get\_all\_document\_id<a name="ZH-CN_TOPIC_0000002231036849"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -978,8 +896,6 @@ def get_all_document_id()
 |数据类型|说明|
 |--|--|
 |List[int]|返回关系数据库所有文档ID组成的List。|
-
-
 
 ##### search\_by\_document\_id<a name="ZH-CN_TOPIC_0000002321478697"></a>
 
@@ -999,14 +915,11 @@ def search_by_document_id(document_id: int)
 |--|--|--|--|
 |document_id|int|必选|文档索引，取值范围为大于等于0。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[MxDocument]|查询到结果时返回MxDocument类实例组成的列表，无结果时返回空列表。MxDocument参见[MxDocument](#mxdocument)。|
-
-
 
 ##### update<a name="ZH-CN_TOPIC_0000002286919218"></a>
 
@@ -1026,9 +939,6 @@ def update(chunk_ids: List[int], texts: List[str])
 |--|--|--|--|
 |chunk_ids|List[int]|必选|文档待更新id列表，列表长度范围(0, 1000000]|
 |texts|List[str]|必选|更新文档内容列表，列表长度范围(0, 1000000], 字符串长度范围[1, 128*1024*1024]。chunk_ids列表和texts列表一一对应。|
-
-
-
 
 #### MxDocument<a name="ZH-CN_TOPIC_0000002095455945"></a>
 
@@ -1056,7 +966,6 @@ class MxDocument(BaseModel):
 |metadata|dict|可选|元数据，比如{'source': '/home/HwHiAiUser/gaokao.txt'}，字典长度不能超过1024，字典中的字符串长度不能超过128*1024*1024，字典嵌套深度不能超过1。|
 |document_name|str|必选|文件名称，长度范围[0, 1024]。|
 
-
 **调用示例<a name="section130714373472"></a>**
 
 ```
@@ -1067,16 +976,12 @@ document = loader.load()[0]
 mx_document = MxDocument(page_content=document.page_content, metadata=document.metadata, document_name="gaokao.txt")
 ```
 
-
-
-
 ### 向量数据库<a name="ZH-CN_TOPIC_0000001982155024"></a>
 
 #### 向量数据库间继承关系<a name="ZH-CN_TOPIC_0000002237897600"></a>
 
 **图 1**  向量数据库间继承关系<a name="fig7330104615533"></a>  
 ![](../figures/向量数据库间继承关系.png "向量数据库间继承关系")
-
 
 #### VectorStore<a name="ZH-CN_TOPIC_0000002020335701"></a>
 
@@ -1093,7 +998,6 @@ from mx_rag.storage.vectorstore import VectorStore
 VectorStore(ABC)
 ```
 
-
 ##### save\_local<a name="ZH-CN_TOPIC_0000001983815872"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1106,7 +1010,6 @@ VectorStore(ABC)
 def save_local()
 ```
 
-
 ##### get\_save\_file<a name="ZH-CN_TOPIC_0000001983975580"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1118,7 +1021,6 @@ def save_local()
 ```
 def get_save_file()
 ```
-
 
 ##### get\_ntotal<a name="ZH-CN_TOPIC_0000002020335705"></a>
 
@@ -1137,8 +1039,6 @@ def get_ntotal()
 |数据类型|说明|
 |--|--|
 |int|向量数据库中的向量总数。|
-
-
 
 ##### add<a name="ZH-CN_TOPIC_0000002020495221"></a>
 
@@ -1161,8 +1061,6 @@ def add(ids, embeddings, document_id)
 |embeddings|ndarray|必选|numpy的数组对象。|
 |document_id|int|可选|待添加向量所属文档的id|
 
-
-
 ##### add\_sparse<a name="ZH-CN_TOPIC_0000002183967889"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1182,8 +1080,6 @@ def add_sparse(ids, sparse_embeddings)
 |--|--|--|--|
 |ids|List[int]|必选|待添加向量的索引ID列表，ids长度范围[0, 1000万)。|
 |sparse_embeddings|List[Dict[int, float]]|必选|稀疏向量对象。|
-
-
 
 ##### add\_dense\_and\_sparse<a name="ZH-CN_TOPIC_0000002184046229"></a>
 
@@ -1206,8 +1102,6 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
 |dense_embeddings|ndarray|必选|numpy的数组对象。|
 |sparse_embeddings|List[Dict[int, float]]|必选|稀疏向量对象。|
 
-
-
 ##### delete<a name="ZH-CN_TOPIC_0000001983815876"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1226,8 +1120,6 @@ def delete(ids)
 |参数名|数据类型|是否必选|说明|
 |--|--|--|--|
 |ids|List[int]|必选|待删除向量的索引ID列表，ids长度范围[0, 1000万)。|
-
-
 
 ##### search<a name="ZH-CN_TOPIC_0000001983975584"></a>
 
@@ -1250,8 +1142,6 @@ def search(embeddings, k, filter_dict)
 |k|int|可选|返回的相似向量的个数。|
 |filter_dict|Dict|可选|由检索条件组成的字典，当前只支持对document_id进行过滤，过滤的文档id以列表形式传入，id列表长度不超过1000*1000。例如，需要在document_id为1，2，4这几篇文档中过滤，则传入的字典为{"document_id": [1, 2, 4]}。|
 
-
-
 ##### search\_with\_threshold<a name="ZH-CN_TOPIC_0000002044574261"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1273,14 +1163,11 @@ def search_with_threshold(embeddings, k, threshold, filter_dict)
 |threshold|float|可选|分数阈值，默认为0.1，取值范围[0.0, 1.0]。|
 |filter_dict|Dict|可选|由检索条件组成的字典，当前只支持对document_id进行过滤，过滤的文档id以列表形式传入，id列表长度不超过1000*1000。例如，需要在document_id为1，2，4这几篇文档中过滤，则传入的字典为{"document_id": [1, 2, 4]}。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[List[float]], List[List[int]]|检索到的最相似的k个向量的得分和ID。|
-
-
 
 ##### as\_retriever<a name="ZH-CN_TOPIC_0000002008456268"></a>
 
@@ -1300,14 +1187,11 @@ def as_retriever(**kwargs):
 |--|--|--|--|
 |**kwargs|Dict[str, Any]|必选|参见[参数说明](./retrieval.md#类功能)|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Retriever|转换之后的向量检索器对象|
-
-
 
 ##### get\_all\_ids<a name="ZH-CN_TOPIC_0000002047006713"></a>
 
@@ -1321,7 +1205,6 @@ def as_retriever(**kwargs):
 @abstractmethod
 def get_all_ids()
 ```
-
 
 ##### update<a name="ZH-CN_TOPIC_0000002321571421"></a>
 
@@ -1345,12 +1228,9 @@ def update(ids: List[int], dense: Optional[np.ndarray] = None,
 |dense|Optional[np.ndarray]|可选|调用embed_documents返回的稠密向量，dense和sparse不能同时为None|
 |sparse|Optional[List[Dict[int, float]]]|可选|调用embed_documents返回的稀疏向量，dense和sparse不能同时为None|
 
-
 **返回值说明<a name="section12421614192614"></a>**
 
 无
-
-
 
 #### VectorStorageFactory<a name="ZH-CN_TOPIC_0000002020319369"></a>
 
@@ -1372,7 +1252,6 @@ class VectorStorageFactory(ABC):
     }
 ```
 
-
 ##### create\_storage<a name="ZH-CN_TOPIC_0000002020478913"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1392,24 +1271,22 @@ def create_storage(cls, **kwargs) -> Optional[VectorStore]
 |--|--|--|--|
 |**kwargs|Dict[str, Any]|必选|<li>如果vector_type为npu_faiss_db，则参见[create](#create-2)。<li>如果vector_type为milvus_db，则参见[create](#create-1)。<li>如果vector_type为opengauss_db，则参见[create](#create)。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Optional[VectorStore]|返回构造成功的向量数据库实例，如果创建失败则会返回None|
 
-
 **调用示例<a name="section131221025202020"></a>**
 
--   创建npu\_faiss\_db
+- 创建npu\_faiss\_db
 
     ```
     from mx_rag.storage.vectorstore import VectorStorageFactory
     storage = VectorStorageFactory.create_storage(vector_type="npu_faiss_db", x_dim = 1024,  devs[1], load_local_index="faiss.index")
     ```
 
--   创建milvus\_db
+- 创建milvus\_db
 
     ```
     import getpass
@@ -1417,8 +1294,6 @@ def create_storage(cls, **kwargs) -> Optional[VectorStore]
     client = MilvusClient("https://x.x.x.x:port", user="xxx", password=getpass.getpass(), token="xxx", secure=True,   client_pem_path="path_to/client.pem",   client_key_path="path_to/client.key",   ca_pem_path="path_to/ca.pem",   server_name="localhost")
     storage = VectorStorageFactory.create_storage(vector_type="milvus_db", x_dim=1024,  client=client)
     ```
-
-
 
 #### OpenGaussDB<a name="ZH-CN_TOPIC_0000002177106756"></a>
 
@@ -1445,13 +1320,11 @@ OpenGaussDB(engine, collection_name, search_mode, index_type, metric_type)
 |index_type|str|可选|向量检索类型，当前支持IVFFLAT，HNSW，默认为HNSW，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量检索类型为HNSW，不支持配置。|
 |metric_type|str|可选|向量距离计算方式，支持IP，L2，COSINE，默认为IP。|
 
-
 **返回类型<a name="section53998444524"></a>**
 
 |数据类型|说明|
 |--|--|
 |OpenGaussDB|OpenGaussDB对象。|
-
 
 **调用示例<a name="section17626179103717"></a>**
 
@@ -1517,7 +1390,6 @@ dense_store.update([1], dense_embeddings[:1])
 dense_store.drop_collection()
 ```
 
-
 ##### create<a name="ZH-CN_TOPIC_0000002177266524"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1547,14 +1419,11 @@ def create(**kwargs)
 |sparse_dim|int|可选|稀疏向量维度，默认为100000。具体请根据稀疏向量模型词库规模进行设置，如bge-m3稀疏模型词库规模为250002。|
 |params|dict|可选|索引类型的额外参数，默认为"None"。为None情况下会设置为空字典。对应add_index方法参数中的params，参考opengauss<a href="https://docs.opengauss.org/zh/docs/latest/docs/SQLReference/%E5%90%91%E9%87%8F%E7%B4%A2%E5%BC%95.html">向量索引介绍</a>。字典校验，字典中字符串长度不能超过1024，字典中包含的可迭代序列长度不能超过1024，字典长度不能超过1024，字典嵌套深度不能超过2层。参数配置多一层类型"sparse"、"dense"用于指示对应是参数是给稠密或稀疏检索使用。配置示例如下：{"dense": {"lists": 200},"sparse": {"m": 16, "ef_construction": 64}}|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |OpenGaussDB|OpenGaussDB对象。|
-
-
 
 ##### create\_collection<a name="ZH-CN_TOPIC_0000002212472785"></a>
 
@@ -1576,8 +1445,6 @@ def create_collection(dense_dim, sparse_dim,  params)
 |sparse_dim|int|可选|稀疏向量维度，默认为100000。|
 |params|dict|可选|索引类型的额外参数，默认为None。为None情况下会设置为空字典。字典校验，字典中字符串长度不能超过1024，字典中包含的可迭代序列长度不能超过1024，字典长度不能超过1024，字典嵌套深度不能超过2层。参数配置多一层类型"sparse"、"dense"用于指示对应是参数是给稠密或稀疏检索使用。配置示例如下：{"dense": {"lists": 200},"sparse": {"m": 16, "ef_construction": 64}}|
 
-
-
 ##### drop\_collection<a name="ZH-CN_TOPIC_0000002177106760"></a>
 
 **函数功能<a name="section5434255810"></a>**
@@ -1589,7 +1456,6 @@ def create_collection(dense_dim, sparse_dim,  params)
 ```
 def drop_collection()
 ```
-
 
 ##### add<a name="ZH-CN_TOPIC_0000002212547197"></a>
 
@@ -1611,10 +1477,8 @@ def add(ids: List[int], embeddings: np.ndarray, document_id)
 |embeddings|ndarray|必选|numpy的数组对象。|
 |document_id|int|可选|待添加向量所属文档的id|
 
-
 >![](public_sys-resources/icon-note.gif) **说明：** 
 >embeddings的shape必须等于2，embeddings包含的向量数量需要等于ids的长度，单次添加向量的总数小于1000万。
-
 
 ##### add\_sparse<a name="ZH-CN_TOPIC_0000002177266528"></a>
 
@@ -1636,10 +1500,8 @@ def add_sparse(ids, sparse_embeddings, document_id)
 |sparse_embeddings|List[Dict[int, float]]|必选|稀疏向量对象。|
 |document_id|int|可选|待添加向量所属文档的id|
 
-
 >![](public_sys-resources/icon-note.gif) **说明：** 
 >sparse\_embeddings包含的向量数量需要等于ids的长度，单次添加向量的总数小于1000万。
-
 
 ##### add\_dense\_and\_sparse<a name="ZH-CN_TOPIC_0000002212472789"></a>
 
@@ -1662,11 +1524,10 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, document_id)
 |sparse_embeddings|List[Dict[int, float]]|必选|稀疏向量对象。|
 |document_id|int|可选|待添加向量所属文档的id|
 
-
 >![](public_sys-resources/icon-note.gif) **说明：** 
->-   dense\_embeddings的shape必须等于2，dense\_embeddings包含的向量数量需要等于ids的长度。
->-   sparse\_embeddings包含的向量数量需要等于ids的长度，单次添加向量的总数小于1000万。
-
+>
+>- dense\_embeddings的shape必须等于2，dense\_embeddings包含的向量数量需要等于ids的长度。
+>- sparse\_embeddings包含的向量数量需要等于ids的长度，单次添加向量的总数小于1000万。
 
 ##### delete<a name="ZH-CN_TOPIC_0000002177106764"></a>
 
@@ -1686,14 +1547,11 @@ def delete(ids)
 |--|--|--|--|
 |ids|List[int]|必选|待删除向量的索引ID列表，ids长度范围[0, 1000万)。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |int|删除的向量的个数。|
-
-
 
 ##### search<a name="ZH-CN_TOPIC_0000002212547201"></a>
 
@@ -1715,14 +1573,11 @@ def search(embeddings, k, filter_dict)
 |k|int|可选|返回的相似向量的个数，取值大于0，默认为“3”，取值范围(0, 10000]。|
 |filter_dict|Dict|可选|由检索条件组成的字典，当前只支持对document_id进行过滤，过滤的文档id以列表形式传入，id列表长度不超过1000*1000。例如，需要在document_id为1，2，4这几篇文档中过滤，则传入的字典为{"document_id": [1, 2, 4]}。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Tuple[List[List[float]], List[List[int]]]|返回2个数据，第一个数据表示相似向量的得分列表，第二个数据表示相似向量的ID列表。|
-
-
 
 ##### get\_all\_ids<a name="ZH-CN_TOPIC_0000002177266532"></a>
 
@@ -1741,8 +1596,6 @@ def get_all_ids() -> List[int]
 |数据类型|说明|
 |--|--|
 |List[int]|返回向量数据库所有向量的ID组成的List。|
-
-
 
 ##### update<a name="ZH-CN_TOPIC_0000002286937324"></a>
 
@@ -1763,9 +1616,6 @@ def update(ids, dense, sparse)
 |ids|List[int]|必选|向量数据库要更新的id列表，id列表和向量列表需要一一对应，ids长度范围[0, 1000万)。|
 |dense|Optional[np.ndarray]|可选|调用embed_documents返回的稠密向量，dense和sparse不能同时为None|
 |sparse|Optional[List[Dict[int, float]]]|可选|调用embed_documents返回的稀疏向量，dense和sparse不能同时为None|
-
-
-
 
 #### MilvusDB<a name="ZH-CN_TOPIC_0000001982155136"></a>
 
@@ -1794,13 +1644,11 @@ MilvusDB(client, collection_name, search_mode, auto_id, index_type, metric_type,
 |metric_type|str|可选|向量距离计算方式，支持IP，L2，COSINE，默认为L2，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量距离计算方式固定为IP，不支持配置。|
 |auto_flush|bool|可选|数据变更时是否自动刷新内存数据，默认为True。|
 
-
 **返回类型<a name="section53998444524"></a>**
 
 |数据类型|说明|
 |--|--|
 |MilvusDB|MilvusDB对象。|
-
 
 **调用示例<a name="section17626179103717"></a>**
 
@@ -1820,7 +1668,6 @@ print(vector_store.search(vecs[1:2, :].tolist()))
 vector_store.update([0], vecs[:1])
 vector_store.drop_collection()
 ```
-
 
 ##### create<a name="ZH-CN_TOPIC_0000002009270488"></a>
 
@@ -1852,14 +1699,11 @@ def create(**kwargs)
 |metric_type|str|可选|向量距离计算方式，支持IP，L2，COSINE，默认为"L2"，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量距离计算方式固定为IP，不支持配置。|
 |auto_flush|bool|可选|数据变更时是否自动刷新内存数据，默认为"True"。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |MilvusDB|MilvusDB对象。|
-
-
 
 ##### set\_collection\_name<a name="ZH-CN_TOPIC_0000002018714721"></a>
 
@@ -1878,8 +1722,6 @@ def set_collection_name(collection_name: str)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |collection_name|str|必选|collection名字，不能为空，支持的最大长度为1024。|
-
-
 
 ##### create\_collection<a name="ZH-CN_TOPIC_0000001981995392"></a>
 
@@ -1900,8 +1742,6 @@ def create_collection(x_dim,  params)
 |x_dim|int|必选|向量长度，0 ＜ x_dim ≤ 1024 * 1024，默认值为None。|
 |params|dict|可选|索引类型的额外参数，默认为None。为None情况下会设置为空字典，参考<a href="milvus In-memory-Index">milvus In-memory-Index</a>。字典校验，字典中字符串长度不能超过1024，字典中包含的可迭代序列长度不能超过1024，字典长度不能超过1024，字典嵌套深度不能超过2层。参数配置多一层类型"sparse"、"dense"用于指示对应是参数是给稠密或稀疏检索使用。配置示例如下：<br>{<br>"sparse": {},<br>"dense": {}<br>}|
 
-
-
 ##### search\_mode<a name="ZH-CN_TOPIC_0000002509353579"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1920,8 +1760,6 @@ def search_mode()
 |数据类型|说明|
 |--|--|
 |SearchMode|实例的检索模式。|
-
-
 
 ##### client<a name="ZH-CN_TOPIC_0000002477433606"></a>
 
@@ -1942,8 +1780,6 @@ def client()
 |--|--|
 |MilvusClient|实例的Milvus代理。|
 
-
-
 ##### collection\_name<a name="ZH-CN_TOPIC_0000002477273622"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -1963,8 +1799,6 @@ def collection_name()
 |--|--|
 |str|实例的Milvus服务器的collection名字。|
 
-
-
 ##### drop\_collection<a name="ZH-CN_TOPIC_0000002018595405"></a>
 
 **函数功能<a name="section5434255810"></a>**
@@ -1976,7 +1810,6 @@ def collection_name()
 ```
 def drop_collection()
 ```
-
 
 ##### add<a name="ZH-CN_TOPIC_0000002018595213"></a>
 
@@ -2000,10 +1833,8 @@ def add(ids: List[int], embeddings: np.ndarray, document_id, docs, metadatas)
 |docs|List[str]|可选|待添加向量的文本。|
 |metadatas|List[dict]|可选|待添加向量的文本元数据信息。|
 
-
 > [!NOTE] 说明
 >embeddings的shape必须等于2，embeddings包含的向量数量需要等于ids的长度，docs包含的文档数需要等于ids的长度，单次添加向量的总数小于1000万。
-
 
 ##### add\_sparse<a name="ZH-CN_TOPIC_0000002184043725"></a>
 
@@ -2027,10 +1858,8 @@ def add_sparse(ids, sparse_embeddings, document_id, docs, metadatas)
 |docs|List[str]|可选|待添加向量的文本。|
 |metadatas|List[dict]|可选|待添加向量的文本元数据信息。|
 
-
 > [!NOTE] 说明
 >sparse\_embeddings包含的向量数量需要等于ids的长度，docs包含的文档数需要等于ids的长度，单次添加向量的总数小于1000万。
-
 
 ##### add\_dense\_and\_sparse<a name="ZH-CN_TOPIC_0000002148646436"></a>
 
@@ -2055,10 +1884,8 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, docs, metadat
 |metadatas|List[dict]|可选|待添加向量的文本元数据信息。|
 |kwargs|Dict|可选|关键字参数，当前仅支持document_id，为待添加向量所属文档的id，传入的其余关键字参数均无效|
 
-
 > [!NOTE] 说明
 >dense\_embeddings的shape必须等于2，dense\_embeddings包含的向量数量需要等于ids的长度，sparse\_embeddings包含的向量数量需要等于ids的长度，docs包含的文档数需要等于ids的长度，单次添加向量的总数小于1000万。
-
 
 ##### delete<a name="ZH-CN_TOPIC_0000001982155156"></a>
 
@@ -2078,14 +1905,11 @@ def delete(ids)
 |--|--|--|--|
 |ids|List[int]|必选|待删除向量的索引ID列表，ids长度范围[0, 1000万)。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |int|删除的向量的个数。|
-
-
 
 ##### search<a name="ZH-CN_TOPIC_0000002018595285"></a>
 
@@ -2108,14 +1932,11 @@ def search(embeddings, k, filter_dict,  **kwargs)
 |filter_dict|Dict|可选|由检索条件组成的字典，当前只支持对document_id进行过滤，过滤的文档id以列表形式传入，id列表长度不超过1000*1000。例如，需要在document_id为1，2，4这几篇文档中过滤，则传入的字典为{"document_id": [1, 2, 4]}，filter_dict默认值为None。|
 |kwargs|Dict|可选|关键字参数，可用于指定MilvusClient search方法的关键字参数，其中output_fields可以指定返回的字段。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Tuple[List[List[float]], List[List[int]],  List[List[List]]]|返回3个数据，第一个数据表示相似向量的得分列表，第二个数据表示相似向量的ID列表。第3个数据表示由kwargs指定的output_fields指定的字段值。|
-
-
 
 ##### get\_all\_ids<a name="ZH-CN_TOPIC_0000002047006533"></a>
 
@@ -2134,8 +1955,6 @@ def get_all_ids() -> List[int]
 |数据类型|说明|
 |--|--|
 |List[int]|返回向量数据库所有向量的ID组成的List。|
-
-
 
 ##### update<a name="ZH-CN_TOPIC_0000002321656781"></a>
 
@@ -2157,11 +1976,9 @@ def update(ids, dense, sparse)
 |dense|Optional[np.ndarray]|可选|调用embed_documents返回的稠密向量，dense和sparse不能同时为None|
 |sparse|Optional[List[Dict[int, float]]]|可选|调用embed_documents返回的稀疏向量，dense和sparse不能同时为None|
 
-
 **返回值说明<a name="section12421614192614"></a>**
 
 无
-
 
 ##### has\_collection<a name="ZH-CN_TOPIC_0000002470973972"></a>
 
@@ -2181,14 +1998,11 @@ def has_collection(collection_name: str)
 |--|--|--|--|
 |collection_name|str|必选|collection名字，不能为空，支持的最大长度为1024。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |bool|如果向量数据库中存在参数collection_name对应的collection则返回True，否则返回False|
-
-
 
 ##### flush<a name="ZH-CN_TOPIC_0000002334333857"></a>
 
@@ -2209,8 +2023,6 @@ def flush()
 **返回值说明<a name="section12421614192614"></a>**
 
 无
-
-
 
 #### MindFAISS<a name="ZH-CN_TOPIC_0000002018595281"></a>
 
@@ -2238,7 +2050,6 @@ MindFAISS(x_dim, devs, load_local_index, index_type, metric_type, auto_save)
 |metric_type|str|可选|向量距离计算方式，支持IP，L2，COSINE，默认为L2|
 |auto_save|bool|可选|是否自动保存索引，取值为True或False，默认为True。|
 
-
 > [!NOTE] 说明 
 >若“auto\_save”设置为“False”，则MindFAISS不会自动保存向量到离线知识库，需要手动调用[save\_local\(\)](#save_local-1)来保存向量数据库到离线知识库，否则程序退出后未保存的向量将丢失，有可能导致关系数据库和向量数据库的数据不一致，从而造成程序运行失败的问题。
 
@@ -2261,7 +2072,6 @@ vector_store.get_save_file()
 vector_store.update([1], vecs[:1])
 ```
 
-
 ##### create<a name="ZH-CN_TOPIC_0000001982155260"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -2281,14 +2091,11 @@ def create(**kwargs)
 |--|--|--|--|
 |kwargs|dict|必选|关键字参数，参考[类功能](#类功能-8)的入参，必选参数必须传入，否则将抛出KeyError。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |MindFAISS|MindFAISS对象。|
-
-
 
 ##### save\_local<a name="ZH-CN_TOPIC_0000001981995468"></a>
 
@@ -2301,7 +2108,6 @@ def create(**kwargs)
 ```
 def save_local()
 ```
-
 
 ##### get\_save\_file<a name="ZH-CN_TOPIC_0000002020522305"></a>
 
@@ -2321,8 +2127,6 @@ def get_save_file()
 |--|--|
 |str|索引存储的文件路径。|
 
-
-
 ##### get\_ntotal<a name="ZH-CN_TOPIC_0000001983842960"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -2340,8 +2144,6 @@ def get_ntotal() -> int
 |数据类型|说明|
 |--|--|
 |int|向量数据库中保存的向量总数。|
-
-
 
 ##### add<a name="ZH-CN_TOPIC_0000001982155256"></a>
 
@@ -2363,10 +2165,8 @@ def add(ids, embeddings, document_id)
 |embeddings|np.ndarray|必选|待存入的文本向量。|
 |document_id|int|可选|继承自基类，MindFAISS不支持该参数。|
 
-
 > [!NOTE] 说明 
 >embeddings的shape必须等于2，embeddings包含的向量数量需要等于ids的长度，添加向量的总数小于1000万。
-
 
 ##### add\_sparse<a name="ZH-CN_TOPIC_0000002184099717"></a>
 
@@ -2380,7 +2180,6 @@ def add(ids, embeddings, document_id)
 def add_sparse(ids, sparse_embeddings)
 ```
 
-
 ##### add\_dense\_and\_sparse<a name="ZH-CN_TOPIC_0000002148818866"></a>
 
 **函数功能<a name="section5434255810"></a>**
@@ -2392,7 +2191,6 @@ def add_sparse(ids, sparse_embeddings)
 ```
 def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
 ```
-
 
 ##### delete<a name="ZH-CN_TOPIC_0000002018714893"></a>
 
@@ -2411,8 +2209,6 @@ def delete(ids)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |ids|List[int]|必选|待删除的向量ID列表，可以为空列表，ids长度范围[0, 1000万)。|
-
-
 
 ##### search<a name="ZH-CN_TOPIC_0000001981995412"></a>
 
@@ -2434,14 +2230,11 @@ def search(embeddings, k, filter_dict)
 |k|int|可选|返回的相似向量的个数，取值大于0，默认为“3”，取值范围为(0, 10000]。|
 |filter_dict|Dict|可选|预留，MindFAISS当前暂不支持过滤检索。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |Tuple[List[List[float]], List[List[int]]]|返回2个数据，第一个数据表示相似向量的得分列表，第二个数据表示相似向量的ID列表。|
-
-
 
 ##### get\_all\_ids<a name="ZH-CN_TOPIC_0000002047006297"></a>
 
@@ -2460,8 +2253,6 @@ def get_all_ids() -> List[int]
 |数据类型|说明|
 |--|--|
 |List[int]|返回向量数据库所有向量的ID组成的List。|
-
-
 
 ##### update<a name="ZH-CN_TOPIC_0000002287040604"></a>
 
@@ -2483,9 +2274,6 @@ def update(ids, dense, sparse)
 |dense|Optional[np.ndarray]|必选|调用embed_documents返回的稠密向量，dense不能为None|
 |sparse|Optional[List[Dict[int, float]]]|可选|继承自基类，不支持稀疏向量|
 
-
-
-
 #### SearchMode<a name="ZH-CN_TOPIC_0000002148644820"></a>
 
 ##### 类功能<a name="ZH-CN_TOPIC_0000002183963765"></a>
@@ -2494,9 +2282,9 @@ def update(ids, dense, sparse)
 
 检索模式当前支持三种模式，包括稠密检索（DENSE）、稀疏检索\(SPARSE\)和混合检索（HYBRID）。
 
--   稠密检索：数据库中向量字段只包含稠密类型。
--   稀疏检索：数据库中向量字段只包含稀疏类型。
--   混合检索：数据库中存放的字段中同时包含稠密和稀疏两种类型。
+- 稠密检索：数据库中向量字段只包含稠密类型。
+- 稀疏检索：数据库中向量字段只包含稀疏类型。
+- 混合检索：数据库中存放的字段中同时包含稠密和稀疏两种类型。
 
 **函数原型<a name="section12411139493"></a>**
 
@@ -2507,7 +2295,3 @@ class SearchMode(Enum):
     SPARSE = 1
     HYBRID = 2
 ```
-
-
-
-

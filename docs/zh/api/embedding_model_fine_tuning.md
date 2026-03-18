@@ -4,15 +4,14 @@
 
 由于一般的embedding模型是在通用的数据集上进行训练的，导致在一些用户的特殊应用领域上存在精度不足进而导致检索增强效果较差的现象，为了解决这一问题，提供了可以帮助用户在相应特殊领域上快速方便的进行embedding模型微调的方法。该方法主要包括评估数据辅助生成、模型评估、微调合成数据自动生成、模型微调这几个部分。
 
--   评估数据辅助生成方法：根据用户提供的可以代表相应领域的典型文本，通过LLM辅助生成一些问答对，再通过人工筛选从中挑选一些具备较多该领域词汇的问答对，从而能较好的评估embedding模型在该领域的精度。
--   模型评估：基于sentence-transformers框架提供的评估方法，使用辅助生成并经过人工筛选后的评估数据集，对embedding模型精度进行评估，包括召回率等指标。
--   微调合成数据自动生成：根据用户提供相应领域的原始文本集，通过LLM自动生成微调合成数据集，再经过多种自动筛选方式挑选出最适合该领域的微调数据。
--   模型微调：基于sentence-transformers框架提供的模型微调方法，使用自动生成并筛选后的微调合成数据，对embedding模型进行微调并输出修改后的模型。
+- 评估数据辅助生成方法：根据用户提供的可以代表相应领域的典型文本，通过LLM辅助生成一些问答对，再通过人工筛选从中挑选一些具备较多该领域词汇的问答对，从而能较好的评估embedding模型在该领域的精度。
+- 模型评估：基于sentence-transformers框架提供的评估方法，使用辅助生成并经过人工筛选后的评估数据集，对embedding模型精度进行评估，包括召回率等指标。
+- 微调合成数据自动生成：根据用户提供相应领域的原始文本集，通过LLM自动生成微调合成数据集，再经过多种自动筛选方式挑选出最适合该领域的微调数据。
+- 模型微调：基于sentence-transformers框架提供的模型微调方法，使用自动生成并筛选后的微调合成数据，对embedding模型进行微调并输出修改后的模型。
 
 用户在使用embedding模型微调方法时，可以参考如下流程：
 
 ![](../figures/zh-cn_image_0000002452701797.png "zh-cn_image_0000002452701797")
-
 
 ### 微调合成数据自动生成方法<a name="ZH-CN_TOPIC_0000002452701765"></a>
 
@@ -24,7 +23,7 @@
 
 **函数原型<a name="section18789201331417"></a>**
 
--   微调合成数据配置类：
+- 微调合成数据配置类：
 
     ```
     from mx_rag.tools.finetune.generator import DataProcessConfig
@@ -41,7 +40,7 @@
         query_rewrite_number: int = 2
     ```
 
--   微调合成数据方法类：
+- 微调合成数据方法类：
 
     ```
     from mx_rag.tools.finetune.generator import TrainDataGenerator
@@ -63,7 +62,6 @@
 |llm_threshold_score|float|可选|基于LLM数据相关性评分筛选后比例, 取值范围(0.0, 1.0)，默认值为0.8。|
 |rewrite|bool|可选|基于LLM对生成的数据进行语义多角度重写扩充，默认值为True|
 |query_rewrite_number|int|可选|针对每个问答对重写扩充的数量，默认值为2，取值范围(0, 20]|
-
 
 GENERATE\_QD\_PROMPT和SCORING\_QD\_PROMPT定义如下：
 
@@ -106,7 +104,6 @@ SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关
 |reranker|Reranker|必选|用于微调合成数据筛选过程中的reranker，详情请参考[Reranker](./reranker.md#rerank)|
 |encrypt_fn|Callable[[str], str]|可选|对生成的Q-D对进行加密存储，默认为None，即不加密处理 <br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|对已存储的Q-D对进行解密处理，默认为None。|
-
 
 **调用示例<a name="section175571825169"></a>**
 
@@ -153,7 +150,6 @@ train_data_generator.generate_train_data(split_doc_list, config)
 
 ```
 
-
 #### generate\_origin\_document<a name="ZH-CN_TOPIC_0000002452821653"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -174,14 +170,11 @@ def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_f
 |loader_mng|LoaderMng|必选|文件加载解析器，详情请参考[LoaderMng](./knowledge_management.md#loadermng)|
 |filter_func|Callable|可选|对解析切分后的文档片段进行数据清洗回调函数，入参和出参都为List[str]，默认值为None|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |list[str]|原始文本文档切分列表|
-
-
 
 #### generate\_train\_data<a name="ZH-CN_TOPIC_0000002419262740"></a>
 
@@ -202,9 +195,6 @@ def generate_train_data(split_doc_list: list[str], data_process_config: DataProc
 |split_doc_list|list[str]|必选|原始文本列表, 列表长度范围[1, 1000*1000], 字符串长度范围[1, 128*1024*1024]|
 |data_process_config|DataProcessConfig|必选|微调合成数据方法配置选项，详情请参考[类功能](#ZH-CN_TOPIC_0000002419102888)中DataProcessConfig类描述|
 |batch_size|int|可选|微调数据生成时并发条数，默认值为8，取值范围(0, 1024]|
-
-
-
 
 ### 评估数据辅助生成方法<a name="ZH-CN_TOPIC_0000002452701769"></a>
 
@@ -229,7 +219,6 @@ EvalDataGenerator(llm: Text2TextLLM, dataset_path: str, encrypt_fn, decrypt_fn)
 |dataset_path|str|必选|评估数据集文件存储目录, 路径长度取值范围为[1,1024]。路径不能包含软链接且不允许存在".."。<br>存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
 |encrypt_fn|Callable[[str], str]|可选|回调函数，返回值为字符串且长度不超过128*1024*1024，对生成的Q-D对进行加密存储，默认为None，即不加密处理。<br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|回调函数，返回值为字符串且长度不超过128*1024*1024，对已存储的Q-D对进行解密处理，默认为None。|
-
 
 **调用示例<a name="section175571825169"></a>**
 
@@ -272,7 +261,6 @@ split_doc_list = eval_data_generator.generate_origin_document(document_path=docu
 eval_data_generator.generate_evaluate_data(split_doc_list)
 ```
 
-
 #### generate\_origin\_document<a name="ZH-CN_TOPIC_0000002452821657"></a>
 
 **功能描述<a name="zh-cn_topic_0000002212438517_section5434255810"></a>**
@@ -293,14 +281,11 @@ def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_f
 |loader_mng|LoaderMng|必选|文件加载解析器，详情请参考[LoaderMng](./knowledge_management.md#loadermng)|
 |filter_func|Callable|可选|对解析切分后的文档片段进行数据清洗回调函数，入参和出参都为List[str]，默认值为None|
 
-
 **返回值说明<a name="zh-cn_topic_0000002212438517_section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |list[str]|原始文本文档切分列表|
-
-
 
 #### generate\_evaluate\_data<a name="ZH-CN_TOPIC_0000002419262744"></a>
 
@@ -323,7 +308,6 @@ def generate_evaluate_data(split_doc_list: list[str], generate_qd_prompt: str , 
 |question_number|int|可选|每个原始文本切片对应生成的问题数，该数量越大，生成的问题角度越全面，有利于微调效果，但是耗时较长，默认值为3, 取值范围(0, 20]|
 |batch_size|int|可选|评估数据生成时并发条数，默认值为8，取值范围(0, 1024]|
 
-
 GENERATE\_QD\_PROMPT定义如下：
 
 ```
@@ -342,8 +326,6 @@ GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
 
 """:
 ```
-
-
 
 ### 模型评估和微调方法<a name="ZH-CN_TOPIC_0000002452701773"></a>
 
@@ -391,7 +373,6 @@ result = evaluator(model)
 print(result)
 ```
 
-
 #### 微调功能<a name="ZH-CN_TOPIC_0000002452821661"></a>
 
 主要基于sentence-transformers框架提供的SentenceTransformerTrainer，通过前述微调合成数据自动生成方法生成的数据集对embedding模型进行微调，相关微调训练参数及超参按照实际进行调整。
@@ -433,6 +414,3 @@ trainer = SentenceTransformerTrainer(
 trainer.train()
 trainer.save_model()
 ```
-
-
-

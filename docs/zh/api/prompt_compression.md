@@ -15,7 +15,6 @@ from mx_rag.compress.base_compressor import PromptCompressor
 class PromptCompressor(ABC)
 ```
 
-
 #### compress\_texts<a name="ZH-CN_TOPIC_0000002284802432"></a>
 
 **功能描述<a name="section1031631414920"></a>**
@@ -35,9 +34,6 @@ def compress_texts(self, context, question)
 |--|--|--|--|
 |context|str|必选|待总结的长文本。|
 |question|str|必选|总结长文本的指令。|
-
-
-
 
 ### RerankCompressor<a name="ZH-CN_TOPIC_0000002319290097"></a>
 
@@ -60,7 +56,6 @@ class RerankCompressor(reranker, splitter)
 |--|--|--|--|
 |reranker|Reranker|必选|排序模型实例，实现对文本切片进行精排，只能为mx_rag.reranker的Reranker对象，具体可参见[Reranker](./reranker.md#reranker)。|
 |splitter|TextSplitter|可选|文档切分函数，只能为继承自langchain的TextSplitter的子类。默认为langchain.text_splitter的RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=0, separators=["\n", ""], keep_separator=True)|
-
 
 **调用示例<a name="section11818153884917"></a>**
 
@@ -85,7 +80,6 @@ res=compressor.compress_texts(context, question, 0.3)
 print(res)
 ```
 
-
 #### compress\_texts<a name="ZH-CN_TOPIC_0000002284690566"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -107,15 +101,11 @@ def compress_texts(context, question, compress_rate, context_reorder)
 |compress_rate|float|可选|压缩率，默认为0.6，取值范围：(0, 1)|
 |context_reorder|bool|可选|是否根据得分重排，默认为False，若为True，计算完相关性之后，将根据压缩率优先保留相关性低的文本切片。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |str|压缩后的文本。|
-
-
-
 
 ### ClusterCompressor<a name="ZH-CN_TOPIC_0000002319443213"></a>
 
@@ -140,7 +130,6 @@ class ClusterCompressor(cluster_func, embed, splitter, dev_id):
 |embed|Embeddings|必选|嵌入对象，把文本切片转换为向量，只能为继承自langchain_core.embeddings的Embeddings的子类。|
 |splitter|TextSplitter|可选|文档切分对象，只能为继承自langchain_text_splitters.base的TextSplitter的子类。默认为langchain.text_splitter的RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=0, separators=["。", "！", "？", "\n", "，", "；", " ", ""])|
 |dev_id|int|可选|NPU id，通过**npu-smi info**查询可用ID，取值范围[0, 63]，默认为卡0。|
-
 
 **调用示例<a name="section11818153884917"></a>**
 
@@ -172,7 +161,6 @@ res=compressor.compress_texts(context, question, 0.6)
 print(res)
 ```
 
-
 #### compress\_texts<a name="ZH-CN_TOPIC_0000002284793852"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -193,13 +181,8 @@ def compress_texts(context, question, compress_rate)
 |question|str|必选|总结长文本的指令，用于计算与context文本切片的相关性。长度范围：[1, 1000*1000]|
 |compress_rate|float|可选|压缩率，默认值为0.6，取值范围：(0, 1)|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |str|压缩后的文本。|
-
-
-
-

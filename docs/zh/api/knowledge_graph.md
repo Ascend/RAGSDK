@@ -7,7 +7,7 @@
 
 **中文默认提示：**
 
--   **三元组抽取提示（TRIPLE\_INSTRUCTION\_CN）：**
+- **三元组抽取提示（TRIPLE\_INSTRUCTION\_CN）：**
 
     ```
     
@@ -112,7 +112,7 @@
     }
     ```
 
--   **实体概念化提示 \(ENTITY\_PROMPT\_CN\):**
+- **实体概念化提示 \(ENTITY\_PROMPT\_CN\):**
 
     ```
     ENTITY_PROMPT_CN = '''
@@ -148,7 +148,7 @@
     '''
     ```
 
--   **事件概念化提示 \(EVENT\_PROMPT\_CN\):**
+- **事件概念化提示 \(EVENT\_PROMPT\_CN\):**
 
     ```
     EVENT_PROMPT_CN = '''
@@ -179,7 +179,7 @@
     '''
     ```
 
--   **关系概念化提示 \(RELATION\_PROMPT\_CN\):**
+- **关系概念化提示 \(RELATION\_PROMPT\_CN\):**
 
     ```
     RELATION_PROMPT_CN = '''
@@ -208,7 +208,7 @@
 
 **英文默认提示：**
 
--   **三元组抽取提示（TRIPLE\_INSTRUCTIONS\_EN）：**
+- **三元组抽取提示（TRIPLE\_INSTRUCTIONS\_EN）：**
 
     ```
     TRIPLE_INSTRUCTIONS_EN = {
@@ -284,7 +284,7 @@
     }
     ```
 
--   **实体概念化提示 \(ENTITY\_PROMPT\_EN\):**
+- **实体概念化提示 \(ENTITY\_PROMPT\_EN\):**
 
     ```
     ENTITY_PROMPT_EN = '''I will give you an ENTITY. You need to give several phrases containing 1-2 words for the 
@@ -319,7 +319,7 @@
                 '''
     ```
 
--   **事件概念化提示 \(EVENT\_PROMPT\_EN\):**
+- **事件概念化提示 \(EVENT\_PROMPT\_EN\):**
 
     ```
     EVENT_PROMPT_EN = '''I will give you an EVENT. You need to give several phrases containing 1-2 words for the 
@@ -344,7 +344,7 @@
                 '''
     ```
 
--   **关系概念化提示 \(RELATION\_PROMPT\_EN\):**
+- **关系概念化提示 \(RELATION\_PROMPT\_EN\):**
 
     ```
     RELATION_PROMPT_EN = '''I will give you an RELATION. You need to give several phrases containing 1-2 words for 
@@ -398,7 +398,6 @@ GraphRAGPipeline(work_dir, llm, embedding_model, dim, rerank_model, graph_type,g
 |encrypt_fn|Callable|可选| 回调方法，对调用[build_graph](#build_graph)产生的json文件内容加密。请注意提供正确加密方法并保证安全性，返回值是加密后的字符串。<br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。                                                                                                                                                                                                                                                                               |
 |decrypt_fn|Callable|可选| 回调方法，在graph_type为"networkx"时，在检索时会对"{graph_name}.json"解密读取。请注意提供正确解密方法并保证安全性，返回值是解密后的字符串。                                                                                                                                                                                                                                                                                                                                      |
 |kwargs|Dict|可选| 扩展参数列表：<li>age_graph：当图数据库类型为openGauss时，需要指定该参数，类型为openGaussAGEGraph，为openGuass图数据库连接实例。<li>devs：指定NPU设备，为一个只包含一个元素的list，类型list[int]。<li>node_vector_store: 用于存储向量化节点以实现相似节点搜索的向量数据库。默认为None，此时将使用MindFAISS作为向量数据库。<li>conceptualize: 是否进行概念聚类，默认为False，不聚类时参数concept_vector_store不生效。<li>concept_vector_store: 在对概念进行聚类时，用于存储向量化概念以实现相似概念搜索的向量数据库。默认为None，此时将使用MindFAISS作为向量数据库。<br>> [!NOTE] 说明 age_graph由用户控制传入，请使用安全的连接方式。 |
-
 
 **返回值说明<a name="section53998444524"></a>**
 
@@ -464,7 +463,6 @@ print(contexts)
 print(result)
 ```
 
-
 #### upload\_files<a name="ZH-CN_TOPIC_0000002306396444"></a>
 
 **功能描述<a name="section53998444524"></a>**
@@ -484,11 +482,9 @@ def upload_files(file_list, loader_mng)
 |file_list|list|是|文件列表，注意同一批次文档列表只支持同一种语言类型，一次上传过多文档构建知识图谱时会比较慢，文档个数限制[1, 100]。<br>单个文档路径长度取值范围为[1, 1024]，文档路径不能为软链接且不允许存在".."，且每个文档大小不超过10G。|
 |loader_mng|LoaderMng|是|提供文档解析函数的管理类对象，数据类型参见[LoaderMng](./knowledge_management.md#loadermng)。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 无
-
 
 #### build\_graph<a name="ZH-CN_TOPIC_0000002340395437"></a>
 
@@ -510,7 +506,6 @@ def build_graph(lang, pad_token, **kwargs)
 |pad_token|str|否|大语言模型使用填充字符，默认为空字符，其取值范围为[0, 255]。|
 |kwargs|dict|否|扩展参数列表：<li>max_workers：构建知识图谱的线程数。默认值为5。<li>batch_size，节点向量化，检索等操作批大小，默认为32。<li>top_k：在对图节点概念进行聚类时，向量检索返回的最相似概念数量。默认值为5，取值范围为[1, 100]。<li>threshold：向量相似性阈值。低于此值的相似性结果将被过滤。默认值为0.3，取值范围为[0.0,1.0]。triple_instructions: 用于指导大型语言模型（LLM）从文档中抽取关系的指令，字典类型。默认值为None，此时将根据语言使用默认值（中文为TRIPLE_INSTRUCTIONS_CN，英文为TRIPLE_INSTRUCTIONS_EN）。用户可以通过提供一个字典来覆盖默认的抽取指令。该字典必须包含以下键：<ul><li>entity_relation： 对应的值定义实体关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。<li>event_entity：对应的值定义事件实体抽取的指令, 字符串类型，长度范围为[1, 1048576]。<li>event_relation：对应的值定义事件关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。<br>每个键对应的值定义了特定提取任务的指令。</ul><li>conceptualizer_prompts: 用于指导LLM进行概念化的提示，字典类型。默认值为None。用户可以通过提供一个字典来覆盖默认的概念化提示。该字典必须包含以下键：<ul><li>entity: 对应的值定义对图中实体进行概念化的提示， 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为ENTITY_PROMPT_CN， 英文为ENTITY_PROMPT_EN）。<li>event: 定义对图中事件进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为EVENT_PROMPT_CN， 英文为EVENT_PROMPT_EN）。<li>relation: 定义对图中关系进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为RELATION_PROMPT_CN， 英文为RELATION_PROMPT_EN）。|
 
-
 **返回值说明<a name="section14945144616426"></a>**
 
 无
@@ -527,8 +522,6 @@ def build_graph(lang, pad_token, **kwargs)
 |"{graph_name}_synset.json"|保存概念聚类之后的类别信息。|
 |"{graph_name}_node_vectors.index"|实体的向量索引文件。|
 |"{graph_name}_concept_vectors.index"|概念的向量索引文件。|
-
-
 
 #### retrieve\_graph<a name="ZH-CN_TOPIC_0000002340515629"></a>
 
@@ -549,14 +542,11 @@ def retrieve_graph(question, **kwargs)
 |question|str|是|用户问题，字符串长度范围[1, 1000*1000]|
 |kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。<li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。<li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。<li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。<li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。<li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。|
 
-
 **返回值说明<a name="section14945144616426"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[str]|检索到的上下文片段。|
-
-
 
 #### as\_retriever<a name="ZH-CN_TOPIC_0000002306396448"></a>
 
@@ -576,15 +566,11 @@ def as_retriever(**kwargs)
 |--|--|--|--|
 |kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。<li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。<li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。<li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。<li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。<li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。|
 
-
 **返回值说明<a name="section14945144616426"></a>**
 
 |数据类型|说明|
 |--|--|
 |GraphRetriever|该检索器继承自langchain_core.retrievers.BaseRetriever。|
-
-
-
 
 ### GraphEvaluator<a name="ZH-CN_TOPIC_0000002336118394"></a>
 
@@ -608,7 +594,6 @@ GraphEvaluator(llm, llm_config)
 |--|--|--|--|
 |llm|Text2TextLLM|必选|大模型接口实例对象。|
 |llm_config|LLMParameterConfig|必选|描述参见[LLMParameterConfig](./llm_client.md#llmparameterconfig)。|
-
 
 **返回值说明<a name="section53998444524"></a>**
 
@@ -636,7 +621,6 @@ with open(relations_path, "r", encoding="utf-8") as f:
     graph_evaluator.evaluate(relations)
 ```
 
-
 #### evaluate<a name="ZH-CN_TOPIC_0000002370036373"></a>
 
 **功能描述<a name="section53998444524"></a>**
@@ -655,11 +639,6 @@ def evaluate(relations)
 |--|--|--|--|
 |relations|list[dict]|是|知识图谱关系列表，每个元素为一个字典，必须包括如下键：raw_text，键值entity_relations、event_entity_relations、event_relations可选。列表长度范围[1, 50000]，嵌套深度最高为5，文本长度限制4096。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 无。函数会打印输出三组精度、召回以及F1得分，分别对应实体，事件中的实体以及事件的抽取情况。输出的得分越高，抽取的质量越好。
-
-
-
-

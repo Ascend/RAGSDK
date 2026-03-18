@@ -8,7 +8,6 @@
 
 KnowledgeDB依赖了KnowledgeStore、Docstore、VectorStore实现对知识库文档片段及向量化入库。KnowledgeStore负责对知识库增删查操作，Docstore负责对文档片段增删改查操作，具体配置实例为（OpenGaussDocstore、MilvusDocstore、SQLiteDocstore），VectorStore负责对向量增删改查操作，具体实例配置为（OpenGaussDB、MilvusDB、MindFAISS）。
 
-
 #### KnowledgeStore<a name="ZH-CN_TOPIC_0000001981995476"></a>
 
 ##### 类功能<a name="ZH-CN_TOPIC_0000002018595389"></a>
@@ -29,7 +28,6 @@ KnowledgeStore(db_path)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |db_path|str|必选|数据库路径，路径长度取值范围为[1, 1024]，路径不能为软链接且不允许存在".."，文件名长度不能超过200。存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
-
 
 **调用示例<a name="section423192561211"></a>**
 
@@ -53,7 +51,6 @@ print(knowledge_store.check_document_exist("name", "1.txt", user_id))
 print(knowledge_store.delete_doc_info("name", "1.txt", user_id))
 ```
 
-
 ##### add\_knowledge<a name="ZH-CN_TOPIC_0000002218885156"></a>
 
 **功能描述<a name="section957011509130"></a>**
@@ -74,14 +71,11 @@ def add_knowledge(knowledge_name, user_id, role)
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 |role|str|可选|用户角色，默认为'admin'。添加后该user_id默认可以操作该知识库。|
 
-
 **返回值说明<a name="section14529112165813"></a>**
 
 |数据类型|说明|
 |--|--|
 |int|返回添加的知识库对应的knowledge_id|
-
-
 
 ##### check\_knowledge\_exist<a name="ZH-CN_TOPIC_0000002254016469"></a>
 
@@ -102,14 +96,11 @@ def check_knowledge_exist(knowledge_name, user_id)
 |knowledge_name|str|必选|知识库名称，长度取值范围为[1, 1024]。|
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 
-
 **返回值说明<a name="section6128201775012"></a>**
 
 |数据类型|说明|
 |--|--|
 |bool|user_id下是否存在该知识库knowledge_name。|
-
-
 
 ##### add\_usr\_id\_to\_knowledge<a name="ZH-CN_TOPIC_0000002253685057"></a>
 
@@ -130,8 +121,6 @@ def add_usr_id_to_knowledge(knowledge_name, user_id, role)
 |knowledge_name|str|必选|知识库名称，长度取值范围为[1, 1024]。|
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 |role|str|必选|用户角色，只能为知识库管理员'admin'或对知识库仅有查询权限的成员'member'，添加后使用对应user_id可以进行查询该知识库。|
-
-
 
 ##### delete\_usr\_id\_from\_knowledge<a name="ZH-CN_TOPIC_0000002089941390"></a>
 
@@ -154,8 +143,6 @@ def delete_usr_id_from_knowledge(knowledge_name, user_id, role, force=False)
 |role|str|必选|用户对应的角色，只能为知识库管理员'admin'或对知识库仅有查询权限的成员'member'。如果user_id和role记录不存在，则报错。|
 |force|bool|可选|若删除的知识库关联的用户只剩一个，是否继续强制删除，默认为False。|
 
-
-
 ##### get\_all\_knowledge\_info<a name="ZH-CN_TOPIC_0000002124527517"></a>
 
 **功能描述<a name="section957011509130"></a>**
@@ -174,14 +161,11 @@ def get_all_knowledge_info(user_id)
 |--|--|--|--|
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 
-
 **返回值说明<a name="section14529112165813"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[KnowledgeModel]|返回user_id下的知识库信息，KnowledgeModel参见[KnowledgeModel类](./databases.md#knowledgemodel类)。
-
-
 
 ##### get\_all\_usr\_role\_by\_knowledge<a name="ZH-CN_TOPIC_0000002253844937"></a>
 
@@ -201,14 +185,11 @@ def get_all_usr_role_by_knowledge(knowledge_name)
 |--|--|--|--|
 |knowledge_name|str|必选|知识库名称，长度取值范围为[1, 1024]。|
 
-
 **返回值说明<a name="section14529112165813"></a>**
 
 |数据类型|说明|
 |--|--|
 |dict{user_id: role}|返回指定知识库下所有的用户id和用户角色，key为用户id，value为用户角色|
-
-
 
 ##### add\_doc\_info<a name="ZH-CN_TOPIC_0000002018595217"></a>
 
@@ -231,14 +212,11 @@ def add_doc_info(knowledge_name, doc_name, file_path, user_id)
 |file_path|str|必选|文档上传路径，存入数据库中，路径长度范围[1, 1024]。|
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 
-
 **返回值说明<a name="section8995173984218"></a>**
 
 |数据类型|说明|
 |--|--|
 |int|在表document_table增加记录，返回文档的document_id。|
-
-
 
 ##### delete\_doc\_info<a name="ZH-CN_TOPIC_0000001981995340"></a>
 
@@ -260,14 +238,11 @@ def delete_doc_info(knowledge_name, doc_name, user_id)
 |doc_name|str|必选|文档名称，长度取值范围为[1, 1024]。|
 |user_id|str|必选|用户id，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 
-
 **返回值说明<a name="section8995173984218"></a>**
 
 |数据类型|说明|
 |--|--|
 |int/None|在表document_table删除记录，返回删除文档的document_id，删除失败返回None。|
-
-
 
 ##### check\_document\_exist<a name="ZH-CN_TOPIC_0000002018714725"></a>
 
@@ -289,14 +264,11 @@ def check_document_exist(knowledge_name, doc_name, user_id)
 |doc_name|str|必选|文档名称，长度取值范围为[1, 1024]。|
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 
-
 **返回值说明<a name="section8995173984218"></a>**
 
 |数据类型|说明|
 |--|--|
 |bool|文档是否存在。|
-
-
 
 ##### get\_all\_documents<a name="ZH-CN_TOPIC_0000001981995464"></a>
 
@@ -317,15 +289,11 @@ def get_all_documents(knowledge_name, user_id)
 |knowledge_name|str|必选|知识库名称，长度取值范围为[1, 1024]。|
 |user_id|str|必选|用户id，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 
-
 **返回值说明<a name="section8995173984218"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[DocumentModel]|返回对应user_id和knowledge_name下的文档信息，DocumentModel参见[DocumentModel类](./databases.md#documentmodel类)。|
-
-
-
 
 #### KnowledgeDB<a name="ZH-CN_TOPIC_0000001982155292"></a>
 
@@ -354,7 +322,6 @@ KnowledgeDB(knowledge_store, chunk_store, vector_store, knowledge_name, white_pa
 |max_file_count|int|可选|上传文档时，允许的最大处理数量，取值范围：[1, 8000]，不建议设置过大，默认值为1000。|
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 |lock|multiprocessing.synchronize.Lock或_thread.LockType|可选|如果用户需要多进程或者多线程调用此接口需要申请锁。默认值为None。可选值：<li>None：表示不使用锁，此时该接口不支持并发。<li>multiprocessing.Lock()：表示进程锁，此时该接口支持多进程调用。<li>threading.Lock()：表示线程锁。此时该接口支持多线程调用。|
-
 
 > [!NOTE] 说明
 >chunk\_store和vector\_store必须保障数据一致性（例如：关系数据库文件和向量数据库文件同时生成）。
@@ -397,7 +364,6 @@ knowledge_db.delete_file(doc_name=file_path.name)
 knowledge_db.delete_all()
 ```
 
-
 ##### add\_file<a name="ZH-CN_TOPIC_0000001981995424"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -415,11 +381,9 @@ def add_file(file, texts, embed_func, metadatas)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |file|pathlib.Path|必选|上传文档的pathlib.Path对象，其中文件路径长度取值范围为[1, 1024]，不能为软链接且不允许存在".."，文件名长度不能超过200。存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
-|texts|List[str]|必选|文档切片后的列表，需要和metadatas的数量保持一致，列表长度取值范围为[1, 1000 * 1000]，字符串长度取值范围为[1, 128 * 1024 * 1024]。|
+|texts|List[str]|必选|文档切片后的列表，需要和metadatas的数量保持一致，列表长度取值范围为[1, 1000 \* 1000]，字符串长度取值范围为[1, 128 \* 1024 \* 1024]。|
 |embed_func|dict|必选|嵌入函数，将文本或图片转换为向量。只允许{'dense': x, 'sparse': y}形式，x和y分别为稠密和稀疏向量的回调函数，xy不能同时为None。|
 |metadatas|List[dict]|可选|文档切片的metadata，默认值为None，列表中元素字典的字符串长度不能超过128*1024*1024，字典长度不能超过1024，字典嵌套不能超过1层。需要和texts的数量保持一致，列表长度取值范围为[1, 1000 * 1000]。|
-
-
 
 ##### delete\_file<a name="ZH-CN_TOPIC_0000001981995624"></a>
 
@@ -439,8 +403,6 @@ def delete_file(doc_name)
 |--|--|--|--|
 |doc_name|str|必选|待删除文档名，文档需已存在，长度取值范围为[1, 1024]。|
 
-
-
 ##### get\_all\_documents<a name="ZH-CN_TOPIC_0000001981995420"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -458,8 +420,6 @@ def get_all_documents()
 |数据类型|说明|
 |--|--|
 |List[DocumentModel]|返回对应user_id下的文档信息，DocumentModel参见[DocumentModel类](./databases.md#documentmodel类)。|
-
-
 
 ##### check\_document\_exist<a name="ZH-CN_TOPIC_0000002018714825"></a>
 
@@ -479,14 +439,11 @@ def check_document_exist(doc_name)
 |--|--|--|--|
 |doc_name|str|必选|文档名称，长度取值范围为[1, 1024]。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |bool|文档是否存在。|
-
-
 
 ##### delete\_all<a name="ZH-CN_TOPIC_0000002089277208"></a>
 
@@ -503,8 +460,6 @@ def delete_all()
 **参数说明<a name="section67420206523"></a>**
 
 无
-
-
 
 #### 文档管理<a name="ZH-CN_TOPIC_0000001982155132"></a>
 
@@ -535,13 +490,11 @@ def upload_files(knowledge, files, loader_mng, embed_func, force)
 |embed_func|Callable[[List[str]], List[List[float]]]或者dict|必选|嵌入函数，把文件信息转换为向量。直接传入回调方法默认按稠密处理，即{'dense': Callable, 'sparse': None}传入字典格式为{'dense': x, 'sparse': y}，x和y分别为稠密和稀疏向量的回调函数，xy不能同时为None。支持同时入库稠密和稀疏向量。|
 |force|bool|可选|是否强制覆盖旧数据，如果选择否，文档重复会抛出异常。默认为False。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[str]|添加到知识库中失败的文件列表。|
-
 
 **调用示例<a name="section175571825169"></a>**
 
@@ -591,7 +544,6 @@ upload_dir(params=params)
 delete_files(knowledge_db, ["test.docx"])
 
 ```
-
 
 ##### upload\_dir<a name="ZH-CN_TOPIC_0000001982155264"></a>
 
@@ -617,7 +569,6 @@ def upload_dir(params: FilesLoadInfo):
 |--|--|--|--|
 |params|FilesLoadInfo|必选|上传目录的参数对象。具体类型介绍请参见[表1](#tableFilesLoadInfo)。|
 
-
 **表 1**  FilesLoadInfo类型介绍
 <a id="tableFilesLoadInfo"></a>
 
@@ -630,7 +581,6 @@ def upload_dir(params: FilesLoadInfo):
 |force|bool|可选|是否强制覆盖旧数据，如果选择否，文档重复会抛出异常。默认为False。|
 |load_image|bool|可选|是否支持图片类型文件，默认为False。如果选择False，表示只支持文档类型如".docx"、".txt"、".md"等，具体支持类型为loader_mng注册器中loader和splitter方法支持类型的交集。如果选择True表示只支持图片类型，支持的范围仅限于loader_mng注册器中loader方法支持的类型与[".jpg", ".png"]的交集。|
 
-
 > [!NOTE] 说明 
 >当支持文档类型的解析时，对应的embed\_func嵌入函数应该支持对应文档类型；当支持图片类型的解析时，对应的embed\_func嵌入函数也应该支持图片类型，否则会出现错误。
 
@@ -639,7 +589,6 @@ def upload_dir(params: FilesLoadInfo):
 |数据类型|说明|
 |--|--|
 |List[str]|添加到知识库中失败的文件列表，包括不支持的文档类型文件和上传失败的文件。|
-
 
 **调用示例<a name="section175571825169"></a>**
 
@@ -689,7 +638,6 @@ upload_dir(params=params)
 delete_files(knowledge_db, ["test.docx"])
 
 ```
-
 
 ##### delete\_files<a name="ZH-CN_TOPIC_0000002018714805"></a>
 
@@ -711,7 +659,6 @@ def delete_files(knowledge, doc_names)
 |knowledge|KnowledgeDB|必选|知识库对象，数据类型参见[KnowledgeDB](#knowledgedb)。|
 |doc_names|List[str]|必选|文档名列表，列表长度不能超过KnowledgeDB.max_file_count。|
 
-
 **调用示例<a name="section175571825169"></a>**
 
 ```
@@ -760,9 +707,6 @@ upload_dir(params=params)
 delete_files(knowledge_db, ["test.docx"])
 
 ```
-
-
-
 
 ### 文档解析<a name="ZH-CN_TOPIC_0000002018595273"></a>
 
@@ -809,14 +753,12 @@ loader_mng.unregister_loader(ExcelLoader)
 loader_mng.unregister_splitter(RecursiveCharacterTextSplitter)
 ```
 
-
 ##### 依赖关系<a name="ZH-CN_TOPIC_0000002238084840"></a>
 
 **图 1**  依赖关系<a name="fig1325663483420"></a>  
 ![](../figures/依赖关系.png "依赖关系")
 
 实现了BaseLoader和TextSplitter抽象基类的对象都支持注册到LoaderMng类中。
-
 
 ##### register\_loader<a name="ZH-CN_TOPIC_0000002019849945"></a>
 
@@ -838,8 +780,6 @@ def register_loader(loader_class, file_types, loader_params)
 |file_types|List[str]|必选|文件扩展名列表。支持文档类型数取值范围[1, 32]，文档扩展名长度取值范围为[1,32]。参数配置如[".txt", ".docx"]|
 |loader_params|Dict[str, Any]|可选|文档加载函数所需要传入的参数，默认为None，参数配置中的字符串长度不能超过1024，字典长度不能超过1024，字典嵌套不能超过1层。|
 
-
-
 ##### register\_splitter<a name="ZH-CN_TOPIC_0000001983409838"></a>
 
 **功能描述<a name="section179971573816"></a>**
@@ -860,8 +800,6 @@ def register_splitter(splitter_class, file_types, splitter_param)
 |file_types|List[str]|必选|文件扩展名列表。支持文档类型数取值范围[1, 32]，文档扩展名长度取值范围为[1,32]。不支持“.jpg”和“.png”格式的文件。参数配置如[".txt", ".docx"]|
 |splitter_params|Dict[str, Any]|可选|文档切分函数所需要传入的参数，默认为None，参数配置中的字符串长度不能超过1024，字典长度不能超过1024，字典嵌套不能超过2层。以langchain为例，当使用的splitter_class为RecursiveCharacterTextSplitter时，splitter_params可以传入的参数为{"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False}，其中chunk_size定义切割块大小，chunk_overlap定义切割块之间重叠部分大小，keep_separator表示切分符是否保留，默认的切分符是["\n\n", "\n", " ", ""]。|
 
-
-
 ##### get\_loader<a name="ZH-CN_TOPIC_0000002019969469"></a>
 
 **功能描述<a name="section198410241691"></a>**
@@ -880,14 +818,11 @@ def get_loader(file_suffix)
 |--|--|--|--|
 |file_suffix|str|必选|文件扩展名，长度取值范围为[1,32]。参数配置如".txt"、".docx"等|
 
-
 **返回值说明<a name="section22791364103"></a>**
 
 |参数名|说明|
 |--|--|
 |LoaderInfo|返回的LoaderInfo实例包含了对应文件类型的加载器的信息，包括加载器的类以及需要传递的参数。|
-
-
 
 ##### get\_splitter<a name="ZH-CN_TOPIC_0000001983250110"></a>
 
@@ -907,14 +842,11 @@ def get_splitter(file_suffix)
 |--|--|--|--|
 |file_suffix|str|必选|文件扩展名，长度取值范围为[1,32]。参数配置如".txt"、".docx"等。|
 
-
 **返回值说明<a name="section8952142312108"></a>**
 
 |参数名|说明|
 |--|--|
 |SplitterInfo|返回的SplitterInfo实例包含了对应文件类型的切分器的信息，包括切分器的类以及需要传递的参数。|
-
-
 
 ##### unregister\_loader<a name="ZH-CN_TOPIC_0000002029049120"></a>
 
@@ -935,8 +867,6 @@ def unregister_loader(loader_class, file_suffix)
 |loader_class|BaseLoader|必选|文档加载函数，只能为继承自langchain的BaseLoader的子类。|
 |file_suffix|str|可选|文件扩展名，长度取值范围为[1,32]，默认值为None，将解析函数为loader_class的全部卸载；若不为空，则卸载对应文档类型的对应解析函数。|
 
-
-
 ##### unregister\_splitter<a name="ZH-CN_TOPIC_0000002065288593"></a>
 
 **功能描述<a name="section198410241691"></a>**
@@ -955,9 +885,6 @@ def unregister_splitter(splitter_class, file_suffix)
 |--|--|--|--|
 |splitter_class|TextSplitter|必选|文档切分函数，只能为继承自langchain的TextSplitter的子类。|
 |file_suffix|str|可选|文件扩展名，长度取值范围为[1,32]，默认值为None，将切分函数为splitter_class的全部卸载，若不为空，则卸载对应文档类型的对应切分函数。|
-
-
-
 
 #### DocxLoader<a name="ZH-CN_TOPIC_0000002018714765"></a>
 
@@ -981,7 +908,6 @@ DocxLoader(file_path, vlm)
 |file_path|str|必选|Docx文件路径，路径长度取值范围为[1,1024]。文档路径不能为软链接且不允许存在".."。单个文档文字数量≤500000；文档大小≤100MB。|
 |vlm|Img2TextLLM|可选|视觉大模型对象，可解析文档中的图片信息，具体可参见[Img2TextLLM](./llm_client.md#img2textllm)|
 
-
 **调用示例<a name="section1611210845612"></a>**
 
 ```
@@ -998,7 +924,6 @@ loader = DocxLoader("/path/to/document.docx", vlm=vlm)
 docs = loader.lazy_load()
 print(list(docs))
 ```
-
 
 ##### lazy\_load<a name="ZH-CN_TOPIC_0000002018595245"></a>
 
@@ -1017,9 +942,6 @@ def lazy_load()
 |数据类型|说明|
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
-
-
-
 
 #### ExcelLoader<a name="ZH-CN_TOPIC_0000001982155044"></a>
 
@@ -1043,7 +965,6 @@ ExcelLoader(file_path,  line_sep="**;")
 |file_path|str|必选|Excel文件路径，路径长度取值范围为[1,1024]，不能为软链接且不允许存在".."。单文件表单数量≤1000，文档大小≤100MB。（.xlsx格式解压后文档大小不能超过500MB）。|
 |line_sep|str|可选|可自定义的行间分隔符，默认值“**;”，长度取值范围为[1,1024]。|
 
-
 **调用示例<a name="section244534818586"></a>**
 
 ```
@@ -1053,17 +974,16 @@ docs = loader.lazy_load()
 print(list(docs))
 ```
 
-
 ##### lazy\_load<a name="ZH-CN_TOPIC_0000002018714729"></a>
 
 **功能描述<a name="section37831034111910"></a>**
 
 实现langchain基类的lazy\_load方法。加载并解析xlsx/xls文件。默认表单第一行为列标题，从第二行开始为内容。逐行读取列标题与值。
 
--   文件必须是xlsx，xls格式中的一种，如果不是则解析失败，抛出异常。
--   文件必须存在，且文件表单数不可超过1000页，文件大小不可超过100MB，否则解析失败，返回空迭代器。
--   如果文件为xlsx格式，则允许解压前文件不超过100MB，不能为一个ZIP bomb（具体要求参考[BaseLoader](#baseloader)），否则解析失败返回空迭代器。
--   默认表单第一行为列标题，从第二行开始为内容。如果表单行数少于两行，则默认为空表。如果单个表单的行超过10000行，或者列超过1000列，则返回空表单。
+- 文件必须是xlsx，xls格式中的一种，如果不是则解析失败，抛出异常。
+- 文件必须存在，且文件表单数不可超过1000页，文件大小不可超过100MB，否则解析失败，返回空迭代器。
+- 如果文件为xlsx格式，则允许解压前文件不超过100MB，不能为一个ZIP bomb（具体要求参考[BaseLoader](#baseloader)），否则解析失败返回空迭代器。
+- 默认表单第一行为列标题，从第二行开始为内容。如果表单行数少于两行，则默认为空表。如果单个表单的行超过10000行，或者列超过1000列，则返回空表单。
 
 **函数原型<a name="section15833919172419"></a>**
 
@@ -1076,9 +996,6 @@ def lazy_load()
 |数据类型|说明|
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
-
-
-
 
 #### PdfLoader<a name="ZH-CN_TOPIC_0000001981995544"></a>
 
@@ -1104,7 +1021,6 @@ PdfLoader(file_path, vlm, lang, enable_ocr)
 |lang|Lang|可选|pdf文档语言类型，枚举值参考[Lang](./univers_api.md#lang)，默认中文（Lang.CH）。|
 |enable_ocr|bool|可选|是否调用OCR，若值为True，会使用OCR进行图片解析和表格信息解析，默认为False，即不解析图片。pdf中的图片像素长宽不能超过2048。<br>>[!NOTE] 说明  当enable_ocr设置为True时，PaddleOCR会联网下载文件，本接口内部使用了pickle模块加载模型，可能存在恶意构造的文件在反序列化时带来安全风险，请确保加载的模型文件来自可信来源。|
 
-
 **调用示例<a name="section1166802012316"></a>**
 
 ```
@@ -1114,15 +1030,14 @@ docs = loader.lazy_load()
 print(list(docs))
 ```
 
-
 ##### lazy\_load<a name="ZH-CN_TOPIC_0000001981995440"></a>
 
 **功能描述<a name="section7701541173917"></a>**
 
 实现langchain基类的lazy\_load方法，加载并解析PDF文件。
 
--   文档必须是PDF格式，如果不是PDF格式则会解析失败，抛出异常。
--   文档路径必须合法且必须存在，且文档页数必须≤1000页，文档大小≤100MB，否则会解析失败，抛出异常。
+- 文档必须是PDF格式，如果不是PDF格式则会解析失败，抛出异常。
+- 文档路径必须合法且必须存在，且文档页数必须≤1000页，文档大小≤100MB，否则会解析失败，抛出异常。
 
 **函数原型<a name="section19107115214394"></a>**
 
@@ -1135,9 +1050,6 @@ def lazy_load()
 |数据类型|说明|
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
-
-
-
 
 #### PowerPointLoader<a name="ZH-CN_TOPIC_0000001982155208"></a>
 
@@ -1168,7 +1080,6 @@ class Lang(Enum):
 |lang|Lang|可选|进行图片OCR时，要识别图片中文字的语言类型，当前支持中文或英文(Lang.CH/Lang.EN)，默认为Lang.CH。|
 |enable_ocr|bool|可选|是否调用OCR进行图片解析，默认为False，即不解析图片。对于像素超过4096*4096或者高宽小于256的图片OCR将不进行解析。<br>>[!NOTE] 说明  当enable_ocr设置为True时，PaddleOCR会联网下载文件，本接口内部使用了pickle模块加载模型，可能存在恶意构造的文件在反序列化时带来安全风险，请确保加载的模型文件来自可信来源。|
 
-
 **调用示例<a name="section106722416410"></a>**
 
 ```
@@ -1177,7 +1088,6 @@ loader = PowerPointLoader("./test.pptx")
 docs = loader.lazy_load()
 print(list(docs))
 ```
-
 
 ##### lazy\_load<a name="ZH-CN_TOPIC_0000001981995428"></a>
 
@@ -1196,9 +1106,6 @@ def lazy_load()
 |数据类型|说明|
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
-
-
-
 
 #### BaseLoader<a name="ZH-CN_TOPIC_0000001981995352"></a>
 
@@ -1221,8 +1128,6 @@ BaseLoader(file_path)
 |--|--|--|--|
 |file_path|str|必选|文档路径，路径长度取值范围为[1,1024]，不能为软链接且不允许存在".."，文档不大于100MB。|
 
-
-
 #### ImageLoader<a name="ZH-CN_TOPIC_0000001983384854"></a>
 
 ##### 类功能<a name="ZH-CN_TOPIC_0000002019944493"></a>
@@ -1244,7 +1149,6 @@ ImageLoader(file_path)
 |--|--|--|--|
 |file_path|str|必选|图片文件路径。路径长度取值范围为[1,1024]，文档路径不能为软链接且不允许存在".."，图片文件小于16M。|
 
-
 **调用示例<a name="section679174612413"></a>**
 
 ```
@@ -1253,7 +1157,6 @@ loader = ImageLoader("test.png")
 docs= loader.lazy_load()
 print(list(docs))
 ```
-
 
 ##### lazy\_load<a name="ZH-CN_TOPIC_0000002019824973"></a>
 
@@ -1272,9 +1175,6 @@ def lazy_load()
 |数据类型|说明|
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
-
-
-
 
 #### MarkdownLoader<a name="ZH-CN_TOPIC_0000002479664244"></a>
 
@@ -1299,7 +1199,6 @@ MarkdownLoader(file_path, vlm, process_images_separately)
 |vlm|Img2TextLLM|可选|视觉大模型对象，可解析文档中的图片信息生成图片总结，具体可参见[Img2TextLLM](./llm_client.md#img2textllm)|
 |process_images_separately|bool|可选|图片信息是否单独解析，若值为True，会将图片信息单独解析生成一个Document对象，默认为False，即将图片信息与其他Markdown内容合并解析生成一个Document对象。|
 
-
 **调用示例<a name="section1611210845612"></a>**
 
 ```
@@ -1317,17 +1216,16 @@ docs = loader.lazy_load()
 print(list(docs))
 ```
 
-
 ##### lazy\_load<a name="ZH-CN_TOPIC_0000002511547205"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
 实现langchain基类的lazy\_load方法，加载并解析Markdown文件。
 
--   文档必须是Markdown格式，如果不是Markdown格式则会解析失败，抛出异常。
--   文档路径必须合法且必须存在，且文档大小≤100MB，否则会解析失败，抛出异常。
--   如果Markdown文档中存在图片，且vlm参数存在，则会调用vlm模型生成图片总结（仅支持本地图片）。
--   如果Markdown文档中存在表格，会按行改写为KV键值对的形式，以第一行表头的值作为键，以其他行的值作为值，键值之间以':'作为分隔符，列之间以','作为分隔符，行之间以';'作为分隔符，最后以'。'收尾。
+- 文档必须是Markdown格式，如果不是Markdown格式则会解析失败，抛出异常。
+- 文档路径必须合法且必须存在，且文档大小≤100MB，否则会解析失败，抛出异常。
+- 如果Markdown文档中存在图片，且vlm参数存在，则会调用vlm模型生成图片总结（仅支持本地图片）。
+- 如果Markdown文档中存在表格，会按行改写为KV键值对的形式，以第一行表头的值作为键，以其他行的值作为值，键值之间以':'作为分隔符，列之间以','作为分隔符，行之间以';'作为分隔符，最后以'。'收尾。
 
 **函数原型<a name="section18789201331417"></a>**
 
@@ -1340,10 +1238,6 @@ def lazy_load()
 |数据类型|说明|
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
-
-
-
-
 
 ### 文档切分<a name="ZH-CN_TOPIC_0000002511544151"></a>
 
@@ -1371,7 +1265,6 @@ MarkdownTextSplitter(chunk_size, chunk_overlap, header_level, **kwargs)
 |header_level|int|可选|标题解析深度，介于0和6之间，默认为3。|
 |**kwargs|Dict[str, Any]|可选|关键字参数，用于提供给langchain父类RecursiveCharacterTextSplitter的额外参数|
 
-
 **调用示例<a name="section1611210845612"></a>**
 
 ```
@@ -1394,17 +1287,16 @@ for doc in docs:
      print(chunks)
 ```
 
-
 ##### split\_text<a name="ZH-CN_TOPIC_0000002511627227"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
 实现langchain基类的split\_text方法，对传入的字符串text进行分块。
 
--   如果text长度小于等于chunk\_size，则不进行切分。
--   如果text长度大于chunk\_size，则会首先调用父类MarkdownHeaderTextSplitter的分块方法按照header\_level选定的标题层级进行切分，得到多个标题块。
--   如果标题块长度小于等于chunk\_size，则会尝试跟后续的标题块进行合并，直到其长度快超过chunk\_size或者没有标题块可以合并，此时会将各块的标题合并之后与块内容拼接得到一个新的标题块作为输出。注意标题合并的规则是：若两个块在同一层级的标题内容不同，则删除该级及更低级的标题，只保留相同的更高级的标题作为共性内容。
--   如果标题块长度大于chunk\_size，则会调用父类RecursiveCharacterTextSplitter的分块方法对该标题块的内容进行递归字符切分，并且将该标题块的所有标题与每一个子标题块内容进行合并作为输出。
+- 如果text长度小于等于chunk\_size，则不进行切分。
+- 如果text长度大于chunk\_size，则会首先调用父类MarkdownHeaderTextSplitter的分块方法按照header\_level选定的标题层级进行切分，得到多个标题块。
+- 如果标题块长度小于等于chunk\_size，则会尝试跟后续的标题块进行合并，直到其长度快超过chunk\_size或者没有标题块可以合并，此时会将各块的标题合并之后与块内容拼接得到一个新的标题块作为输出。注意标题合并的规则是：若两个块在同一层级的标题内容不同，则删除该级及更低级的标题，只保留相同的更高级的标题作为共性内容。
+- 如果标题块长度大于chunk\_size，则会调用父类RecursiveCharacterTextSplitter的分块方法对该标题块的内容进行递归字符切分，并且将该标题块的所有标题与每一个子标题块内容进行合并作为输出。
 
 注：拼接标题之后的块长度可能会大于chunk\_size。
 
@@ -1420,14 +1312,8 @@ def split_text(text)
 |--|--|--|--|
 |text|str|必选|待切分的字符串，text长度不超过100MB。|
 
-
 **返回值说明<a name="section11818153884917"></a>**
 
 |数据类型|说明|
 |--|--|
 |List[str]|返回切分后得到的分块列表。|
-
-
-
-
-

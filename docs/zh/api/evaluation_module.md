@@ -25,8 +25,6 @@
 |nv_context_relevance|用于评估检索到的上下文（片段或段落）是否与用户输入（问题）相关。评估方式是采用两条独立的“大模型判官”提示，让每个判官分别对相关性进行评分（分数为0、1或2）。然后将分数转换到[0,1]区间，并取二者平均值作为最终得分。|[user_input, retrieved_contexts]|该分数的范围为0到1，分数越高，表示检索到的上下文与用户问题的关联性越强。|
 |nv_response_groundedness|衡量模型的回答在多大程度上得到了检索到的上下文的支持。它评估回答中的每一个论断或信息，是否都能在检索到的上下文中完全或部分找到依据|[response, retrieved_contexts]|该分数的范围为0到1，分数越高，表示回答得到检索到的上下文的支持越多。|
 
-
-
 ### RAGEvaluator<a name="ZH-CN_TOPIC_0000002039570353"></a>
 
 #### 类功能<a name="ZH-CN_TOPIC_0000002003412142"></a>
@@ -48,7 +46,6 @@ RAGEvaluator(llm: LLM, embeddings: Embeddings)
 |--|--|--|--|
 |llm|LLM|必选|llm模块主要用于和大模型进行对话。需继承自langchain.llms.base.LLM，参考：[Text2TextLLM](./llm_client.md#text2textllm)|
 |embeddings|Embeddings|必选|词嵌入模块评估时需要对用户问题进行向量化，必须是[TextEmbedding](./embedding.md#textembedding)或者[TEIEmbedding](./embedding.md#teiembedding)的实例之一。|
-
 
 **调用示例<a name="section36441848853"></a>**
 
@@ -115,7 +112,6 @@ print(result)
 
 ```
 
-
 #### evaluate<a name="ZH-CN_TOPIC_0000002039570357"></a>
 
 **功能描述<a name="section5434255810"></a>**
@@ -137,7 +133,6 @@ def evaluate(metrics, dataset, language, prompts_path, show_progress)
 |language|str|可选|本地化语言参数，如果指定将按照指定的语言进行评测。<br>默认值为None。如果不设置值，提示词将采用ragas自带的默认提示词。<br>支持的取值为"chinese"和"english"。|
 |prompts_path|str|可选|本地化提示词参数，如果指定将结合language在prompt_dir目录寻找对应的提示词文件，如果找到则可以加速评估过程。目录下的各文件大小不能超过4MB、深度不超过64，且文件总个数不超过512。<br>默认值为None。<br>字符串长度限制[1, 255]。|
 |show_progress|bool|可选|在评估期间是否显示进度条，默认不显示。|
-
 
 **返回值说明<a name="section11818153884917"></a>**
 

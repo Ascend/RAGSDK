@@ -4,15 +4,14 @@
 
 RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
--   容器化部署流程如[图1](#fig66411525144113)所示，具体方法请参见[容器内部署RAG SDK](./installation_guide.md#容器内部署rag-sdk)。
--   物理机内部署流程如[图2](#fig188855012335)所示，具体方法请参见[物理机内部署RAG SDK](./installation_guide.md#物理机内部署rag-sdk)。
+- 容器化部署流程如[图1](#fig66411525144113)所示，具体方法请参见[容器内部署RAG SDK](./installation_guide.md#容器内部署rag-sdk)。
+- 物理机内部署流程如[图2](#fig188855012335)所示，具体方法请参见[物理机内部署RAG SDK](./installation_guide.md#物理机内部署rag-sdk)。
 
 **图 1** RAG SDK容器化部署流程<a id="fig66411525144113"></a>  
 ![](figures/RAG-SDK容器化部署流程.png "RAG-SDK容器化部署流程")
 
 **图 2** RAG SDK物理机内部署流程<a id="fig188855012335"></a>  
 ![](figures/RAG-SDK物理机内部署流程.png "RAG-SDK物理机内部署流程")
-
 
 ## 获取RAG SDK软件包<a name="ZH-CN_TOPIC_0000001982155320"></a>
 
@@ -23,7 +22,6 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 |组件名称|软件包|获取链接|
 |--|--|--|
 |RAG SDK|检索增强软件包|<a href="https://www.hiascend.com/zh/developer/download/community/result?module=sdk+cann">获取链接</a>|
-
 
 > [!NOTE] 说明
 >容器内自带有RAG SDK，如果需要更新，请参见[升级](#升级)。
@@ -40,20 +38,19 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 企业客户请访问：[https://support.huawei.com/enterprise/zh/tool/software-digital-signature-openpgp-validation-tool-TL1000000054](https://support.huawei.com/enterprise/zh/tool/software-digital-signature-openpgp-validation-tool-TL1000000054)
 
-
 ## 安装依赖<a name="ZH-CN_TOPIC_0000002018714993"></a>
 
 为保证RAG SDK的正常使用，需要安装相关依赖。
 
--   如果在物理机内部署RAG SDK，需要安装[表1](#table285894914124)中的所有依赖包。
--   如果在容器内部署RAG SDK，需要在宿主机上安装npu-driver驱动包、npu-firmware固件包和Ascend Docker Runtime，并启动MindIE推理服务，其他操作请参考[容器内部署RAG SDK](#容器内部署rag-sdk)。
+- 如果在物理机内部署RAG SDK，需要安装[表1](#table285894914124)中的所有依赖包。
+- 如果在容器内部署RAG SDK，需要在宿主机上安装npu-driver驱动包、npu-firmware固件包和Ascend Docker Runtime，并启动MindIE推理服务，其他操作请参考[容器内部署RAG SDK](#容器内部署rag-sdk)。
 
 **安装依赖<a name="section10458105983310"></a>**
 
-1.  安装NPU驱动固件，详细步骤请参见《CANN 软件安装指南》中的“安装NPU驱动和固件”章节（商用版）或“安装NPU驱动和固件”章节（社区版）内容。为了让非root用户能够使用驱动，驱动的安装要添加**--install-for-all**选项。
-2.  安装CANN Toolkit、ops和NNAL加速库，详细步骤请参见《CANN 软件安装指南》中的“安装依赖”和“安装CANN软件包”章节。建议以普通用户HwHiAiUser进行安装。如果使用AscendHub镜像部署RAG SDK，无需执行该步骤。
-3.  安装并运行推理大模型，详细步骤请参见《MindIE安装指南》中的“方式三：容器安装方式”章节和“配置Server”章节。
-4.  安装Ascend Docker Runtime，详细步骤请参见《MindCluster  集群调度用户指南》的“安装 \> 安装部署”章节。
+1. 安装NPU驱动固件，详细步骤请参见《CANN 软件安装指南》中的“安装NPU驱动和固件”章节（商用版）或“安装NPU驱动和固件”章节（社区版）内容。为了让非root用户能够使用驱动，驱动的安装要添加**--install-for-all**选项。
+2. 安装CANN Toolkit、ops和NNAL加速库，详细步骤请参见《CANN 软件安装指南》中的“安装依赖”和“安装CANN软件包”章节。建议以普通用户HwHiAiUser进行安装。如果使用AscendHub镜像部署RAG SDK，无需执行该步骤。
+3. 安装并运行推理大模型，详细步骤请参见《MindIE安装指南》中的“方式三：容器安装方式”章节和“配置Server”章节。
+4. 安装Ascend Docker Runtime，详细步骤请参见《MindCluster  集群调度用户指南》的“安装 \> 安装部署”章节。
 
 **下载依赖软件包<a name="section107791548183117"></a>**
 
@@ -119,12 +116,12 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 </table>
 
 > [!NOTE] 说明
->-   <i><version\></i>表示软件版本号。
->-   <i><arch\></i>表示CPU架构。
->-   <i><chip\_type\></i>表示芯片类型。可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删除，即是<i><chip\_type\></i>的取值。
->-   为了让非root用户能够使用驱动，安装npu-driver要添加<b>--install-for-all</b>选项
->-   对于用户集成的开源和第三方软件，漏洞和问题请自行检查并及时进行修复；可以并且不限于通过[CVE（通用漏洞字典）官网](https://cve.mitre.org/cve/search_cve_list.html)确认对应开源软件版本的已知漏洞，并通过版本升级、使用patch补丁包更新等方式修复。
-
+>
+>- <i><version\></i>表示软件版本号。
+>- <i><arch\></i>表示CPU架构。
+>- <i><chip\_type\></i>表示芯片类型。可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删除，即是<i><chip\_type\></i>的取值。
+>- 为了让非root用户能够使用驱动，安装npu-driver要添加<b>--install-for-all</b>选项
+>- 对于用户集成的开源和第三方软件，漏洞和问题请自行检查并及时进行修复；可以并且不限于通过[CVE（通用漏洞字典）官网](https://cve.mitre.org/cve/search_cve_list.html)确认对应开源软件版本的已知漏洞，并通过版本升级、使用patch补丁包更新等方式修复。
 
 ## 安装RAG SDK<a name="ZH-CN_TOPIC_0000002018595473"></a>
 
@@ -138,20 +135,20 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 **安装前准备<a name="section127111016173115"></a>**
 
--   已经根据[安装依赖](#安装依赖)章节安装所需的依赖。
--   配置源之前，请确保安装环境能够连接网络。
+- 已经根据[安装依赖](#安装依赖)章节安装所需的依赖。
+- 配置源之前，请确保安装环境能够连接网络。
 
 **操作步骤<a name="section15488921175211"></a>**
 
-1.  获取基础镜像。
-    -   推荐从昇腾镜像仓库获取RAG SDK镜像。步骤如下：
-        1.  进入[昇腾镜像仓库](https://www.hiascend.com/developer/ascendhub/detail/b875f781df984480b0385a96fa1b03c9)。
-        2.  单击“镜像版本”页签。
-        3.  单击所需版本的“立即下载”按钮，按照页面提示进行下载。下载的镜像默认运行用户为普通用户“HwHiAiUser”。
+1. 获取基础镜像。
+    - 推荐从昇腾镜像仓库获取RAG SDK镜像。步骤如下：
+        1. 进入[昇腾镜像仓库](https://www.hiascend.com/developer/ascendhub/detail/b875f781df984480b0385a96fa1b03c9)。
+        2. 单击“镜像版本”页签。
+        3. 单击所需版本的“立即下载”按钮，按照页面提示进行下载。下载的镜像默认运行用户为普通用户“HwHiAiUser”。
 
-    -   如果不从昇腾镜像仓库获取基础镜像，则用户自己准备一个镜像，步骤如下：
-        1.  获取Dockerfile。Dockerfile中默认指定的安装和运行RAG SDK及相关依赖软件包的用户为普通用户“HwHiAiUser”，如果需要指定为其他用户，请在Dockerfile文件中适配修改。
-        2.  在Dockerfile同级目录下创建package目录，并在package目录下存放[安装依赖](#安装依赖)章节中获取的依赖包，和[获取RAG SDK软件包](#获取rag-sdk软件包)章节中获取的RAG SDK软件包。
+    - 如果不从昇腾镜像仓库获取基础镜像，则用户自己准备一个镜像，步骤如下：
+        1. 获取Dockerfile。Dockerfile中默认指定的安装和运行RAG SDK及相关依赖软件包的用户为普通用户“HwHiAiUser”，如果需要指定为其他用户，请在Dockerfile文件中适配修改。
+        2. 在Dockerfile同级目录下创建package目录，并在package目录下存放[安装依赖](#安装依赖)章节中获取的依赖包，和[获取RAG SDK软件包](#获取rag-sdk软件包)章节中获取的RAG SDK软件包。
 
             文件存放结构如下示例，其中driver目录为npu-driver驱动安装后的目录，driver默认安装路径为“/usr/local/Ascend/driver/”。
 
@@ -168,7 +165,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
                 `-- driver
             ```
 
-        3.  执行以下命令，构建RAG SDK镜像。
+        3. 执行以下命令，构建RAG SDK镜像。
 
             ```
             docker build -t <镜像名称>:<镜像tag> --build-arg http_proxy=<代理> --build-arg https_proxy=<代理> --build-arg ARCH=$(uname -m) --build-arg PLATFORM=<chip_type> -f Dockerfile .
@@ -176,27 +173,27 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
             <i><chip\_type\></i>表示芯片名称，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删除，即是<i><chip\_type\></i>的取值。若是Atlas 800I A3 超节点服务器则取值为A3。
 
-2.  运行RAG SDK。
-    1.  执行如下命令运行RAG SDK容器。
+2. 运行RAG SDK。
+    1. 执行如下命令运行RAG SDK容器。
 
         ```
         docker run -e ASCEND_VISIBLE_DEVICES=<device_id>  -itd --name <mxrag_demo> -p <port>:<port> -v <model_dir>:<model_dir>:ro <镜像名称>:<镜像tag> bash
         ```
 
         > [!NOTE] 说明 
-        >-   <_device\_id_\>：表示NPU设备ID，默认从0开始。如果有多个，中间用英文","隔开。每个容器使用的NPU卡只能独占，否则会报错。可通过执行**ls /dev/davinci\* |grep -v /dev/davinci\_manager |tr -d /dev/davinci**命令查询。
-        >-   <_mxrag\_demo_\>：表示运行后的容器名称，默认为mxrag\_demo。
-        >-   <port\>：表示需要映射的端口。
-        >-   <_model\_dir_\>：表示RAG SDK使用的模型存放的上级目录，如/home/data，不能配置为/home和/home/HwHiAiUser，防止宿主机文件挂载覆盖容器中HwHiAiUser家目录文件，导致RAG SDK功能异常。
-        >-   对于Atlas 800I A2设备使用clip向量模型加速时，需添加--device=/dev/dvpp\_cmdlist:/dev/dvpp\_cmdlist:rw 参数支持对dvpp对图片预处理，并且需保证容器运行用户对/dev/dvpp\_cmdlist有访问权限。
+        >- <_device\_id_\>：表示NPU设备ID，默认从0开始。如果有多个，中间用英文","隔开。每个容器使用的NPU卡只能独占，否则会报错。可通过执行**ls /dev/davinci\* |grep -v /dev/davinci\_manager |tr -d /dev/davinci**命令查询。
+        >- <_mxrag\_demo_\>：表示运行后的容器名称，默认为mxrag\_demo。
+        >- <port\>：表示需要映射的端口。
+        >- <_model\_dir_\>：表示RAG SDK使用的模型存放的上级目录，如/home/data，不能配置为/home和/home/HwHiAiUser，防止宿主机文件挂载覆盖容器中HwHiAiUser家目录文件，导致RAG SDK功能异常。
+        >- 对于Atlas 800I A2设备使用clip向量模型加速时，需添加--device=/dev/dvpp\_cmdlist:/dev/dvpp\_cmdlist:rw 参数支持对dvpp对图片预处理，并且需保证容器运行用户对/dev/dvpp\_cmdlist有访问权限。
 
-    2.  进入容器。
+    2. 进入容器。
 
         ```
         docker exec -it <mxrag_demo> bash
         ```
 
-    3.  执行**npu-smi info**命令检查驱动是否挂载正常。
+    3. 执行**npu-smi info**命令检查驱动是否挂载正常。
 
         如当Health参数的值为OK时，即表示当前芯片的健康状态为正常（以下仅为示例，请以实际查询到的信息为准）。
 
@@ -222,17 +219,16 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         +===============================+=================+======================================================+
         ```
 
-
 ### 物理机内部署RAG SDK<a name="ZH-CN_TOPIC_0000001984017610"></a>
 
 本章节指导用户基于操作系统ubuntu20.04-live-server和Huawei Cloud EulerOS 2.0，以普通用户“HwHiAiUser”为例，在物理机内部署RAG SDK。
 
--   确保已经根据[安装依赖](#安装依赖)章节安装所需的依赖。
--   安装RAG SDK和安装CANN的用户需为同一用户，建议为普通用户。
+- 确保已经根据[安装依赖](#安装依赖)章节安装所需的依赖。
+- 安装RAG SDK和安装CANN的用户需为同一用户，建议为普通用户。
 
 **安装前准备<a name="section189916619599"></a>**
 
--   基于操作系统ubuntu20.04-live-server，确保系统已安装Python 3.11，libpq-dev以及cmake，cmake最小版本为3.24.3。以下为libpq-dev和Python的安装方法：
+- 基于操作系统ubuntu20.04-live-server，确保系统已安装Python 3.11，libpq-dev以及cmake，cmake最小版本为3.24.3。以下为libpq-dev和Python的安装方法：
 
     ```
     # 安装libpq-dev（psycopg2需要）
@@ -252,8 +248,8 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     python3 -m pip install --upgrade setuptools
     ```
 
--   基于操作系统Huawei Cloud EulerOS 2.0，Python及依赖包的安装方法：
-<br># 确保系统yum源中包含python3.11，配置方法可参考[HCE的REPO源配置与软件安装](https://support.huaweicloud.com/usermanual-hce/hce_repo.html)的官方源配置和[13.12openEuler的REPO源配置](./1.faq.md#openeuler的repo源配置)
+- 基于操作系统Huawei Cloud EulerOS 2.0，Python及依赖包的安装方法：
+<br># 确保系统yum源中包含python3.11，配置方法可参考[HCE的REPO源配置与软件安装](https://support.huaweicloud.com/usermanual-hce/hce_repo.html)的官方源配置和[13.12openEuler的REPO源配置](./faq.md#openeuler的repo源配置)
 
     ```
     yum update
@@ -263,8 +259,8 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 **操作步骤<a name="section539219178112"></a>**
 
-1.  切换用户至HwHiAiUser，并进入“/home/HwHiAiUser”目录。
-2.  安装torch和torch-npu。
+1. 切换用户至HwHiAiUser，并进入“/home/HwHiAiUser”目录。
+2. 安装torch和torch-npu。
 
     ```
     # for x86,安装torch:
@@ -275,7 +271,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     pip3 install torch-npu==2.1.0.post12
     ```
 
-3.  安装torchvision-npu
+3. 安装torchvision-npu
 
     ```
     # 下载Torchvision Adapter代码，进入插件根目录
@@ -293,21 +289,21 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     pip3 install torchvision_npu-*.whl
     ```
 
-4.  安装OpenBLAS。
-    1.  下载OpenBLAS v0.3.10源码压缩包并解压。
+4. 安装OpenBLAS。
+    1. 下载OpenBLAS v0.3.10源码压缩包并解压。
 
         ```
         wget https://github.com/xianyi/OpenBLAS/archive/v0.3.10.tar.gz -O OpenBLAS-0.3.10.tar.gz
         tar -xf OpenBLAS-0.3.10.tar.gz
         ```
 
-    2.  进入OpenBLAS目录。
+    2. 进入OpenBLAS目录。
 
         ```
         cd OpenBLAS-0.3.10
         ```
 
-    3.  编译安装。
+    3. 编译安装。
 
         ```
         make FC=gfortran USE_OPENMP=1 -j
@@ -315,7 +311,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         make PREFIX=/home/HwHiAiUser/OpenBLAS install
         ```
 
-    4.  配置库路径的环境变量。
+    4. 配置库路径的环境变量。
 
         ```
         vim ~/.bashrc
@@ -323,7 +319,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         export LD_LIBRARY_PATH=/home/HwHiAiUser/OpenBLAS/lib:$LD_LIBRARY_PATH
         ```
 
-    5.  验证是否安装成功。
+    5. 验证是否安装成功。
 
         ```
         cat /home/HwHiAiUser/OpenBLAS/lib/cmake/openblas/OpenBLASConfigVersion.cmake | grep 'PACKAGE_VERSION "'
@@ -331,12 +327,12 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
         如果正确显示软件的版本信息，则表示安装成功。
 
-5.  下载faiss源码，构建faiss wheel包并安装。
+5. 下载faiss源码，构建faiss wheel包并安装。
 
     > [!NOTE] 说明 
     >在安装Index SDK依赖时也安装了faiss，但仅编译生成了libfaiss.so，还需要构建faiss wheel包并安装，以便在python中使用faiss。
 
-    1.  下载faiss源码包并解压。
+    1. 下载faiss源码包并解压。
 
         ```
         # faiss 1.10.0
@@ -344,13 +340,13 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         tar -xf v1.10.0.tar.gz && cd faiss-1.10.0/faiss
         ```
 
-    2.  创建install\_faiss.sh脚本。
+    2. 创建install\_faiss.sh脚本。
 
         ```
         vi install_faiss.sh
         ```
 
-    3.  在install\_faiss.sh脚本中写入如下内容。
+    3. 在install\_faiss.sh脚本中写入如下内容。
 
         ```
         export FAISS_INSTALL_PATH=/usr/local/faiss/faiss1.10.0
@@ -373,25 +369,25 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         pip3 install faiss-1.10.0*.whl
         ```
 
-    4.  按“Esc”键，输入<b>:wq!</b>，按“Enter”保存并退出编辑。
-    5.  执行**install\_faiss.sh**脚本，安装faiss。
+    4. 按“Esc”键，输入<b>:wq!</b>，按“Enter”保存并退出编辑。
+    5. 执行**install\_faiss.sh**脚本，安装faiss。
 
         ```
         bash install_faiss.sh
         ```
 
         > [!NOTE] 说明
-        >-   如果报错没有wheel，请使用pip安装。
-        >-   安装完faiss之后，numpy可能更新到2.x.x版本，需要回退至1.26.4。
+        >- 如果报错没有wheel，请使用pip安装。
+        >- 安装完faiss之后，numpy可能更新到2.x.x版本，需要回退至1.26.4。
 
-6.  安装Index SDK。
-    1.  增加对软件包的可执行权限。
+6. 安装Index SDK。
+    1. 增加对软件包的可执行权限。
 
         ```
         chmod +x Ascend-mindxsdk-mxindex_{version}_linux-{arch}.run
         ```
 
-    2.  执行如下命令，校验软件包的一致性和完整性。
+    2. 执行如下命令，校验软件包的一致性和完整性。
 
         ```
         ./Ascend-mindxsdk-mxindex_{version}_linux-{arch}.run --check
@@ -403,15 +399,15 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         Verifying archive integrity...  100%   SHA256 checksums are OK. All good.    
         ```
 
-    3.  创建软件包的安装路径。
-        -   **若用户未指定安装路径**，软件会默认安装到软件包所在的路径。
-        -   **若用户想指定安装路径**，需要先创建安装路径。以安装路径“/home/HwHiAiUser/Ascend”为例：
+    3. 创建软件包的安装路径。
+        - **若用户未指定安装路径**，软件会默认安装到软件包所在的路径。
+        - **若用户想指定安装路径**，需要先创建安装路径。以安装路径“/home/HwHiAiUser/Ascend”为例：
 
             ```
             mkdir -p /home/HwHiAiUser/Ascend
             ```
 
-    4.  安装Index SDK。
+    4. 安装Index SDK。
 
         ```
         ./Ascend-mindxsdk-mxindex_7.2.RC1_linux-aarch64.run --install --install-path=<安装路径> --platform=<npu_type>
@@ -425,27 +421,27 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         Uncompressing ASCEND MXINDEX RUN PACKAGE  100%
         ```
 
-    5.  安装完Index SDK后执行Index SDK脚本。
+    5. 安装完Index SDK后执行Index SDK脚本。
 
         ```
         cd <安装路径>/mxIndex/ops && ./custom_opp_{arch}.run
         ```
 
-7.  下载并安装ascendfaiss。
-    1.  下载源码包并解压
+7. 下载并安装ascendfaiss。
+    1. 下载源码包并解压
 
         ```
         wget https://gitee.com/ascend/mindsdk-referenceapps/repository/archive/master.zip 
         unzip master.zip && cd mindsdk-referenceapps-master/IndexSDK/faiss-python
         ```
 
-    2.  创建install\_ascendfaiss\_sh.sh脚本
+    2. 创建install\_ascendfaiss\_sh.sh脚本
 
         ```
         vi install_ascendfaiss.sh
         ```
 
-    3.  在install\_ascendfaiss.sh脚本中写入如下内容。。
+    3. 在install\_ascendfaiss.sh脚本中写入如下内容。。
 
         ```       
         # 设置以下环境变量
@@ -472,14 +468,14 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         export LD_LIBRARY_PATH=${INDEXSDK_INSTALL_PATH}/lib:${FAISS_INSTALL_PATH}/lib:$LD_LIBRARY_PATH
         ```
 
-    4.  按“Esc”键，输入<b>:wq!</b>，按“Enter”保存并退出编辑。
-    5.  执行**install\_ascendfaiss.sh**脚本，安装**ascendfaiss**。
+    4. 按“Esc”键，输入<b>:wq!</b>，按“Enter”保存并退出编辑。
+    5. 执行**install\_ascendfaiss.sh**脚本，安装**ascendfaiss**。
 
         ```
         bash install_ascendfaiss.sh
         ```
 
-8.  安装RAG SDK。
+8. 安装RAG SDK。
 
     ```
     bash  Ascend-mindxsdk-mxrag_<version>_linux-<arch>.run --install --install-path=<安装路径> --platform=<npu_type>
@@ -593,14 +589,13 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     </tbody>
     </table>
 
-
     > [!NOTE] 说明
     >以下参数未展示在--help参数中，用户请勿直接使用。
-    >-   --xwin：使用xwin模式运行。
-    >-   --phase2：要求执行第二步动作。
+    >- --xwin：使用xwin模式运行。
+    >- --phase2：要求执行第二步动作。
 
-9.  设置RAG SDK运行环境变量。
-    1.  用vim打开文件\~/.bashrc，在文件最后添加如下内容。
+9. 设置RAG SDK运行环境变量。
+    1. 用vim打开文件\~/.bashrc，在文件最后添加如下内容。
 
         ```
         export MX_INDEX_FINALIZE=0
@@ -619,7 +614,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         source /home/HwHiAiUser/Ascend/mxRag/script/set_env.sh
         ```
 
-    2.  保存退出后运行如下命令让环境生效。
+    2. 保存退出后运行如下命令让环境生效。
 
         ```
         source ~/.bashrc
@@ -632,8 +627,8 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 **检查运行环境<a name="section19468866105"></a>**
 
-1.  切换到运行用户HwHiAiUser。
-2.  执行**npu-smi info**命令检查驱动是否挂载正常。
+1. 切换到运行用户HwHiAiUser。
+2. 执行**npu-smi info**命令检查驱动是否挂载正常。
 
     如当Health参数的值为OK时，即表示当前芯片的健康状态为正常（以下仅为示例，请以实际查询到的信息为准）。
 
@@ -659,7 +654,6 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     +===============================+=================+======================================================+
     ```
 
-
 # 升级<a name="ZH-CN_TOPIC_0000001983329754"></a>
 
 **注意事项<a name="section1894903161912"></a>**
@@ -670,7 +664,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 用户如需将当前版本的RAG SDK升级至最新版本，可将最新的RAG SDK软件包上传至安装环境后，在软件包所在目录下使用命令进行版本升级，具体命令参见如下。以下命令运行用户为HwHiAiUser。
 
-1.  使用<b>--upgrade</b>命令升级。
+1. 使用<b>--upgrade</b>命令升级。
 
     ```
     bash Ascend-mindxsdk-mxrag_<version>_linux-<arch>.run --upgrade --install-path=<安装路径> --platform=<npu_type>
@@ -721,7 +715,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     升级过程中提示Do you want to upgrade to a newer version provided by this package and the old version will be removed? \[Y/N\]时，输入Y或y表示同意升级，此时旧版本的RAG SDK将被卸载；输入其他内容表示退出升级。
 
-2.  出现以下提示说明升级成功。
+2. 出现以下提示说明升级成功。
 
     ```
     Upgrade RAG SDK successfully
@@ -740,6 +734,3 @@ bash 安装目录/mxRag/script/uninstall.sh
 ```
 Uninstall RAG SDK package successfully.
 ```
-
-
-

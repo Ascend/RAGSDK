@@ -36,10 +36,9 @@ cd OpenBLAS && make -j8 && make install
 export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 ```
 
-
 ### openEuler的REPO源配置<a name="ZH-CN_TOPIC_0000002251012161"></a>
 
-1.  新建yum源配置文件
+1. 新建yum源配置文件
 
     ```
     vim /etc/yum.repos.d/openEuler.repo
@@ -56,12 +55,11 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
     gpgkey=https://repo.openeuler.org/openEuler-24.03-LTS/OS/x86_64/RPM-GPG-KEY-openEuler
     ```
 
-2.  更新yum缓存
+2. 更新yum缓存
 
     ```
     yum makecache
     ```
-
 
 ### 编译Faiss 1.10.0时，CMake出现报错信息<a name="ZH-CN_TOPIC_0000002472901917"></a>
 
@@ -77,14 +75,14 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 
 安装CMake 3.24.0或以上版本。以安装CMake 3.24.0版本为例：
 
--   x86环境：
-    1.  获取CMake安装脚本。
+- x86环境：
+    1. 获取CMake安装脚本。
 
         ```
         wget https://github.com/Kitware/CMake/releases/download/v3.24.0/cmake-3.24.0-linux-x86_64.sh
         ```
 
-    2.  运行安装脚本。
+    2. 运行安装脚本。
 
         ```
         bash ./cmake-3.24.0-linux-x86_64.sh --skip-license --prefix=/usr
@@ -103,7 +101,7 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
         # 输入 n
         ```
 
-    3.  查看CMake版本。
+    3. 查看CMake版本。
 
         ```
         cmake --version
@@ -115,14 +113,14 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
         cmake version 3.24.0
         ```
 
--   aarch64环境：
-    1.  获取CMake安装脚本。
+- aarch64环境：
+    1. 获取CMake安装脚本。
 
         ```
         wget https://github.com/Kitware/CMake/releases/download/v3.24.0/cmake-3.24.0-linux-aarch64.sh
         ```
 
-    2.  运行安装脚本。
+    2. 运行安装脚本。
 
         ```
         bash ./cmake-3.24.0-linux-aarch64.sh --skip-license --prefix=/usr
@@ -141,7 +139,7 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
         # 输入 n
         ```
 
-    3.  查看CMake版本。
+    3. 查看CMake版本。
 
         ```
         cmake --version
@@ -152,7 +150,6 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
         ```
         cmake version 3.24.0
         ```
-
 
 ### 编译安装ascendfaiss报Python错误<a name="ZH-CN_TOPIC_0000002439453562"></a>
 
@@ -176,8 +173,6 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 ./configgure --prefix=/usr/local/python3.11.11 --enable-shared
 ```
 
-
-
 ## 运行时常见问题<a name="ZH-CN_TOPIC_0000002256346734"></a>
 
 ### cannot allocate memory in static TLS block<a name="ZH-CN_TOPIC_0000001982155048"></a>
@@ -194,18 +189,17 @@ import报错示例：ImportError: xxxxx cannot allocate memory in static TLS blo
 
 **解决方案<a name="section19641271973"></a>**
 
-1.  在运行的demo或者示例代码第一行加入以下内容：
+1. 在运行的demo或者示例代码第一行加入以下内容：
 
     ```
     from paddle.base import libpaddle
     ```
 
-2.  重试，如果还没解决将上述报错so全路径添加到LD\_PRELOAD环境变量，注意可能会有多条。示例如下：其中xxxx为报错的so路径信息
+2. 重试，如果还没解决将上述报错so全路径添加到LD\_PRELOAD环境变量，注意可能会有多条。示例如下：其中xxxx为报错的so路径信息
 
     ```
     export LD_PRELOAD=xxxx:$LD_PRELOAD
     ```
-
 
 ### 运行时报错：std::bad\_alloc<a name="ZH-CN_TOPIC_0000001981995388"></a>
 
@@ -227,7 +221,6 @@ Python导包时出现以下报错：
 from paddle.base import libpaddle
 ```
 
-
 ### 运行时报错：corrupted size vs. prev\_size或者Segmentation fault<a name="ZH-CN_TOPIC_0000002023064214"></a>
 
 **问题现象<a name="section238219259714"></a>**
@@ -240,7 +233,7 @@ from paddle.base import libpaddle
 
 **解决方案<a name="section19641271973"></a>**
 
--   方案一
+- 方案一
 
     可以设置环境变量“MX\_INDEX\_FINALIZE”为0，则Index SDK不调用aclFinalize；设置为“1”表示仍调用aclFinalize。其他为无效设置。
 
@@ -250,10 +243,9 @@ from paddle.base import libpaddle
     export MX_INDEX_FINALIZE=0
     ```
 
--   方案二
+- 方案二
 
     若方案一无效，删除from paddle.base import libpaddle，然后调整导包顺序。若同时导入mx\_rag.retrievers或mx\_rag.storage相关包与mx\_rag.document或mx\_rag.knowledge相关包，需先导入后者。
-
 
 ### 抛出异常时，堆栈信息只打印了一行异常信息<a name="ZH-CN_TOPIC_0000002087879053"></a>
 
@@ -282,6 +274,3 @@ sys.tracebacklimit = 1000
 
 > [!NOTE] 说明
 >打印堆栈信息可能导致打印调用点的参数，参数中可能有敏感信息，请注意识别。
-
-
-
