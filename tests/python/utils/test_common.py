@@ -77,11 +77,11 @@ class TestCommon(unittest.TestCase):
         validate_sequence({"a": [["b"] * 1025]}, max_check_depth=3)
         with open("./test.log") as fd:
             res1 = fd.readline()
-            self.assertTrue(res1.find("nested depth cannot exceed 1") > -1)
+            self.assertGreater(res1.find("nested depth cannot exceed 1"), -1)
             res2 = fd.readline()
-            self.assertTrue(res2.find("1th layer param length") > -1)
+            self.assertGreater(res2.find("1th layer param length"), -1)
             res3 = fd.readline()
-            self.assertTrue(res3.find("2th layer param length") > -1)
+            self.assertGreater(res3.find("2th layer param length"), -1)
             fd.close()
 
     def test_validate_list_list_str(self):

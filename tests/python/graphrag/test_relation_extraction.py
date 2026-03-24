@@ -20,9 +20,8 @@ See the Mulan PSL v2 for more details.
 
 import unittest
 from unittest.mock import Mock, patch
-from mx_rag.utils.common import Lang
-from langchain_core.documents import Document
 
+from langchain_core.documents import Document
 
 from mx_rag.graphrag.relation_extraction import (
     _parse_and_repair_json,
@@ -30,6 +29,10 @@ from mx_rag.graphrag.relation_extraction import (
     generate_relations_en,
     LLMRelationExtractor
 )
+from mx_rag.utils.common import Lang
+
+def mock_return_input(x, *args):
+    return x
 
 
 class TestParseAndRepairJson(unittest.TestCase):
@@ -54,7 +57,7 @@ class TestParseAndRepairJson(unittest.TestCase):
     @patch('mx_rag.graphrag.relation_extraction.repair_json')
     def test_parse_with_repair_function(self, mock_repair_json, mock_normalize, mock_extract):
         mock_extract.return_value = '{"key": "value"'  # Invalid JSON
-        mock_normalize.side_effect = lambda x, *args: x
+        mock_normalize.side_effect = mock_return_input
         mock_repair_json.return_value = '[{"key": "value"}]'
 
         def repair_func(text):
@@ -68,7 +71,7 @@ class TestParseAndRepairJson(unittest.TestCase):
     @patch('mx_rag.graphrag.relation_extraction.normalize_json_string')
     def test_parse_with_llm_repair(self, mock_normalize, mock_extract):
         mock_extract.return_value = '{"invalid": json}'
-        mock_normalize.side_effect = lambda x, *args: x
+        mock_normalize.side_effect = mock_return_input
         self.mock_llm.chat.return_value = '{"invalid": "json"}'
 
         result = _parse_and_repair_json(self.mock_llm, "text")
@@ -80,7 +83,7 @@ class TestParseAndRepairJson(unittest.TestCase):
     @patch('mx_rag.graphrag.relation_extraction.normalize_json_string')
     def test_parse_all_repairs_fail(self, mock_normalize, mock_extract):
         mock_extract.return_value = 'completely invalid'
-        mock_normalize.side_effect = lambda x, *args: x
+        mock_normalize.side_effect = mock_return_input
         self.mock_llm.chat.return_value = 'still invalid'
 
         result = _parse_and_repair_json(self.mock_llm, "text")
@@ -184,8 +187,8 @@ class TestLLMRelationExtractor(unittest.TestCase):
         extractor._process_relations = Mock()
         extractor._process_relations.side_effect = [
             [{"entity": "rel1"}, {"entity": "rel2"}],  # entity_relations
-            [{"event": "ent1"}, {"event": "ent2"}],   # event_entity_relations
-            [{"event": "rel1"}, {"event": "rel2"}]    # event_relations
+            [{"event": "ent1"}, {"event": "ent2"}],  # event_entity_relations
+            [{"event": "rel1"}, {"event": "rel2"}]  # event_relations
         ]
 
         # Create test documents
@@ -212,6 +215,7 @@ class TestLLMRelationExtractor(unittest.TestCase):
 
         # Verify function calls
         self.assertEqual(extractor._process_relations.call_count, 3)  # 3 relation types
+
 
 if __name__ == "__main__":
     unittest.main()

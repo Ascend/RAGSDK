@@ -58,7 +58,7 @@ class TestKnowledge(unittest.TestCase):
         knowledge_store = KnowledgeStore(SQL_PATH)
         knowledge_store.add_knowledge("test_knowledge", "user123", "admin")
         knowledge_store.add_knowledge("test_knowledge", "user123", 'admin')
-        self.assertEqual(knowledge_store.check_knowledge_exist("test_knowledge", "user123"), True)
+        self.assertTrue(knowledge_store.check_knowledge_exist("test_knowledge", "user123"))
         knowledge_store.add_usr_id_to_knowledge("test_knowledge", "user124", "admin")
         knowledge_store.add_usr_id_to_knowledge("test_knowledge", "user124", "admin")
         knowledge_store.add_usr_id_to_knowledge("test_knowledge", "user000", "member")

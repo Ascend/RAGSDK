@@ -192,7 +192,7 @@ class MilvusDB(VectorStore):
 
         return milvus_db
 
-    @validate_params(collection_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
+    @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))
     def set_collection_name(self, collection_name: str):
         self._collection_name = collection_name
@@ -228,7 +228,7 @@ class MilvusDB(VectorStore):
             self.client.drop_collection(self._collection_name)
 
     @validate_params(
-        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
                  message="param must be List[int]")
     )
     def delete(self, ids: List[int]):
@@ -264,7 +264,7 @@ class MilvusDB(VectorStore):
             return self._perform_dense_search(np.array(embeddings), k, output_fields, **kwargs)
 
     @validate_params(
-        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
                  message="param must be List[int]"),
         document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
                          message="param must greater equal than 0")
@@ -284,7 +284,7 @@ class MilvusDB(VectorStore):
         logger.info(f"success add {len(ids)} ids in MilvusDB.")
 
     @validate_params(
-        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
                  message="param must be List[int]"),
         document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
                          message="param must greater equal than 0")
@@ -303,7 +303,7 @@ class MilvusDB(VectorStore):
         logger.info(f"successfully add {len(ids)} vectors in MilvusDB.")
 
     @validate_params(
-        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
                  message="param must be List[int]")
     )
     def add_dense_and_sparse(self, ids: List[int], dense_embeddings: np.ndarray,
@@ -329,7 +329,7 @@ class MilvusDB(VectorStore):
         return ids
 
     @validate_params(
-        ids=dict(validator=lambda x: isinstance(x, list) and all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
                  message="param must be List[int]"),
         dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
                    message="dense must be Optional[np.ndarray]"),
@@ -363,7 +363,7 @@ class MilvusDB(VectorStore):
                 self.flush()
             logger.info(f"Successfully updated chunk ids {ids}")
 
-    @validate_params(collection_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
+    @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
                                           message="param length range (0, 1024]"))
     def has_collection(self, collection_name):
         return self.client.has_collection(collection_name)

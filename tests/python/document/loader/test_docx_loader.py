@@ -18,14 +18,13 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-
 import os
 import unittest
 
 from docx import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from mx_rag.document.loader import DocxLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 class DocxLoaderTestCase(unittest.TestCase):

@@ -89,6 +89,19 @@ RESPONSE_STREAM = {
 class TestMindieLLM(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
 
+    def setUp(self):
+        self.data_blocks = [
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\","
+            b"\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}],"
+            b"\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\","
+            b"\"choices\":[{\"index\":0,\"delta\":{\"content\":\" World\"},\"finish_reason\":null}],"
+            b"\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
+            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\","
+            b"\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],"
+            b"\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n"
+        ]
+
     def test_chat(self):
         with patch("urllib3.PoolManager.request", mock.Mock(
                 return_value=MockResponse(RESPONSE, {
@@ -142,16 +155,9 @@ class TestMindieLLM(unittest.TestCase):
         mock_response.status = 200
         mock_response.headers = {"Content-Type": "text/event-stream"}
 
-        # 模拟流式响应的数据块
-        data_blocks = [
-            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
-            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" World\"},\"finish_reason\":null}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
-            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n"
-        ]
-
         # 模拟stream方法，逐步返回数据块
         def mock_stream(chunk_size):
-            for block in data_blocks:
+            for block in self.data_blocks:
                 yield block
 
         mock_response.stream = mock_stream
@@ -174,16 +180,9 @@ class TestMindieLLM(unittest.TestCase):
         mock_response.status = 200
         mock_response.headers = {"Content-Type": "text/event-stream"}
 
-        # 模拟流式响应的数据块
-        data_blocks = [
-            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
-            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" World\"},\"finish_reason\":null}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n",
-            b"data: {\"id\":\"99\",\"object\":\"chat.completion\",\"created\":1716561049,\"model\":\"llama2-7b-hf\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"length\"}],\"usage\":{\"prompt_tokens\":46,\"completion_tokens\":78,\"total_tokens\":124}}\n"
-        ]
-
         # 模拟stream方法，逐步返回数据块
         def mock_stream(chunk_size):
-            for block in data_blocks:
+            for block in self.data_blocks:
                 yield block
 
         mock_response.stream = mock_stream

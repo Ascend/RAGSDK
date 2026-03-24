@@ -65,8 +65,12 @@ class TestHelperDocStore(unittest.TestCase):
                 self.assertEqual(chunk.document_name, self.test_documents[i].document_name)
 
     def test_add_documents_with_encryption(self):
-        encrypt_fn = lambda x: x + "_encrypted"
-        decrypt_fn = lambda x: x[:-10] if x.endswith("_encrypted") else x
+        def encrypt_fn(x: str):
+            return x + "_encrypted"
+
+        def decrypt_fn(x: str):
+            return x[:-10] if x.endswith("_encrypted") else x
+
         docstore = _DocStoreHelper(self.engine, encrypt_fn=encrypt_fn, decrypt_fn=decrypt_fn)
         doc_id = 1
         docstore.add(self.test_documents, doc_id)
@@ -131,7 +135,7 @@ class TestHelperDocStore(unittest.TestCase):
     def test_mx_document(self):
         MxDocument(page_content="hello", metadata={}, document_name="name")
         with self.assertRaises(ValueError):
-            MxDocument(page_content="hello", metadata={"key": "a" * (STR_MAX_LEN+1)}, document_name="name")
+            MxDocument(page_content="hello", metadata={"key": "a" * (STR_MAX_LEN + 1)}, document_name="name")
 
 
 if __name__ == '__main__':

@@ -20,9 +20,9 @@ See the Mulan PSL v2 for more details.
 
 import os
 import unittest
-from unittest.mock import patch, MagicMock
 
 from mx_rag.document.loader.image_loader import ImageLoader
+
 
 class ImageLoaderTestCase(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -32,4 +32,3 @@ class ImageLoaderTestCase(unittest.TestCase):
         loader = ImageLoader(os.path.join(self.data_dir, "test.png"))
         png = loader.load()
         self.assertTrue(png[0].metadata, {"path": os.path.join(self.current_dir, "../../../data/test.png")})
-

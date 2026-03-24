@@ -29,6 +29,7 @@ from mx_rag.llm import LLMParameterConfig
 def _convert_data_to_user(data):
     return data
 
+
 def _convert_data_to_cache(data):
     return data
 

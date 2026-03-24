@@ -225,7 +225,7 @@ class TestCypherQueryBuilder(unittest.TestCase):
         self.assertEqual(result, "MATCH ()-[r]->() RETURN count(r) AS cnt")
 
 
-class TestCypherValueEscaping:
+class TestCypherValueEscaping(unittest.TestCase):
     """Test the cypher_value function for proper escaping."""
 
     def test_string_with_single_quotes(self):

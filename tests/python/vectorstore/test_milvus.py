@@ -20,13 +20,14 @@ See the Mulan PSL v2 for more details.
 
 import unittest
 from unittest.mock import patch, MagicMock
+
 import numpy as np
 from pymilvus import MilvusClient
 from pymilvus.client.types import ExtraList
 
+from mx_rag.storage.vectorstore import MilvusDB
 from mx_rag.storage.vectorstore.milvus import MilvusError
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
-from mx_rag.storage.vectorstore import MilvusDB
 
 
 class TestMilvusDB(unittest.TestCase):
@@ -133,7 +134,7 @@ class TestMilvusDB(unittest.TestCase):
 
     def test_add_sparse_with_docs(self):
         db = self.create_milvus_db_sparse()
-        db.add_sparse(self.ids, self.sparse_vecs, docs = self.docs)
+        db.add_sparse(self.ids, self.sparse_vecs, docs=self.docs)
         self.create_milvus_db_dense().client.insert.assert_called_once()
         self.create_milvus_db_dense().client.refresh_load.assert_called_once()
 

@@ -18,7 +18,6 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-
 import os
 import re
 import stat
@@ -32,7 +31,6 @@ from loguru import logger
 from unstructured.documents.elements import (
     ElementType, Element
 )
-
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.llm import Img2TextLLM
@@ -146,7 +144,8 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
                     logger.debug(f"Processing markdown image: {img_path}")
                     image_data = f.read()
                     img_base64, image_summary = self._interpret_image(image_data, self.vlm)
-                    return img_base64, re.sub(r'^#+\s*', '', image_summary, flags=re.MULTILINE) if image_summary else element.text
+                    return img_base64, re.sub(r'^#+\s*', '', image_summary,
+                                              flags=re.MULTILINE) if image_summary else element.text
             except FileNotFoundError as fnf_error:
                 logger.warning(f"Image file not found: {str(fnf_error)}")
                 return "", element.text
@@ -158,7 +157,6 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
                 return "", element.text
         else:
             return "", element.text
-
 
     def _is_document_valid(self):
         """Validate the Markdown document for security and format."""
