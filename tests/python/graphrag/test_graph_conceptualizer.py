@@ -154,6 +154,9 @@ class TestGraphConceptualizer(unittest.TestCase):
 
     def test_conceptualize_entity(self):
         """Test the _conceptualize_entity method."""
+        def get_edge_attributes_mock(src, tgt, attr):
+            return f"{src} -> {tgt}"
+            
         conceptualizer = GraphConceptualizer(
             llm=self.mock_llm,
             graph=self.mock_graph,
@@ -162,9 +165,7 @@ class TestGraphConceptualizer(unittest.TestCase):
         entity = "entity1"
         self.mock_graph.predecessors.return_value = ["pred1"]
         self.mock_graph.successors.return_value = ["succ1"]
-        self.mock_graph.get_edge_attributes.side_effect = (
-            lambda src, tgt, attr: f"{src} -> {tgt}"
-        )
+        self.mock_graph.get_edge_attributes.side_effect = get_edge_attributes_mock
         conceptualizer.prompts["entity"] = "Entity: [ENTITY] Context: [CONTEXT]"
         result = conceptualizer._conceptualize_entity(entity)
         self.mock_llm.chat.assert_called_once()

@@ -319,7 +319,8 @@ class ExcelLoader(BaseLoader, mxBaseLoader):
                     logger.info(f"In file ['{self.file_path}'] sheet ['{ws.name}'] is empty")
                     continue
                 for line in lines:
-                    yield Document(page_content=line, metadata={"source": self.file_path, "sheet": ws.name, "type": "text"})
+                    yield Document(page_content=line,
+                                   metadata={"source": self.file_path, "sheet": ws.name, "type": "text"})
         except xlrd.biffh.XLRDError as e:
             logger.error(f"Excel parsing error for file '{self.file_path}': {e}")
             return

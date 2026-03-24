@@ -23,9 +23,9 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, List, Optional
 
 from json_repair import repair_json
+from langchain_core.documents import Document
 from loguru import logger
 from tqdm import tqdm
-from langchain_core.documents import Document
 
 from mx_rag.graphrag.prompts.extract_graph import TRIPLE_INSTRUCTIONS_CN, TRIPLE_INSTRUCTIONS_EN
 from mx_rag.graphrag.prompts.repair_json import JSON_REPAIR_PROMPT
@@ -41,13 +41,13 @@ from mx_rag.utils.common import Lang, validate_params, MAX_PROMPT_LENGTH
 
 
 def _parse_and_repair_json(
-    llm: Text2TextLLM,
-    text: str,
-    answer_start_token: str = "",
-    repair_function: Optional[Callable[[str], str]] = None,
-    remove_space: bool = False,
-    handle_single_quote: bool = False,
-    llm_repair_prompt_template: str = JSON_REPAIR_PROMPT,
+        llm: Text2TextLLM,
+        text: str,
+        answer_start_token: str = "",
+        repair_function: Optional[Callable[[str], str]] = None,
+        remove_space: bool = False,
+        handle_single_quote: bool = False,
+        llm_repair_prompt_template: str = JSON_REPAIR_PROMPT,
 ) -> List[dict]:
     """
     Efficiently parse and repair a JSON-like string, escalating from local fixes to LLM repair.
@@ -74,7 +74,7 @@ def _parse_and_repair_json(
             return None
 
     def attempt_repair_and_parse(
-        repair_strategy: Callable[[str], str], text
+            repair_strategy: Callable[[str], str], text
     ) -> Optional[List[dict]]:
         try:
             repaired = repair_strategy(text)
@@ -114,10 +114,10 @@ def _parse_and_repair_json(
 
 
 def generate_relations_cn(
-    llm: Text2TextLLM,
-    pad_token: str,
-    texts: List[str],
-    repair_function: Callable[[str], str],
+        llm: Text2TextLLM,
+        pad_token: str,
+        texts: List[str],
+        repair_function: Callable[[str], str],
 ) -> List[List[dict]]:
     """
     Generalized function to generate a list of relations from the model output (Chinese).
@@ -158,7 +158,8 @@ class LLMRelationExtractor:
         pad_token (str): The token used for padding in the LLM.
         language (Lang): The language setting, defaulting to Chinese (Lang.CH).
         triple_instructions (dict): Instructions for extracting triples based on the language.
-        user_prompts (dict): User prompts for different extraction tasks (entity_relation, event_entity, event_relation).
+        user_prompts (dict): User prompts for different extraction tasks
+        (entity_relation, event_entity, event_relation).
     """
 
     @validate_params(
@@ -175,12 +176,12 @@ class LLMRelationExtractor:
         )
     )
     def __init__(
-        self,
-        llm: Text2TextLLM,
-        pad_token: str,
-        language: Lang = Lang.CH,
-        max_workers=None,
-        triple_instructions: Optional[dict] = None,
+            self,
+            llm: Text2TextLLM,
+            pad_token: str,
+            language: Lang = Lang.CH,
+            max_workers=None,
+            triple_instructions: Optional[dict] = None,
     ):
         self.llm = llm
         self.pad_token = pad_token
@@ -198,8 +199,8 @@ class LLMRelationExtractor:
     @validate_params(
         docs=dict(
             validator=lambda x: isinstance(x, list)
-            and all(isinstance(it, Document) for it in x)
-            and 0 < len(x) <= 1000000,
+                                and all(isinstance(it, Document) for it in x)
+                                and 0 < len(x) <= 1000000,
             message="param must be a list of Document elements, length range [1, 1000000]",
         )
     )
@@ -244,7 +245,7 @@ class LLMRelationExtractor:
         ]
 
     def _process_relations(
-        self, outputs: List[str], repair_function: Callable
+            self, outputs: List[str], repair_function: Callable
     ) -> List[List[dict]]:
         if self.language == Lang.CH:
             return generate_relations_cn(

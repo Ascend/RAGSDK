@@ -19,17 +19,17 @@ See the Mulan PSL v2 for more details.
 """
 
 import os
-from paddle.base import libpaddle
-import pathlib
 import unittest
 from unittest.mock import MagicMock, patch
-import numpy as np
 
-from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, FilesLoadInfo, delete_files
+import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from mx_rag.knowledge import upload_dir
-from mx_rag.document.loader import DocxLoader, PdfLoader, ImageLoader
+from paddle.base import libpaddle
+
 from mx_rag.document import LoaderMng
+from mx_rag.document.loader import DocxLoader, PdfLoader, ImageLoader
+from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, FilesLoadInfo, delete_files
+from mx_rag.knowledge import upload_dir
 from mx_rag.knowledge.handler import FileHandlerError
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore.faiss_npu import MindFAISS
@@ -177,7 +177,7 @@ class TestHandler(unittest.TestCase):
         upload_files(**self.common_params, files=[self.test_file])
         delete_files(self.knowledge_db, ['test.pdf'])
         res = self.knowledge_db.check_document_exist('test.pdf')
-        self.assertEqual(res, False)
+        self.assertFalse(res)
 
     def test_upload_files_with_embed_fun(self):
         self.common_params['embed_func'] = {"dense": embed_func, "sparse": None}
@@ -185,6 +185,7 @@ class TestHandler(unittest.TestCase):
         self.common_params['embed_func'] = {"dense": None, "sparse": None}
         with self.assertRaises(ValueError):
             upload_files(**self.common_params, files=[self.test_file])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -18,15 +18,14 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-from typing import List
 import unittest
 from unittest import mock
 from unittest.mock import patch
 
-from mx_rag.reranker import RerankerFactory
-from mx_rag.reranker.reranker import Reranker
-from mx_rag.cache.cache_similarity.cache_similarity import CacheSimilarity
 from cache_mocker import MockerReranker
+
+from mx_rag.cache.cache_similarity.cache_similarity import CacheSimilarity
+from mx_rag.reranker import RerankerFactory
 
 
 def mock_create_similarity(*args, **kwargs):

@@ -18,11 +18,10 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-
 import json
 import random
-from typing import Dict
 import unittest
+from typing import Dict
 from unittest import mock
 from unittest.mock import patch
 
@@ -93,8 +92,9 @@ class TestTEIEmbedding(unittest.TestCase):
             data = json.loads(body)
 
             response_data = []
-            for input in data['inputs']:
-                item = [{"index": random.randint(0,100), "value":random.uniform(1,100)} for j in range(len(input.split()))]
+            for input_data in data['inputs']:
+                item = [{"index": random.randint(0, 100), "value": random.uniform(1, 100)}
+                        for j in range(len(input_data.split()))]
                 response_data.append(item)
             return TestTEIEmbedding.Result(True, json.dumps(response_data))
 

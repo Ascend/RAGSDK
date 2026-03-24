@@ -27,7 +27,7 @@ from mx_rag.storage.document_store import MxDocument
 from mx_rag.storage.document_store.base_storage import StorageError, Docstore
 from mx_rag.storage.document_store.helper_storage import _DocStoreHelper
 from mx_rag.utils.common import validate_params, MAX_CHUNKS_NUM, MAX_SQLITE_FILE_NAME_LEN, \
-    check_db_file_limit, validate_list_str, TEXT_MAX_LEN, STR_MAX_LEN
+    check_db_file_limit, validate_list_str, STR_MAX_LEN
 from mx_rag.utils.file_check import FileCheck, check_disk_free_space
 
 
@@ -51,7 +51,8 @@ class SQLiteDocstore(Docstore):
 
     @validate_params(
         documents=dict(
-            validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
+            validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM and all(
+                isinstance(it, MxDocument) for it in x),
             message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"),
         document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
                          message="param must greater equal than 0")
@@ -64,11 +65,13 @@ class SQLiteDocstore(Docstore):
         check_db_file_limit(self.db_path)
         return self.doc_store.add(documents, document_id)
 
-    @validate_params(document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"))
+    @validate_params(
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"))
     def delete(self, document_id: int) -> List[int]:
         return self.doc_store.delete(document_id)
 
-    @validate_params(chunk_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"))
+    @validate_params(
+        chunk_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"))
     def search(self, chunk_id: int) -> Optional[MxDocument]:
         return self.doc_store.search(chunk_id)
 
@@ -78,7 +81,8 @@ class SQLiteDocstore(Docstore):
     def get_all_document_id(self) -> List[int]:
         return self.doc_store.get_all_document_id()
 
-    @validate_params(document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message=f"document_id must >= 0"))
+    @validate_params(
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message=f"document_id must >= 0"))
     def search_by_document_id(self, document_id: int):
         return self.doc_store.search_by_document_id(document_id)
 

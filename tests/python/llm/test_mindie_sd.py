@@ -18,9 +18,7 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-
 import io
-
 import unittest
 from unittest import mock
 from unittest.mock import patch
@@ -67,7 +65,8 @@ class TestMindieVision(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 200))):
-            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888", client_param=ClientParam(use_http=True))
+            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888",
+                                          client_param=ClientParam(use_http=True))
             res = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
             self.assertNotEqual(res["result"], "")
 
@@ -76,7 +75,8 @@ class TestMindieVision(unittest.TestCase):
             "Content-Type": "application/json",
             "Content-Length": 200
         }, 404))):
-            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888", client_param=ClientParam(use_http=True))
+            sd_model = Text2ImgMultiModel(model_name="sd", url="http://test:8888",
+                                          client_param=ClientParam(use_http=True))
             res = sd_model.text2img(prompt="dog wearing black glasses", output_format="png")
             self.assertEqual(res["result"], "")
 

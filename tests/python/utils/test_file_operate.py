@@ -18,16 +18,16 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-import os
 import json
+import os
 import shutil
 import stat
 import unittest
 from unittest.mock import patch, MagicMock
 
 import pytest
+from loguru import logger
 
-from mx_rag.utils.common import MAX_FILE_SIZE
 from mx_rag.utils.file_check import FileCheckError, FileCheck, SecDirCheck
 from mx_rag.utils.file_operate import read_jsonl_from_file, write_jsonl_to_file
 
@@ -108,7 +108,7 @@ class TestCheckFileOwner(unittest.TestCase):
 
         try:
             FileCheck.check_file_owner(self.file_path)
-            print("Test passed: File and directory owned by current user.")
+            logger.info("Test passed: File and directory owned by current user.")
         except FileCheckError:
             self.fail("check_file_owner raised FileCheckError unexpectedly!")
 
@@ -119,7 +119,7 @@ class TestCheckFileOwner(unittest.TestCase):
         # 调用函数，预期返回一个异常
         with self.assertRaises(FileCheckError):
             FileCheck.check_file_owner(self.file_path)
-        print("Test passed: Detected file owned by another user.")
+        logger.info("Test passed: Detected file owned by another user.")
 
     def test_directory_owned_by_other_user(self):
         # 文件所在目录的属主为另一个用户
@@ -128,7 +128,7 @@ class TestCheckFileOwner(unittest.TestCase):
         # 调用函数，预期返回一个异常
         with self.assertRaises(FileCheckError):
             FileCheck.check_file_owner(self.file_path)
-        print("Test passed: Detected directory owned by another user.")
+        logger.info("Test passed: Detected directory owned by another user.")
 
     def test_file_not_found(self):
         # 文件不存在
@@ -137,7 +137,7 @@ class TestCheckFileOwner(unittest.TestCase):
         # Run the function and expect an exception
         with self.assertRaises(FileCheckError):
             FileCheck.check_file_owner(self.file_path)
-        print("Test passed: Detected file not found.")
+        logger.info("Test passed: Detected file not found.")
 
     def test_directory_not_found(self):
         # 文件所在目录不存在
@@ -146,7 +146,7 @@ class TestCheckFileOwner(unittest.TestCase):
         # Run the function and expect an exception
         with self.assertRaises(FileCheckError):
             FileCheck.check_file_owner(self.file_path)
-        print("Test passed: Detected directory not found.")
+        logger.info("Test passed: Detected directory not found.")
 
 
 class TestSecDirCheck(unittest.TestCase):
@@ -222,7 +222,7 @@ class TestSecDirCheck(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             SecDirCheck(self.dir_path, max_size=1024, max_file_num=1).check()
 
-        self.assertTrue("file nums" in cm.exception.__str__())
+        self.assertIn("file nums", cm.exception.__str__())
 
     def test_dir_file_num_2(self):
         # 测试当前目录及子目录总文件数2个文件，期望存在一个文件
@@ -236,12 +236,12 @@ class TestSecDirCheck(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             SecDirCheck(self.dir_path, max_size=1024, max_file_num=1).check()
 
-        self.assertTrue("file nums" in cm.exception.__str__())
+        self.assertIn("file nums", cm.exception.__str__())
 
         with self.assertRaises(ValueError) as cm:
             SecDirCheck(self.dir_path, max_size=1024, max_depth=1).check()
 
-        self.assertTrue("max_depth" in cm.exception.__str__())
+        self.assertIn("max_depth", cm.exception.__str__())
 
     def test_dir_file_size(self):
         # 测试当前目录下文件大小不超过1024
@@ -296,4 +296,3 @@ class TestSecDirCheck(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

@@ -75,102 +75,6 @@ class MyTestCase(unittest.TestCase):
         logger.info("create MindFAISS done")
         llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct", base_url="http://70.255.71.175:3000", timeout=120)
 
-        def test_rag_chain_npu_single(self):
-            """
-            测试单条搜索结果，包含source_documents和不包含source_documents进行测试
-            """
-            r = Retriever(vector_store=vector_store, k=1, score_threshold=0.5, embed_func=emb.embed_documents)
-            rag = SingleText2TextChain(retriever=r, llm=llm)
-            good_prompt = "2024年高考语文作文题目？"
-
-            # 非流式输出，结果不包含source_documents
-            query_response = rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1, top_p=1.0))
-            logger.debug(f"response {query_response}")
-            self.assertEqual(query_response.get('query', None), "2024年高考语文作文题目？")
-            self.assertTrue(query_response.get('result', None) is not None)
-            self.assertTrue(query_response.get('source_documents', None) is None)
-
-            rag.source = True
-            # 非流式输出，结果包含source_documents
-            query_response = rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1, top_p=1.0))
-            self.assertTrue(query_response.get('query', None) == "2024年高考语文作文题目？")
-            self.assertTrue(query_response.get('result', None) is not None)
-            source_documents = query_response.get('source_documents', None)
-            self.assertTrue(source_documents is not None and len(source_documents) == 1)
-            self.assertEqual(source_documents[0]['metadata']['source'], "test.docx")
-            logger.debug(f"response {query_response}")
-
-            # 流式输出，结果不包含source_documents
-            rag.source = False
-            for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
-                                                                      top_p=1.0, stream=True)):
-                query_response = response
-                self.assertEqual(response.get('query', None), "2024年高考语文作文题目？")
-                self.assertTrue(response.get('result', None) is not None)
-                self.assertTrue(response.get('source_documents', None) is None)
-            logger.debug(f"response {query_response}")
-
-            # 流式输出，结果包含source_documents
-            rag.source = True
-            for response in rag.query(good_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
-                                                                      top_p=1.0, stream=True)):
-                query_response = response
-                self.assertEqual(response.get('query', None), "2024年高考语文作文题目？")
-                self.assertTrue(response.get('result', None) is not None)
-                source_documents = query_response.get('source_documents', None)
-                self.assertTrue(source_documents is not None and len(source_documents) == 1)
-                self.assertEqual(source_documents[0]['metadata']['source'], "test.docx")
-            rag.source = False
-            logger.debug(f"response {query_response}")
-
-        def test_rag_chain_npu_multi_doc(self):
-            multi_sr_prompt = "2024年高考语文作文题目"
-            r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, k=5, score_threshold=0.7)
-            rag = SingleText2TextChain(retriever=r, llm=llm)
-            rag.source = True
-            query_response = ""
-            for response in rag.query(multi_sr_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
-                                                                          top_p=1.0, stream=True)):
-                query_response = response
-                logger.trace(f"response {response}")
-                self.assertEqual(response.get('query', None), "2024年高考语文作文题目")
-                self.assertTrue(response.get('result', None) is not None)
-                source_documents = response.get('source_documents', None)
-                self.assertTrue(type(source_documents) is list and len(source_documents) == 5)
-            logger.debug(f"response {query_response}")
-
-        def test_rag_chain_npu_multi_doc_query_rewrite(self):
-            multi_sr_prompt = "2024年高考语文作文题目"
-
-            class Parse(BaseOutputParser):
-                def parse(self, output: str) -> List[str]:
-                    lines = []
-                    for line in output.splitlines()[1:]:
-                        if line.strip() == "" or "**Version" in lines or "-------" in lines:
-                            continue
-                        lines.append(line)
-                    return lines[0:3]
-
-            prompt = PromptTemplate(
-                input_variables=["question"],
-                template="你是AI语言助手。你的任务是通过用户给定的原始问题生成3"
-                "个不同版本问题，以便用户从向量数据库中检索相关文档。通过生成多个相似问题来帮助用户克服一些基于距离的相似性搜索的限制。"
-                "请使用中文简洁回答，问题之间使用换行符分隔。原始问题: {question}"
-            )
-
-            r = MultiQueryRetriever(llm=llm, prompt=prompt, parser=Parse(), vector_store=vector_store,
-                                    embed_func=emb.embed_documents, k=5,
-                                    score_threshold=0.7)
-            rag = SingleText2TextChain(retriever=r, llm=llm)
-            rag.source = True
-            query_response = ""
-            for response in rag.query(multi_sr_prompt, LLMParameterConfig(max_tokens=1024, temperature=0.1,
-                                                                          top_p=1.0, stream=True)):
-                query_response = response
-                logger.trace(f"response {response}")
-            logger.debug(f"response {query_response}")
-
-
         def test_rag_chain_npu_no_doc(self):
             r = Retriever(vector_store=vector_store, embed_func=emb.embed_documents, score_threshold=0.5)
             rag = SingleText2TextChain(retriever=r, llm=llm)
@@ -180,9 +84,6 @@ class MyTestCase(unittest.TestCase):
                 logger.trace(f"response {response}")
                 self.assertTrue(len(response.get('source_documents', None)) == 0)
 
-        # test_rag_chain_npu_single(self)
-        # test_rag_chain_npu_multi_doc(self)
-        # test_rag_chain_npu_no_doc(self)
         test_rag_chain_npu_multi_doc_query_rewrite(self)
 
 

@@ -18,7 +18,6 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-
 import os
 import shutil
 import sys
@@ -26,11 +25,11 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+from langchain_core.documents import Document
 from transformers import is_torch_npu_available
 
-from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.knowledge import KnowledgeDB
-from langchain_core.documents import Document
+from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.storage.document_store import MxDocument
 
 if not is_torch_npu_available():

@@ -18,18 +18,24 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-import numpy as np
 import unittest
 from unittest.mock import Mock, patch
+
+import numpy as np
+
 from mx_rag.graphrag.graph_evaluator import GraphEvaluator
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
+
+
+def mock_return_input(x):
+    return x
 
 
 class TestGraphEvaluator(unittest.TestCase):
     def setUp(self):
         """Set up a GraphEvaluator instance with mocked dependencies."""
-        self.mock_llm = Mock(spec = Text2TextLLM)
-        self.mock_llm_config = Mock(spec = LLMParameterConfig)
+        self.mock_llm = Mock(spec=Text2TextLLM)
+        self.mock_llm_config = Mock(spec=LLMParameterConfig)
         self.evaluator = GraphEvaluator(self.mock_llm, self.mock_llm_config)
 
     def test_calculate(self):
@@ -69,7 +75,7 @@ class TestGraphEvaluator(unittest.TestCase):
     @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._remove_empty_lines")
     def test_count_more(self, mock_remove_empty_lines):
         """Test the count_more method for counting unrecognized entities/relations."""
-        mock_remove_empty_lines.side_effect = lambda x: x
+        mock_remove_empty_lines.side_effect = mock_return_input
         task1 = "Triple1\nTriple2"
         task2 = "{'Event': 'E1', 'Entity': ['E2', 'E3']}\n{'Event': 'E4', 'Entity': ['E5']}"
         task3 = "All recognized"
@@ -78,7 +84,7 @@ class TestGraphEvaluator(unittest.TestCase):
     @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._remove_empty_lines")
     def test_count_incorrect(self, mock_remove_empty_lines):
         """Test the count_incorrect method for counting incorrect entities/relations."""
-        mock_remove_empty_lines.side_effect = lambda x: x
+        mock_remove_empty_lines.side_effect = mock_return_input
         task1 = "Triple1\nTriple2"
         task2 = "{'Event': 'E1', 'Entity': ['E2', 'E3']}\n{'Event': 'E4', 'Entity': ['E5']}"
         task3 = "all correct"
@@ -90,7 +96,7 @@ class TestGraphEvaluator(unittest.TestCase):
     @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._count_more")
     @patch("mx_rag.graphrag.graph_evaluator.GraphEvaluator._count_incorrect")
     def test_evaluate(
-        self, mock_count_incorrect, mock_count_more, mock_count_origin, mock_get_incorrect, mock_get_more):
+            self, mock_count_incorrect, mock_count_more, mock_count_origin, mock_get_incorrect, mock_get_more):
         """Test the evaluate method for aggregating results."""
         mock_count_origin.return_value = [10, 5, 8]
         mock_get_more.return_value = ["more1", "more2", "more3"]
@@ -102,7 +108,7 @@ class TestGraphEvaluator(unittest.TestCase):
         with patch("mx_rag.graphrag.graph_evaluator.logger.info") as mock_logger:
             self.evaluator.evaluate(relations)
             mock_logger.assert_called()  # Ensure logging is called
-        relations = [{"raw_text": "text"*1025, "entity_relations": [], "event_entity_relations": [], "event_relations": []}]
+        relations = [
+            {"raw_text": "text" * 1025, "entity_relations": [], "event_entity_relations": [], "event_relations": []}]
         with self.assertRaises(ValueError):
             self.evaluator.evaluate(relations)
-
