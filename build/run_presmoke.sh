@@ -26,7 +26,7 @@ echo "PRESMOKE_DIR: $PRESMOKE_DIR"
 echo "CODE_PATH: $CODE_PATH"
 
 cd $CODE_PATH
-changed=$(git diff master --no-commit-id --name-only)
+changed=$(git diff ${servicebranch_1} --no-commit-id --name-only)
 echo "$changed" > changed_files.txt
 
 # 设置环境变量
