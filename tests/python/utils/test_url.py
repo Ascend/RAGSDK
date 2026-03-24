@@ -23,6 +23,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 
 from urllib3.exceptions import TimeoutError as urllib3_TimeoutError, HTTPError
+
 from mx_rag.utils import ClientParam
 from mx_rag.utils.url import is_url_valid, RequestUtils
 
@@ -78,7 +79,6 @@ class TestURL(unittest.TestCase):
         with patch('mx_rag.utils.url.is_url_valid') as mock_is_url_valid:
             mock_is_url_valid.return_value = True
             with patch("mx_rag.utils.url.urllib3.PoolManager") as mock_pool_manager:
-
                 mock_pool = mock_pool_manager.return_value
                 mock_pool.request.side_effect = urllib3_TimeoutError
                 request_utils = RequestUtils(client_param=client_param)
@@ -104,7 +104,8 @@ class TestURL(unittest.TestCase):
             with patch("mx_rag.utils.url.urllib3.PoolManager") as mock_pool_manager:
                 mock_pool = mock_pool_manager.return_value
                 # 模拟成功响应对象
-                mock_response = MagicMock(headers={'Content-Length': '10', 'Content-Type': 'text/event-stream'}, status=200)  # 模拟有效的 Content-Length
+                mock_response = MagicMock(headers={'Content-Length': '10', 'Content-Type': 'text/event-stream'},
+                                          status=200)  # 模拟有效的 Content-Length
                 mock_response.read.return_value = b"response data"
                 mock_pool.request.return_value = mock_response
                 request_utils = RequestUtils(client_param=client_param)
@@ -132,12 +133,10 @@ class TestURL(unittest.TestCase):
                 result = list(request_utils.post_streamly('http://test.com', 'body', {'headers': 'headers'}))
                 self.assertFalse(result[0].success)
 
-                mock_response = MagicMock(headers={'Content-Length': '10', 'Content-Type': 'text/event-stream'}, status=400)
+                mock_response = MagicMock(headers={'Content-Length': '10', 'Content-Type': 'text/event-stream'},
+                                          status=400)
                 mock_response.read.return_value = b"response data"
                 mock_pool.request.return_value = mock_response
                 request_utils = RequestUtils(client_param=client_param)
                 result = request_utils.post('http://www.google.com', 'body', {'headers': 'headers'})
                 self.assertFalse(result.success)
-
-
-

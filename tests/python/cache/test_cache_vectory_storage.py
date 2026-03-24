@@ -18,17 +18,17 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-from typing import List
 import unittest
+from typing import List
 from unittest import mock
 from unittest.mock import patch
 
 import numpy as np
+from cache_mocker import MockerVecStorage
 from gptcache.manager.vector_data.base import VectorData
 
 from mx_rag.cache.cache_storage.cache_vec_storage import CacheVecStorage
 from mx_rag.storage.vectorstore.vector_storage_factory import VectorStorageError
-from cache_mocker import MockerVecStorage
 
 
 def mock_create_vector_storage(*args, **kwargs):

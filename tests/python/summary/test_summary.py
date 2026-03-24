@@ -22,6 +22,7 @@ import unittest
 from unittest.mock import patch
 
 from langchain_core.prompts import PromptTemplate
+
 from mx_rag.llm import Text2TextLLM
 from mx_rag.summary.summary import Summary
 
@@ -36,9 +37,7 @@ class TestSummary(unittest.TestCase):
         pass
 
     def setup_method(self, method):
-        self.llm = Text2TextLLM(base_url="http://127.0.0.1:1025/v1/chat/completions", model_name="qianwen-7b",
-                                timeout=60,
-                                use_http=True)
+        self.llm = Text2TextLLM(base_url="http://127.0.0.1:1025/v1/chat/completions", model_name="qianwen-7b")
 
     def teardown_method(self, method):
         pass
@@ -54,7 +53,7 @@ class TestSummary(unittest.TestCase):
         except Exception as e:
             res = False
 
-        self.assertEqual(res, False)
+        self.assertFalse(res)
 
     @patch("mx_rag.summary.summary.Summary._summarize")
     def test_summarize(self, summary_mock):
@@ -73,16 +72,17 @@ class TestSummary(unittest.TestCase):
         res = su._split_summary_by_threshold(["aaa", "1b2"], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 1)])
 
-        res = su._split_summary_by_threshold(["aaa", "b"*1000, "2c3"*20], merge_threshold=1024)
+        res = su._split_summary_by_threshold(["aaa", "b" * 1000, "2c3" * 20], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 1), (2, 2)])
 
-        res = su._split_summary_by_threshold(["aaa", "2"*1020, "2c3", "ddd", "67"], merge_threshold=1024)
+        res = su._split_summary_by_threshold(["aaa", "2" * 1020, "2c3", "ddd", "67"], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 1), (2, 4)])
 
-        res = su._split_summary_by_threshold(["11"*1024, "22"*1024, "111111"*1024, "33", "33"], merge_threshold=1024)
+        res = su._split_summary_by_threshold(["11" * 1024, "22" * 1024, "111111" * 1024, "33", "33"],
+                                             merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 0), (1, 1), (2, 2), (3, 4)])
 
-        res = su._split_summary_by_threshold(["11111"*1024, "33", "33"], merge_threshold=1024)
+        res = su._split_summary_by_threshold(["11111" * 1024, "33", "33"], merge_threshold=1024)
         self.assertSequenceEqual(res, [(0, 0), (1, 2)])
 
     @patch("mx_rag.summary.summary.Summary._summarize")

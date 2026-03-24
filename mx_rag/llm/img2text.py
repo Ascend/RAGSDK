@@ -18,20 +18,20 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
+import base64
 import json
 import re
-import base64
 from typing import List, Optional, Any
-from pydantic import ConfigDict, Field, field_validator
 
 from langchain.llms.base import LLM
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from loguru import logger
+from pydantic import ConfigDict, Field, field_validator
 
+from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.llm.text2text import _check_sys_messages
 from mx_rag.utils import ClientParam
 from mx_rag.utils.common import safe_get, MB, validate_params, MAX_URL_LENGTH, MAX_MODEL_NAME_LENGTH, MAX_PROMPT_LENGTH
-from mx_rag.llm.llm_parameter import LLMParameterConfig
 from mx_rag.utils.url import RequestUtils
 
 IMG_TO_TEXT_PROMPT = '''Given an image containing a table or figure, please provide a structured and detailed
@@ -71,7 +71,7 @@ def _check_image_url(image_url):
         return False
 
     # 检查字符串长度
-    if not 0 < len(url_value) <= 4*MB:
+    if not 0 < len(url_value) <= 4 * MB:
         return False
 
     # 检查 url 是否为 base64 格式

@@ -26,7 +26,6 @@ from langchain_opengauss import openGaussAGEGraph, OpenGaussSettings
 from mx_rag.utils.common import MAX_RECURSION_LIMIT
 
 
-
 def cypher_value(v, depth=0, seen=None):
     """
     Convert a Python value to a safe representation for Cypher queries
@@ -201,7 +200,8 @@ class CypherQueryBuilder:
         if append:
             return (
                 f"MATCH (n:Node {{id: {cypher_value(label)}}}) "
-                f"WITH n, CASE WHEN coalesce(n.{safe_key}, '') = '' THEN {val} else n.{safe_key} + ',' + {val} END AS new_value "
+                f"WITH n, CASE WHEN coalesce(n.{safe_key}, '') = '' THEN {val} "
+                f"else n.{safe_key} + ',' + {val} END AS new_value "
                 f"SET n.{safe_key} = new_value"
             )
         return f"MATCH (n:Node {{id: {cypher_value(label)}}}) SET n.{safe_key} = {cypher_value(value)}"
@@ -252,11 +252,13 @@ class CypherQueryBuilder:
 
     @staticmethod
     def delete_edge(source_label: str, target_label: str) -> str:
-        return f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->(b:Node {{id: {cypher_value(target_label)}}}) DELETE r"
+        return (f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->"
+                f"(b:Node {{id: {cypher_value(target_label)}}}) DELETE r")
 
     @staticmethod
     def match_edge(source_label: str, target_label: str) -> str:
-        return f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->(b:Node {{id: {cypher_value(target_label)}}}) RETURN r LIMIT 1"
+        return (f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->"
+                f"(b:Node {{id: {cypher_value(target_label)}}}) RETURN r LIMIT 1")
 
     @staticmethod
     def match_edges(with_data: bool = True) -> str:
@@ -286,7 +288,8 @@ class CypherQueryBuilder:
         safe_key = escape_identifier(key)
         if append:
             return (
-                f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]->(b:Node {{id: {cypher_value(target_label)}}}) "
+                f"MATCH (a:Node {{id: {cypher_value(source_label)}}})-[r]"
+                f"->(b:Node {{id: {cypher_value(target_label)}}}) "
                 f"SET r.{safe_key} = coalesce(r.{safe_key}, []) + {cypher_value(value)}"
             )
         return (

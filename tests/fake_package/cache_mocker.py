@@ -48,7 +48,7 @@ class MockerVecStorage(VectorStore):
     def add_sparse(self, ids, sparse_embeddings):
         pass
 
-    def add_dense_and_sparse(self, ids, dense_embeddings, sparse_embeddings, document_id = 0):
+    def add_dense_and_sparse(self, ids, dense_embeddings, sparse_embeddings, document_id=0):
         pass
 
     def get_ntotal(self) -> int:

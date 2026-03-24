@@ -24,6 +24,7 @@ from unittest.mock import patch
 
 from mx_rag.document.loader.excel_loader import ExcelLoader
 
+
 class TestExcelLoader(unittest.TestCase):
     current_dir = os.path.dirname(os.path.realpath(__file__))
     data_dir = os.path.realpath(os.path.join(current_dir, "../../../data"))

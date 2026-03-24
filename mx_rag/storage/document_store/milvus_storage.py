@@ -81,8 +81,9 @@ class MilvusDocstore(Docstore):
             self.client.drop_collection(self.collection_name)
 
     @validate_params(
-        documents=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM and all(isinstance(it, MxDocument) for it in x),
-                         message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"),
+        documents=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= MAX_CHUNKS_NUM and all(
+            isinstance(it, MxDocument) for it in x),
+                       message="param must be List[MxDocument] and length range in (0, 1000 * 1000]"),
         document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
                          message="param must greater equal than 0")
     )
@@ -201,7 +202,7 @@ class MilvusDocstore(Docstore):
         res = self.client.query(self.collection_name, filter="id == 0 or id != 0", output_fields=["document_id"])
         return list(set([x.get("document_id") for x in res]))
 
-    @validate_params(document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message=f"document_id must >= 0"))
+    @validate_params(document_id=dict(validator=lambda x: x >= 0, message=f"document_id must >= 0"))
     def search_by_document_id(self, document_id: int):
         outputs = self.client.query(
             collection_name=self.collection_name,

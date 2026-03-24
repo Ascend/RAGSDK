@@ -44,11 +44,7 @@ class TestSparseEmbedding(unittest.TestCase):
             super().__init__(**kwargs)
 
         def __getattr__(self, key):
-            try:
-                return self[key]
-            except KeyError:
-                error_msg = f'Dict object has no attribute [{key}]'
-                raise AttributeError(error_msg)
+            return self[key]
 
         def __setattr__(self, key, value):
             self[key] = value

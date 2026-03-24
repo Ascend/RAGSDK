@@ -20,6 +20,7 @@ See the Mulan PSL v2 for more details.
 
 import unittest
 from unittest.mock import Mock, MagicMock, patch
+
 import numpy as np
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
@@ -421,12 +422,14 @@ class TestOpenGaussDB(unittest.TestCase):
     def test_update(self):
         dense_data = np.array([[1.0, 2.0, 3.0]])
         sparse_data = [{1: 0.5, 2: 0.3}]
+
+        def mock_get_vec_by_id(ids):
+            return [{"id": index + 1, "vector": [0.1], "sparse_vector": [{}]} for index in range(3)]
+
         with self.assertRaises(ValueError):
             self.db.update([1, 2, 3], dense_data, sparse_data)
         self.db.sparse_dim = 1
-        self.db._get_vec_by_id = lambda x: [{"id": 1, "vector": [0.1], "sparse_vector": [{}]},
-                                            {"id": 2, "vector": [0.1], "sparse_vector": [{}]},
-                                            {"id": 3, "vector": [0.1], "sparse_vector": [{}]}]
+        self.db._get_vec_by_id = mock_get_vec_by_id
         with self.assertRaises(StorageError):
             self.db.update([1, 2, 3], np.array([[1.0], [2.0], [3.0]]), [{1: 0.5}, {2: 0.3}, {3: 0.4}])
 

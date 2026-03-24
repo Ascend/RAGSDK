@@ -18,16 +18,18 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-import unittest
-import tempfile
-from pathlib import Path
-from mx_rag.utils.crl_checker import CRLChecker
 import datetime
+import tempfile
+import unittest
+from pathlib import Path
 from unittest.mock import patch, MagicMock, PropertyMock
+
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+
+from mx_rag.utils.crl_checker import CRLChecker
 
 
 # Helper function to generate crypto materials for tests

@@ -17,7 +17,6 @@
 */
 #ifndef ATB_SPEED_UTILS_WORKSPACE_H
 #define ATB_SPEED_UTILS_WORKSPACE_H
-#include <cstdint>
 #include <memory>
 #include <vector>
 #include "buffer_base.h"

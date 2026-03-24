@@ -43,7 +43,7 @@ class TestTokenParseDocumentFile(unittest.TestCase):
     data_dir = os.path.realpath(os.path.join(current_dir, "../../../data"))
 
     @staticmethod
-    def token_parse_document_file(filepath, tokenizer, max_tokens, DOC_PARSER_MAP) -> Tuple[
+    def token_parse_document_file(filepath, tokenizer, max_tokens) -> Tuple[
         List[str], List[Dict[str, str]]]:
         file = Path(filepath)
         loader, splitter = DOC_PARSER_MAP.get(file.suffix, (None, None))
@@ -64,10 +64,9 @@ class TestTokenParseDocumentFile(unittest.TestCase):
         with self.assertRaises(ValueError):
             TestTokenParseDocumentFile.token_parse_document_file(
                 os.path.join(os.path.join(self.data_dir, "Sample.img")),
-                None, 100, DOC_PARSER_MAP)
+                None, 100)
 
     def test_token_parse_document_file_sample(self):
         tokenizer = None
-        texts, metadatas = TestTokenParseDocumentFile.token_parse_document_file(self.file_path, tokenizer, 100,
-                                                                                DOC_PARSER_MAP)
+        texts, metadatas = TestTokenParseDocumentFile.token_parse_document_file(self.file_path, tokenizer, 100)
         self.assertEqual(metadatas, [{'source': 'demo.docx', 'type': 'text'}])

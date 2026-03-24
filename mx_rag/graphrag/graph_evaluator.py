@@ -18,12 +18,12 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-import re
 import concurrent.futures
-import numpy as np
-from typing import Any, List, Optional
+import re
 from dataclasses import dataclass
+from typing import Any, List, Optional
 
+import numpy as np
 from loguru import logger
 from tqdm import tqdm
 
