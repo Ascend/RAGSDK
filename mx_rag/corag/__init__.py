@@ -19,6 +19,18 @@ See the Mulan PSL v2 for more details.
 """
 
 
-__all__ = ["SubqueryFineTuner", "FineTuneArguments"]
+__all__ = [
+    "CoRagAgent", 
+    "CoRagBaseConfig", 
+    "SampleGenerator", 
+    "CoRagEvaluator", 
+    "SubqueryFineTuner", 
+    "FineTuneArguments"
+]
 
+
+from mx_rag.corag.evaluator import CoRagEvaluator
+from mx_rag.corag.config import CoRagBaseConfig
+from mx_rag.corag.corag_agent import CoRagAgent
+from mx_rag.corag.sample_generator import SampleGenerator
 from mx_rag.corag.subquery_finetuner import SubqueryFineTuner, FineTuneArguments
