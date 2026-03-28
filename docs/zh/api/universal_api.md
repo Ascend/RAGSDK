@@ -10,7 +10,7 @@
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.utils import ClientParam
 ClientParam(use_http, ca_file, crl_file, timeout, response_limit_size)
 ```
@@ -30,8 +30,7 @@ ClientParam(use_http, ca_file, crl_file, timeout, response_limit_size)
 
 **调用示例<a name="section96001515205720"></a>**
 
-```
-
+```python
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.utils import ClientParam
 llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
@@ -58,7 +57,7 @@ for res in llm.chat_streamly("请介绍下北京"):
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.utils import Lang
 class Lang(Enum):
     EN: str = 'en'

@@ -7,7 +7,7 @@
 
 ##### KnowledgeModel类<a name="ZH-CN_TOPIC_0000002124359997"></a>
 
-```
+```python
 class KnowledgeModel(Base):
     __tablename__ = "knowledge_table"
 
@@ -25,7 +25,7 @@ class KnowledgeModel(Base):
 
 ##### DocumentModel类<a name="ZH-CN_TOPIC_0000002088760430"></a>
 
-```
+```python
 class DocumentModel(Base):
     __tablename__ = "document_table"
 
@@ -45,7 +45,7 @@ class DocumentModel(Base):
 
 上传文档时，chunk\_id和向量数据库中的id一致。
 
-```
+```python
 class ChunkModel(Base):
     __tablename__ = "chunks_table"
 
@@ -76,7 +76,7 @@ class ChunkModel(Base):
 
 **函数原型<a name="section546771414342"></a>**
 
-```
+```python
 from mx_rag.storage.document_store import Docstore
 class Docstore(ABC)
 ```
@@ -89,7 +89,7 @@ class Docstore(ABC)
 
 **函数原型<a name="section1247913102108"></a>**
 
-```
+```python
 @abstractmethod
 def add(documents, document_id)
 ```
@@ -102,7 +102,7 @@ def add(documents, document_id)
 
 **函数原型<a name="section1247913102108"></a>**
 
-```
+```python
 @abstractmethod
 def delete(document_id)
 ```
@@ -115,7 +115,7 @@ def delete(document_id)
 
 **函数原型<a name="section868519111050"></a>**
 
-```
+```python
 @abstractmethod
 def search(chunk_id) -> MxDocument
 ```
@@ -128,7 +128,7 @@ def search(chunk_id) -> MxDocument
 
 **函数原型<a name="section868519111050"></a>**
 
-```
+```python
 @abstractmethod
 def get_all_chunk_id(self) -> List[int]
 ```
@@ -141,7 +141,7 @@ def get_all_chunk_id(self) -> List[int]
 
 **函数原型<a name="section868519111050"></a>**
 
-```
+```python
 @abstractmethod
 def get_all_document_id(self) -> List[int]
 ```
@@ -154,7 +154,7 @@ def get_all_document_id(self) -> List[int]
 
 **函数原型<a name="section868519111050"></a>**
 
-```
+```python
 @abstractmethod
 def update(chunk_ids: List[int], texts: List[str])
 ```
@@ -167,7 +167,7 @@ def update(chunk_ids: List[int], texts: List[str])
 
 **函数原型<a name="section868519111050"></a>**
 
-```
+```python
 @abstractmethod
 def search_by_document_id(document_id: int)
 ```
@@ -182,7 +182,7 @@ def search_by_document_id(document_id: int)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.storage.document_store import OpenGaussDocstore
 OpenGaussDocstore(engine, encrypt_fn, decrypt_fn, enable_bm25, index_name)
 ```
@@ -192,14 +192,14 @@ OpenGaussDocstore(engine, encrypt_fn, decrypt_fn, enable_bm25, index_name)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |engine|Engine|必选|Engine实例，具体说明请参考<a href="https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine">Engine</a>。限制使用opengauss方言。<br>>[!NOTE] 说明 Engine由用户控制传入，请使用安全的连接方式。|
-|encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容加密，输出为字符串。add保存时，数据库保存的是chunk字段经过encrypt_fn方法处理后的数据。<br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
+|encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容加密，输出为字符串。add保存时，数据库保存的是chunk字段经过encrypt_fn方法处理后的数据。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过16*1024*1024，对ChunkModel类的chunk内容解密，输出为字符串。search返回时，返回的是chunk字段经过decrypt_fn方法处理后的数据。|
 |enable_bm25|bool|可选|配置数据库是否支持bm25稀疏检索，若此参数配置为False，则全文检索功能不可用(full_text_search方法始终返回[ ])，默认为True。|
 |index_name|str|可选|创建的bm25检索的名称，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$，即只能由大小写字母、数字、下划线组成，且长度为6-64，默认为"chunks_content_bm25"。|
 
 **调用示例<a name="section139398168249"></a>**
 
-```
+```python
 import getpass
 from sqlalchemy import URL, create_engine
 from mx_rag.storage.document_store import MxDocument, OpenGaussDocstore
@@ -254,7 +254,7 @@ chunk_store.search_by_document_id(document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add(documents, document_id)
 ```
 
@@ -279,7 +279,7 @@ def add(documents, document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def delete(document_id)
 ```
 
@@ -303,7 +303,7 @@ def delete(document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search(chunk_id)
 ```
 
@@ -327,7 +327,7 @@ def search(chunk_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_chunk_id()
 ```
 
@@ -345,7 +345,7 @@ def get_all_chunk_id()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_document_id()
 ```
 
@@ -363,7 +363,7 @@ def get_all_document_id()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def full_text_search(query, top_k, filter_dict) -> List[MxDocument]
 ```
 
@@ -389,7 +389,7 @@ def full_text_search(query, top_k, filter_dict) -> List[MxDocument]
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def drop()
 ```
 
@@ -401,7 +401,7 @@ def drop()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search_by_document_id(document_id: int)
 ```
 
@@ -425,7 +425,7 @@ def search_by_document_id(document_id: int)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def update(chunk_ids: List[int], texts: List[str])
 ```
 
@@ -446,7 +446,7 @@ def update(chunk_ids: List[int], texts: List[str])
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.storage.document_store import MilvusDocstore
 MilvusDocstore(client, collection_name, enable_bm25, bm25_k1, bm25_b, auto_flush)
 ```
@@ -461,12 +461,12 @@ MilvusDocstore(client, collection_name, enable_bm25, bm25_k1, bm25_b, auto_flush
 |bm25_k1|float|可选|bm25稀疏向量检索时控制词频饱和度。数值越大，术语频率在文档排序中的重要性越高。取值范围[1.2, 2.0], 默认为1.2，具体说明请参考<a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus全文检索</a>相关部分|
 |bm25_b|float|可选|bm25稀疏向量检索时控制文档长度标准化的程度。取值范围[0, 1]，默认为0.75。具体说明请参考<a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus全文检索</a>相关部分|
 |auto_flush|bool|可选|数据变更时是否自动刷新内存数据，默认为True。|
-|encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，enable_bm25为False时生效，当调用add或update时，使用encrypt_fn方法对文档page_content加密后入库。<br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
+|encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，enable_bm25为False时生效，当调用add或update时，使用encrypt_fn方法对文档page_content加密后入库。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过16*1024*1024，enable_bm25为False时生效，调用查询类接口时对使用decrypt_fn对page_content解密后返回。|
 
 **调用示例<a name="section139398168249"></a>**
 
-```
+```python
 import getpass
 from pymilvus import MilvusClient
 from mx_rag.storage.document_store import MxDocument, MilvusDocstore
@@ -496,7 +496,7 @@ chunk_store.search_by_document_id(document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add(documents, document_id)
 ```
 
@@ -521,7 +521,7 @@ def add(documents, document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def delete(document_id)
 ```
 
@@ -545,7 +545,7 @@ def delete(document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search(chunk_id)
 ```
 
@@ -569,7 +569,7 @@ def search(chunk_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_chunk_id()
 ```
 
@@ -587,7 +587,7 @@ def get_all_chunk_id()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_document_id()
 ```
 
@@ -605,7 +605,7 @@ def get_all_document_id()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def full_text_search(query, top_k, drop_ratio_search, filter_dict)
 ```
 
@@ -632,7 +632,7 @@ def full_text_search(query, top_k, drop_ratio_search, filter_dict)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @property
 def client()
 ```
@@ -651,7 +651,7 @@ def client()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @property
 def collection_name()
 ```
@@ -670,7 +670,7 @@ def collection_name()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def drop_collection()
 ```
 
@@ -682,7 +682,7 @@ def drop_collection()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search_by_document_id(document_id: int)
 ```
 
@@ -706,7 +706,7 @@ def search_by_document_id(document_id: int)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def update(chunk_ids: List[int], texts: List[str])
 ```
 
@@ -729,7 +729,7 @@ def update(chunk_ids: List[int], texts: List[str])
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def flush()
 ```
 
@@ -751,7 +751,7 @@ def flush()
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.storage.document_store import SQLiteDocstore
 SQLiteDocstore(db_path, encrypt_fn, decrypt_fn)
 ```
@@ -766,7 +766,7 @@ SQLiteDocstore(db_path, encrypt_fn, decrypt_fn)
 
 **调用示例<a name="section139398168249"></a>**
 
-```
+```python
 from mx_rag.storage.document_store import MxDocument, SQLiteDocstore
 def encrypt_fn(value):
     # 安全的加密方法
@@ -796,7 +796,7 @@ chunk_store.search_by_document_id(document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add(documents, document_id)
 ```
 
@@ -821,7 +821,7 @@ def add(documents, document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def delete(document_id)
 ```
 
@@ -845,7 +845,7 @@ def delete(document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search(chunk_id)
 ```
 
@@ -869,7 +869,7 @@ def search(chunk_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_chunk_id()
 ```
 
@@ -887,7 +887,7 @@ def get_all_chunk_id()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_document_id()
 ```
 
@@ -905,7 +905,7 @@ def get_all_document_id()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search_by_document_id(document_id: int)
 ```
 
@@ -929,7 +929,7 @@ def search_by_document_id(document_id: int)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def update(chunk_ids: List[int], texts: List[str])
 ```
 
@@ -950,7 +950,7 @@ def update(chunk_ids: List[int], texts: List[str])
 
 **函数原型<a name="section546771414342"></a>**
 
-```
+```python
 from mx_rag.storage.document_store import MxDocument
 class MxDocument(BaseModel):
     page_content: str
@@ -968,7 +968,7 @@ class MxDocument(BaseModel):
 
 **调用示例<a name="section130714373472"></a>**
 
-```
+```python
 from langchain_community.document_loaders import TextLoader
 from mx_rag.storage.document_store import MxDocument
 loader = TextLoader("/xxx/gaokao.txt", encoding="utf-8")
@@ -993,7 +993,7 @@ mx_document = MxDocument(page_content=document.page_content, metadata=document.m
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.storage.vectorstore import VectorStore
 VectorStore(ABC)
 ```
@@ -1006,7 +1006,7 @@ VectorStore(ABC)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def save_local()
 ```
 
@@ -1018,7 +1018,7 @@ def save_local()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_save_file()
 ```
 
@@ -1030,7 +1030,7 @@ def get_save_file()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_ntotal()
 ```
 
@@ -1048,7 +1048,7 @@ def get_ntotal()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @abstractmethod
 def add(ids, embeddings, document_id)
 ```
@@ -1069,7 +1069,7 @@ def add(ids, embeddings, document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @abstractmethod
 def add_sparse(ids, sparse_embeddings)
 ```
@@ -1089,7 +1089,7 @@ def add_sparse(ids, sparse_embeddings)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @abstractmethod
 def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
 ```
@@ -1110,7 +1110,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @abstractmethod
 def delete(ids)
 ```
@@ -1129,7 +1129,7 @@ def delete(ids)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @abstractmethod
 def search(embeddings, k, filter_dict)
 ```
@@ -1150,7 +1150,7 @@ def search(embeddings, k, filter_dict)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search_with_threshold(embeddings, k, threshold, filter_dict)
 ```
 
@@ -1177,7 +1177,7 @@ def search_with_threshold(embeddings, k, threshold, filter_dict)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def as_retriever(**kwargs):
 ```
 
@@ -1201,7 +1201,7 @@ def as_retriever(**kwargs):
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @abstractmethod
 def get_all_ids()
 ```
@@ -1214,7 +1214,7 @@ def get_all_ids()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @abstractmethod
 def update(ids: List[int], dense: Optional[np.ndarray] = None,
            sparse: Optional[List[Dict[int, float]]] = None):
@@ -1242,7 +1242,7 @@ def update(ids: List[int], dense: Optional[np.ndarray] = None,
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.storage.vectorstore import VectorStorageFactory
 class VectorStorageFactory(ABC):
     _NPU_SUPPORT_VEC_TYPE = {
@@ -1260,7 +1260,7 @@ class VectorStorageFactory(ABC):
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @classmethod
 def create_storage(cls, **kwargs) -> Optional[VectorStore]
 ```
@@ -1269,7 +1269,7 @@ def create_storage(cls, **kwargs) -> Optional[VectorStore]
 
 |参数名|数据类型|是否必选|说明|
 |--|--|--|--|
-|**kwargs|Dict[str, Any]|必选|<li>如果vector_type为npu_faiss_db，则参见[create](#create-2)。<li>如果vector_type为milvus_db，则参见[create](#create-1)。<li>如果vector_type为opengauss_db，则参见[create](#create)。|
+|**kwargs|Dict[str, Any]|必选|<li>如果vector_type为npu_faiss_db，则参见[create](#ZH-CN_TOPIC_0000001982155260)。</li><li>如果vector_type为milvus_db，则参见[create](#ZH-CN_TOPIC_0000002009270488)。</li><li>如果vector_type为opengauss_db，则参见[create](#ZH-CN_TOPIC_0000002177266524)。</li>|
 
 **返回值说明<a name="section11818153884917"></a>**
 
@@ -1281,14 +1281,14 @@ def create_storage(cls, **kwargs) -> Optional[VectorStore]
 
 - 创建npu\_faiss\_db
 
-    ```
+    ```python
     from mx_rag.storage.vectorstore import VectorStorageFactory
     storage = VectorStorageFactory.create_storage(vector_type="npu_faiss_db", x_dim = 1024,  devs[1], load_local_index="faiss.index")
     ```
 
 - 创建milvus\_db
 
-    ```
+    ```python
     import getpass
     from mx_rag.storage.vectorstore import VectorStorageFactory
     client = MilvusClient("https://x.x.x.x:port", user="xxx", password=getpass.getpass(), token="xxx", secure=True,   client_pem_path="path_to/client.pem",   client_key_path="path_to/client.key",   ca_pem_path="path_to/ca.pem",   server_name="localhost")
@@ -1305,7 +1305,7 @@ def create_storage(cls, **kwargs) -> Optional[VectorStore]
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.storage.vectorstore import OpenGaussDB
 OpenGaussDB(engine, collection_name, search_mode, index_type, metric_type)
 ```
@@ -1328,7 +1328,7 @@ OpenGaussDB(engine, collection_name, search_mode, index_type, metric_type)
 
 **调用示例<a name="section17626179103717"></a>**
 
-```
+```python
 import getpass
 import numpy as np
 from mx_rag.storage.vectorstore import OpenGaussDB, SearchMode
@@ -1390,7 +1390,7 @@ dense_store.update([1], dense_embeddings[:1])
 dense_store.drop_collection()
 ```
 
-##### create<a name="ZH-CN_TOPIC_0000002177266524"></a>
+##### create<a id="ZH-CN_TOPIC_0000002177266524"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -1398,14 +1398,15 @@ dense_store.drop_collection()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @classmethod
 def create(**kwargs)
 ```
 
 **输入参数说明<a name="section19434210583"></a>**
 
->![](public_sys-resources/icon-note.gif) **说明：** 
+>[!NOTE]
+>
 >此方法所有入参均需要通过关键字参数传递
 
 |参数名|数据类型|可选/必选|说明|
@@ -1433,7 +1434,7 @@ def create(**kwargs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def create_collection(dense_dim, sparse_dim,  params)
 ```
 
@@ -1453,7 +1454,7 @@ def create_collection(dense_dim, sparse_dim,  params)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def drop_collection()
 ```
 
@@ -1465,7 +1466,7 @@ def drop_collection()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add(ids: List[int], embeddings: np.ndarray, document_id)
 ```
 
@@ -1477,7 +1478,7 @@ def add(ids: List[int], embeddings: np.ndarray, document_id)
 |embeddings|ndarray|必选|numpy的数组对象。|
 |document_id|int|可选|待添加向量所属文档的id|
 
->![](public_sys-resources/icon-note.gif) **说明：** 
+>[!NOTE]
 >embeddings的shape必须等于2，embeddings包含的向量数量需要等于ids的长度，单次添加向量的总数小于1000万。
 
 ##### add\_sparse<a name="ZH-CN_TOPIC_0000002177266528"></a>
@@ -1488,7 +1489,7 @@ def add(ids: List[int], embeddings: np.ndarray, document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add_sparse(ids, sparse_embeddings, document_id)
 ```
 
@@ -1500,7 +1501,7 @@ def add_sparse(ids, sparse_embeddings, document_id)
 |sparse_embeddings|List[Dict[int, float]]|必选|稀疏向量对象。|
 |document_id|int|可选|待添加向量所属文档的id|
 
->![](public_sys-resources/icon-note.gif) **说明：** 
+>[!NOTE]
 >sparse\_embeddings包含的向量数量需要等于ids的长度，单次添加向量的总数小于1000万。
 
 ##### add\_dense\_and\_sparse<a name="ZH-CN_TOPIC_0000002212472789"></a>
@@ -1511,7 +1512,7 @@ def add_sparse(ids, sparse_embeddings, document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, document_id)
 ```
 
@@ -1524,7 +1525,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, document_id)
 |sparse_embeddings|List[Dict[int, float]]|必选|稀疏向量对象。|
 |document_id|int|可选|待添加向量所属文档的id|
 
->![](public_sys-resources/icon-note.gif) **说明：** 
+>[!NOTE]
 >
 >- dense\_embeddings的shape必须等于2，dense\_embeddings包含的向量数量需要等于ids的长度。
 >- sparse\_embeddings包含的向量数量需要等于ids的长度，单次添加向量的总数小于1000万。
@@ -1537,7 +1538,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def delete(ids)
 ```
 
@@ -1561,7 +1562,7 @@ def delete(ids)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search(embeddings, k, filter_dict)
 ```
 
@@ -1587,7 +1588,7 @@ def search(embeddings, k, filter_dict)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_ids() -> List[int]
 ```
 
@@ -1605,7 +1606,7 @@ def get_all_ids() -> List[int]
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def update(ids, dense, sparse)
 ```
 
@@ -1627,7 +1628,7 @@ def update(ids, dense, sparse)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.storage.vectorstore import MilvusDB
 MilvusDB(client, collection_name, search_mode, auto_id, index_type, metric_type, auto_flush)
 ```
@@ -1652,7 +1653,7 @@ MilvusDB(client, collection_name, search_mode, auto_id, index_type, metric_type,
 
 **调用示例<a name="section17626179103717"></a>**
 
-```
+```python
 import getpass
 from pymilvus import MilvusClient
 from mx_rag.storage.vectorstore import MilvusDB
@@ -1669,7 +1670,7 @@ vector_store.update([0], vecs[:1])
 vector_store.drop_collection()
 ```
 
-##### create<a name="ZH-CN_TOPIC_0000002009270488"></a>
+##### create<a id="ZH-CN_TOPIC_0000002009270488"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -1677,14 +1678,14 @@ vector_store.drop_collection()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @staticmethod
 def create(**kwargs)
 ```
 
 **输入参数说明<a name="section19434210583"></a>**
 
->![](public_sys-resources/icon-note.gif) **说明：** 
+>[!NOTE]
 >此方法所有入参均需要通过关键字参数传递
 
 |参数名|数据类型|可选/必选|说明|
@@ -1713,7 +1714,7 @@ def create(**kwargs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def set_collection_name(collection_name: str)
 ```
 
@@ -1731,7 +1732,7 @@ def set_collection_name(collection_name: str)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def create_collection(x_dim,  params)
 ```
 
@@ -1740,7 +1741,7 @@ def create_collection(x_dim,  params)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |x_dim|int|必选|向量长度，0 ＜ x_dim ≤ 1024 * 1024，默认值为None。|
-|params|dict|可选|索引类型的额外参数，默认为None。为None情况下会设置为空字典，参考<a href="milvus In-memory-Index">milvus In-memory-Index</a>。字典校验，字典中字符串长度不能超过1024，字典中包含的可迭代序列长度不能超过1024，字典长度不能超过1024，字典嵌套深度不能超过2层。参数配置多一层类型"sparse"、"dense"用于指示对应是参数是给稠密或稀疏检索使用。配置示例如下：<br>{<br>"sparse": {},<br>"dense": {}<br>}|
+|params|dict|可选|索引类型的额外参数，默认为None。为None情况下会设置为空字典，参考<a href="https://milvus.io/docs/zh/index.md?tab=floating#In-memory-Index">milvus In-memory-Index</a>。字典校验，字典中字符串长度不能超过1024，字典中包含的可迭代序列长度不能超过1024，字典长度不能超过1024，字典嵌套深度不能超过2层。参数配置多一层类型"sparse"、"dense"用于指示对应是参数是给稠密或稀疏检索使用。配置示例如下：<br>{<br>"sparse": {},<br>"dense": {}<br>}|
 
 ##### search\_mode<a name="ZH-CN_TOPIC_0000002509353579"></a>
 
@@ -1750,7 +1751,7 @@ def create_collection(x_dim,  params)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @property
 def search_mode()
 ```
@@ -1769,7 +1770,7 @@ def search_mode()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @property
 def client()
 ```
@@ -1788,7 +1789,7 @@ def client()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @property
 def collection_name()
 ```
@@ -1807,7 +1808,7 @@ def collection_name()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def drop_collection()
 ```
 
@@ -1819,7 +1820,7 @@ def drop_collection()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add(ids: List[int], embeddings: np.ndarray, document_id, docs, metadatas)
 ```
 
@@ -1844,7 +1845,7 @@ def add(ids: List[int], embeddings: np.ndarray, document_id, docs, metadatas)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add_sparse(ids, sparse_embeddings, document_id, docs, metadatas)
 ```
 
@@ -1869,7 +1870,7 @@ def add_sparse(ids, sparse_embeddings, document_id, docs, metadatas)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, docs, metadatas, **kwargs)
 ```
 
@@ -1895,7 +1896,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, docs, metadat
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def delete(ids)
 ```
 
@@ -1919,7 +1920,7 @@ def delete(ids)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search(embeddings, k, filter_dict,  **kwargs)
 ```
 
@@ -1946,7 +1947,7 @@ def search(embeddings, k, filter_dict,  **kwargs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_ids() -> List[int]
 ```
 
@@ -1964,7 +1965,7 @@ def get_all_ids() -> List[int]
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def update(ids, dense, sparse)
 ```
 
@@ -1988,7 +1989,7 @@ def update(ids, dense, sparse)
 
 **函数原型<a name="section1856217101124"></a>**
 
-```
+```python
 def has_collection(collection_name: str)
 ```
 
@@ -2012,7 +2013,7 @@ def has_collection(collection_name: str)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def flush()
 ```
 
@@ -2026,7 +2027,7 @@ def flush()
 
 #### MindFAISS<a name="ZH-CN_TOPIC_0000002018595281"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002018595453"></a>
+##### 类功能<a id="ZH-CN_TOPIC_0000002018595453"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -2034,7 +2035,7 @@ def flush()
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.storage.vectorstore import MindFAISS
 MindFAISS(x_dim, devs, load_local_index, index_type, metric_type, auto_save)
 ```
@@ -2051,11 +2052,11 @@ MindFAISS(x_dim, devs, load_local_index, index_type, metric_type, auto_save)
 |auto_save|bool|可选|是否自动保存索引，取值为True或False，默认为True。|
 
 > [!NOTE] 说明 
->若“auto\_save”设置为“False”，则MindFAISS不会自动保存向量到离线知识库，需要手动调用[save\_local\(\)](#save_local-1)来保存向量数据库到离线知识库，否则程序退出后未保存的向量将丢失，有可能导致关系数据库和向量数据库的数据不一致，从而造成程序运行失败的问题。
+>若“auto\_save”设置为“False”，则MindFAISS不会自动保存向量到离线知识库，需要手动调用[save\_local\(\)](#ZH-CN_TOPIC_000000995468)来保存向量数据库到离线知识库，否则程序退出后未保存的向量将丢失，有可能导致关系数据库和向量数据库的数据不一致，从而造成程序运行失败的问题。
 
 **调用示例<a name="section87272117253"></a>**
 
-```
+```python
 from mx_rag.storage.vectorstore import MindFAISS
 import numpy as np
 vector_store = MindFAISS.create(x_dim=1024,  devs=[0],
@@ -2072,7 +2073,7 @@ vector_store.get_save_file()
 vector_store.update([1], vecs[:1])
 ```
 
-##### create<a name="ZH-CN_TOPIC_0000001982155260"></a>
+##### create<a id="ZH-CN_TOPIC_0000001982155260"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -2080,7 +2081,7 @@ vector_store.update([1], vecs[:1])
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @staticmethod
 def create(**kwargs)
 ```
@@ -2089,7 +2090,7 @@ def create(**kwargs)
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|kwargs|dict|必选|关键字参数，参考[类功能](#类功能-8)的入参，必选参数必须传入，否则将抛出KeyError。|
+|kwargs|dict|必选|关键字参数，参考[类功能](#ZH-CN_TOPIC_0000002018595453)的入参，必选参数必须传入，否则将抛出KeyError。|
 
 **返回值说明<a name="section11818153884917"></a>**
 
@@ -2097,7 +2098,7 @@ def create(**kwargs)
 |--|--|
 |MindFAISS|MindFAISS对象。|
 
-##### save\_local<a name="ZH-CN_TOPIC_0000001981995468"></a>
+##### save\_local<a id="ZH-CN_TOPIC_000000995468"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -2105,7 +2106,7 @@ def create(**kwargs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def save_local()
 ```
 
@@ -2117,7 +2118,7 @@ def save_local()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_save_file()
 ```
 
@@ -2135,7 +2136,7 @@ def get_save_file()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_ntotal() -> int
 ```
 
@@ -2153,7 +2154,7 @@ def get_ntotal() -> int
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add(ids, embeddings, document_id)
 ```
 
@@ -2176,7 +2177,7 @@ def add(ids, embeddings, document_id)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add_sparse(ids, sparse_embeddings)
 ```
 
@@ -2188,7 +2189,7 @@ def add_sparse(ids, sparse_embeddings)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
 ```
 
@@ -2200,7 +2201,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def delete(ids)
 ```
 
@@ -2218,7 +2219,7 @@ def delete(ids)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def search(embeddings, k, filter_dict)
 ```
 
@@ -2244,7 +2245,7 @@ def search(embeddings, k, filter_dict)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_ids() -> List[int]
 ```
 
@@ -2262,7 +2263,7 @@ def get_all_ids() -> List[int]
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def update(ids, dense, sparse)
 ```
 
@@ -2288,7 +2289,7 @@ def update(ids, dense, sparse)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.storage.vectorstore import SearchMode
 class SearchMode(Enum):
     DENSE = 0

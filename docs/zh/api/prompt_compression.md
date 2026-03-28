@@ -10,7 +10,7 @@ prompt压缩抽象类
 
 **函数原型<a name="section546771414342"></a>**
 
-```
+```python
 from mx_rag.compress.base_compressor import PromptCompressor
 class PromptCompressor(ABC)
 ```
@@ -23,7 +23,7 @@ class PromptCompressor(ABC)
 
 **函数原型<a name="section1247913102108"></a>**
 
-```
+```python
 @abstractmethod
 def compress_texts(self, context, question)
 ```
@@ -45,7 +45,7 @@ def compress_texts(self, context, question)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.compress.rerank_compressor import RerankCompressor
 class RerankCompressor(reranker, splitter)
 ```
@@ -59,7 +59,7 @@ class RerankCompressor(reranker, splitter)
 
 **调用示例<a name="section11818153884917"></a>**
 
-```
+```python
 from mx_rag.compress.rerank_compressor import RerankCompressor
 from mx_rag.reranker.local import LocalReranker
 from mx_rag.reranker.service import TEIReranker
@@ -88,7 +88,7 @@ print(res)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def compress_texts(context, question, compress_rate, context_reorder)
 ```
 
@@ -117,7 +117,7 @@ def compress_texts(context, question, compress_rate, context_reorder)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.compress.cluster_compressor import ClusterCompressor
 class ClusterCompressor(cluster_func, embed, splitter, dev_id):
 ```
@@ -133,7 +133,7 @@ class ClusterCompressor(cluster_func, embed, splitter, dev_id):
 
 **调用示例<a name="section11818153884917"></a>**
 
-```
+```python
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sklearn.cluster import HDBSCAN
 from mx_rag.compress.cluster_compressor import ClusterCompressor
@@ -169,7 +169,7 @@ print(res)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def compress_texts(context, question, compress_rate)
 ```
 

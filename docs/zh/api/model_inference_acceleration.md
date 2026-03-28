@@ -9,7 +9,7 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
 
 - 各类模型推理加速配置如下：
 
-    ```
+    ```python
     from modeling_bert_adapter import enable_bert_speed
     from modeling_roberta_adapter import enable_roberta_speed
     from modeling_xlm_roberta_adapter import enable_xlm_roberta_speed
@@ -18,13 +18,13 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
 
 - 设置ENABLE\_BOOST变量激活模型推理加速，设置值为"True"或"False"。
 
-    ```
+    ```bash
     os.environ["ENABLE_BOOST"] = "True"
     ```
 
 - 模型加速日志相关环境变量说明。
 
-    ```
+    ```bash
     ATB_LOG_TO_STDOUT：设置为1时表示日志记录到标准输出
     ATB_LOG_TO_FILE：设置为1时表示日志记录到文件
     ATB_LOG_LEVEL：设置日志等级，可配置为TRACE，DEBUG，INFO，WARN，ERROR，FATAL
@@ -43,7 +43,7 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
 
 2. 通过**lspci -vs **_**<bus-id\>**_命令查询npu卡对应的NUMA node。
 
-    ```
+    ```bash
     lspci -vs 0000:83:00.0
     ```
 
@@ -51,7 +51,7 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
 
 3. 通过lscpu获得NUMA node对应的CPU核数。
 
-    ```
+    ```bash
     lscpu | grep NUMA
     ```
 
@@ -59,13 +59,13 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
 
 4. 在程序执行前添加**numactl -C **_**<CPU核数\>**_。
 
-    ```
+    ```bash
     numactl -C 48-71 xxxx程序
     ```
 
 **开启推理加速调用示例<a name="section2077111093420"></a>**
 
-```
+```python
 import os
 import torch
 import torch_npu
