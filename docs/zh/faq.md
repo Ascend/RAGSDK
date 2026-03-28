@@ -16,7 +16,7 @@
 
 正确安装依赖，如下：
 
-```
+```bash
 # 升级swig
 tar -xzvf swig-4.0.2.tar.gz
 cd swig-4.0.2
@@ -40,13 +40,13 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 
 1. 新建yum源配置文件
 
-    ```
+    ```bash
     vim /etc/yum.repos.d/openEuler.repo
     ```
 
     内容如下：
 
-    ```
+    ```bash
     [openEuler] 
     name=openEuler repository 
     baseurl=https://mirrors.aliyun.com/openeuler/openEuler-24.03-LTS/OS/x86_64/
@@ -57,7 +57,7 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 
 2. 更新yum缓存
 
-    ```
+    ```bash
     yum makecache
     ```
 
@@ -78,17 +78,17 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 - x86环境：
     1. 获取CMake安装脚本。
 
-        ```
+        ```bash
         wget https://github.com/Kitware/CMake/releases/download/v3.24.0/cmake-3.24.0-linux-x86_64.sh
         ```
 
     2. 运行安装脚本。
 
-        ```
+        ```bash
         bash ./cmake-3.24.0-linux-x86_64.sh --skip-license --prefix=/usr
         ```
 
-        ```
+        ```bash
         # 安装过程中遇到：
         # 选择1
         Do you accept the license? [y/n]: 
@@ -103,30 +103,30 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 
     3. 查看CMake版本。
 
-        ```
+        ```bash
         cmake --version
         ```
 
         显示当前的CMake版本：
 
-        ```
+        ```text
         cmake version 3.24.0
         ```
 
 - aarch64环境：
     1. 获取CMake安装脚本。
 
-        ```
+        ```bash
         wget https://github.com/Kitware/CMake/releases/download/v3.24.0/cmake-3.24.0-linux-aarch64.sh
         ```
 
     2. 运行安装脚本。
 
-        ```
+        ```bash
         bash ./cmake-3.24.0-linux-aarch64.sh --skip-license --prefix=/usr
         ```
 
-        ```
+        ```bash
         # 安装过程中遇到：
         # 选择1
         Do you accept the license? [y/n]: 
@@ -141,13 +141,13 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 
     3. 查看CMake版本。
 
-        ```
+        ```bash
         cmake --version
         ```
 
         显示当前的CMake版本：
 
-        ```
+        ```text
         cmake version 3.24.0
         ```
 
@@ -169,7 +169,7 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 
 重新编译安装Python，编译参数示例如下。
 
-```
+```bash
 ./configgure --prefix=/usr/local/python3.11.11 --enable-shared
 ```
 
@@ -191,13 +191,13 @@ import报错示例：ImportError: xxxxx cannot allocate memory in static TLS blo
 
 1. 在运行的demo或者示例代码第一行加入以下内容：
 
-    ```
+    ```python
     from paddle.base import libpaddle
     ```
 
 2. 重试，如果还没解决将上述报错so全路径添加到LD\_PRELOAD环境变量，注意可能会有多条。示例如下：其中xxxx为报错的so路径信息
 
-    ```
+    ```bash
     export LD_PRELOAD=xxxx:$LD_PRELOAD
     ```
 
@@ -217,7 +217,7 @@ Python导包时出现以下报错：
 
 在运行的Demo或者示例代码第一行加入以下内容：
 
-```
+```python
 from paddle.base import libpaddle
 ```
 
@@ -239,7 +239,7 @@ from paddle.base import libpaddle
 
     确保安装的Index SDK版本配套的版本，添加环境变量：
 
-    ```
+    ```bash
     export MX_INDEX_FINALIZE=0
     ```
 
@@ -257,7 +257,7 @@ from paddle.base import libpaddle
 
 当前默认堆栈限制设置为0，即只打印堆栈的栈顶信息。
 
-```
+```text
 sys.tracebacklimit = 0
 ```
 
@@ -265,7 +265,7 @@ sys.tracebacklimit = 0
 
 在运行的Demo或调用处，导入mx\_rag的包后，增加配置：
 
-```
+```python
 import mx_rag
 import sys
 # 在import mx_rag或mx_rag的子模块后增加：

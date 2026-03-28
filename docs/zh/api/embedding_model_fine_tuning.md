@@ -25,7 +25,7 @@
 
 - 微调合成数据配置类：
 
-    ```
+    ```python
     from mx_rag.tools.finetune.generator import DataProcessConfig
     @dataclass
     class DataProcessConfig():
@@ -42,7 +42,7 @@
 
 - 微调合成数据方法类：
 
-    ```
+    ```python
     from mx_rag.tools.finetune.generator import TrainDataGenerator
     TrainDataGenerator(llm: Text2TextLLM, dataset_path: str, reranker: Reranker, encrypt_fn, decrypt_fn)
     ```
@@ -65,7 +65,7 @@
 
 GENERATE\_QD\_PROMPT和SCORING\_QD\_PROMPT定义如下：
 
-```
+```text
 GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
 文章：气候变化对海洋生态系统造成了严重的影响，其中包括海洋温度上升、海平面上升、酸化等问题。这些变化对海洋生物种群分布、生态圈的稳定性以及渔业等方面都产生了深远影响。在全球变暖的背景下，保护海洋生态系统已经成为当务之急。 
 问题：气候变化对海洋生态系统的影响主要体现在哪些方面？
@@ -102,12 +102,12 @@ SCORING_QD_PROMPT = """您的任务是评估给定问题与文档之间的相关
 |llm|Text2TextLLM|必选|用于微调合成数据生成及筛选的大模型，详情请参考[Text2TextLLM](./llm_client.md#text2textllm)|
 |dataset_path|str|必选|自动生成和筛选后的微调合成数据集文件存储目录，路径长度取值范围为[1,1024]。路径不能包含软链接且不允许存在".."。<br>存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
 |reranker|Reranker|必选|用于微调合成数据筛选过程中的reranker，详情请参考[Reranker](./reranker.md#rerank)|
-|encrypt_fn|Callable[[str], str]|可选|对生成的Q-D对进行加密存储，默认为None，即不加密处理 <br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
+|encrypt_fn|Callable[[str], str]|可选|对生成的Q-D对进行加密存储，默认为None，即不加密处理 <br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|对已存储的Q-D对进行解密处理，默认为None。|
 
 **调用示例<a name="section175571825169"></a>**
 
-```
+```python
 from paddle.base import libpaddle
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -158,7 +158,7 @@ train_data_generator.generate_train_data(split_doc_list, config)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_func: Callable[[List[str]], List[str]])
 ```
 
@@ -184,7 +184,7 @@ def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_f
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def generate_train_data(split_doc_list: list[str], data_process_config: DataProcessConfig, batch_size: int)
 ```
 
@@ -206,7 +206,7 @@ def generate_train_data(split_doc_list: list[str], data_process_config: DataProc
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.tools.finetune.generator.eval_data_generator import EvalDataGenerator
 EvalDataGenerator(llm: Text2TextLLM, dataset_path: str, encrypt_fn, decrypt_fn)
 ```
@@ -217,12 +217,12 @@ EvalDataGenerator(llm: Text2TextLLM, dataset_path: str, encrypt_fn, decrypt_fn)
 |--|--|--|--|
 |llm|Text2TextLLM|必选|用于生成评估数据集的大模型，详情请参考[Text2TextLLM](./llm_client.md#text2textllm)|
 |dataset_path|str|必选|评估数据集文件存储目录, 路径长度取值范围为[1,1024]。路径不能包含软链接且不允许存在".."。<br>存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
-|encrypt_fn|Callable[[str], str]|可选|回调函数，返回值为字符串且长度不超过128*1024*1024，对生成的Q-D对进行加密存储，默认为None，即不加密处理。<br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
+|encrypt_fn|Callable[[str], str]|可选|回调函数，返回值为字符串且长度不超过128*1024*1024，对生成的Q-D对进行加密存储，默认为None，即不加密处理。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|回调函数，返回值为字符串且长度不超过128*1024*1024，对已存储的Q-D对进行解密处理，默认为None。|
 
 **调用示例<a name="section175571825169"></a>**
 
-```
+```python
 from paddle.base import libpaddle
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -269,7 +269,7 @@ eval_data_generator.generate_evaluate_data(split_doc_list)
 
 **函数原型<a name="zh-cn_topic_0000002212438517_section18789201331417"></a>**
 
-```
+```python
 def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_func: Callable[[List[str]], List[str]])
 ```
 
@@ -295,7 +295,7 @@ def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_f
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def generate_evaluate_data(split_doc_list: list[str], generate_qd_prompt: str , question_number: int, batch_size: int)
 ```
 
@@ -310,7 +310,7 @@ def generate_evaluate_data(split_doc_list: list[str], generate_qd_prompt: str , 
 
 GENERATE\_QD\_PROMPT定义如下：
 
-```
+```text
 GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
 文章：气候变化对海洋生态系统造成了严重的影响，其中包括海洋温度上升、海平面上升、酸化等问题。这些变化对海洋生物种群分布、生态圈的稳定性以及渔业等方面都产生了深远影响。在全球变暖的背景下，保护海洋生态系统已经成为当务之急。 
 问题：气候变化对海洋生态系统的影响主要体现在哪些方面？
@@ -335,13 +335,13 @@ GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
 
 主要基于sentence-transformers框架提供的InformationRetrievalEvaluator方法，使用前述评估数据辅助生成方法生成的评估数据集对embedding模型进行评估，评估成功后将会返回以下指标：
 
-```
+```python
 {'cosine_accuracy@1', 'cosine_accuracy@3', 'cosine_accuracy@5', 'cosine_accuracy@10', 'cosine_precision@1', 'cosine_precision@3', 'cosine_precision@5', 'cosine_precision@10', 'cosine_recall@1', 'cosine_recall@3', 'cosine_recall@5', 'cosine_recall@10', 'cosine_ndcg@10', 'cosine_mrr@10', 'cosine_map@100', 'dot_accuracy@1', 'dot_accuracy@3', 'dot_accuracy@5', 'dot_accuracy@10', 'dot_precision@1', 'dot_precision@3', 'dot_precision@5', 'dot_precision@10', 'dot_recall@1', 'dot_recall@3', 'dot_recall@5', 'dot_recall@10', 'dot_ndcg@10', 'dot_mrr@10', 'dot_map@100'}
 ```
 
 **调用示例<a name="section175571825169"></a>**
 
-```
+```python
 import torch
 import torch_npu
 from sentence_transformers import SentenceTransformer
@@ -379,7 +379,7 @@ print(result)
 
 **调用示例<a name="section175571825169"></a>**
 
-```
+```python
 import torch
 import torch_npu
 from datasets import load_dataset

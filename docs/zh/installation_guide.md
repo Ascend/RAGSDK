@@ -152,7 +152,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
             文件存放结构如下示例，其中driver目录为npu-driver驱动安装后的目录，driver默认安装路径为“/usr/local/Ascend/driver/”。
 
-            ```
+            ```bash
             $ tree -L 2
             .
             |-- Dockerfile
@@ -167,7 +167,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
         3. 执行以下命令，构建RAG SDK镜像。
 
-            ```
+            ```bash
             docker build -t <镜像名称>:<镜像tag> --build-arg http_proxy=<代理> --build-arg https_proxy=<代理> --build-arg ARCH=$(uname -m) --build-arg PLATFORM=<chip_type> -f Dockerfile .
             ```
 
@@ -176,7 +176,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 2. 运行RAG SDK。
     1. 执行如下命令运行RAG SDK容器。
 
-        ```
+        ```bash
         docker run -e ASCEND_VISIBLE_DEVICES=<device_id>  -itd --name <mxrag_demo> -p <port>:<port> -v <model_dir>:<model_dir>:ro <镜像名称>:<镜像tag> bash
         ```
 
@@ -189,7 +189,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     2. 进入容器。
 
-        ```
+        ```bash
         docker exec -it <mxrag_demo> bash
         ```
 
@@ -197,7 +197,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
         如当Health参数的值为OK时，即表示当前芯片的健康状态为正常（以下仅为示例，请以实际查询到的信息为准）。
 
-        ```
+        ```text
         +--------------------------------------------------------------------------------------------------------+
         | npu-smi 24.1.rc2                            Version: 24.1.rc2                                          |
         +-------------------------------+-----------------+------------------------------------------------------+
@@ -230,7 +230,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 - 基于操作系统ubuntu20.04-live-server，确保系统已安装Python 3.11，libpq-dev以及cmake，cmake最小版本为3.24.3。以下为libpq-dev和Python的安装方法：
 
-    ```
+    ```bash
     # 安装libpq-dev（psycopg2需要）
     apt install -y libpq-dev
     # 设置PY_VERSION为python3.11
@@ -251,7 +251,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 - 基于操作系统Huawei Cloud EulerOS 2.0，Python及依赖包的安装方法：
 <br># 确保系统yum源中包含python3.11，配置方法可参考[HCE的REPO源配置与软件安装](https://support.huaweicloud.com/usermanual-hce/hce_repo.html)的官方源配置和[13.12openEuler的REPO源配置](./faq.md#openeuler的repo源配置)
 
-    ```
+    ```bash
     yum update
     yum install python3.11
     yum install cmake swig postgresql-devel patch mesa-libGL
@@ -262,7 +262,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 1. 切换用户至HwHiAiUser，并进入“/home/HwHiAiUser”目录。
 2. 安装torch和torch-npu。
 
-    ```
+    ```bash
     # for x86,安装torch:
     pip3 install torch==2.1.0+cpu  --index-url [https://download.pytorch.org/whl/cpu](https://download.pytorch.org/whl/cpu)
     # for aarch64,安装torch:
@@ -273,7 +273,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 3. 安装torchvision-npu
 
-    ```
+    ```bash
     # 下载Torchvision Adapter代码，进入插件根目录
     git clone https://gitee.com/ascend/vision.git vision_npu
     cd vision_npu
@@ -292,20 +292,20 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 4. 安装OpenBLAS。
     1. 下载OpenBLAS v0.3.10源码压缩包并解压。
 
-        ```
+        ```bash
         wget https://github.com/xianyi/OpenBLAS/archive/v0.3.10.tar.gz -O OpenBLAS-0.3.10.tar.gz
         tar -xf OpenBLAS-0.3.10.tar.gz
         ```
 
     2. 进入OpenBLAS目录。
 
-        ```
+        ```bash
         cd OpenBLAS-0.3.10
         ```
 
     3. 编译安装。
 
-        ```
+        ```bash
         make FC=gfortran USE_OPENMP=1 -j
         # 普通用户需要指定安装路径
         make PREFIX=/home/HwHiAiUser/OpenBLAS install
@@ -313,7 +313,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     4. 配置库路径的环境变量。
 
-        ```
+        ```bash
         vim ~/.bashrc
         # 在文件末添加如下信息
         export LD_LIBRARY_PATH=/home/HwHiAiUser/OpenBLAS/lib:$LD_LIBRARY_PATH
@@ -321,7 +321,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     5. 验证是否安装成功。
 
-        ```
+        ```bash
         cat /home/HwHiAiUser/OpenBLAS/lib/cmake/openblas/OpenBLASConfigVersion.cmake | grep 'PACKAGE_VERSION "'
         ```
 
@@ -334,7 +334,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     1. 下载faiss源码包并解压。
 
-        ```
+        ```bash
         # faiss 1.10.0
         wget https://github.com/facebookresearch/faiss/archive/v1.10.0.tar.gz 
         tar -xf v1.10.0.tar.gz && cd faiss-1.10.0/faiss
@@ -342,13 +342,13 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     2. 创建install\_faiss.sh脚本。
 
-        ```
+        ```bash
         vi install_faiss.sh
         ```
 
     3. 在install\_faiss.sh脚本中写入如下内容。
 
-        ```
+        ```bash
         export FAISS_INSTALL_PATH=/usr/local/faiss/faiss1.10.0
         # faiss安装后可能是${FAISS_INSTALL_PATH}/lib或者${FAISS_INSTALL_PATH}/lib64，与具体操作系统有关
         export FAISS_INSTALL_PATH_LIB=${FAISS_INSTALL_PATH}/lib
@@ -372,7 +372,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     4. 按“Esc”键，输入<b>:wq!</b>，按“Enter”保存并退出编辑。
     5. 执行**install\_faiss.sh**脚本，安装faiss。
 
-        ```
+        ```bash
         bash install_faiss.sh
         ```
 
@@ -383,19 +383,19 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 6. 安装Index SDK。
     1. 增加对软件包的可执行权限。
 
-        ```
+        ```bash
         chmod +x Ascend-mindxsdk-mxindex_{version}_linux-{arch}.run
         ```
 
     2. 执行如下命令，校验软件包的一致性和完整性。
 
-        ```
+        ```bash
         ./Ascend-mindxsdk-mxindex_{version}_linux-{arch}.run --check
         ```
 
         若显示如下信息，说明软件包已通过校验。
 
-        ```
+        ```ColdFusion
         Verifying archive integrity...  100%   SHA256 checksums are OK. All good.    
         ```
 
@@ -403,13 +403,13 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         - **若用户未指定安装路径**，软件会默认安装到软件包所在的路径。
         - **若用户想指定安装路径**，需要先创建安装路径。以安装路径“/home/HwHiAiUser/Ascend”为例：
 
-            ```
+            ```bash
             mkdir -p /home/HwHiAiUser/Ascend
             ```
 
     4. 安装Index SDK。
 
-        ```
+        ```bash
         ./Ascend-mindxsdk-mxindex_7.2.RC1_linux-aarch64.run --install --install-path=<安装路径> --platform=<npu_type>
         ```
 
@@ -417,33 +417,33 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
         若出现如下回显信息，则表示软件成功安装。
 
-        ```
+        ```ColdFusion
         Uncompressing ASCEND MXINDEX RUN PACKAGE  100%
         ```
 
     5. 安装完Index SDK后执行Index SDK脚本。
 
-        ```
+        ```bash
         cd <安装路径>/mxIndex/ops && ./custom_opp_{arch}.run
         ```
 
 7. 下载并安装ascendfaiss。
     1. 下载源码包并解压
 
-        ```
+        ```bash
         wget https://gitee.com/ascend/mindsdk-referenceapps/repository/archive/master.zip 
         unzip master.zip && cd mindsdk-referenceapps-master/IndexSDK/faiss-python
         ```
 
     2. 创建install\_ascendfaiss\_sh.sh脚本
 
-        ```
+        ```bash
         vi install_ascendfaiss.sh
         ```
 
     3. 在install\_ascendfaiss.sh脚本中写入如下内容。。
 
-        ```       
+        ```bash
         # 设置以下环境变量
         export PY_VERSION=python3.11
         export FAISS_INSTALL_PATH=/usr/local/faiss/faiss1.10.0
@@ -471,13 +471,13 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     4. 按“Esc”键，输入<b>:wq!</b>，按“Enter”保存并退出编辑。
     5. 执行**install\_ascendfaiss.sh**脚本，安装**ascendfaiss**。
 
-        ```
+        ```bash
         bash install_ascendfaiss.sh
         ```
 
 8. 安装RAG SDK。
 
-    ```
+    ```bash
     bash  Ascend-mindxsdk-mxrag_<version>_linux-<arch>.run --install --install-path=<安装路径> --platform=<npu_type>
     # 安装第三方依赖包
     pip3 install  rank_bm25==0.2.2 langchain-opengauss==0.1.5
@@ -487,7 +487,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     若出现如下回显信息，则表示软件成功安装。
 
-    ```
+    ```ColdFusion
     Install package successfully
     ```
 
@@ -597,7 +597,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 9. 设置RAG SDK运行环境变量。
     1. 用vim打开文件\~/.bashrc，在文件最后添加如下内容。
 
-        ```
+        ```bash
         export MX_INDEX_FINALIZE=0
         export PY_VERSION=python3.11
         export LOGURU_FORMAT='<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message!r}</level>'
@@ -616,7 +616,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     2. 保存退出后运行如下命令让环境生效。
 
-        ```
+        ```bash
         source ~/.bashrc
         ```
 
@@ -632,7 +632,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     如当Health参数的值为OK时，即表示当前芯片的健康状态为正常（以下仅为示例，请以实际查询到的信息为准）。
 
-    ```
+    ```text
     +--------------------------------------------------------------------------------------------------------+
     | npu-smi 24.1.rc2                            Version: 24.1.rc2                                          |
     +-------------------------------+-----------------+------------------------------------------------------+
@@ -666,7 +666,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 1. 使用<b>--upgrade</b>命令升级。
 
-    ```
+    ```bash
     bash Ascend-mindxsdk-mxrag_<version>_linux-<arch>.run --upgrade --install-path=<安装路径> --platform=<npu_type>
     ```
 
@@ -717,7 +717,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 2. 出现以下提示说明升级成功。
 
-    ```
+    ```text
     Upgrade RAG SDK successfully
     ```
 
@@ -725,12 +725,12 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 用户如需移除RAG SDK软件包部署，可参考以下命令进行卸载。使用HwHiAiUser用户执行：
 
-```
+```bash
 bash 安装目录/mxRag/script/uninstall.sh
 ```
 
 若显示如下信息，则表示软件成功卸载。
 
-```
+```bash
 Uninstall RAG SDK package successfully.
 ```

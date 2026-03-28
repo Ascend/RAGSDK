@@ -60,7 +60,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 1. 编译检索算子，以实现检索功能。
 
-    ```
+    ```bash
     cd $MX_INDEX_INSTALL_PATH/tools/ && python3 aicpu_generate_model.py -t <chip_type> && python3 flat_generate_model.py -d <dim> -t <chip_type>  && cp op_models/* $MX_INDEX_MODELPATH 
     ```
 
@@ -73,7 +73,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     在/home/HwHiAiUser目录下创建文档gaokao.txt，编码格式为utf-8，内容如下：
 
-    ```
+    ```text
     2024年高考语文作文试题
     新课标I卷
     阅读下面的材料，根据要求写作。（60分）
@@ -89,7 +89,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     参考并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/RagDemo)中rag\_demo\_knowledge.py样例代码，请根据实际情况修改代码中的文件路径、模型路径等默认参数，详细参数设置请参见readme.md文件。
 
-    ```
+    ```python
     python3 rag_demo_knowledge.py --file_path "/path/to/gaokao.txt"
     ```
 
@@ -97,7 +97,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     样例代码能打印出上传的文件名列表，则表示构建知识库成功。
 
-    ```
+    ```text
     [‘gaokao.txt’]
     ```
 
@@ -107,13 +107,13 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 1. 执行在线问答样例。参考并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/RagDemo)中rag\_demo\_query.py代码文件，请根据实际情况修改代码中的模型路径、mindie服务IP和port等默认参数，详细参数设置请参见readme.md文件。
 
-    ```
+    ```python
     python3 rag_demo_query.py --query "请描述2024年高考作文题目" 
     ```
 
 2. 运行程序获取结果。
 
-    ```
+    ```text
     {
         'query': '请描述2024年高考作文题目',
         'result': '题目：新时代下的生活\n\n材料：\n\n随着科技的不断发展，人们的生活逐渐便利。各种智能设备的应用，让我们的生活更加便捷。然而，在这种便利背后，我们是否面临着一些问题？\n\n请根据以上材料，结合自己的思考，以新时代下的生活为题材，自拟标题，写一篇议论文。',
@@ -129,7 +129,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
     }
     ```
 
-> [!NOTE] 说明 
+> [!NOTE] 说明
 >
 >- “构建知识库”和“检索回答”过程使用的embedding模型、关系数据库路径、向量数据库路径需对应保持一致，才能正常执行样例。
 >- 执行样例代码时，当参数<b>"tei\_emb"</b>为“False”，表示本地启动embedding模型，embedding\_path传入本地模型存放目录；当参数<b>"tei\_emb"</b>为“True”，表示启动服务化模型，embedding_url传入服务化模型URI地址；reranker同理。
@@ -158,7 +158,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 1. 编译检索算子，以实现检索功能。
 
-    ```
+    ```bash
     cd $MX_INDEX_INSTALL_PATH/tools/ && python3 aicpu_generate_model.py -t <chip_type> && python3 flat_generate_model.py -d <dim> -t <chip_type>  && cp op_models/* $MX_INDEX_MODELPATH 
     ```
 
@@ -171,7 +171,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     在/home/HwHiAiUser目录下创建文档gaokao.md，编码格式为utf-8，内容如下：
 
-    ```
+    ```text
     2024年高考语文作文试题
     新课标I卷
     阅读下面的材料，根据要求写作。（60分）
@@ -186,13 +186,13 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 3. 参见并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/RagDemo)中rag\_demo\_cache\_qa.py代码文件，请根据实际情况修改代码中的文件路径、模型路径和大模型IP和port等默认参数，详细参数设置请参见readme.md文件。
 4. 执行样例代码。
 
-    ```
+    ```python
     python3 rag_demo_cache_qa.py  --query "请描述2024年高考作文题目"
     ```
 
 5. 运行两次样例代码，获取结果。
 
-    ```
+    ```ColdFusion
     # 第一次运行结果和第二次回答一致，但第二次运行时命中缓存返回，回答时间大幅减少
     {'query': '请描述2024年高考作文题目', 'result': '根据您提供的信息，2024年高考语文作文试题的具体内容尚未公开。通常，高考作文题目会在考试当天或考试前一段时间由教育部门公布。因此，无法为您提供2024年高考作文题目具体内容。\n\n不过，根据您提供的信息，题目可能会围绕“随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？”这一主题展开。学生需要根据这个问题，选准角度，确定立意，明确文体，自拟标题，并在不少于800字的范围内进行写作。\n\n如果您需要进一步的指导或帮助，例如如何构思作文、如何组织思路、如何提高写作质量等，我可以提供一些一般性的建议。', 'source_documents': [{'metadata': {'source': '/home/HwHiAiUser/gaokao.md'}, 'page_content': '2024年高考语文作文试题\n新课标I卷\n阅读下面的材料，根据要求写作。（60分）\n随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？\n以上材料引发了你怎样的联想和思考？请写一篇文章。\n要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。\n'}]}
     耗时：0.0007343292236328125s
@@ -214,7 +214,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 1. 在任意目录编辑创建retrieve\_img\_demo.py，内容如下：
 
-    ```
+    ```python
     import argparse
     
     from mx_rag.document import LoaderMng
@@ -269,7 +269,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 2. 执行如下命令运行，其他参数按实际情况配置，参考[ClientParam](./api/universal_api.md#clientparam)。
 
-    ```
+    ```bash
     python3 retrieve_img_demo.py --image-path ./car1.jpg  --image-path ./car2.jpg  --query "小汽车"
     ```
 
@@ -287,7 +287,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 1. 在容器内任意目录执行vim命令创建demo.py代码文件，文件内容如下：
 
-    ```
+    ```python
     from langchain.memory import ConversationBufferWindowMemory
     from langchain.chains import LLMChain
     from langchain_core.prompts import PromptTemplate
@@ -320,7 +320,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 2. 运行样例代码，请求大模型中带有历史信息，prompt拼接结果如下：
 
-    ```
+    ```ColdFusion
     You are a chatbot having a conversation with a human. Please answer as briefly as possible.
     
     Human: 请记住小明的爸爸是小刚
