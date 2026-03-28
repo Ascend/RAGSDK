@@ -13,7 +13,7 @@
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.llm import Text2TextLLM
 # 所有参数需通过关键字参数传递
 Text2TextLLM(base_url, model_name, llm_config, client_param)
@@ -26,11 +26,11 @@ Text2TextLLM(base_url, model_name, llm_config, client_param)
 |base_url|str|必选|大模型服务地址。长度取值范围[1, 128]。|
 |model_name|str|必选|LLM模型名称。长度取值范围[1, 128]。|
 |llm_config|LLMParameterConfig|可选|通过langchain调用时生效，描述参见[LLMParameterConfig](#llmparameterconfig)；非langchain方式调用通过chat和chat_streamly方法传入参数，参见[chat](#chat)和[chat_streamly](#chat_streamly)。|
-|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./univers_api.md#clientparam)。|
+|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./universal_api.md#clientparam)。|
 
 **调用示例<a name="section1743812130014"></a>**
 
-```
+```python
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.utils import ClientParam
 llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
@@ -52,7 +52,7 @@ for res in llm.chat_streamly("请介绍下北京"):
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def chat(query, sys_messages, role, llm_config)
 ```
 
@@ -79,7 +79,7 @@ def chat(query, sys_messages, role, llm_config)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def chat_streamly(query, sys_messages, role, llm_config)
 ```
 
@@ -112,7 +112,7 @@ def chat_streamly(query, sys_messages, role, llm_config)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.llm import Text2ImgMultiModel
 Text2ImgMultiModel(url, model_name, client_param)
 ```
@@ -123,7 +123,7 @@ Text2ImgMultiModel(url, model_name, client_param)
 |--|--|--|--|
 |url|str|必选|大模型访问url。长度取值[1, 128]。|
 |model_name|str|可选|SD模型名称。默认值为None。长度取值范围(0,128]。|
-|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./univers_api.md#clientparam)|
+|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./universal_api.md#clientparam)|
 
 **返回值说明<a name="section53998444524"></a>**
 
@@ -131,7 +131,7 @@ Text2ImgMultiModel对象。
 
 **调用示例<a name="section145571842142214"></a>**
 
-```
+```python
 from mx_rag.llm import Text2ImgMultiModel
 from mx_rag.utils import ClientParam
 multi_model = Text2ImgMultiModel(model_name="sd", url="txt to image url",
@@ -148,7 +148,7 @@ print(res)
 
 请求body数据格式如下：
 
-```
+```python
 {
 "prompt": 文本生成提示词,
 "output_format": 生成的图片格式,
@@ -159,7 +159,7 @@ print(res)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def text2img(prompt, output_format, size)
 ```
 
@@ -189,7 +189,7 @@ def text2img(prompt, output_format, size)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.llm import Img2ImgMultiModel
 Img2ImgMultiModel(url, model_name, client_param)
 ```
@@ -200,7 +200,7 @@ Img2ImgMultiModel(url, model_name, client_param)
 |--|--|--|--|
 |url|str|必选|大模型访问url。长度取值范围[1, 128]。|
 |model_name|str|可选|SD模型名称。默认值为None。长度取值范围[1, 128]。|
-|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./univers_api.md#clientparam)。|
+|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./universal_api.md#clientparam)。|
 
 **返回值说明<a name="section53998444524"></a>**
 
@@ -208,7 +208,7 @@ Img2ImgMultiModel对象。
 
 **调用示例<a name="section175571825169"></a>**
 
-```
+```python
 
 import sys
 from mx_rag.document.loader import ImageLoader
@@ -236,7 +236,7 @@ print(res)
 
 与大模型服务交互进行文生图，获取模型推理的结果。发送给大模型数据格式如下：
 
-```
+```python
 请求body数据格式如下：
 {
 "prompt": 生成图片提示词,
@@ -248,7 +248,7 @@ print(res)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def img2img(prompt, image_content, size)
 ```
 
@@ -278,7 +278,7 @@ def img2img(prompt, image_content, size)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.llm import LLMParameterConfig
 LLMParameterConfig(max_tokens, presence_penalty, frequency_penalty, temperature, top_p, seed, stream)
 ```
@@ -297,7 +297,7 @@ LLMParameterConfig(max_tokens, presence_penalty, frequency_penalty, temperature,
 
 **调用示例<a name="section96001515205720"></a>**
 
-```
+```python
 
 from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.utils import ClientParam
@@ -324,7 +324,7 @@ for res in llm.chat_streamly("请介绍下北京"):
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.llm import Img2TextLLM
 # 所有参数需通过关键字参数传递
 Img2TextLLM(base_url, prompt, model_name, llm_config, client_param)
@@ -338,11 +338,11 @@ Img2TextLLM(base_url, prompt, model_name, llm_config, client_param)
 |prompt|str|可选|提示词，用于指导视觉大模型生成结构化、详细且符合要求的图像描述，默认值为[IMG_TO_TEXT_PROMPT](#li183183578215)，用户也可根据需求配置。长度范围[1, 1024 * 1024]|
 |model_name|str|必选|LLM模型名称。长度取值范围[1, 128]。|
 |llm_config|LLMParameterConfig|可选|通过langchain调用时生效，描述参见[LLMParameterConfig](#llmparameterconfig)；非langchain方式调用通过chat方法传入参数，参见[chat](#chat)。|
-|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./univers_api.md#clientparam)。|
+|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./universal_api.md#clientparam)。|
 
 - <a id="li183183578215"></a>**图像结构化描述提示（IMG\_TO\_TEXT\_PROMPT）**
 
-```
+```text
 IMG_TO_TEXT_PROMPT = '''Given an image containing a table or figure, please provide a structured and detailed
 description in chinese with two levels of granularity:
 
@@ -365,7 +365,7 @@ description in chinese with two levels of granularity:
 
 **调用示例<a name="section1743812130014"></a>**
 
-```
+```python
 from mx_rag.llm import Img2TextLLM, LLMParameterConfig
 from mx_rag.utils import ClientParam
 from PIL import Image
@@ -396,7 +396,7 @@ print(res)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def chat(image_url, prompt, sys_messages, role, llm_config)
 ```
 

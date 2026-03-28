@@ -18,7 +18,7 @@ KnowledgeDB依赖了KnowledgeStore、Docstore、VectorStore实现对知识库文
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.knowledge import KnowledgeStore
 KnowledgeStore(db_path)
 ```
@@ -31,7 +31,7 @@ KnowledgeStore(db_path)
 
 **调用示例<a name="section423192561211"></a>**
 
-```
+```python
 from mx_rag.knowledge import KnowledgeStore
 # 初始化知识管理关系数据库
 knowledge_store = KnowledgeStore(db_path="./sql.db")
@@ -59,7 +59,7 @@ print(knowledge_store.delete_doc_info("name", "1.txt", user_id))
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def add_knowledge(knowledge_name, user_id, role)
 ```
 
@@ -85,7 +85,7 @@ def add_knowledge(knowledge_name, user_id, role)
 
 **函数原型<a name="section4732112119111"></a>**
 
-```
+```python
 def check_knowledge_exist(knowledge_name, user_id)
 ```
 
@@ -110,7 +110,7 @@ def check_knowledge_exist(knowledge_name, user_id)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def add_usr_id_to_knowledge(knowledge_name, user_id, role)
 ```
 
@@ -130,7 +130,7 @@ def add_usr_id_to_knowledge(knowledge_name, user_id, role)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def delete_usr_id_from_knowledge(knowledge_name, user_id, role, force=False)
 ```
 
@@ -151,7 +151,7 @@ def delete_usr_id_from_knowledge(knowledge_name, user_id, role, force=False)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def get_all_knowledge_info(user_id)
 ```
 
@@ -175,7 +175,7 @@ def get_all_knowledge_info(user_id)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def get_all_usr_role_by_knowledge(knowledge_name)
 ```
 
@@ -199,7 +199,7 @@ def get_all_usr_role_by_knowledge(knowledge_name)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def add_doc_info(knowledge_name, doc_name, file_path, user_id)
 ```
 
@@ -226,7 +226,7 @@ def add_doc_info(knowledge_name, doc_name, file_path, user_id)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def delete_doc_info(knowledge_name, doc_name, user_id)
 ```
 
@@ -252,7 +252,7 @@ def delete_doc_info(knowledge_name, doc_name, user_id)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def check_document_exist(knowledge_name, doc_name, user_id)
 ```
 
@@ -278,7 +278,7 @@ def check_document_exist(knowledge_name, doc_name, user_id)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 def get_all_documents(knowledge_name, user_id)
 ```
 
@@ -305,7 +305,7 @@ def get_all_documents(knowledge_name, user_id)
 
 **函数原型<a name="section38010117445"></a>**
 
-```
+```python
 from mx_rag.knowledge import KnowledgeDB
 KnowledgeDB(knowledge_store, chunk_store, vector_store, knowledge_name, white_paths, max_file_count, user_id, lock)
 ```
@@ -321,14 +321,14 @@ KnowledgeDB(knowledge_store, chunk_store, vector_store, knowledge_name, white_pa
 |white_paths|List[str]|必选|上传文档的白名单路径列表。列表长度取值范围：[1, 1024]，路径长度取值范围：[1, 1024]，路径不能为软链接且不允许存在".."。<br>上传的文档路径需要在白名单路径下才能上传成功。|
 |max_file_count|int|可选|上传文档时，允许的最大处理数量，取值范围：[1, 8000]，不建议设置过大，默认值为1000。|
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
-|lock|multiprocessing.synchronize.Lock或_thread.LockType|可选|如果用户需要多进程或者多线程调用此接口需要申请锁。默认值为None。可选值：<li>None：表示不使用锁，此时该接口不支持并发。<li>multiprocessing.Lock()：表示进程锁，此时该接口支持多进程调用。<li>threading.Lock()：表示线程锁。此时该接口支持多线程调用。|
+|lock|multiprocessing.synchronize.Lock或_thread.LockType|可选|如果用户需要多进程或者多线程调用此接口需要申请锁。默认值为None。可选值：<li>None：表示不使用锁，此时该接口不支持并发。</li><li>multiprocessing.Lock()：表示进程锁，此时该接口支持多进程调用。</li><li>threading.Lock()：表示线程锁。此时该接口支持多线程调用。</li>|
 
 > [!NOTE] 说明
 >chunk\_store和vector\_store必须保障数据一致性（例如：关系数据库文件和向量数据库文件同时生成）。
 
 **调用示例<a name="section119720129280"></a>**
 
-```
+```python
 import pathlib
 from paddle.base import libpaddle
 from mx_rag.embedding.local import TextEmbedding
@@ -372,7 +372,7 @@ knowledge_db.delete_all()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def add_file(file, texts, embed_func, metadatas)
 ```
 
@@ -393,7 +393,7 @@ def add_file(file, texts, embed_func, metadatas)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def delete_file(doc_name)
 ```
 
@@ -411,7 +411,7 @@ def delete_file(doc_name)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def get_all_documents()
 ```
 
@@ -429,7 +429,7 @@ def get_all_documents()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def check_document_exist(doc_name)
 ```
 
@@ -453,7 +453,7 @@ KnowledgeDB绑定了关系数据库、向量数据库以及user\_id和knowledge\
 
 **函数原型<a name="section36342025154918"></a>**
 
-```
+```python
 def delete_all()
 ```
 
@@ -471,7 +471,7 @@ def delete_all()
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.knowledge import upload_files
 def upload_files(knowledge, files, loader_mng, embed_func, force)
 ```
@@ -498,7 +498,7 @@ def upload_files(knowledge, files, loader_mng, embed_func, force)
 
 **调用示例<a name="section175571825169"></a>**
 
-```
+```python
 from mx_rag.embedding.local import TextEmbedding
 from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, delete_files, FilesLoadInfo
 from mx_rag.document import LoaderMng
@@ -553,7 +553,7 @@ delete_files(knowledge_db, ["test.docx"])
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.knowledge import upload_dir, FilesLoadInfo
 FilesLoadInfo(knowledge, dir_path, loader_mng, embed_func, force, load_image)
 def upload_dir(params: FilesLoadInfo):
@@ -592,7 +592,7 @@ def upload_dir(params: FilesLoadInfo):
 
 **调用示例<a name="section175571825169"></a>**
 
-```
+```python
 from mx_rag.embedding.local import TextEmbedding
 from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, delete_files, FilesLoadInfo
 from mx_rag.document import LoaderMng
@@ -647,7 +647,7 @@ delete_files(knowledge_db, ["test.docx"])
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.knowledge import delete_files
 def delete_files(knowledge, doc_names)
 ```
@@ -661,7 +661,7 @@ def delete_files(knowledge, doc_names)
 
 **调用示例<a name="section175571825169"></a>**
 
-```
+```python
 from mx_rag.embedding.local import TextEmbedding
 from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, delete_files, FilesLoadInfo
 from mx_rag.document import LoaderMng
@@ -722,14 +722,14 @@ delete_files(knowledge_db, ["test.docx"])
 
 **函数原型<a name="section99811443115916"></a>**
 
-```
+```python
 from mx_rag.document import LoaderMng
 LoaderMng()
 ```
 
 **调用示例<a name="section721715411913"></a>**
 
-```
+```python
 from mx_rag.document.loader import ExcelLoader
 from mx_rag.document import LoaderMng
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -768,7 +768,7 @@ loader_mng.unregister_splitter(RecursiveCharacterTextSplitter)
 
 **函数原型<a name="section1467253414016"></a>**
 
-```
+```python
 def register_loader(loader_class, file_types, loader_params)
 ```
 
@@ -788,7 +788,7 @@ def register_loader(loader_class, file_types, loader_params)
 
 **函数原型<a name="section117561235698"></a>**
 
-```
+```python
 def register_splitter(splitter_class, file_types, splitter_param)
 ```
 
@@ -808,7 +808,7 @@ def register_splitter(splitter_class, file_types, splitter_param)
 
 **函数原型<a name="section1588410551598"></a>**
 
-```
+```python
 def get_loader(file_suffix)
 ```
 
@@ -832,7 +832,7 @@ def get_loader(file_suffix)
 
 **函数原型<a name="section116371616191010"></a>**
 
-```
+```python
 def get_splitter(file_suffix)
 ```
 
@@ -856,7 +856,7 @@ def get_splitter(file_suffix)
 
 **函数原型<a name="section116371616191010"></a>**
 
-```
+```python
 def unregister_loader(loader_class, file_suffix)
 ```
 
@@ -875,7 +875,7 @@ def unregister_loader(loader_class, file_suffix)
 
 **函数原型<a name="section116371616191010"></a>**
 
-```
+```python
 def unregister_splitter(splitter_class, file_suffix)
 ```
 
@@ -896,7 +896,7 @@ def unregister_splitter(splitter_class, file_suffix)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.document.loader import DocxLoader
 DocxLoader(file_path, vlm)
 ```
@@ -910,7 +910,7 @@ DocxLoader(file_path, vlm)
 
 **调用示例<a name="section1611210845612"></a>**
 
-```
+```python
 from mx_rag.document.loader import DocxLoader
 from mx_rag.llm import Img2TextLLM, LLMParameterConfig
 from mx_rag.utils import ClientParam
@@ -933,7 +933,7 @@ print(list(docs))
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def lazy_load()
 ```
 
@@ -953,7 +953,7 @@ def lazy_load()
 
 **函数原型<a name="section13591154710133"></a>**
 
-```
+```python
 from mx_rag.document.loader import ExcelLoader
 ExcelLoader(file_path,  line_sep="**;")
 ```
@@ -967,7 +967,7 @@ ExcelLoader(file_path,  line_sep="**;")
 
 **调用示例<a name="section244534818586"></a>**
 
-```
+```python
 from mx_rag.document.loader import ExcelLoader
 loader = ExcelLoader("test.xlsx")
 docs = loader.lazy_load()
@@ -987,7 +987,7 @@ print(list(docs))
 
 **函数原型<a name="section15833919172419"></a>**
 
-```
+```python
 def lazy_load()
 ```
 
@@ -1007,7 +1007,7 @@ def lazy_load()
 
 **函数原型<a name="section11275646349"></a>**
 
-```
+```python
 from mx_rag.document.loader import PdfLoader
 PdfLoader(file_path, vlm, lang, enable_ocr)
 ```
@@ -1018,12 +1018,12 @@ PdfLoader(file_path, vlm, lang, enable_ocr)
 |--|--|--|--|
 |file_path|str|必选|pdf文档路径，路径长度取值范围为[1,1024]，不能为软链接且不允许存在".."。文档页数≤1000页，文档大小≤100MB。|
 |vlm|Img2TextLLM|可选|视觉大模型对象，可解析文档中的图片信息，具体可参见[Img2TextLLM](./llm_client.md#img2textllm)|
-|lang|Lang|可选|pdf文档语言类型，枚举值参考[Lang](./univers_api.md#lang)，默认中文（Lang.CH）。|
+|lang|Lang|可选|pdf文档语言类型，枚举值参考[Lang](./universal_api.md#lang)，默认中文（Lang.CH）。|
 |enable_ocr|bool|可选|是否调用OCR，若值为True，会使用OCR进行图片解析和表格信息解析，默认为False，即不解析图片。pdf中的图片像素长宽不能超过2048。<br>>[!NOTE] 说明  当enable_ocr设置为True时，PaddleOCR会联网下载文件，本接口内部使用了pickle模块加载模型，可能存在恶意构造的文件在反序列化时带来安全风险，请确保加载的模型文件来自可信来源。|
 
 **调用示例<a name="section1166802012316"></a>**
 
-```
+```python
 from mx_rag.document.loader import PdfLoader
 loader = PdfLoader("test.pdf")
 docs = loader.lazy_load()
@@ -1041,7 +1041,7 @@ print(list(docs))
 
 **函数原型<a name="section19107115214394"></a>**
 
-```
+```python
 def lazy_load()
 ```
 
@@ -1061,7 +1061,7 @@ def lazy_load()
 
 **函数原型<a name="section11275646349"></a>**
 
-```
+```python
 from mx_rag.document.loader import PowerPointLoader
 PowerPointLoader(file_path, vlm, lang, enable_ocr)
 # 参数枚举值
@@ -1082,7 +1082,7 @@ class Lang(Enum):
 
 **调用示例<a name="section106722416410"></a>**
 
-```
+```python
 from mx_rag.document.loader import PowerPointLoader
 loader = PowerPointLoader("./test.pptx")
 docs = loader.lazy_load()
@@ -1097,7 +1097,7 @@ print(list(docs))
 
 **函数原型<a name="section19107115214394"></a>**
 
-```
+```python
 def lazy_load()
 ```
 
@@ -1117,7 +1117,7 @@ def lazy_load()
 
 **函数原型<a name="section11275646349"></a>**
 
-```
+```python
 from mx_rag.document.loader import BaseLoader
 BaseLoader(file_path)
 ```
@@ -1138,7 +1138,7 @@ BaseLoader(file_path)
 
 **函数原型<a name="section11275646349"></a>**
 
-```
+```python
 from mx_rag.document.loader import ImageLoader
 ImageLoader(file_path)
 ```
@@ -1151,7 +1151,7 @@ ImageLoader(file_path)
 
 **调用示例<a name="section679174612413"></a>**
 
-```
+```python
 from mx_rag.document.loader import ImageLoader
 loader = ImageLoader("test.png")
 docs= loader.lazy_load()
@@ -1166,7 +1166,7 @@ print(list(docs))
 
 **函数原型<a name="section19107115214394"></a>**
 
-```
+```python
 def lazy_load()
 ```
 
@@ -1186,7 +1186,7 @@ def lazy_load()
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.document.loader import MarkdownLoader
 MarkdownLoader(file_path, vlm, process_images_separately)
 ```
@@ -1201,7 +1201,7 @@ MarkdownLoader(file_path, vlm, process_images_separately)
 
 **调用示例<a name="section1611210845612"></a>**
 
-```
+```python
 from mx_rag.document.loader import MarkdownLoader
 from mx_rag.llm import Img2TextLLM, LLMParameterConfig
 from mx_rag.utils import ClientParam
@@ -1229,7 +1229,7 @@ print(list(docs))
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def lazy_load()
 ```
 
@@ -1251,7 +1251,7 @@ def lazy_load()
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.document.splitter import MarkdownTextSplitter
 MarkdownTextSplitter(chunk_size, chunk_overlap, header_level, **kwargs)
 ```
@@ -1267,7 +1267,7 @@ MarkdownTextSplitter(chunk_size, chunk_overlap, header_level, **kwargs)
 
 **调用示例<a name="section1611210845612"></a>**
 
-```
+```python
 from mx_rag.document.loader import MarkdownLoader
 from mx_rag.document.splitter import MarkdownTextSplitter
 from mx_rag.llm import Img2TextLLM, LLMParameterConfig
@@ -1302,7 +1302,7 @@ for doc in docs:
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def split_text(text)
 ```
 

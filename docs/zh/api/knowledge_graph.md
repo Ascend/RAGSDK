@@ -9,7 +9,7 @@
 
 - **三元组抽取提示（TRIPLE\_INSTRUCTION\_CN）：**
 
-    ```
+    ```text
     
     TRIPLE_INSTRUCTIONS_CN = {
         "entity_relation": """
@@ -114,7 +114,7 @@
 
 - **实体概念化提示 \(ENTITY\_PROMPT\_CN\):**
 
-    ```
+    ```text
     ENTITY_PROMPT_CN = '''
     ## 目标
     给定一个实体及其背景，提供多个短语来表示该实体的抽象概念。
@@ -150,7 +150,7 @@
 
 - **事件概念化提示 \(EVENT\_PROMPT\_CN\):**
 
-    ```
+    ```text
     EVENT_PROMPT_CN = '''
     ## 目标
     给定一个事件，提供多个短语来表示该事件的抽象概念。 
@@ -181,7 +181,7 @@
 
 - **关系概念化提示 \(RELATION\_PROMPT\_CN\):**
 
-    ```
+    ```text
     RELATION_PROMPT_CN = '''
     ## 目标
     给定一个关系，提供多个短语来表示该关系的抽象概念。
@@ -210,7 +210,7 @@
 
 - **三元组抽取提示（TRIPLE\_INSTRUCTIONS\_EN）：**
 
-    ```
+    ```text
     TRIPLE_INSTRUCTIONS_EN = {
         "entity_relation": """Given a passage, summarize all the important entities and the relations between them in 
         a concise manner. Relations should briefly capture the connections between entities, without repeating information 
@@ -286,7 +286,7 @@
 
 - **实体概念化提示 \(ENTITY\_PROMPT\_EN\):**
 
-    ```
+    ```text
     ENTITY_PROMPT_EN = '''I will give you an ENTITY. You need to give several phrases containing 1-2 words for the 
                 ABSTRACT ENTITY of this ENTITY.
                 You must return your answer in the following format: phrases1, phrases2, phrases3,...
@@ -321,7 +321,7 @@
 
 - **事件概念化提示 \(EVENT\_PROMPT\_EN\):**
 
-    ```
+    ```text
     EVENT_PROMPT_EN = '''I will give you an EVENT. You need to give several phrases containing 1-2 words for the 
                 ABSTRACT EVENT of this EVENT.
                 You must return your answer in the following format: phrases1, phrases2, phrases3,...
@@ -346,7 +346,7 @@
 
 - **关系概念化提示 \(RELATION\_PROMPT\_EN\):**
 
-    ```
+    ```text
     RELATION_PROMPT_EN = '''I will give you an RELATION. You need to give several phrases containing 1-2 words for 
                 the ABSTRACT RELATION of this RELATION.
                 You must return your answer in the following format: phrases1, phrases2, phrases3,...
@@ -378,7 +378,7 @@
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.graphrag import GraphRAGPipeline
 
 GraphRAGPipeline(work_dir, llm, embedding_model, dim, rerank_model, graph_type,graph_name, encrypt_fn,decrypt_fn,kwargs)
@@ -390,14 +390,14 @@ GraphRAGPipeline(work_dir, llm, embedding_model, dim, rerank_model, graph_type,g
 |--|--|--|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 |work_dir|str|必选| 知识图谱工作目录，其剩余空间至少为5GB，保存生成的图json中间文件，如果使用的MindFAISS，对应的向量数据也在该路径下。<br>不能为相对路径，路径长度不能超过1024，不能为软链接且不允许存在".."。<br>路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。                                                                                                                                                                                                                   |
 |llm|Text2TextLLM|必选| 大模型接口实例对象。                                                                                                                                                                                                                                                                                                                                                                                                                     |
-|embedding_model|Embeddings|必选| langchain_core.embeddings.Embeddings的子类，取值包含：<li>mx_rag.embedding.local.TextEmbedding<li>mx_rag.embedding.service.TEIEmbedding                                                                                                                                                                                                                                                                                                 |
+|embedding_model|Embeddings|必选| langchain_core.embeddings.Embeddings的子类，取值包含：<li>mx_rag.embedding.local.TextEmbedding</li><li>mx_rag.embedding.service.TEIEmbedding</li>                                                                                                                                                                                                                                                                                                 |
 |dim|int|必选| 嵌入模型生成的向量维度，其取值范围为[1, 1024 * 1024]。                                                                                                                                                                                                                                                                                                                                                                                            |
-|rerank_model|Reranker|可选| mx_rag_reranker.Reranker的子类，默认为None，取值包含：<li>mx_rag.reranker.local.LocalReranker<li>mx_rag.reranker.service.TEIReranker                                                                                                                                                                                                                                                                                                        |
+|rerank_model|Reranker|可选| mx_rag_reranker.Reranker的子类，默认为None，取值包含：<li>mx_rag.reranker.local.LocalReranker</li><li>mx_rag.reranker.service.TEIReranker</li>                                                                                                                                                                                                                                                                                                        |
 |graph_type|str|可选| 图数据库类型，默认为“networkx”，其取值仅支持["networkx", "opengauss"]。                                                                                                                                                                                                                                                                                                                                                                          |
 |graph_name|str|可选| 知识图谱名称，默认为“graph”，其取值范围为[1, 255]，只能由标识符组成。                                                                                                                                                                                                                                                                                                                                                                                     |
-|encrypt_fn|Callable|可选| 回调方法，对调用[build_graph](#build_graph)产生的json文件内容加密。请注意提供正确加密方法并保证安全性，返回值是加密后的字符串。<br>> [!NOTICE] 须知 如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。                                                                                                                                                                                                                                                                               |
+|encrypt_fn|Callable|可选| 回调方法，对调用[build_graph](#build_graph)产生的json文件内容加密。请注意提供正确加密方法并保证安全性，返回值是加密后的字符串。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。                                                                                                                                                                                                                                                                               |
 |decrypt_fn|Callable|可选| 回调方法，在graph_type为"networkx"时，在检索时会对"{graph_name}.json"解密读取。请注意提供正确解密方法并保证安全性，返回值是解密后的字符串。                                                                                                                                                                                                                                                                                                                                      |
-|kwargs|Dict|可选| 扩展参数列表：<li>age_graph：当图数据库类型为openGauss时，需要指定该参数，类型为openGaussAGEGraph，为openGuass图数据库连接实例。<li>devs：指定NPU设备，为一个只包含一个元素的list，类型list[int]。<li>node_vector_store: 用于存储向量化节点以实现相似节点搜索的向量数据库。默认为None，此时将使用MindFAISS作为向量数据库。<li>conceptualize: 是否进行概念聚类，默认为False，不聚类时参数concept_vector_store不生效。<li>concept_vector_store: 在对概念进行聚类时，用于存储向量化概念以实现相似概念搜索的向量数据库。默认为None，此时将使用MindFAISS作为向量数据库。<br>> [!NOTE] 说明 age_graph由用户控制传入，请使用安全的连接方式。 |
+|kwargs|Dict|可选| 扩展参数列表：<li>age_graph：当图数据库类型为openGauss时，需要指定该参数，类型为openGaussAGEGraph，为openGuass图数据库连接实例。</li><li>devs：指定NPU设备，为一个只包含一个元素的list，类型list[int]。</li><li>node_vector_store: 用于存储向量化节点以实现相似节点搜索的向量数据库。默认为None，此时将使用MindFAISS作为向量数据库。</li><li>conceptualize: 是否进行概念聚类，默认为False，不聚类时参数concept_vector_store不生效。</li><li>concept_vector_store: 在对概念进行聚类时，用于存储向量化概念以实现相似概念搜索的向量数据库。默认为None，此时将使用MindFAISS作为向量数据库。</li><br>age_graph由用户控制传入，请使用安全的连接方式。 |
 
 **返回值说明<a name="section53998444524"></a>**
 
@@ -405,7 +405,7 @@ GraphRAGPipeline对象。
 
 **调用示例<a name="section8509453104117"></a>**
 
-```
+```python
 import getpass
 from paddle.base import libpaddle  # fix std::bad_alloc
 from langchain_opengauss import OpenGaussSettings, openGaussAGEGraph
@@ -471,7 +471,7 @@ print(result)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def upload_files(file_list, loader_mng)
 ```
 
@@ -494,7 +494,7 @@ def upload_files(file_list, loader_mng)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def build_graph(lang, pad_token, **kwargs)
 ```
 
@@ -504,7 +504,7 @@ def build_graph(lang, pad_token, **kwargs)
 |--|--|--|--|
 |lang|Lang|否|语料所用的语言，默认取值为Lang.EN，即英文语料。|
 |pad_token|str|否|大语言模型使用填充字符，默认为空字符，其取值范围为[0, 255]。|
-|kwargs|dict|否|扩展参数列表：<li>max_workers：构建知识图谱的线程数。默认值为5。<li>batch_size，节点向量化，检索等操作批大小，默认为32。<li>top_k：在对图节点概念进行聚类时，向量检索返回的最相似概念数量。默认值为5，取值范围为[1, 100]。<li>threshold：向量相似性阈值。低于此值的相似性结果将被过滤。默认值为0.3，取值范围为[0.0,1.0]。triple_instructions: 用于指导大型语言模型（LLM）从文档中抽取关系的指令，字典类型。默认值为None，此时将根据语言使用默认值（中文为TRIPLE_INSTRUCTIONS_CN，英文为TRIPLE_INSTRUCTIONS_EN）。用户可以通过提供一个字典来覆盖默认的抽取指令。该字典必须包含以下键：<ul><li>entity_relation： 对应的值定义实体关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。<li>event_entity：对应的值定义事件实体抽取的指令, 字符串类型，长度范围为[1, 1048576]。<li>event_relation：对应的值定义事件关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。<br>每个键对应的值定义了特定提取任务的指令。</ul><li>conceptualizer_prompts: 用于指导LLM进行概念化的提示，字典类型。默认值为None。用户可以通过提供一个字典来覆盖默认的概念化提示。该字典必须包含以下键：<ul><li>entity: 对应的值定义对图中实体进行概念化的提示， 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为ENTITY_PROMPT_CN， 英文为ENTITY_PROMPT_EN）。<li>event: 定义对图中事件进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为EVENT_PROMPT_CN， 英文为EVENT_PROMPT_EN）。<li>relation: 定义对图中关系进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为RELATION_PROMPT_CN， 英文为RELATION_PROMPT_EN）。|
+|kwargs|dict|否|扩展参数列表：<li>max_workers：构建知识图谱的线程数。默认值为5。</li><li>batch_size，节点向量化，检索等操作批大小，默认为32。</li><li>top_k：在对图节点概念进行聚类时，向量检索返回的最相似概念数量。默认值为5，取值范围为[1, 100]。</li><li>threshold：向量相似性阈值。低于此值的相似性结果将被过滤。默认值为0.3，取值范围为[0.0,1.0]。</li><li>triple_instructions: 用于指导大型语言模型（LLM）从文档中抽取关系的指令，字典类型。默认值为None，此时将根据语言使用默认值（中文为TRIPLE_INSTRUCTIONS_CN，英文为TRIPLE_INSTRUCTIONS_EN）。用户可以通过提供一个字典来覆盖默认的抽取指令。该字典必须包含以下键：<ul><li>entity_relation：对应的值定义实体关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。</li><li>event_entity：对应的值定义事件实体抽取的指令, 字符串类型，长度范围为[1, 1048576]。</li><li>event_relation：对应的值定义事件关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。<br>每个键对应的值定义了特定提取任务的指令。</li></ul></li><li>conceptualizer_prompts: 用于指导LLM进行概念化的提示，字典类型。默认值为None。用户可以通过提供一个字典来覆盖默认的概念化提示。该字典必须包含以下键：<ul><li>entity: 对应的值定义对图中实体进行概念化的提示， 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为ENTITY_PROMPT_CN，英文为ENTITY_PROMPT_EN）。</li><li>event: 定义对图中事件进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为EVENT_PROMPT_CN，英文为EVENT_PROMPT_EN）。</li><li>relation: 定义对图中关系进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为RELATION_PROMPT_CN，英文为RELATION_PROMPT_EN）。</li></ul></li>|
 
 **返回值说明<a name="section14945144616426"></a>**
 
@@ -531,7 +531,7 @@ def build_graph(lang, pad_token, **kwargs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def retrieve_graph(question, **kwargs)
 ```
 
@@ -540,7 +540,7 @@ def retrieve_graph(question, **kwargs)
 |参数名|数据类型|是否必选|说明|
 |--|--|--|--|
 |question|str|是|用户问题，字符串长度范围[1, 1000*1000]|
-|kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。<li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。<li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。<li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。<li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。<li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。|
+|kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。</li><li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。</li><li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。</li><li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。</li><li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。</li><li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。</li>|
 
 **返回值说明<a name="section14945144616426"></a>**
 
@@ -556,7 +556,7 @@ def retrieve_graph(question, **kwargs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def as_retriever(**kwargs)
 ```
 
@@ -564,7 +564,7 @@ def as_retriever(**kwargs)
 
 |参数名|数据类型|是否必选|说明|
 |--|--|--|--|
-|kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。<li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。<li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。<li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。<li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。<li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。|
+|kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。</li><li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。</li><li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。</li><li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。</li><li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。</li><li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。</li>|
 
 **返回值说明<a name="section14945144616426"></a>**
 
@@ -582,7 +582,7 @@ def as_retriever(**kwargs)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.graphrag import GraphEvaluator
 
 GraphEvaluator(llm, llm_config)
@@ -601,7 +601,7 @@ GraphEvaluator对象。
 
 **调用示例<a name="section8509453104117"></a>**
 
-```
+```python
 import json
 from paddle.base import libpaddle
 from mx_rag.graphrag.graph_evaluator import GraphEvaluator
@@ -629,7 +629,7 @@ with open(relations_path, "r", encoding="utf-8") as f:
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def evaluate(relations)
 ```
 

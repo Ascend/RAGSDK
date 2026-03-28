@@ -13,7 +13,7 @@ Chain定义实现了对接大模型客户端。
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.chain.base import Chain
 Chain()
 ```
@@ -26,7 +26,7 @@ Chain()
 
 **函数原型<a name="section3491114194215"></a>**
 
-```
+```python
 def query(text, llm_config, *args, **kwargs)
 ```
 
@@ -49,7 +49,7 @@ def query(text, llm_config, *args, **kwargs)
 
 **函数原型<a name="section18642312124813"></a>**
 
-```
+```python
 from mx_rag.chain import Text2ImgChain
 Text2ImgChain(multi_model)
 ```
@@ -68,7 +68,7 @@ Text2ImgChain(multi_model)
 
 **函数原型<a name="section1011494243817"></a>**
 
-```
+```python
 def query(text, llm_config, *args, **kwargs)
 ```
 
@@ -90,7 +90,7 @@ def query(text, llm_config, *args, **kwargs)
 
 **调用示例<a name="section17535145902914"></a>**
 
-```
+```python
 from mx_rag.chain import Text2ImgChain
 from mx_rag.llm import Text2ImgMultiModel
 from mx_rag.utils import ClientParam
@@ -111,7 +111,7 @@ print(llm_data)
 
 **函数原型<a name="section33741681180"></a>**
 
-```
+```python
 from mx_rag.chain import Img2ImgChain
 Img2ImgChain(multi_model, retriever)
 ```
@@ -131,7 +131,7 @@ Img2ImgChain(multi_model, retriever)
 
 **函数原型<a name="section17985124181613"></a>**
 
-```
+```python
 def query(text, llm_config, *args, **kwargs)
 ```
 
@@ -153,7 +153,7 @@ def query(text, llm_config, *args, **kwargs)
 
 **调用示例<a name="section055181421218"></a>**
 
-```
+```python
 # 该用例基于知识库中已上传的图片检索出相关图片，结合提示词发送给大模型生成图片
 from paddle.base import libpaddle
 from mx_rag.chain import Img2ImgChain
@@ -191,7 +191,7 @@ print(llm_data)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.chain import SingleText2TextChain
 SingleText2TextChain(llm, retriever, reranker, prompt, sys_messages, source, user_content_builder)
 ```
@@ -210,7 +210,7 @@ SingleText2TextChain(llm, retriever, reranker, prompt, sys_messages, source, use
 
 - <a name="li19440111017591"></a>参数user\_content\_builder的默认函数：
 
-```
+```python
 def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
     """
        默认的用户输入拼接逻辑。
@@ -254,7 +254,7 @@ RAG SDK对话功能。
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def query(text, llm_config, *args, **kwargs) 
 ```
 
@@ -277,7 +277,7 @@ def query(text, llm_config, *args, **kwargs)
 
 - **基本对话功能**
 
-```
+```python
 from paddle.base import libpaddle
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from mx_rag.chain import SingleText2TextChain
@@ -343,7 +343,7 @@ print(response)
 
 - **图文并茂对话功能**
 
-```
+```python
 from paddle.base import libpaddle
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from mx_rag.chain import SingleText2TextChain
@@ -481,7 +481,7 @@ print(response)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.chain import ParallelText2TextChain
 class ParallelText2TextChain(SingleText2TextChain)
 ```
@@ -500,7 +500,7 @@ class ParallelText2TextChain(SingleText2TextChain)
 
 - 参数user\_content\_builder的默认函数：
 
-```
+```python
 def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
     """
        默认的用户输入拼接逻辑。
@@ -544,7 +544,7 @@ RAG SDK对话功能。
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def query(text: str, llm_config, *args, **kwargs)
 ```
 
@@ -561,11 +561,11 @@ def query(text: str, llm_config, *args, **kwargs)
 
 |数据类型|说明|
 |--|--|
-|Union[Dict, Iterator[Dict]]|返回字典或者迭代器，stream设置成True表示返回迭代器，否则返回字典。其中Dict内容为：<li>带知识来源：{"prompt": prompt, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}<li>不带知识来源：{"prompt": prompt, "result": data}|
+|Union[Dict, Iterator[Dict]]|返回字典或者迭代器，stream设置成True表示返回迭代器，否则返回字典。其中Dict内容为：<li>带知识来源：{"prompt": prompt, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}</li><li>不带知识来源：{"prompt": prompt, "result": data}</li>|
 
 **调用示例<a name="section352434893611"></a>**
 
-```
+```python
 from mx_rag.chain import ParallelText2TextChain
 from mx_rag.llm import Text2TextLLM
 from mx_rag.embedding.local import TextEmbedding
@@ -599,7 +599,7 @@ print(answer)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.chain.single_text_to_text import GraphRagText2TextChain
 GraphRagText2TextChain(llm, retriever, reranker)
 ```
@@ -622,7 +622,7 @@ GraphRagText2TextChain(llm, retriever, reranker)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def query(text, llm_config, *args, **kwargs)
 ```
 

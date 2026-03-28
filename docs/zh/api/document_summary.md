@@ -11,7 +11,7 @@
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.summary import Summary
 Summary(llm, llm_config)
 ```
@@ -25,7 +25,7 @@ Summary(llm, llm_config)
 
 **调用示例<a name="section129100236713"></a>**
 
-```
+```python
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.document.loader import DocxLoader
 from mx_rag.llm import Text2TextLLM
@@ -51,7 +51,7 @@ print(res)
 
 **函数原型<a name="section1011494243817"></a>**
 
-```
+```python
 def summarize(texts, not_summarize_threshold, prompt)
 ```
 
@@ -77,7 +77,7 @@ def summarize(texts, not_summarize_threshold, prompt)
 
 **函数原型<a name="section1011494243817"></a>**
 
-```
+```python
 def merge_text_summarize(texts, merge_threshold, not_summarize_threshold, prompt)
 ```
 

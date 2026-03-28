@@ -10,7 +10,7 @@
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.retrievers import Retriever
 # 所有参数需通过关键字参数传递
 Retriever(vector_store, document_store, embed_func, k, score_threshold)
@@ -35,7 +35,7 @@ Retriever(vector_store, document_store, embed_func, k, score_threshold)
 
 **调用示例<a name="section723323518481"></a>**
 
-```
+```python
 from paddle.base import libpaddle
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -107,7 +107,7 @@ print(res)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def set_filter(filter_dict)
 ```
 
@@ -127,7 +127,7 @@ def set_filter(filter_dict)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.retrievers import MultiQueryRetriever
 # 所有参数需通过关键字参数传递
 MultiQueryRetriever(llm, prompt, parser, llm_config)
@@ -144,7 +144,7 @@ MultiQueryRetriever(llm, prompt, parser, llm_config)
 
 **调用示例<a name="section129100236713"></a>**
 
-```
+```python
 #知识库构建的示例请参考以上Retriever调用示例STET1，本示例默认已经完成离线知识库构建。
 
 from mx_rag.retrievers import MultiQueryRetriever
@@ -176,7 +176,7 @@ print(res)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.retrievers.bm_retriever import BMRetriever
 # 所有参数需通过关键字参数传递
 BMRetriever(docs, llm, k, llm_config, prompt, preprocess_func)
@@ -195,7 +195,7 @@ BMRetriever(docs, llm, k, llm_config, prompt, preprocess_func)
 
 **调用示例<a name="section129100236713"></a>**
 
-```
+```python
 from mx_rag.document.loader import DocxLoader
 from mx_rag.chain import SingleText2TextChain
 from mx_rag.llm import Text2TextLLM
@@ -222,7 +222,7 @@ print(res)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.retrievers.full_text_retriever import FullTextRetriever
 FullTextRetriever(document_store, k)
 ```
@@ -237,7 +237,7 @@ FullTextRetriever(document_store, k)
 
 **调用示例<a name="section129100236713"></a>**
 
-```
+```python
 import getpass
 from pymilvus import MilvusClient
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -265,7 +265,7 @@ print(full_retrive.invoke("爪哇岛"))
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def set_filter(filter_dict)
 ```
 

@@ -10,7 +10,7 @@
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.reranker import Reranker
 Reranker(k) # 抽象类
 ```
@@ -33,7 +33,7 @@ Reranker对象。
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @abstractmethod
 def rerank(query, texts, batch_size)
 ```
@@ -60,7 +60,7 @@ def rerank(query, texts, batch_size)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def rerank_top_k(objs, scores)
 ```
 
@@ -90,7 +90,7 @@ def rerank_top_k(objs, scores)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.reranker.local import LocalReranker
 LocalReranker(model_path, dev_id, k, use_fp16)
 ```
@@ -99,7 +99,7 @@ LocalReranker(model_path, dev_id, k, use_fp16)
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|model_path|str|必选|模型权重文件目录，路径长度不能超过1024，不能为软链接和相对路径。<li>目录下的各文件大小不能超过10GB、深度不超过64，且文件总个数不超过512。<li>运行用户的属组，以及非运行用户不能有该目录下文件的写权限。<li>目录下的文件以及文件的上一级目录的属组必须是运行用户。<br>存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
+|model_path|str|必选|模型权重文件目录，路径长度不能超过1024，不能为软链接和相对路径。<li>目录下的各文件大小不能超过10GB、深度不超过64，且文件总个数不超过512。</li><li>运行用户的属组，以及非运行用户不能有该目录下文件的写权限。</li><li>目录下的文件以及文件的上一级目录的属组必须是运行用户。</li><br>存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
 |dev_id|int|可选|模型运行在哪张卡上，取值范围：[0, 63]，默认值为0。|
 |k|int|可选|精排后返回最相关的k个结果，取值范围：[1, 10000]，默认值为1。|
 |use_fp16|bool|可选|是否将模型转换为半精度，默认值为True。|
@@ -110,7 +110,7 @@ LocalReranker对象。
 
 **调用示例<a name="section1911333395714"></a>**
 
-```
+```python
 from paddle.base import libpaddle
 from langchain_core.documents import Document
 from mx_rag.reranker.local import LocalReranker
@@ -138,7 +138,7 @@ print(res)
 
 **函数原型<a name="section544124513018"></a>**
 
-```
+```python
 @staticmethod
 def create(**kwargs)
 ```
@@ -163,7 +163,7 @@ def create(**kwargs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def rerank(query, texts, batch_size)
 ```
 
@@ -191,7 +191,7 @@ def rerank(query, texts, batch_size)
 
 **函数原型<a name="section12411139493"></a>**
 
-```
+```python
 from mx_rag.reranker.service import TEIReranker
 TEIReranker(url,  k, client_param)
 ```
@@ -202,7 +202,7 @@ TEIReranker(url,  k, client_param)
 |--|--|--|--|
 |url|str|必选|TEI rerank服务地址，字符串长度范围[1, 128]。支持"/rerank"、"/v1/rerank"接口。<br>> [!NOTE] 说明 当前基于TEI框架创建的rerank服务不支持https协议，为安全起见可通过搭建一个nginx服务，使该服务与rerank服务处于一个可信网络。使用时客户端以https方式访问nginx，nginx转发请求到rerank服务。|
 |k|int|可选|精排后返回最相关的k个结果，取值范围[1, 10000]，默认值为1。|
-|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./univers_api.md#clientparam)。|
+|client_param|ClientParam|可选|https客户端配置参数，默认值为ClientParam()，具体描述请参见[ClientParam](./universal_api.md#clientparam)。|
 
 **返回值说明<a name="section53998444524"></a>**
 
@@ -210,7 +210,7 @@ TEIReranker对象。
 
 **调用示例<a name="section775131316315"></a>**
 
-```
+```python
 from paddle.base import libpaddle
 from mx_rag.reranker.service import TEIReranker
 from mx_rag.utils import ClientParam
@@ -231,7 +231,7 @@ print(res)
 
 **函数原型<a name="section544124513018"></a>**
 
-```
+```python
 @staticmethod
 def create(**kwargs)
 ```
@@ -256,7 +256,7 @@ def create(**kwargs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def rerank(query, texts, batch_size)
 ```
 
@@ -284,7 +284,7 @@ reranker的工厂方法类，用于生产RAG SDK的reranker。
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.reranker import RerankerFactory
 class RerankerFactory(ABC):
     _NPU_SUPPORT_RERANKER: Dict[str, Callable[[Dict[str, Any]], Reranker]] = {
@@ -295,7 +295,7 @@ class RerankerFactory(ABC):
 
 **调用示例<a name="section437712181015"></a>**
 
-```
+```python
 from paddle.base import libpaddle
 from mx_rag.reranker import RerankerFactory
 from mx_rag.utils import ClientParam
@@ -319,7 +319,7 @@ print(tei_scores)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 @classmethod
 def create_reranker(cls, **kwargs):
 ```
@@ -328,8 +328,8 @@ def create_reranker(cls, **kwargs):
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|similarity_type|str|必选|该参数在kwargs中，reranker的类型。<br>可取值：<li>local_reranker<li>tei_reranker|
-|**kwargs|Any|可选|除去similarity_type，其余参数为构造reranker的参数。<li>如果是local_reranker，请参见[类功能](#ZH-CN_TOPIC_0000002419262724)。<li>如果是tei_reranker，请参见[类功能](#ZH-CN_TOPIC_0000002419262728)。|
+|similarity_type|str|必选|该参数在kwargs中，reranker的类型。<br>可取值：<li>local_reranker</li><li>tei_reranker</li>|
+|**kwargs|Any|可选|除去similarity_type，其余参数为构造reranker的参数。<li>如果是local_reranker，请参见[类功能](#ZH-CN_TOPIC_0000002419262724)。</li><li>如果是tei_reranker，请参见[类功能](#ZH-CN_TOPIC_0000002419262728)。</li>|
 
 ### MixRetrieveReranker<a name="ZH-CN_TOPIC_0000002419102832"></a>
 
@@ -341,7 +341,7 @@ def create_reranker(cls, **kwargs):
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 from mx_rag.reranker.local import MixRetrieveReranker
 MixRetrieveReranker(k, baseline, amplitude, slope, midpoint)
 ```
@@ -366,7 +366,7 @@ MixRetrieveReranker对象。
 
 **调用示例<a name="section1911333395714"></a>**
 
-```
+```python
 from langchain_core.documents import Document
 from mx_rag.reranker.local import MixRetrieveReranker
 
@@ -398,7 +398,7 @@ res = reranker.rerank(query, docs)
 
 **函数原型<a name="section18789201331417"></a>**
 
-```
+```python
 def rerank(query, texts, batch_size)
 ```
 
