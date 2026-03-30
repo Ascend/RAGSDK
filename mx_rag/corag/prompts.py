@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -25,10 +25,11 @@ def get_generate_subquery_prompt(query: str, past_subqueries: List[str], past_su
     if len(past_subqueries) != len(past_subanswers):
         raise ValueError("past_subqueries and past_subanswers must have the same length")
     
-    past = ''
+    past_parts = []
     for idx, (subquery, subanswer) in enumerate(zip(past_subqueries, past_subanswers)):
-        past += f"""Step {idx+1}: {subquery}
-Answer {idx + 1}: {subanswer}\n"""
+        past_parts.append(f"""Step {idx+1}: {subquery}
+Answer {idx + 1}: {subanswer}\n""")
+    past = ''.join(past_parts)
     past = past.strip()
 
     prompt = f"""As an assistant using a search engine to iteratively answer the main question, 
@@ -53,9 +54,11 @@ Please provide only the follow-up question without any additional explanation or
 
 
 def get_generate_intermediate_answer_prompt(subquery: str, documents: List[str]) -> str:
-    context = ''
+    context_parts = []
     for idx, doc in enumerate(documents):
-        context += f"""Document {idx+1}:\n{doc}\n\n"""
+        context_parts.append(f"""Document {idx+1}:
+{doc}\n\n""")
+    context = ''.join(context_parts)
 
     prompt = f"""Using only the information provided in the following 
 documents, please answer the given question.
@@ -86,10 +89,11 @@ def get_generate_final_answer_prompt(
         raise ValueError("interaction_queries and interaction_answers must have the same length")
     
     # Build interaction history
-    interaction_history = ''
+    history_parts = []
     for idx, (subquery, subanswer) in enumerate(zip(interaction_queries, interaction_answers)):
-        interaction_history += f"""[Subquery {idx+1}] {subquery}
-[Response {idx+1}] {subanswer}\n"""
+        history_parts.append(f"""[Subquery {idx+1}] {subquery}
+[Response {idx+1}] {subanswer}\n""")
+    interaction_history = ''.join(history_parts)
     interaction_history = interaction_history.strip()
 
     # Build reference context

@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -33,15 +33,20 @@ from mx_rag.corag.prompts import (
 
 
 def _process_subquery(input_subquery: str) -> Tuple[str, Optional[str]]:
+    # 限制输入长度，防止ReDoS攻击
+    if len(input_subquery) > 10000:
+        return input_subquery.strip(), None
+    
     # Extract reasoning blocks from the subquery
-    reasoning_pattern = r'<reasoning>(.*?)</reasoning>'
-    reasoning_match = re.search(reasoning_pattern, input_subquery, flags=re.DOTALL)
+    # 使用更严格的模式，避免过度回溯
+    reasoning_pattern = r'<reasoning>([^<]*)</reasoning>'
+    reasoning_match = re.search(reasoning_pattern, input_subquery)
     reasoning_content = reasoning_match.group(1).strip() if reasoning_match else None
 
     # Remove reasoning blocks from the original text
-    processed_subquery = re.sub(reasoning_pattern, '', input_subquery, flags=re.DOTALL)
+    processed_subquery = re.sub(reasoning_pattern, '', input_subquery)
     # Also handle original think block format for backward compatibility
-    processed_subquery = re.sub(r'<think>.*?</think>', '', processed_subquery, flags=re.DOTALL)
+    processed_subquery = re.sub(r'<think>([^<]*)</think>', '', processed_subquery)
 
     processed_subquery = processed_subquery.strip()
     # Remove surrounding quotes if present

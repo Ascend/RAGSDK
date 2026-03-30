@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -123,6 +123,11 @@ class CoRagEvaluator:
         Returns:
             句子列表。
         """
+        if text is None:
+            return []
+        # 限制输入长度，防止ReDoS攻击
+        if len(text) > 10000:
+            return [text.strip()]
         return [s.strip() for s in re.split(r'(?<=[.?!])\s+', text) if s.strip()]
 
     def _get_golden_facts(self, item: Dict[str, Any]) -> List[str]:

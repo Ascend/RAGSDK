@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -40,8 +40,8 @@ class CoRagBaseConfig:
     Attributes:
         base_llm: 基础LLM实例，用于生成子查询和答案。
         retrieve_api_url: 检索API的URL地址。
-        num_threads: 并行处理的线程数，默认为4。
-        max_path_length: 最大路径长度，默认为5。
+        num_threads: 并行处理的线程数，默认为8。
+        max_path_length: 最大路径长度，默认为3。
         judge_llm: 判断LLM实例，用于评估答案正确性（可选）。
         final_llm: 最终答案生成LLM实例（可选）。
         sub_answer_llm: 子答案生成LLM实例（可选）。

@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -44,7 +44,8 @@ def _normalize_retrieve_api_results(results):
 
 def search_by_retrieve_api(query: str, url: str) -> List[Dict]:
     try:
-        response = requests.post(url, json={'query': query}, headers={"Content-Type": "application/json"})
+        # 设置超时时间为10秒，防止资源消耗攻击
+        response = requests.post(url, json={'query': query}, headers={"Content-Type": "application/json"}, timeout=10)
         if response.status_code == 200:
             return _normalize_retrieve_api_results(response.json())
         else:
@@ -58,6 +59,9 @@ def search_by_retrieve_api(query: str, url: str) -> List[Dict]:
 def normalize_text(text: str) -> str:
     """标准化文本：小写、移除标点、冠词和多余空格。"""
     if text is None:
+        return ""
+    # 限制输入长度，防止ReDoS攻击
+    if len(text) > 10000:
         return ""
     text = text.lower()
     text = re.sub(r'[^\w\s]', ' ', text)
@@ -130,7 +134,7 @@ def check_answer_with_llm_judge(
             return True
         return False
     except Exception as e:
-        logger.warning(f"  [WARNING] LLM judge error: {e}, falling back to string matching")
+        logger.warning(f"LLM judge error: {e}, falling back to string matching")
         return check_answer(prediction, ground_truths)
 
 

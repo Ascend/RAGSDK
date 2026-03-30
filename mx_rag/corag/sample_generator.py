@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -19,7 +19,7 @@ See the Mulan PSL v2 for more details.
 """
 import json
 import os
-import random
+import secrets
 import traceback
 from typing import List, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -176,7 +176,7 @@ class SampleGenerator:
 
                 if is_correct:
                     valid_path = {
-                        "id": item.get('id', str(random.randint(0, DEFAULT_RANDOM_ID_RANGE))),
+                        "id": item.get('id', str(secrets.randbelow(DEFAULT_RANDOM_ID_RANGE + 1))),
                         "query": query,
                         "answers": ground_truths,
                         "generated_final_answer": final_ans,
@@ -220,7 +220,7 @@ class SampleGenerator:
         Args:
             input_file: 输入数据文件路径（JSON格式）。
             output_file: 输出文件路径。
-            n_samples: 每个查询采样的路径数量，默认为5。
+            n_samples: 每条路径的最大采样次数，默认为5。
             
         Returns:
             处理后的样本列表。
