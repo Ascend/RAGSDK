@@ -32,7 +32,7 @@ get_version() {
       VERSION=${VERSION%.*}
     fi
   else
-    VERSION="7.0.RC1"
+    VERSION="26.0.0"
   fi
 
 }

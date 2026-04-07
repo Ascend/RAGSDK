@@ -44,7 +44,7 @@ def get_ci_version_info():
     :return: version number
     """
     ci_version_file = this_directory.joinpath('ci', 'config', 'config.ini')
-    version = '7.0.RC1'
+    version = '26.0.0'
     logging.info("get version from %s", ci_version_file)
     try:
         R_FLAGS = os.O_RDONLY
