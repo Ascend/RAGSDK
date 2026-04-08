@@ -1,5 +1,6 @@
 # RAGSDK
 
+- [RAGSDK](#ragsdk)
 - [最新消息](#最新消息)
 - [简介](#简介)
 - [目录结构](#目录结构)
@@ -71,26 +72,26 @@ RAGSDK支持在容器内部署和在物理机内部署两种安装方式。
 
 在RAGSDK容器中，构建run包以及执行ut的流程。
 
-1. 到[acendhub](https://www.hiascend.com/developer/ascendhub/detail/ragsdk)，下载ragsdk镜像，运行容器
+1. 从[ascendhub](https://www.hiascend.com/developer/ascendhub/detail/ragsdk)下载ragsdk镜像，运行容器
   
-2. 下载代码到本地
+2. 在容器中克隆该仓库
 
   ```bash
   git clone https://gitcode.com/Ascend/RAGSDK.git
   cd RAGSDK
   ```
 
-3. 执行构建脚本
+3. 进入RAGSDK的子目录 `build` 中，执行构建脚本
 
   ```bash
   cd build
   bash build.sh
   ```
 
-4. 构建完之后，run包在./ouput/目录下，安装run包
+4. 构建完之后，run包存放在RAGSDK的子目录 `output` 下，进入 `output` 目录安装run包
 
   ```bash
-  cd ../output/
+  cd ./output/
   ./Ascend-mindxsdk-mxrag_{version}_linux-{arch}.run --install --install-path=<安装路径> --platform=<chip_type>
   ```
 
@@ -98,10 +99,10 @@ RAGSDK支持在容器内部署和在物理机内部署两种安装方式。
   >
   > \<chip_type>表示芯片类型，可在安装昇腾AI处理器的服务器执行npu-smi info命令进行查询，将查询到的“Name”最后一位数字删掉，即是--platform的取值。若是Atlas 800I A3 超节点服务器则取值为A3。
 
-5. 执行测试用例
+5. 安装完run包后，进入RAGSDK的子目录 `test` 中执行测试用例
 
   ```bash
-  cd ../tests/
+  cd ./tests/
   bash run_py_test.sh
   ```
 
