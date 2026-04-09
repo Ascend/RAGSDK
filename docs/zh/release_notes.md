@@ -30,7 +30,7 @@
 
 |产品名称| 版本     |
 |--|--------|
-|Ascend HDK| 26.0.0 |
+|Ascend HDK| 26.0.RC1 |
 |CANN| 9.0.0  |
 
 ## 病毒扫描结果<a name="ZH-CN_TOPIC_0000002492442006"></a>
@@ -45,7 +45,7 @@
 
 | MindSDK软件版本    |MindSDK待升级版本|CANN版本兼容性|Ascend HDK版本兼容性|
 |----------------|--|--|--|
-| MindSDK 26.0.0 |<li>MindSDK 6.0.RC3及6.0.RC3.x</li><li>MindSDK 6.0.0及6.0.0.x</li><li>MindSDK 7.0.RC1及7.0.RC1.x</li><li>MindSDK 7.1.RC1及7.1.RC1.x</li><li>MindSDK 7.2.RC1及7.2.RC1.x</li><li>MindSDK 7.3.0及7.3.0.x</li>|<li>CANN 8.1.RC1及8.1.RC1.x</li><li>CANN 8.2.RC1及8.2.RC1.x</li><li>CANN 8.3.RC1及8.3.RC1.x</li><li>CANN 8.5.0及8.5.0.x</li><li>CANN 9.0.0及9.0.0.x</li>|<li>Ascend HDK 25.0.RC1及Ascend HDK 25.0.RC1.x</li><li>Ascend HDK 25.2.0及Ascend HDK 25.2.0.x</li><li>Ascend HDK 25.3.RC1及Ascend HDK 25.3.RC1.x</li><li>Ascend HDK 25.5.0及Ascend HDK 25.5.0.x</li><li>Ascend HDK 26.0.0及Ascend HDK 26.0.0.x</li>|
+| MindSDK 26.0.0 |<li>MindSDK 6.0.RC3及6.0.RC3.x</li><li>MindSDK 6.0.0及6.0.0.x</li><li>MindSDK 7.0.RC1及7.0.RC1.x</li><li>MindSDK 7.1.RC1及7.1.RC1.x</li><li>MindSDK 7.2.RC1及7.2.RC1.x</li><li>MindSDK 7.3.0及7.3.0.x</li>|<li>CANN 8.1.RC1及8.1.RC1.x</li><li>CANN 8.2.RC1及8.2.RC1.x</li><li>CANN 8.3.RC1及8.3.RC1.x</li><li>CANN 8.5.0及8.5.0.x</li><li>CANN 9.0.0及9.0.0.x</li>|<li>Ascend HDK 25.0.RC1及Ascend HDK 25.0.RC1.x</li><li>Ascend HDK 25.2.0及Ascend HDK 25.2.0.x</li><li>Ascend HDK 25.3.RC1及Ascend HDK 25.3.RC1.x</li><li>Ascend HDK 25.5.0及Ascend HDK 25.5.0.x</li><li>Ascend HDK 26.0.RC1及Ascend HDK 26.0.RC1.x</li>|
 
 > [!NOTE] 说明 
 >软件版本兼容性是指网元软件版本升级时，关联设备、网管和上层OSS不需要联动升级或打补丁，仍然可以支持已有功能。
