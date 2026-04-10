@@ -44,7 +44,7 @@ class TestQADemo(unittest.TestCase):
             os.remove("./sql.db")
 
     def test_query(self):
-        white_path: list[str] = ["/home"]
+        white_path: list[str] = ["/home","/workspace"]
         file_path: str = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                                        "../../data/gaokao.txt"))
         llm_url: str = "http://127.0.0.1:8000/v1/chat/completions"
@@ -52,7 +52,7 @@ class TestQADemo(unittest.TestCase):
         model_name: str = "Llama3-8B-Chinese-Chat"
         score_threshold: float = 0.5
         query: str = "高考作文语文题目"
-        milvus_url: str = "http://127.0.0.1:19530"
+        milvus_url: str = "http://my-release-milvus.milvus:19530"
         # 离线构建知识库,首先注册文档处理器
         loader_mng = LoaderMng()
         # 加载文档加载器，可以使用mxrag自有的，也可以使用langchain的
