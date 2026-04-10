@@ -39,6 +39,8 @@ apt-get install -y  libpq-dev
 pip3 install uvicorn
 
 # 安装rag
+mkdir -p ${PRESMOKE_DIR}/pkg
+
 cp ${RUN_PKG_PATH}/Ascend-mindxsdk-mxrag_*_linux-aarch64.run ${PRESMOKE_DIR}/pkg/
 cd ${PRESMOKE_DIR}/pkg/
 chmod +x *.run

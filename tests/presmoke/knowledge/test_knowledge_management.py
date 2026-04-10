@@ -38,7 +38,7 @@ class TestKnowledgeManagement(unittest.TestCase):
     def test_knowledge_management(self):
         # 设置向量检索使用的NPU卡
         dev = 0
-        milvus_url: str = "http://127.0.0.1:19530"
+        milvus_url: str = "http://my-release-milvus.milvus:19530"
         # 加载embedding模型
         embed_func = TextEmbedding("/home/data/bge-large-zh-v1.5", dev_id=dev)
         # 初始化向量数据库
