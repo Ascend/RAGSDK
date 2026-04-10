@@ -170,7 +170,7 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
 重新编译安装Python，编译参数示例如下。
 
 ```bash
-./configgure --prefix=/usr/local/python3.11.11 --enable-shared
+./configure --prefix=/usr/local/python3.11.11 --enable-shared
 ```
 
 ## 运行时常见问题<a name="ZH-CN_TOPIC_0000002256346734"></a>

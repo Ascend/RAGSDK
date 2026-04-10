@@ -145,7 +145,7 @@ MultiQueryRetriever(llm, prompt, parser, llm_config)
 **调用示例<a name="section129100236713"></a>**
 
 ```python
-#知识库构建的示例请参考以上Retriever调用示例STET1，本示例默认已经完成离线知识库构建。
+#知识库构建的示例请参考以上Retriever调用示例，本示例默认已经完成离线知识库构建。
 
 from mx_rag.retrievers import MultiQueryRetriever
 from mx_rag.llm import Text2TextLLM
