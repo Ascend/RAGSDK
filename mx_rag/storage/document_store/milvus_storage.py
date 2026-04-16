@@ -254,9 +254,16 @@ class MilvusDocstore(Docstore):
             "search_params": search_params,
             "output_fields": ["page_content", "metadata", "document_name"]
         }
+
         if doc_filter:
-            search_kwargs["filter"] = "document_id IN {document_list}"
-            search_kwargs["filter_params"] = {"document_list": doc_filter}
+            if isinstance(doc_filter, (list, tuple)):
+                conditions = [f"document_id == {id_}" for id_ in doc_filter]
+                filter_expr = " || ".join(conditions)
+            else:
+                filter_expr = f"document_id == {doc_filter}"
+
+            search_kwargs["filter"] = filter_expr
+
         return self.client.search(**search_kwargs)
 
     def _create_collection(self):

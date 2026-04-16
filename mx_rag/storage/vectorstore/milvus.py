@@ -239,7 +239,9 @@ class MilvusDB(VectorStore):
         self._validate_collection_existence()
         if len(ids) >= self.MAX_VEC_NUM:
             raise MilvusError(f"Length of ids is over limit, {len(ids)} >= {self.MAX_VEC_NUM}")
-        res = self.client.delete(collection_name=self._collection_name, ids=ids).get("delete_count")
+        res = self.client.delete(collection_name=self._collection_name, ids=ids)
+        if isinstance(res, dict):
+            res = res.get("delete_count")
         if self._auto_flush:
             self.flush()
         logger.info(f"success delete {len(ids)} vectors in MilvusDB.")
