@@ -1,3 +1,4 @@
+# 接口参考——数据库
 
 ## 数据库<a name="ZH-CN_TOPIC_0000002018595193"></a>
 
@@ -455,7 +456,7 @@ MilvusDocstore(client, collection_name, enable_bm25, bm25_k1, bm25_b, auto_flush
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|client|MilvusClient|必选|MilvusClient实例，具体说明请参考<a href="https://milvus.io/api-reference/pymilvus/v2.4.x/MilvusClient/Client/MilvusClient.md">MilvusClient</a>。<br>> [!NOTE] 说明 MilvusClient由用户控制传入，请使用安全的连接方式。|
+|client|MilvusClient|必选|MilvusClient实例，支持<a href="https://milvus.io/docs/zh/connect-to-milvus-server.md">服务模式</a>和<a href="https://milvus.io/docs/zh/milvus_lite.md">Lite模式</a>。<br>> [!NOTE] 说明 MilvusClient由用户控制传入，请使用安全的连接方式。|
 |collection_name|str|可选|集合名称，不能为空，最大长度为1024，默认为doc_store|
 |enable_bm25|bool|可选|是否开启bm25稀疏向量检索，默认为True，如果此参数设置为False，则全文检索功能不可用(full_text_search方法始终返回[ ])|
 |bm25_k1|float|可选|bm25稀疏向量检索时控制词频饱和度。数值越大，术语频率在文档排序中的重要性越高。取值范围[1.2, 2.0], 默认为1.2，具体说明请参考<a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus全文检索</a>相关部分|
@@ -470,7 +471,11 @@ MilvusDocstore(client, collection_name, enable_bm25, bm25_k1, bm25_b, auto_flush
 import getpass
 from pymilvus import MilvusClient
 from mx_rag.storage.document_store import MxDocument, MilvusDocstore
+# 服务模式
 client = MilvusClient("https://x.x.x.x:port", user="xxx", password=getpass.getpass(), secure=True,   client_pem_path="path_to/client.pem",   client_key_path="path_to/client.key",   ca_pem_path="path_to/ca.pem",   server_name="localhost")
+
+# client也可使用Lite模式，如下：
+# client = MilvusClient("./milvus_demo.db")
 
 chunk_store = MilvusDocstore(client)
 text = ["示例", "文本"]
@@ -1637,7 +1642,7 @@ MilvusDB(client, collection_name, search_mode, auto_id, index_type, metric_type,
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|client|MilvusClient|必选|MilvusClient实例，具体说明请参考<a href="https://milvus.io/api-reference/pymilvus/v2.4.x/MilvusClient/Client/MilvusClient.md">MilvusClient</a>。<br>> [!NOTE] 说明 MilvusClient由用户控制传入，请使用安全的连接方式。|
+|client|MilvusClient|必选|MilvusClient实例，支持<a href="https://milvus.io/docs/zh/connect-to-milvus-server.md">服务模式</a>和<a href="https://milvus.io/docs/zh/milvus_lite.md">Lite模式</a>。<br>> [!NOTE] 说明 MilvusClient由用户控制传入，请使用安全的连接方式。|
 |collection_name|str|可选|集合名称，不能为空，最大长度为1024，默认为rag_sdk。|
 |search_mode|SearchMode|可选|检索模式，当前支持三种模式，包括稠密检索（DENSE），稀疏检索(SPARSE)和混合检索（HYBRID），默认为稠密检索。类型介绍可参见[SearchMode](#search_mode)。|
 |auto_id|bool|可选|主键是否自增，默认为False。|
@@ -1658,7 +1663,12 @@ import getpass
 from pymilvus import MilvusClient
 from mx_rag.storage.vectorstore import MilvusDB
 import numpy as np
+# 服务模式
 client = MilvusClient("https://x.x.x.x:port", user="xxx", password=getpass.getpass(), secure=True,   client_pem_path="path_to/client.pem",   client_key_path="path_to/client.key",   ca_pem_path="path_to/ca.pem",   server_name="localhost")
+
+# client也可使用Lite模式，如下：
+# client = MilvusClient("./milvus_demo.db")
+
 vector_store = MilvusDB.create(client=client,  x_dim=1024)
 vecs = np.random.randn(3, 1024)
 vector_store.add([0, 1, 2], vecs)
