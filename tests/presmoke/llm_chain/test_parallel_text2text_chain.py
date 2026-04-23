@@ -34,7 +34,7 @@ from mx_rag.utils import ClientParam
 class TestParallelText2TextChain(unittest.TestCase):
     def test_parallel_chain(self):
         dev = 0
-        milvus_url: str = "http://127.0.0.1:19530"
+        milvus_url: str = "http://my-release-milvus.milvus:19530"
         milvus_client = MilvusClient(milvus_url)
         vector_store = MilvusDB.create(client=milvus_client,
                                        x_dim=1024,

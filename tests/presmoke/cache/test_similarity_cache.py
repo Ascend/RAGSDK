@@ -47,7 +47,7 @@ class TestSimilarityCacheDemo(unittest.TestCase):
 
     def test_chain(self):
         dim = 1024
-        milvus_url: str = "http://127.0.0.1:19530"
+        milvus_url: str = "http://my-release-milvus.milvus:19530"
         client = MilvusClient(milvus_url, server_name="localhost")
         dev = 0
         embedding_path = "/home/data/bge-large-zh-v1.5"

@@ -61,7 +61,7 @@ class TestGraphPipline(unittest.TestCase):
         )
         graph_name = "test"
         graph_type = "networkx"
-        milvus_url: str = "http://127.0.0.1:19530"
+        milvus_url: str = "http://my-release-milvus.milvus:19530"
         milvus_client = MilvusClient(milvus_url, server_name="localhost")
         vector_store = MilvusDB.create(client=milvus_client,
                                        x_dim=1024,
