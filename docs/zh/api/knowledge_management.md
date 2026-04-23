@@ -1,3 +1,5 @@
+# 接口参考——知识管理
+
 ## 知识管理<a name="ZH-CN_TOPIC_0000002018595433"></a>
 
 ### 知识库文档管理<a name="ZH-CN_TOPIC_0000002018595305"></a>
@@ -139,7 +141,7 @@ def delete_usr_id_from_knowledge(knowledge_name, user_id, role, force=False)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |knowledge_name|str|必选|知识库名称，长度取值范围为[1, 1024]。|
-|user_id|str|必选|需要删除的用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_]{6,64}$。|
+|user_id|str|必选|需要删除的用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 |role|str|必选|用户对应的角色，只能为知识库管理员'admin'或对知识库仅有查询权限的成员'member'。如果user_id和role记录不存在，则报错。|
 |force|bool|可选|若删除的知识库关联的用户只剩一个，是否继续强制删除，默认为False。|
 
@@ -323,7 +325,7 @@ KnowledgeDB(knowledge_store, chunk_store, vector_store, knowledge_name, white_pa
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 |lock|multiprocessing.synchronize.Lock或_thread.LockType|可选|如果用户需要多进程或者多线程调用此接口需要申请锁。默认值为None。可选值：<li>None：表示不使用锁，此时该接口不支持并发。</li><li>multiprocessing.Lock()：表示进程锁，此时该接口支持多进程调用。</li><li>threading.Lock()：表示线程锁。此时该接口支持多线程调用。</li>|
 
-> [!NOTE] 说明
+> [!NOTE]
 >chunk\_store和vector\_store必须保障数据一致性（例如：关系数据库文件和向量数据库文件同时生成）。
 
 **调用示例<a name="section119720129280"></a>**
@@ -581,7 +583,7 @@ def upload_dir(params: FilesLoadInfo):
 |force|bool|可选|是否强制覆盖旧数据，如果选择否，文档重复会抛出异常。默认为False。|
 |load_image|bool|可选|是否支持图片类型文件，默认为False。如果选择False，表示只支持文档类型如".docx"、".txt"、".md"等，具体支持类型为loader_mng注册器中loader和splitter方法支持类型的交集。如果选择True表示只支持图片类型，支持的范围仅限于loader_mng注册器中loader方法支持的类型与[".jpg", ".png"]的交集。|
 
-> [!NOTE] 说明 
+> [!NOTE]
 >当支持文档类型的解析时，对应的embed\_func嵌入函数应该支持对应文档类型；当支持图片类型的解析时，对应的embed\_func嵌入函数也应该支持图片类型，否则会出现错误。
 
 **返回值说明<a name="section11818153884917"></a>**

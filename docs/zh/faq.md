@@ -272,5 +272,5 @@ import sys
 sys.tracebacklimit = 1000
 ```
 
-> [!NOTE] 说明
+> [!NOTE]
 >打印堆栈信息可能导致打印调用点的参数，参数中可能有敏感信息，请注意识别。

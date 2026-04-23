@@ -1,3 +1,5 @@
+# 接口参考——检索
+
 ## 检索<a name="ZH-CN_TOPIC_0000002018714873"></a>
 
 ### Retriever<a name="ZH-CN_TOPIC_0000001981995612"></a>
@@ -253,8 +255,8 @@ docs = DocxLoader("test.docx").load_and_split(
         RecursiveCharacterTextSplitter(chunk_size=750, chunk_overlap=100))
 mxdocs = [MxDocument(page_content=doc.page_content, metadata=doc.metadata, document_name="text.docx") for doc in docs]
 chunk_store.add(mxdocs, 1)
-full_retrive = FullTextRetriever(document_store=chunk_store, k=3)
-print(full_retrive.invoke("爪哇岛"))
+full_retrieve = FullTextRetriever(document_store=chunk_store, k=3)
+print(full_retrieve.invoke("爪哇岛"))
 ```
 
 #### set\_filter<a name="ZH-CN_TOPIC_0000002319871057"></a>

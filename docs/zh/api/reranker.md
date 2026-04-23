@@ -1,3 +1,5 @@
+# 接口参考——排序
+
 ## 排序<a name="ZH-CN_TOPIC_0000002452701713"></a>
 
 ### Reranker<a name="ZH-CN_TOPIC_0000002452821633"></a>
@@ -85,7 +87,7 @@ def rerank_top_k(objs, scores)
 
 本地使用transformers启动模型，提供文本相关性计算功能。继承抽象类Reranker。当前支持的模型：bge-reranker-large、bge-reranker-base。
 
-> [!NOTE] 说明 
+> [!NOTE]
 >配置的模型如果不是safetensors权重格式，请先将模型权重转换为safetensors格式后再使用，防止使用ckpt、bin等不安全的模型权重格式引入安全问题。
 
 **函数原型<a name="section12411139493"></a>**
