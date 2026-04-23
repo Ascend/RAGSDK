@@ -64,7 +64,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
     cd $MX_INDEX_INSTALL_PATH/tools/ && python3 aicpu_generate_model.py -t <chip_type> && python3 flat_generate_model.py -d <dim> -t <chip_type>  && cp op_models/* $MX_INDEX_MODELPATH 
     ```
 
-    > [!NOTE] 说明
+    > [!NOTE]
     >- MX\_INDEX\_INSTALL\_PATH、MX\_INDEX\_MODELPATH变量已在\~/.bashrc中配置，无需单独配置。具体配置值请查看\~/.bashrc。
     >- **-d** <dim\>表示embedding模型向量化后的维度，因acge\_text\_embedding嵌入模型向量维度为1024，这里设置为-d 1024。
     >- **-t** <i><chip\_type\></i>表示芯片类型。对于Atlas 300I Duo 推理卡，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删掉，即是<i><chip\_type\></i>的取值。对于Atlas 800I A2 推理服务器，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，取“Name”对应的字段。对于Atlas 800I A3 超节点服务器，可以通过**npu-smi info -t board -i 0 -c 0**命令进行查询，获取**NPU Name**信息，910\_<b><i>\<NPU Name></i></b>即是<i><chip\_type\></i>的取值。
@@ -82,12 +82,12 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
     要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。
     ```
 
-    > [!NOTE] 说明 
+    > [!NOTE]
     >所选大模型训练截止日在2024年以前，模型本身未学习“2024年高考语文作文试题”相关知识。
 
 3. 构建领域知识库。
 
-    参考并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/RagDemo)中rag\_demo\_knowledge.py样例代码，请根据实际情况修改代码中的文件路径、模型路径等默认参数，详细参数设置请参见readme.md文件。
+    参考并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/rag_with_api)中rag\_demo\_knowledge.py样例代码，请根据实际情况修改代码中的文件路径、模型路径等默认参数，详细参数设置请参见readme.md文件。
 
     ```python
     python3 rag_demo_knowledge.py --file_path "/path/to/gaokao.txt"
@@ -105,7 +105,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 **操作步骤<a name="section37221226145019"></a>**
 
-1. 执行在线问答样例。参考并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/RagDemo)中rag\_demo\_query.py代码文件，请根据实际情况修改代码中的模型路径、mindie服务IP和port等默认参数，详细参数设置请参见readme.md文件。
+1. 执行在线问答样例。参考并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/rag_with_api)中rag\_demo\_query.py代码文件，请根据实际情况修改代码中的模型路径、mindie服务IP和port等默认参数，详细参数设置请参见readme.md文件。
 
     ```python
     python3 rag_demo_query.py --query "请描述2024年高考作文题目" 
@@ -129,7 +129,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
     }
     ```
 
-> [!NOTE] 说明
+> [!NOTE]
 >
 >- “构建知识库”和“检索回答”过程使用的embedding模型、关系数据库路径、向量数据库路径需对应保持一致，才能正常执行样例。
 >- 执行样例代码时，当参数<b>"tei\_emb"</b>为“False”，表示本地启动embedding模型，embedding\_path传入本地模型存放目录；当参数<b>"tei\_emb"</b>为“True”，表示启动服务化模型，embedding_url传入服务化模型URI地址；reranker同理。
@@ -162,7 +162,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
     cd $MX_INDEX_INSTALL_PATH/tools/ && python3 aicpu_generate_model.py -t <chip_type> && python3 flat_generate_model.py -d <dim> -t <chip_type>  && cp op_models/* $MX_INDEX_MODELPATH 
     ```
 
-    > [!NOTE] 说明 
+    > [!NOTE]
     >- MX\_INDEX\_INSTALL\_PATH、MX\_INDEX\_MODELPATH变量已在\~/.bashrc中配置，无需单独配置。具体配置值请查看\~/.bashrc。
     >- **-d** <i><dim\></i>表示embedding模型向量化后的维度，因acge\_text\_embedding嵌入模型向量维度为1024，这里设置为-d 1024。
     >- **-t** <i><chip\_type\></i>表示芯片类型。对于Atlas 300I Duo 推理卡，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删掉，即是<i><chip\_type\></i>的取值。对于Atlas 800I A2 推理服务器，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，取“Name”对应的字段。对于Atlas 800I A3 超节点服务器，可以通过**npu-smi info -t board -i 0 -c 0**命令进行查询，获取**NPU Name**信息，910\_<b><i>\<NPU Name></i></b>即是<i><chip\_type\></i>的取值。
@@ -180,10 +180,10 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
     要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。
     ```
 
-    > [!NOTE] 说明 
+    > [!NOTE]
     >所选大模型训练截止日在2024年以前，模型本身未学习“2024年高考语文作文试题”相关知识。
 
-3. 参见并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/RagDemo)中rag\_demo\_cache\_qa.py代码文件，请根据实际情况修改代码中的文件路径、模型路径和大模型IP和port等默认参数，详细参数设置请参见readme.md文件。
+3. 参见并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/qa_cache)中rag\_demo\_cache\_qa.py代码文件，请根据实际情况修改代码中的文件路径、模型路径和大模型IP和port等默认参数，详细参数设置请参见readme.md文件。
 4. 执行样例代码。
 
     ```python
@@ -335,7 +335,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 ## 调用Agentic RAG样例<a name="ZH-CN_TOPIC_0000002041731821"></a>
 
-详细介绍可参见：[RAG SDK基于LangGraph知识检索增强应用使能方案](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/langgraph)。
+详细介绍可参见：[RAG SDK基于LangGraph知识检索增强应用使能方案](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/langgraph)。
 
 ## chat with ragsdk<a name="ZH-CN_TOPIC_0000002485964970"></a>
 

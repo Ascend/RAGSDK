@@ -111,7 +111,7 @@ EVENT_PROMPT_EN = '''I will give you an EVENT. You need to give several phrases 
             Your answer: retreat, relaxation, escape, nature, solitude
             
             EVENT: A cat chased a prey into its shelter
-            Your answer: hunting, escape, predation, hidding, stalking
+            Your answer: hunting, escape, predation, hiding, stalking
 
             EVENT: Sam playing with his dog
             Your answer: relaxing event, petting, playing, bonding, friendship
@@ -136,13 +136,13 @@ ENTITY_PROMPT_EN = '''I will give you an ENTITY. You need to give several phrase
             CONTEXT: premiered BFI London Film Festival, became highest-grossing Pixar release
             Your answer: movie, film
 
-            ENTITY: Thinkpad X60
-            CONTEXT: Richard Stallman announced he is using Trisquel on a Thinkpad X60
-            Your answer: Thinkpad, laptop, machine, device, hardware, computer, brand
+            ENTITY: ThinkPad X60
+            CONTEXT: Richard Stallman announced he is using Trisquel on a ThinkPad X60
+            Your answer: ThinkPad, laptop, machine, device, hardware, computer, brand
 
             ENTITY: Harry Callahan
             CONTEXT: bluffs another robber, tortures Scorpio
-            Your answer: person, Amarican, character, police officer, detective
+            Your answer: person, American, character, police officer, detective
 
             ENTITY: Black Mountain College
             CONTEXT: was started by John Andrew Rice, attracted faculty
@@ -189,7 +189,7 @@ TRIPLE_INSTRUCTIONS_CN = {
 2. 关系必须为一个动词，准确描述“头实体”与“尾实体”之间的具体联系，且不得重复头、尾实体的字面信息；  
 3. 头实体与尾实体均不得为“是”，不得使用代词；
 4. 实体和关系不能为空字符串，不能为仅包含标点符号的字符串；
-4. 输出必须采用下列 JSON 格式，禁止添加、删除或修改任何字段：
+5. 输出必须采用下列 JSON 格式，禁止添加、删除或修改任何字段：
 
 [
     {
@@ -274,8 +274,8 @@ TRIPLE_INSTRUCTIONS_CN = {
 2. 仅使用指定关系类型：在之前、在之后、同时、因为、结果。  
 3. 每个三元组中的“头事件”与“尾事件”均须为段落中完整原句，且语义对应具体、可独立理解。
 4. “头事件”和“尾事件”不能为空字符串，且不能重叠；
-4. 关系不能为空字符串；
-5. 输出严格使用下方 JSON 格式，不允许添加、删减或省略任何字段。  
+5. 关系不能为空字符串；
+6. 输出严格使用下方 JSON 格式，不允许添加、删减或省略任何字段。  
 
 ## JSON 格式  
 [
@@ -346,9 +346,9 @@ ENTITY_PROMPT_CN = '''
 背景：在BFI伦敦电影节首映，成为皮克斯票房最高的影片
 概念：电影, 影片
 
-实体：Thinkpad X60
-背景：理查德·斯托曼宣布他在Thinkpad X60上使用Trisquel
-概念：Thinkpad, 笔记本, 机器, 设备, 硬件, 电脑, 品牌
+实体：ThinkPad X60
+背景：理查德·斯托曼宣布他在ThinkPad X60上使用Trisquel
+概念：ThinkPad, 笔记本, 机器, 设备, 硬件, 电脑, 品牌
 
 实体：哈里·卡拉汉
 背景：欺骗另一个抢劫犯，折磨天蝎座

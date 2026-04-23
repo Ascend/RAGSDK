@@ -1,3 +1,5 @@
+# 接口参考——向量化
+
 ## 向量化<a name="ZH-CN_TOPIC_0000002419262684"></a>
 
 ### TextEmbedding<a name="ZH-CN_TOPIC_0000002419262688"></a>
@@ -8,7 +10,7 @@
 
 本地使用transformers启动模型，提供文本至向量的embedding功能。需要使用transformers支持的BertModel类模型权重。类继承实现了langchain\_core.embeddings.Embeddings接口。当前支持的模型：[BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5)，[aspire/acge\_text\_embedding](https://huggingface.co/aspire/acge_text_embedding)。
 
-> [!NOTE] 说明 
+> [!NOTE]
 >配置的模型如果不是safetensors权重格式，请先将模型权重转换为safetensors格式后再使用，防止使用ckpt、bin等不安全的模型权重格式引入安全问题。
 
 **函数原型<a name="section12411139493"></a>**
@@ -163,7 +165,7 @@ def embed_query(text)
 
 本地使用transformers启动模型，提供文本至向量的sparse embedding功能。需要使用transformers支持的BertModel类模型权重。类继承实现了langchain\_core.embeddings.Embeddings接口。当前支持的模型：BAAI/bge-m3。
 
-> [!NOTE] 说明 
+> [!NOTE]
 >配置的模型如果不是safetensors权重格式，请先将模型权重转换为safetensors格式后再使用，防止使用ckpt、bin等不安全的模型权重格式引入安全问题。
 
 **函数原型<a name="section12411139493"></a>**
@@ -525,7 +527,7 @@ def embed_query(text)
 
 本地使用cn\_clip启动模型，提供将图片和文本的embedding功能。ImageEmbedding类继承实现了langchain\_core.embeddings.Embeddings接口。
 
-> [!NOTE] 说明 
+> [!NOTE]
 >cn\_clip采用torch.load加载权重文件，请确保权重文件安全可信，防止加载权重时引入命令注入等安全问题。
 
 **函数原型<a name="section12411139493"></a>**

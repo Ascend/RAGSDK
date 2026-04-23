@@ -1,3 +1,4 @@
+# 接口参考——大模型Chain
 
 ## 大模型Chain<a name="ZH-CN_TOPIC_0000001981995492"></a>
 
@@ -80,7 +81,7 @@ def query(text, llm_config, *args, **kwargs)
 |llm_config|LLMParameterConfig|可选|调用大模型的参数，具体说明可参见[LLMParameterConfig](./llm_client.md#llmparameterconfig)。|
 |args|list|可选|继承自基类，未使用。|
 |kwargs["output_format"]|str|可选|输出的图片格式，通过kwargs["output_format"]获取，支持["png", "jpeg", "jpg", "webp"]，默认取值为png。|
-|kwargs["size"]|str|可选|图片生成尺寸，表示为"height*width"，由入参kwargs传递，具体支持的尺寸由对应的大模型决定，正则匹配格式为"^\d{1,5}\*\d{1,5}$"，默认为512*512。|
+|kwargs["size"]|str|可选|图片生成尺寸，表示为"height*width"，由入参kwargs传递，具体支持的尺寸由对应的大模型决定，正则匹配格式为"^\d{1,5}\\\*\d{1,5}$"，默认为512 \* 512。|
 
 **返回值说明<a name="section5555330124016"></a>**
 
@@ -187,7 +188,7 @@ print(llm_data)
 
 **功能描述<a name="section957011509130"></a>**
 
-单轮对话Chain，实现基本的问答对话功能，继承Chain，参考[基本对话功能](#section175571825169)。也可实现图文并茂对话功能，参考[图文并茂对话功能](#section175571825169)
+单轮对话Chain，实现基本的问答对话功能，继承Chain，参考[基本对话功能](#section175571825169)。也可实现图文并茂对话功能，参考[图文并茂对话功能](#section175571825169)。
 
 **函数原型<a name="section12411139493"></a>**
 
@@ -595,7 +596,7 @@ print(answer)
 
 **功能描述<a name="section957011509130"></a>**
 
-知识图谱Chain，继承自[SingleText2TextChain](#singletext2textchain)，调用示例可参考：[调用示例](./knowledge_graph.md#类功能))。
+知识图谱Chain，继承自[SingleText2TextChain](#singletext2textchain)，调用示例可参考：[调用示例](./knowledge_graph.md#类功能)。
 
 **函数原型<a name="section12411139493"></a>**
 
