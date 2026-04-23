@@ -34,7 +34,7 @@ from mx_rag.utils import ClientParam
 
 class TestImg2ImgChain(unittest.TestCase):
     def test_img2img_chain(self):
-        milvus_url: str = "http://127.0.0.1:19530"
+        milvus_url: str = "http://my-release-milvus.milvus:19530"
         img_emb = CLIPEmbedding.create(url="http://127.0.0.1:8000/encode_clip",
                                        client_param=ClientParam(use_http=True))
         client = MilvusClient(milvus_url, server_name="localhost")
