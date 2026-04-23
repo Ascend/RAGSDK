@@ -1,3 +1,4 @@
+# 接口参考——模型推理加速
 
 ## 模型推理加速<a name="ZH-CN_TOPIC_0000002419102884"></a>
 
@@ -30,7 +31,7 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
     ATB_LOG_LEVEL：设置日志等级，可配置为TRACE，DEBUG，INFO，WARN，ERROR，FATAL
     ```
 
-> [!NOTE] 说明
+> [!NOTE]
 >对于clip系列模型在Atlas 300I Duo 推理卡上推理，支持加速的batch为<=4，其他batch加速无明显性能提升甚至有劣化情况。
 
 **绑CPU核提升推理性能<a name="section15187132092714"></a>**

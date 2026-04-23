@@ -1,3 +1,5 @@
+# 接口参考——Prompt压缩
+
 ## Prompt压缩<a name="ZH-CN_TOPIC_0000002319268421"></a>
 
 ### PromptCompressor<a name="ZH-CN_TOPIC_0000002284793848"></a>

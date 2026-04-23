@@ -23,7 +23,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 |--|--|--|
 |RAG SDK|检索增强软件包|<a href="https://www.hiascend.com/zh/developer/download/community/result?module=sdk+cann">获取链接</a>|
 
-> [!NOTE] 说明
+> [!NOTE]
 >容器内自带有RAG SDK，如果需要更新，请参见[升级](#升级)。
 
 **软件数字签名验证<a name="section1269731820717"></a>**
@@ -115,7 +115,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 </tr>
 </table>
 
-> [!NOTE] 说明
+> [!NOTE]
 >
 >- <i><version\></i>表示软件版本号。
 >- <i><arch\></i>表示CPU架构。
@@ -180,7 +180,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         docker run -e ASCEND_VISIBLE_DEVICES=<device_id>  -itd --name <mxrag_demo> -p <port>:<port> -v <model_dir>:<model_dir>:ro <镜像名称>:<镜像tag> bash
         ```
 
-        > [!NOTE] 说明 
+        > [!NOTE] 
         >- <_device\_id_\>：表示NPU设备ID，默认从0开始。如果有多个，中间用英文","隔开。每个容器使用的NPU卡只能独占，否则会报错。可通过执行**ls /dev/davinci\* |grep -v /dev/davinci\_manager |tr -d /dev/davinci**命令查询。
         >- <_mxrag\_demo_\>：表示运行后的容器名称，默认为mxrag\_demo。
         >- <port\>：表示需要映射的端口。
@@ -279,10 +279,10 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     cd vision_npu
     git checkout v0.16.0-6.0.0
     # 安装依赖库
-    pip3 install -r requirement.txt
+    pip3 install -r requirements.txt
     # 配置cann环境变量
     source /home/HwHiAiUser/Ascend/ascend-toolkit/set_env.sh
-    # 编包
+    # 编译安装包
     python3 setup.py bdist_wheel
     # 安装
     cd dist
@@ -329,7 +329,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 5. 下载faiss源码，构建faiss wheel包并安装。
 
-    > [!NOTE] 说明 
+    > [!NOTE] 
     >在安装Index SDK依赖时也安装了faiss，但仅编译生成了libfaiss.so，还需要构建faiss wheel包并安装，以便在python中使用faiss。
 
     1. 下载faiss源码包并解压。
@@ -376,7 +376,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         bash install_faiss.sh
         ```
 
-        > [!NOTE] 说明
+        > [!NOTE]
         >- 如果报错没有wheel，请使用pip安装。
         >- 安装完faiss之后，numpy可能更新到2.x.x版本，需要回退至1.26.4。
 
@@ -493,7 +493,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     --install安装命令同时支持输入可选参数，如[表1](#table7138521890)所示。输入不在列表中的参数可能正常安装或者报错。
 
-    > [!NOTICE] 须知
+    > [!NOTICE]
     >如果通过**./**_\{run\_file\_name\}__.run_** --help**命令查询出的参数未解释在如下表格，则说明该参数预留或适用于其他处理器版本，用户无需关注。
 
     **表 1**  安装包支持的参数表
@@ -561,7 +561,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     </tr>
     <tr id="row191392023915"><td class="cellrowborder" valign="top" width="30%" headers="mcps1.2.3.1.1 "><p id="p613914210915"><a name="p613914210915"></a><a name="p613914210915"></a>--install-path=<em id="i6139127919"><a name="i6139127919"></a><a name="i6139127919"></a>&lt;path&gt;</em></p>
     </td>
-    <td class="cellrowborder" valign="top" width="70%" headers="mcps1.2.3.1.2 "><p id="p41399211916"><a name="p41399211916"></a><a name="p41399211916"></a>（可选）自定义<span id="ph1058913412462"><a name="ph1058913412462"></a><a name="ph1058913412462"></a>RAG SDK</span>软件包安装根目录。如未设置，默认为当前命令执行所在目录。配置的路径必须是"/"或"~"开头，路径取值合法字符为"-_.0-9a-zA-Z/"，且不能包含“..，长度不超过1024。</p>
+    <td class="cellrowborder" valign="top" width="70%" headers="mcps1.2.3.1.2 "><p id="p41399211916"><a name="p41399211916"></a><a name="p41399211916"></a>（可选）自定义<span id="ph1058913412462"><a name="ph1058913412462"></a><a name="ph1058913412462"></a>RAG SDK</span>软件包安装根目录。如未设置，默认为当前命令执行所在目录。配置的路径必须是"/"或"~"开头，路径取值合法字符为"-_.0-9a-zA-Z/"，且不能包含“..”，长度不超过1024。</p>
     <p id="zh-cn_topic_0000001127124040_zh-cn_topic_0000001110810470_zh-cn_topic_0000001079598564_zh-cn_topic_0245337208_p1290010243505"><a name="zh-cn_topic_0000001127124040_zh-cn_topic_0000001110810470_zh-cn_topic_0000001079598564_zh-cn_topic_0245337208_p1290010243505"></a><a name="zh-cn_topic_0000001127124040_zh-cn_topic_0000001110810470_zh-cn_topic_0000001079598564_zh-cn_topic_0245337208_p1290010243505"></a>若不指定，将安装到默认路径下：</p>
     <a name="zh-cn_topic_0000001127124040_zh-cn_topic_0000001110810470_zh-cn_topic_0000001079598564_zh-cn_topic_0245337208_ul1190072465010"></a><a name="zh-cn_topic_0000001127124040_zh-cn_topic_0000001110810470_zh-cn_topic_0000001079598564_zh-cn_topic_0245337208_ul1190072465010"></a><ul id="zh-cn_topic_0000001127124040_zh-cn_topic_0000001110810470_zh-cn_topic_0000001079598564_zh-cn_topic_0245337208_ul1190072465010"><li>若使用root用户安装，默认安装路径为：/usr/local/Ascend。</li><li>若使用非root用户安装，则默认安装路径为：${HOME}/Ascend。</li></ul>
     <p id="p86031014062"><a name="p86031014062"></a><a name="p86031014062"></a><span id="ph3593356171011"><a name="ph3593356171011"></a><a name="ph3593356171011"></a>若通过该参数指定了安装目录</span><span id="ph29251359141014"><a name="ph29251359141014"></a><a name="ph29251359141014"></a>，</span>该目录other用户不能有写权限，如果指定普通用户安装，安装目录属主必须为当前安装用户。</p>
@@ -589,7 +589,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     </tbody>
     </table>
 
-    > [!NOTE] 说明
+    > [!NOTE]
     >以下参数未展示在--help参数中，用户请勿直接使用。
     >- --xwin：使用xwin模式运行。
     >- --phase2：要求执行第二步动作。
@@ -620,7 +620,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         source ~/.bashrc
         ```
 
-> [!NOTE] 说明 
+> [!NOTE] 
 >安装RAG SDK时可能出现报错信息：
 >ERROR: Cannot uninstall 'xxx'. It is a distutils installed project and thus we cannot accurately determine which files belong to it which would lead to only a partial uninstall.
 >则说明xxx模块是操作系统自带的组件，无法直接升级，可以尝试重新下发指令安装：**pip3 install -r requirements.txt --ignore-installed**

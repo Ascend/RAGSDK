@@ -25,7 +25,7 @@ ClientParam(use_http, ca_file, crl_file, timeout, response_limit_size)
 |timeout|int|可选|对接服务端响应超时时间，取值(0, 600]，默认值为60，单位为秒。|
 |response_limit_size|int|可选|客户端接受服务端响应的最大字节，取值(0, 10MB]，默认1M。|
 
-> [!NOTE]说明 
+> [!NOTE]
 >创建客户端时，判断use\_http，如果启用HTTPS时，ca\_file是必传参数，如果只传入了ca\_file参数，创建单向认证的TLS/SSL context；如果未启用HTTPS，客户端配置默认的TLS/SSL context。
 
 **调用示例<a name="section96001515205720"></a>**

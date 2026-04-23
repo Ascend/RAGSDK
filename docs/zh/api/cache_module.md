@@ -1,3 +1,5 @@
+# 接口参考——缓存模块
+
 ## 缓存模块<a name="ZH-CN_TOPIC_0000002018595221"></a>
 
 ### 总体说明<a name="ZH-CN_TOPIC_0000001984862788"></a>
@@ -79,7 +81,7 @@ CacheConfig(cache_size, eviction_policy, auto_flush, data_save_folder, min_free_
 |disable_report|bool|可选|是否需要支持维测数据功能<br>默认值：False<br>取值范围：True表示不支持；False表示支持。|
 |lock|multiprocessing.synchronize.Lock, _thread.LockType|可选|CacheConfig不支持多线程或者多进程进行处理，如果用户需要多进程或者多线程调用此接口需要申请锁。默认值为None。<br>可选值：<br>None：表示不使用锁，此时该接口不支持并发。<br>multiprocessing.Lock()：表示进程锁，此时该接口支持多进程调用。<br>threading.Lock()：表示线程锁。此时该接口支持多线程调用。|
 
-> [!NOTE] 说明 
+> [!NOTE]
 >
 >- 本接口内部使用了pickle模块，有被恶意构造的数据在unpickle期间攻击的风险。需要保证在被加载的落盘数据data\_save\_folder是安全存储，仅可加载可信的落盘数据。
 >- 对于memory cache来说，它的落盘文件不能超过100MB大小。
@@ -126,7 +128,7 @@ SimilarityCacheConfig(vector_config, cache_config, emb_config, similarity_config
 |clean_size|int|可选|每次缓存数据添加超过cache_size时，老化的个数，默认值为1。取值范围：(0, cache_size]|
 |**kwargs|Any|必选|参数介绍可参见[CacheConfig](#cacheconfig)。|
 
-> [!NOTE] 说明 
+> [!NOTE]
 >
 >- 本接口内部使用了pickle模块，有被恶意构造的数据在unpickle期间攻击的风险。需要保证在被加载的落盘数据data\_save\_folder是安全存储，仅可加载可信的落盘数据。
 >- vector\_config和cache\_config必须同时为None或同时不为None。如果vector\_config和cache\_config同时为None，则等同于memory cache。

@@ -1143,7 +1143,7 @@ def search(embeddings, k, filter_dict)
 
 |参数名|数据类型|是否必选|说明|
 |--|--|--|--|
-|embeddings|Union[List[List[float], List[Dict[int, float]]]|必选|欲检索的向量对象，可以为稠密向量或者稀疏向量。|
+|embeddings|Union[List[List[float]], List[Dict[int, float]]]|必选|欲检索的向量对象，可以为稠密向量或者稀疏向量。|
 |k|int|可选|返回的相似向量的个数。|
 |filter_dict|Dict|可选|由检索条件组成的字典，当前只支持对document_id进行过滤，过滤的文档id以列表形式传入，id列表长度不超过1000*1000。例如，需要在document_id为1，2，4这几篇文档中过滤，则传入的字典为{"document_id": [1, 2, 4]}。|
 
@@ -1844,7 +1844,7 @@ def add(ids: List[int], embeddings: np.ndarray, document_id, docs, metadatas)
 |docs|List[str]|可选|待添加向量的文本。|
 |metadatas|List[dict]|可选|待添加向量的文本元数据信息。|
 
-> [!NOTE] 说明
+> [!NOTE]
 >embeddings的shape必须等于2，embeddings包含的向量数量需要等于ids的长度，docs包含的文档数需要等于ids的长度，单次添加向量的总数小于1000万。
 
 ##### add\_sparse<a name="ZH-CN_TOPIC_0000002184043725"></a>
@@ -1869,7 +1869,7 @@ def add_sparse(ids, sparse_embeddings, document_id, docs, metadatas)
 |docs|List[str]|可选|待添加向量的文本。|
 |metadatas|List[dict]|可选|待添加向量的文本元数据信息。|
 
-> [!NOTE] 说明
+> [!NOTE]
 >sparse\_embeddings包含的向量数量需要等于ids的长度，docs包含的文档数需要等于ids的长度，单次添加向量的总数小于1000万。
 
 ##### add\_dense\_and\_sparse<a name="ZH-CN_TOPIC_0000002148646436"></a>
@@ -1895,7 +1895,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, docs, metadat
 |metadatas|List[dict]|可选|待添加向量的文本元数据信息。|
 |kwargs|Dict|可选|关键字参数，当前仅支持document_id，为待添加向量所属文档的id，传入的其余关键字参数均无效|
 
-> [!NOTE] 说明
+> [!NOTE]
 >dense\_embeddings的shape必须等于2，dense\_embeddings包含的向量数量需要等于ids的长度，sparse\_embeddings包含的向量数量需要等于ids的长度，docs包含的文档数需要等于ids的长度，单次添加向量的总数小于1000万。
 
 ##### delete<a name="ZH-CN_TOPIC_0000001982155156"></a>
@@ -2061,7 +2061,7 @@ MindFAISS(x_dim, devs, load_local_index, index_type, metric_type, auto_save)
 |metric_type|str|可选|向量距离计算方式，支持IP，L2，COSINE，默认为L2|
 |auto_save|bool|可选|是否自动保存索引，取值为True或False，默认为True。|
 
-> [!NOTE] 说明 
+> [!NOTE]
 >若“auto\_save”设置为“False”，则MindFAISS不会自动保存向量到离线知识库，需要手动调用[save\_local\(\)](#ZH-CN_TOPIC_000000995468)来保存向量数据库到离线知识库，否则程序退出后未保存的向量将丢失，有可能导致关系数据库和向量数据库的数据不一致，从而造成程序运行失败的问题。
 
 **调用示例<a name="section87272117253"></a>**
@@ -2176,7 +2176,7 @@ def add(ids, embeddings, document_id)
 |embeddings|np.ndarray|必选|待存入的文本向量。|
 |document_id|int|可选|继承自基类，MindFAISS不支持该参数。|
 
-> [!NOTE] 说明 
+> [!NOTE]
 >embeddings的shape必须等于2，embeddings包含的向量数量需要等于ids的长度，添加向量的总数小于1000万。
 
 ##### add\_sparse<a name="ZH-CN_TOPIC_0000002184099717"></a>
