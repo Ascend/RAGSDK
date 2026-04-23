@@ -60,8 +60,7 @@ def truncate_long_text_by_char(text: str, max_token_length: int) -> str:
     if len(text) <= max_char_len:
         return text
     half_len = max_char_len // 2
-    with self.lock:
-        return text[:half_len] + text[- (max_char_len - half_len):]
+    return text[:half_len] + text[- (max_char_len - half_len):]
 
 
 def search_by_retrieve_api(query: str, url: str, top_k: int = 5) -> List[Dict]:
