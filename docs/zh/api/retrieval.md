@@ -61,7 +61,7 @@ loader_mng.register_splitter(splitter_class=RecursiveCharacterTextSplitter,
                                               "keep_separator": False
                                               })
 # 初始化embedding模型
-emb = TextEmbedding(model_path="/path/to/acge_text_embedding", dev_id=0)
+emb = TextEmbedding(model_path="/path/to/bge-large-zh-v1.5", dev_id=0)
 # 初始化向量数据库
 vector_store = MindFAISS(x_dim=1024,
                          

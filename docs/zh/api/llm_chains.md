@@ -310,7 +310,7 @@ loader_mng.register_splitter(splitter_class=RecursiveCharacterTextSplitter,
 
 dev = 0
 # 加载embedding模型
-emb = TextEmbedding("/path/to/acge_text_embedding/", dev_id=dev)
+emb = TextEmbedding("/path/to/bge-large-zh-v1.5", dev_id=dev)
 # 初始化向量数据库
 vector_store = MindFAISS(x_dim=1024,  devs=[dev],
                                  load_local_index="/path/to/faiss.index",
@@ -384,7 +384,7 @@ loader_mng.register_splitter(splitter_class=RecursiveCharacterTextSplitter,
 
 dev = 0
 # 加载embedding模型
-emb = TextEmbedding("/path/to/acge_text_embedding/", dev_id=dev)
+emb = TextEmbedding("/path/to/bge-large-zh-v1.5", dev_id=dev)
 client_param = ClientParam(ca_file="/path/to/ca.crt")
 # 初始化向量数据库
 vector_store = MindFAISS(x_dim=1024,  devs=[dev],
@@ -575,7 +575,7 @@ from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.retrievers import Retriever
 from mx_rag.utils import ClientParam
 dev = 0
-emb = TextEmbedding("/path/to/acge_text_embedding/", dev_id=dev)
+emb = TextEmbedding("/path/to/bge-large-zh-v1.5", dev_id=dev)
 client_param = ClientParam(ca_file="/path/to/ca.crt")
 llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct",
                    base_url="https://x.x.x.x:port/v1/chat/completions",

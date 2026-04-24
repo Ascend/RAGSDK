@@ -36,19 +36,19 @@ RAG SDK的完整开发流程如[图1](#fig1495610311102)所示。用户可参见
 
 本章节介绍基于Atlas 800I A2 推理服务器，使用RAG SDK  Python接口开发基于知识库的问答系统。RAG SDK运行框架如[图1](#fig17633219113617)所示，其运行步骤分为“构建知识库”和“检索问答”。
 
-本样例是一个文生文场景，检索方法为距离检索“FLAT:L2”方法，其中框架图中每个步骤的“\[xxx\]”表示可选的方法类。推理大模型使用Llama3-8B-Chinese-Chat，embedding模型使用模型acge\_text\_embedding，reranker（可选）模型使用bge-reranker-large。
+本样例是一个文生文场景，检索方法为距离检索“FLAT:L2”方法，其中框架图中每个步骤的“\[xxx\]”表示可选的方法类。推理大模型使用Llama3-8B-Chinese-Chat，embedding模型使用模型bge-large-zh-v1.5，reranker（可选）模型使用bge-reranker-large。
 
 **图 1**  基于知识库的问答流程<a id="fig17633219113617"></a>  
 ![](figures/基于知识库的问答流程.png "基于知识库的问答流程")
 
 **前提条件<a name="section896201815106"></a>**
 
-- 已经在MindIE容器中下载和运行Llama3-8B-Chinese-Chat大模型，模型下载链接：<a href="https://huggingface.co/shenzhi-wang/Llama3-8B-Chinese-Chat">链接</a>。
+- 已经在MindIE容器中下载和运行Llama3-8B-Chinese-Chat大模型，模型下载链接：<a href="https://www.modelscope.cn/models/LLM-Research/Llama3-8B-Chinese-Chat">链接</a>。
 - 已经基于《MindIE安装指南》中的“安装MindIE \> 方式三：容器安装方式”章节完成在宿主机上的容器化部署，并参考《MindIE Motor开发指南》中的“快速入门 \> 启动服务”章节启动服务。
 - 已经完成[安装RAG SDK](./installation_guide.md#安装rag-sdk)。
-- 已经下载嵌入模型“acge\_text\_embedding”和reranker模型“bge-reranker-large”，并放在[2.a](./installation_guide.md#容器内部署rag-sdk)中运行容器时配置的模型存放目录下。模型下载链接：
-    - acge\_text\_embedding模型：<a href="https://huggingface.co/aspire/acge_text_embedding">链接</a>
-    - bge-reranker-large模型：<a href="https://huggingface.co/BAAI/bge-reranker-large">链接</a>
+- 已经下载嵌入模型“bge-large-zh-v1.5”和reranker模型“bge-reranker-large”，并放在[2.a](./installation_guide.md#容器内部署rag-sdk)中运行容器时配置的模型存放目录下。模型下载链接：
+    - bge-large-zh-v1.5模型：<a href="https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5">链接</a>
+    - bge-reranker-large模型：<a href="https://www.modelscope.cn/models/BAAI/bge-reranker-large">链接</a>
 
 **TEI服务化说明<a name="section1734316490"></a>**
 
@@ -66,7 +66,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     > [!NOTE]
     >- MX\_INDEX\_INSTALL\_PATH、MX\_INDEX\_MODELPATH变量已在\~/.bashrc中配置，无需单独配置。具体配置值请查看\~/.bashrc。
-    >- **-d** <dim\>表示embedding模型向量化后的维度，因acge\_text\_embedding嵌入模型向量维度为1024，这里设置为-d 1024。
+    >- **-d** <dim\>表示embedding模型向量化后的维度，因bge-large-zh-v1.5嵌入模型向量维度为1024，这里设置为-d 1024。
     >- **-t** <i><chip\_type\></i>表示芯片类型。对于Atlas 300I Duo 推理卡，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删掉，即是<i><chip\_type\></i>的取值。对于Atlas 800I A2 推理服务器，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，取“Name”对应的字段。对于Atlas 800I A3 超节点服务器，可以通过**npu-smi info -t board -i 0 -c 0**命令进行查询，获取**NPU Name**信息，910\_<b><i>\<NPU Name></i></b>即是<i><chip\_type\></i>的取值。
 
 2. 创建领域知识文档。
@@ -145,14 +145,14 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 **前提条件<a name="section1736555225910"></a>**
 
-- 已经在MindIE容器中下载和运行Llama3-8B-Chinese-Chat大模型，模型下载链接：<a href="https://huggingface.co/shenzhi-wang/Llama3-8B-Chinese-Chat">链接</a>。
+- 已经在MindIE容器中下载和运行Llama3-8B-Chinese-Chat大模型，模型下载链接：<a href="https://www.modelscope.cn/models/LLM-Research/Llama3-8B-Chinese-Chat">链接</a>。
 
 - RAG SDK的容器内能够访问Llama3-8B-Chinese-Chat大模型的路径下的config.json和tokenizer.json，用于计算文本token大小。
 - 已经基于《MindIE安装指南》中的“安装MindIE \> 方式三：容器安装方式”章节完成在宿主机上的容器化部署，并参考《MindIE Motor开发指南》中的“快速入门 \> 启动服务”章节启动服务。
 - 已经完成[安装RAG SDK](./installation_guide.md#安装rag-sdk)。
-- 已经下载嵌入模型“acge\_text\_embedding”和reranker模型“bge-reranker-large”，并放在[2.a](./installation_guide.md#容器内部署rag-sdk)中运行容器时配置的模型存放目录下。模型下载链接：
-    - acge\_text\_embedding模型：<a href="https://huggingface.co/aspire/acge_text_embedding">链接</a>
-    - bge-reranker-large模型：<a href="https://huggingface.co/BAAI/bge-reranker-large">链接</a>
+- 已经下载嵌入模型“bge-large-zh-v1.5”和“bge-reranker-large”，并放在[2.a](./installation_guide.md#容器内部署rag-sdk)中运行容器时配置的模型存放目录下。模型下载链接：
+    - bge-large-zh-v1.5模型：<a href="https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5">链接</a>
+    - bge-reranker-large模型：<a href="https://www.modelscope.cn/models/BAAI/bge-reranker-large">链接</a>
 
 **操作步骤<a name="section599518311318"></a>**
 
@@ -164,7 +164,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     > [!NOTE]
     >- MX\_INDEX\_INSTALL\_PATH、MX\_INDEX\_MODELPATH变量已在\~/.bashrc中配置，无需单独配置。具体配置值请查看\~/.bashrc。
-    >- **-d** <i><dim\></i>表示embedding模型向量化后的维度，因acge\_text\_embedding嵌入模型向量维度为1024，这里设置为-d 1024。
+    >- **-d** <i><dim\></i>表示embedding模型向量化后的维度，因bge-large-zh-v1.5嵌入模型向量维度为1024，这里设置为-d 1024。
     >- **-t** <i><chip\_type\></i>表示芯片类型。对于Atlas 300I Duo 推理卡，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删掉，即是<i><chip\_type\></i>的取值。对于Atlas 800I A2 推理服务器，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，取“Name”对应的字段。对于Atlas 800I A3 超节点服务器，可以通过**npu-smi info -t board -i 0 -c 0**命令进行查询，获取**NPU Name**信息，910\_<b><i>\<NPU Name></i></b>即是<i><chip\_type\></i>的取值。
 
 2. 创建领域知识文档。
@@ -339,4 +339,4 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 ## chat with ragsdk<a name="ZH-CN_TOPIC_0000002485964970"></a>
 
-启动WEB服务，进行参数配置、文档上传、删除、问答等操作，详细流程见：[chat\_with\_ragsdk](https://gitcode.com/printSSS/mindsdk-referenceapps_9751/blob/cache01/RAGSDK/MainRepo/Samples/RagDemo/chat_with_ascend/readme.md)
+启动WEB服务，进行参数配置、文档上传、删除、问答等操作，详细流程见：[chat\_with\_ragsdk](https://gitcode.com/Ascend/mindsdk-referenceapps/blob/master/RAGSDK/MainRepo/Samples/chat_with_ascend/README.md)

@@ -8,7 +8,7 @@
 
 **功能描述<a name="section957011509130"></a>**
 
-本地使用transformers启动模型，提供文本至向量的embedding功能。需要使用transformers支持的BertModel类模型权重。类继承实现了langchain\_core.embeddings.Embeddings接口。当前支持的模型：[BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5)，[aspire/acge\_text\_embedding](https://huggingface.co/aspire/acge_text_embedding)。
+本地使用transformers启动模型，提供文本至向量的embedding功能。需要使用transformers支持的BertModel类模型权重。类继承实现了langchain\_core.embeddings.Embeddings接口。当前支持的模型：[BAAI/bge-large-zh-v1.5](https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5)，[aspire/acge\_text\_embedding](https://www.modelscope.cn/models/yangjhchs/acge_text_embedding)。
 
 > [!NOTE]
 >配置的模型如果不是safetensors权重格式，请先将模型权重转换为safetensors格式后再使用，防止使用ckpt、bin等不安全的模型权重格式引入安全问题。
