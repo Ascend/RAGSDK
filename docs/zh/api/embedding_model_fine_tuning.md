@@ -396,7 +396,7 @@ model = SentenceTransformer("model_path", device="npu" if torch.npu.is_available
 train_loss = MultipleNegativesRankingLoss(model)
 train_dataset = load_dataset("json", data_files="train_data.jsonl", split="train")
 args = SentenceTransformerTrainingArguments(
-    output_dir="output_dir",      # output directory and hugging face model ID
+    output_dir="output_dir",      # output directory and model ID
     num_train_epochs=4,                         # number of epochs
     per_device_train_batch_size=8,              # train batch size
     gradient_accumulation_steps=16,             # for a global batch size of 512
