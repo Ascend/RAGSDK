@@ -62,13 +62,6 @@ function package()
     cp -rf "${ROOT_PATH}"/requirements.txt .
     cp -rf "${ROOT_PATH}"/script .
 
-    mkdir -p ./ops/310P
-    mkdir -p ./ops/910B
-    mkdir -p ./ops/A3
-    cp -rf "${ROOT_PATH}"/ops/Ascend910B/lib ./ops/910B
-    cp -rf "${ROOT_PATH}"/ops/Ascend910B/lib ./ops/A3
-    cp -rf "${ROOT_PATH}"/ops/Ascend310P/lib ./ops/310P
-
     mkdir -p ./ops/transformer_adapter
     cp -rf "${ROOT_PATH}"/ops/transformer_adapter/* ./ops/transformer_adapter
 

@@ -73,30 +73,17 @@ function build_ops()
 {
     platform=$1
     local py=$2
-    echo "perpare ops build"
+    echo "prepare ops build"
     cd "${ROOT_PATH}/ops"
     dos2unix build.sh
     bash build.sh $platform "${py}"
     echo "build $platform ops success"
 }
 
-function get_nlohmann() {
-  if [ ! -e "${ROOT_PATH}/opensource/json" ]; then
-    mkdir -p "${ROOT_PATH}/opensource"
-    cd "${ROOT_PATH}/opensource"
-    wget https://github.com/nlohmann/json/archive/v3.11.3.tar.gz
-    tar -xf v3.11.3.tar.gz
-    mv json-3.11.3 json
-  fi
-}
-
 function main()
 {
     clean
-    get_nlohmann
     build_wheel_package python3.11 "${PY311_VER}"
-    build_ops Ascend310P python3.11
-    build_ops Ascend910B python3.11
 
     package "${PY311_VER}"
 }
