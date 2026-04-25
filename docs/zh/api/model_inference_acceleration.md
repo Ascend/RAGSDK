@@ -17,7 +17,7 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
     from modeling_clip_adapter import enable_clip_speed
     ```
 
-- 设置ENABLE\_BOOST变量激活模型推理加速，设置值为"True"或"False"。
+- 设置ENABLE\_BOOST变量是否使能模型推理加速，设置值为"True"、"true"、"1"时表示使能加速，设置其他值表示不使能加速。
 
     ```bash
     os.environ["ENABLE_BOOST"] = "True"

@@ -450,27 +450,7 @@ function install_whl() {
 }
 
 function install_ops() {
-    # 校验用户输入的platform是否与当前环境的平台一致
-    if [[ "$chip_type" == "310P" ]]; then
-        check_ret=$(npu-smi info | awk '{print $3}' | grep 310P | sed -n 1p)
-    elif [[ "$chip_type" == "910B" ]]; then
-        check_ret=$(npu-smi info | awk '{print $3}' | grep 910B | sed -n 1p)
-    elif [[ "$chip_type" == "A3" ]]; then
-        check_ret=$(npu-smi info | awk '{print $3}' | grep Ascend910 | sed -n 1p)
-    fi
-
-    if [[ -z "$check_ret" ]]; then
-        log "WARNING" "Platform mismatch for $chip_type, please check it."
-    fi
-
     mkdir -p "${install_path}/${INSTALL_DIRECTORY}"/ops
-
-    if [[ -d "ops/$chip_type" ]]; then
-        cp -rf ops/"$chip_type"/* "${install_path}/${INSTALL_DIRECTORY}"/ops
-    else
-        log "ERROR" "Invalid platform: $chip_type" "y"
-        exit 1;
-    fi
 
     cp -rf ops/transformer_adapter "${install_path}/${INSTALL_DIRECTORY}"/ops
 }
