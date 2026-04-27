@@ -1,3 +1,5 @@
+# CoRAG接口参考
+
 ## CoRAG模块
 
 CoRAG（Chain of Retrieval-Augmented Generation）是一种基于链式检索增强生成的多轮问答框架，通过迭代生成子查询、获取相关文档并整合信息，实现复杂问题的深度推理和回答。
@@ -29,8 +31,7 @@ CoRagBaseConfig(base_llm, retrieve_api_url, num_threads, max_path_length, final_
 | sub\_answer\_llm   | Text2TextLLM | 可选    | None | 子答案生成LLM实例，若不提供则使用base\_llm。具体可参见[Text2TextLLM](./llm_client.md#text2textllm)            |
 | judge\_llm         | Text2TextLLM | 可选    | None | 判断LLM实例，用于评估答案正确性。具体可参见[Text2TextLLM](./llm_client.md#text2textllm)                      |
 | retrieve\_top\_k   | int          | 可选    | 5    | 检索API返回的文档数量，默认值为5。                                                                          |
-
-
+| client\_param     | ClientParam  | 可选    | ClientParam() | HTTP客户端参数，用于配置请求行为。具体可参见[ClientParam](./universal_api.md#clientparam) |
 
 **请求体示例**
 
@@ -184,9 +185,8 @@ CoRagAgent(base_llm, retrieve_api_url, final_llm, sub_answer_llm)
 | retrieve\_api\_url | str          | 必选    | -    | 检索API的URL地址，用于获取相关文档。                                                          |
 | final\_llm         | Text2TextLLM | 可选    | None | 最终答案生成LLM实例，若不提供则使用base\_llm。具体可参见[Text2TextLLM](./llm_client.md#text2textllm) |
 | sub\_answer\_llm   | Text2TextLLM | 可选    | None | 子答案生成LLM实例，若不提供则使用base\_llm。具体可参见[Text2TextLLM](./llm_client.md#text2textllm)  |
-| retrieve\_top\_k   | int          | 可选    | 3    | 检索API返回的文档数量，默认值为3。                                                                          |
-
-
+| retrieve\_top\_k   | int          | 可选    | 5    | 检索API返回的文档数量，默认值为5。                                                                          |
+| client\_param     | ClientParam  | 可选    | ClientParam() | HTTP客户端参数，用于配置请求行为。具体可参见[ClientParam](./universal_api.md#clientparam) |
 
 #### 调用示例
 
@@ -205,7 +205,9 @@ llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
 # 初始化CoRagAgent
 agent = CoRagAgent(
     base_llm=llm,
-    retrieve_api_url="http://your-retrieve-api.com/retrieve"
+    retrieve_api_url="http://your-retrieve-api.com/retrieve",
+    retrieve_top_k=5,
+    client_param=ClientParam(ca_file="/path/to/ca.crt")
 )
 
 # 生成推理路径
@@ -318,7 +320,8 @@ config = CoRagBaseConfig(
     base_llm=llm,
     retrieve_api_url="http://your-retrieve-api.com/query",
     num_threads=4,
-    max_path_length=3
+    max_path_length=3,
+    client_param=ClientParam(ca_file="/path/to/ca.crt")
 )
 
 # 初始化样本生成器
@@ -510,7 +513,8 @@ config = CoRagBaseConfig(
     base_llm=llm,
     retrieve_api_url="http://your-retrieve-api.com/retrieve",
     num_threads=4,
-    max_path_length=3
+    max_path_length=3,
+    client_param=ClientParam(ca_file="/path/to/ca.crt")
 )
 
 # 初始化评估器
@@ -646,4 +650,3 @@ def evaluate(self, eval_file, save_file, calc_recall, enable_naive_retrieval, nu
     }, ...
 ]
 ```
-
