@@ -37,6 +37,9 @@ Tag 遵循以下格式:
 | 26.0.0-310p-ubuntu22.04-py3.11               | [Dockerfile](./Dockerfile.310p.ubuntu)  | 
 | 26.0.0-910b-ubuntu22.04-py3.11                | [Dockerfile](./Dockerfile.910b.ubuntu)  | 
 | 26.0.0-a3-ubuntu22.04-py3.11                | [Dockerfile](./Dockerfile.a3.ubuntu)  | 
+| 26.0.0-310p-openeuler24.03-py3.11               | [Dockerfile](./Dockerfile.310p.openeuler)  | 
+| 26.0.0-910b-openeuler24.03-py3.11                | [Dockerfile](./Dockerfile.910b.openeuler)  | 
+| 26.0.0-a3-openeuler24.03-py3.11                | [Dockerfile](./Dockerfile.a3.openeuler)  | 
 
 ## 快速开始
 
