@@ -50,7 +50,6 @@ RUN cd /tmp && wget https://github.com/facebookresearch/faiss/archive/v1.10.0.ta
     cd dist && \
     pip3 install faiss-1.10.0*.whl
 
-COPY ./package/Ascend-* /tmp/
 # 安装index
 ARG MX_INDEX_INSTALL_PATH=/usr/local/Ascend/mxIndex
 ARG MX_INDEX_MODELPATH=/home/ascend/modelpath
