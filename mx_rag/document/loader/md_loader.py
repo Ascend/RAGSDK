@@ -132,8 +132,14 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
         img_path = element.metadata.image_url
         if img_path and self.vlm:
             try:
+                md_dir = os.path.dirname(os.path.realpath(self.file_path))
                 if not os.path.isabs(img_path):
-                    img_path = os.path.realpath(os.path.join(os.path.dirname(self.file_path), img_path))
+                    img_path = os.path.realpath(os.path.join(md_dir, img_path))
+                else:
+                    img_path = os.path.realpath(img_path)
+
+                if not os.path.commonpath([img_path, md_dir]) == md_dir:
+                    raise PermissionError(f"Image path '{img_path}' is outside the markdown directory.")
                 SecFileCheck(img_path, MAX_PAGE_CONTENT).check()
                 if Path(img_path).suffix not in IMAGE_TYPE:
                     raise TypeError(f"type '{Path(img_path).suffix}' is not support")
@@ -151,6 +157,9 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
                 return "", element.text
             except TypeError as type_error:
                 logger.warning(f"Unsupported image type: {str(type_error)}")
+                return "", element.text
+            except PermissionError as perm_error:
+                logger.warning(f"Image path not allowed: {str(perm_error)}")
                 return "", element.text
             except Exception as e:
                 logger.warning(f"An unexpected error occurred: {str(e)}")
