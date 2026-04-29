@@ -1184,7 +1184,7 @@ def lazy_load()
 
 **功能描述<a name="section957011509130"></a>**
 
-继承实现langchain\_core.document\_loaders.base.BaseLoader类和[mx\_rag.document.loader.BaseLoader类](#baseloader)，执行Markdown解析功能，支持.md，.markdown格式的文件（文件大小不能超过100MB），可解析文档中的图片信息和文档中的表格信息，传入视觉大模型对象可支持图片解析总结。MarkdownLoader首次使用时需要联网下载NLTK分词模型，出于安全考虑，默认不自动下载，如果报错可自行下载NLTK分词模型文件至nltk.data.path变量指定的路径下。
+继承实现langchain\_core.document\_loaders.base.BaseLoader类和[mx\_rag.document.loader.BaseLoader类](#baseloader)，执行Markdown解析功能，支持.md，.markdown格式的文件（文件大小不能超过100MB），可解析文档中的图片信息和文档中的表格信息，其中图片路径应位于markdown文件同目录或子目录，传入视觉大模型对象可支持图片解析总结。MarkdownLoader首次使用时需要联网下载NLTK分词模型，出于安全考虑，默认不自动下载，如果报错可自行下载NLTK分词模型文件至nltk.data.path变量指定的路径下。
 
 **函数原型<a name="section12411139493"></a>**
 
