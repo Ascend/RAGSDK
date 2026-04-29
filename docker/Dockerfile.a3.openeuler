@@ -66,7 +66,7 @@ RUN pip3 install torch-npu==2.1.0.post13 --extra-index-url https://download.pyto
 
 # 安装mxrag
 RUN ARCH=$(uname -m) && \
-    cd /tmp && wget https://gitcode.com/Ascend/RAGSDK/releases/download/v${RAGSDK_VERSION}/Ascend-mindxsdk-mxindex_${RAGSDK_VERSION}_linux-${ARCH}.run && \
+    cd /tmp && wget https://gitcode.com/Ascend/RAGSDK/releases/download/v${RAGSDK_VERSION}/Ascend-mindxsdk-mxrag_${RAGSDK_VERSION}_linux-${ARCH}.run && \
     bash /tmp/Ascend-mindxsdk-mxrag_*_linux-${ARCH}.run --install --install-path=/usr/local/Ascend --quiet --platform=${PLATFORM} && \
     pip3 install -r /usr/local/Ascend/mxRag/requirements.txt
 # 安装mxrag第三方依赖
