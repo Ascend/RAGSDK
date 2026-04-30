@@ -94,7 +94,7 @@ function patch_makeself() {
 
     if [ ! -e "${ROOT_PATH}/opensource/makeself" ]; then
         git clone https://gitcode.com/cann-src-third-party/makeself.git
-        cd makeself
+        cd makeself && git checkout v2.5.0-h1
         unzip makeself-release-2.5.0.zip
         cd makeself-release-2.5.0
         patch -p1 < ../*.patch
