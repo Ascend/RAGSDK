@@ -34,7 +34,7 @@ from mx_rag.summary import Summary
 from mx_rag.utils import ClientParam
 client_param = ClientParam(ca_file="/path/to/ca.crt")
 llm = Text2TextLLM(base_url="https://ip:port/v1/chat/completions", model_name="qianwen-7b", client_param=client_param)
-loader=DocxLoader("/home/HwHiAiUser/MindIE.docx")
+loader=DocxLoader("/workspace/MindIE.docx")
 docs = loader.load_and_split(RecursiveCharacterTextSplitter(chunk_size=750, chunk_overlap=150))
 summary = Summary(llm=llm)
 # 调用summarize方法
