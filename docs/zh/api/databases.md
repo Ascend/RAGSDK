@@ -968,7 +968,7 @@ class MxDocument(BaseModel):
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |page_content|str|必选|切分后的文本，长度范围[0, 16MB]。|
-|metadata|dict|可选|元数据，比如{'source': '/home/HwHiAiUser/gaokao.txt'}，字典长度不能超过1024，字典中的字符串长度不能超过128*1024*1024，字典嵌套深度不能超过1。|
+|metadata|dict|可选|元数据，比如{'source': '/workspace/gaokao.txt'}，字典长度不能超过1024，字典中的字符串长度不能超过128*1024*1024，字典嵌套深度不能超过1。|
 |document_name|str|必选|文件名称，长度范围[0, 1024]。|
 
 **调用示例<a name="section130714373472"></a>**
