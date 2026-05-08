@@ -1,4 +1,4 @@
-FROM swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.0.0-beta.2-310p-openeuler24.03-py3.11
+FROM swr.cn-south-1.myhuaweicloud.com/ascendhub/cann:9.0.0-310p-openeuler24.03-py3.11
 
 ARG PLATFORM=310P
 ARG PYTHON_VERSION=python3.11
