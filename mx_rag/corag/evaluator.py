@@ -350,7 +350,7 @@ class CoRagEvaluator:
             }
 
             if enable_naive_retrieval and self.retrieve_api_url:
-                naive_docs = self._naive_retrieve(question, num_contexts)
+                naive_docs = self._naive_retrieve(question, len(selected_documents))
                 n_hits, n_total = self._check_hit(naive_docs, golden_facts)
                 naive_recall_info = {
                     "hits": n_hits,
