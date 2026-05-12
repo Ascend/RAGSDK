@@ -260,15 +260,10 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 **操作步骤<a name="section539219178112"></a>**
 
 1. 切换用户至HwHiAiUser，并进入“/home/HwHiAiUser”目录。
-2. 安装torch和torch-npu。
+2. 安装torch-npu。
 
     ```bash
-    # for x86,安装torch:
-    pip3 install torch==2.1.0+cpu  --index-url [https://download.pytorch.org/whl/cpu](https://download.pytorch.org/whl/cpu)
-    # for aarch64,安装torch:
-    pip3 install torch==2.1.0 
-    # for all,安装torch-npu
-    pip3 install torch-npu==2.1.0.post12
+    pip3 install torch-npu==2.1.0.post13 --extra-index-url https://download.pytorch.org/whl/cpu
     ```
 
 3. 安装torchvision-npu
@@ -479,8 +474,6 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     ```bash
     bash  Ascend-mindxsdk-mxrag_<version>_linux-<arch>.run --install --install-path=<安装路径> --platform=<npu_type>
-    # 安装第三方依赖包
-    pip3 install  rank_bm25==0.2.2 langchain-opengauss==0.1.5
     # 安装依赖包
     pip3 install -r <安装路径>/mxRag/requirements.txt
     ```
