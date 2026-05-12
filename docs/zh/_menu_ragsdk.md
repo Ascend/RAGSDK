@@ -20,6 +20,7 @@
     -   [Prompt压缩](./api/prompt_compression.md)
     -   [大模型Chain](./api/llm_chains.md)
     -   [知识图谱](./api/knowledge_graph.md)
+    -   [corag模块](./api/corag_module.md)
 
 -   [常用操作](common_operations.md)
 -   [安全加固](security_hardening.md)
