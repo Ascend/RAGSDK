@@ -24,31 +24,43 @@ import stat
 from pathlib import Path
 from typing import Iterator
 
-from bs4 import BeautifulSoup
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
 from loguru import logger
-from unstructured.documents.elements import (
-    ElementType, Element
-)
+from unstructured.documents.elements import ElementType, Element
 
 from mx_rag.document.loader.base_loader import BaseLoader as mxBaseLoader
 from mx_rag.llm import Img2TextLLM
-from mx_rag.utils.common import validate_params, MAX_PAGE_CONTENT, IMAGE_TYPE, HEADER_MARK
+from mx_rag.utils.common import (
+    validate_params,
+    MAX_PAGE_CONTENT,
+    IMAGE_TYPE,
+    HEADER_MARK,
+)
 from mx_rag.utils.file_check import SecFileCheck
 
 
 class MarkdownLoader(BaseLoader, mxBaseLoader):
     """Loader for loading and processing Markdown documents."""
+
     EXTENSION = (".md", ".markdown")
 
     @validate_params(
-        vlm=dict(validator=lambda x: isinstance(x, Img2TextLLM) or x is None,
-                 message="param must be instance of Img2TextLLM or None"),
-        process_images_separately=dict(validator=lambda x: isinstance(x, bool),
-                                       message="process_images_separately must be boolean")
+        vlm=dict(
+            validator=lambda x: isinstance(x, Img2TextLLM) or x is None,
+            message="param must be instance of Img2TextLLM or None",
+        ),
+        process_images_separately=dict(
+            validator=lambda x: isinstance(x, bool),
+            message="process_images_separately must be boolean",
+        ),
     )
-    def __init__(self, file_path: str, vlm: Img2TextLLM = None, process_images_separately: bool = False):
+    def __init__(
+        self,
+        file_path: str,
+        vlm: Img2TextLLM = None,
+        process_images_separately: bool = False,
+    ):
         """Initialize the markdown loader with file path, VLM and process_images_separately options."""
         super().__init__(file_path)
         self.vlm = vlm
@@ -70,13 +82,15 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
                 content_parts.append(table_text)
             elif element.category == ElementType.IMAGE:
                 img_base64, image_text = self._handle_image(element)
-                if (self.process_images_separately):
-                    yield Document(page_content=image_text,
-                                   metadata={
-                                       "source": os.path.basename(self.file_path),
-                                       "image_base64": img_base64,
-                                       "type": "image"}
-                                   )
+                if self.process_images_separately:
+                    yield Document(
+                        page_content=image_text,
+                        metadata={
+                            "source": os.path.basename(self.file_path),
+                            "image_base64": img_base64,
+                            "type": "image",
+                        },
+                    )
                 else:
                     content_parts.append(image_text)
             elif element.category == ElementType.TITLE:
@@ -90,43 +104,19 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
         if full_content:
             yield Document(
                 page_content=full_content,
-                metadata={
-                    "source": os.path.basename(self.file_path),
-                    "type": "text"
-                }
+                metadata={"source": os.path.basename(self.file_path), "type": "text"},
             )
 
     def _handle_table(self, element: Element) -> str:
-        """Process table element and serialize it into text format."""
+        """Process table element and return original HTML table format."""
         logger.info(f"Processing markdown table {self.table_index}")
         self.table_index += 1
 
         table_html = element.metadata.text_as_html
-        soup = BeautifulSoup(table_html, 'html.parser')
-        rows = soup.find_all('tr')
-        if not rows:
-            logger.warning("The table is empty.")
-            return ""
+        if table_html:
+            return table_html.strip()
 
-        header_cells = rows[0].find_all(['td', 'th'])
-        headers = [cell.get_text(strip=True) for cell in header_cells]
-
-        serialized_rows = []
-        for row in rows[1:]:
-            cells = row.find_all(['td', 'th'])
-            row_data = [cell.get_text(strip=True) for cell in cells]
-            kv_pairs = []
-            for i, header in enumerate(headers):
-                if i < len(row_data):
-                    kv_pairs.append(f"{header}:{row_data[i]}")
-            if kv_pairs:
-                serialized_rows.append(",".join(kv_pairs))
-
-        serialized_table = ";".join(serialized_rows)
-        if serialized_table:
-            serialized_table += "。"
-
-        return serialized_table
+        return ""
 
     def _handle_image(self, element: Element) -> tuple[str, str]:
         img_path = element.metadata.image_url
@@ -146,12 +136,13 @@ class MarkdownLoader(BaseLoader, mxBaseLoader):
 
                 R_FLAGS = os.O_RDONLY
                 MODES = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-                with os.fdopen(os.open(img_path, R_FLAGS, MODES), 'rb') as f:
+                with os.fdopen(os.open(img_path, R_FLAGS, MODES), "rb") as f:
                     logger.debug(f"Processing markdown image: {img_path}")
                     image_data = f.read()
                     img_base64, image_summary = self._interpret_image(image_data, self.vlm)
-                    return img_base64, re.sub(r'^#+\s*', '', image_summary,
-                                              flags=re.MULTILINE) if image_summary else element.text
+                    return img_base64, re.sub(
+                        r"^#+\s*", "", image_summary, flags=re.MULTILINE
+                    ) if image_summary else element.text
             except FileNotFoundError as fnf_error:
                 logger.warning(f"Image file not found: {str(fnf_error)}")
                 return "", element.text
