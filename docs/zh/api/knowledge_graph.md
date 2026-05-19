@@ -11,14 +11,14 @@
 - **三元组抽取提示（TRIPLE\_INSTRUCTION\_CN）：**
 
     ```text
-    
+
     TRIPLE_INSTRUCTIONS_CN = {
         "entity_relation": """
     ## 目标
     请从以下文本中提取所有重要实体及其关系，并严格遵守以下规则：
     ## 要求
-    1. 实体必须为名词，尽量简洁；  
-    2. 关系必须为一个动词，准确描述“头实体”与“尾实体”之间的具体联系，且不得重复头、尾实体的字面信息；  
+    1. 实体必须为名词，尽量简洁；
+    2. 关系必须为一个动词，准确描述“头实体”与“尾实体”之间的具体联系，且不得重复头、尾实体的字面信息；
     3. 头实体与尾实体均不得为“是”，不得使用代词；
     4. 实体和关系不能为空字符串，不能为仅包含标点符号的字符串；
     5. 输出必须采用下列 JSON 格式，禁止添加、删除或修改任何字段：
@@ -92,15 +92,15 @@
     """,
         "event_relation": """
     ## 目标
-    请对以下段落逐句抽取事件，并识别它们之间的时间或因果关系。  
-    ## 要求  
-    1. 一句视为一个独立事件，保留原句，不做任何省略。  
-    2. 仅使用指定关系类型：在之前、在之后、同时、因为、结果。  
+    请对以下段落逐句抽取事件，并识别它们之间的时间或因果关系。
+    ## 要求
+    1. 一句视为一个独立事件，保留原句，不做任何省略。
+    2. 仅使用指定关系类型：在之前、在之后、同时、因为、结果。
     3. 每个三元组中的“头事件”与“尾事件”均须为段落中完整原句，且语义对应具体、可独立理解。
     4. “头事件”和“尾事件”不能为空字符串，且不能重叠；
     5. 关系不能为空字符串；
-    6. 输出严格使用下方 JSON 格式，不允许添加、删减或省略任何字段。  
-    ## JSON 格式  
+    6. 输出严格使用下方 JSON 格式，不允许添加、删减或省略任何字段。
+    ## JSON 格式
     [
         {
             "头事件": "{事件1完整原句}",
@@ -154,7 +154,7 @@
     ```text
     EVENT_PROMPT_CN = '''
     ## 目标
-    给定一个事件，提供多个短语来表示该事件的抽象概念。 
+    给定一个事件，提供多个短语来表示该事件的抽象概念。
     ## 输出格式
     短语1, 短语2, 短语3,...
     ## 要求
@@ -213,59 +213,59 @@
 
     ```text
     TRIPLE_INSTRUCTIONS_EN = {
-        "entity_relation": """Given a passage, summarize all the important entities and the relations between them in 
-        a concise manner. Relations should briefly capture the connections between entities, without repeating information 
-        from the head and tail entities. The entities should be as specific as possible. Exclude pronouns from 
+        "entity_relation": """Given a passage, summarize all the important entities and the relations between them in
+        a concise manner. Relations should briefly capture the connections between entities, without repeating information
+        from the head and tail entities. The entities should be as specific as possible. Exclude pronouns from
         being considered as entities. The output should strictly adhere to the following JSON format:
         [
             {
                 "Head": "{a noun}",
                 "Relation": "{a verb}",
-                "Tail": "{a noun}",
+                "Tail": "{a noun}"
             },
             {
                 "Head": "China",
                 "Relation": "Capital",
-                "Tail": "Beijing",
+                "Tail": "Beijing"
             },
             {
                 "Head": "Dog",
                 "Relation": "like",
-                "Tail": "bone",
+                "Tail": "bone"
             },
             {
                 "Head": "Mao Zedong",
                 "Relation": "Father",
-                "Tail": "Mao Anying",
+                "Tail": "Mao Anying"
             },
             {
                 "Head": "China Shipbuilding Materials Yungui Co., Ltd.",
                 "Relation": "Established",
-                "Tail": "May 31, 1990",
+                "Tail": "May 31, 1990"
             },
             {
                 "Head": "Company",
                 "Relation": "Address",
-                "Tail": "Kunming City, Yunnan Province",
+                "Tail": "Kunming City, Yunnan Province"
             },
             {
                 "Head": "Company",
                 "Relation": "Operation",
-                "Tail": "Electronics",
+                "Tail": "Electronics"
             },
             {
                 "Head": "Year 1999",
                 "Relation": "Before",
-                "Tail": "Year 2000",
+                "Tail": "Year 2000"
             },
             {
                 "Head": "Year 2001",
                 "Relation": "After",
-                "Tail": "Year 2000",
+                "Tail": "Year 2000"
             },
         ]""",
-        "event_entity": """Please analyze and summarize the participation relations between the events and entities 
-        in the given paragraph. Each event is a single independent sentence. Additionally, identify all the entities 
+        "event_entity": """Please analyze and summarize the participation relations between the events and entities
+        in the given paragraph. Each event is a single independent sentence. Additionally, identify all the entities
         that participated in the events. Do not use ellipses. Please strictly output in the following JSON format:
         [
             {
@@ -273,7 +273,7 @@
                 "Entity": ["entity 1", "entity 2", "..."]
             }...
         ] """,
-        "event_relation": """Please analyze and summarize the relationships between the events in the paragraph. 
+        "event_relation": """Please analyze and summarize the relationships between the events in the paragraph.
         Each event is a single independent sentence. Identify temporal and causal relationships between the events using the following types: before, after, at the same time, because, and as a result. Each extracted triple should be specific, meaningful, and able to stand alone.  Do not use ellipses.  The output should strictly adhere to the following JSON format:
         [
             {
@@ -288,12 +288,12 @@
 - **实体概念化提示 \(ENTITY\_PROMPT\_EN\):**
 
     ```text
-    ENTITY_PROMPT_EN = '''I will give you an ENTITY. You need to give several phrases containing 1-2 words for the 
+    ENTITY_PROMPT_EN = '''I will give you an ENTITY. You need to give several phrases containing 1-2 words for the
                 ABSTRACT ENTITY of this ENTITY.
                 You must return your answer in the following format: phrases1, phrases2, phrases3,...
                 You can't return anything other than answers.
                 These abstract intention words should fulfill the following requirements.
-                1. The ABSTRACT ENTITY phrases can well represent the ENTITY, and it could be the type of the ENTITY or 
+                1. The ABSTRACT ENTITY phrases can well represent the ENTITY, and it could be the type of the ENTITY or
                 the related concepts of the ENTITY.
                 2. Strictly follow the provided format, do not add extra characters or words.
                 3. Write at least 3 or more phrases at different abstract level if possible.
@@ -323,19 +323,19 @@
 - **事件概念化提示 \(EVENT\_PROMPT\_EN\):**
 
     ```text
-    EVENT_PROMPT_EN = '''I will give you an EVENT. You need to give several phrases containing 1-2 words for the 
+    EVENT_PROMPT_EN = '''I will give you an EVENT. You need to give several phrases containing 1-2 words for the
                 ABSTRACT EVENT of this EVENT.
                 You must return your answer in the following format: phrases1, phrases2, phrases3,...
                 You can't return anything other than answers.
                 These abstract event words should fulfill the following requirements.
-                1. The ABSTRACT EVENT phrases can well represent the EVENT, and it could be the type of the EVENT or the related concepts of the EVENT.    
+                1. The ABSTRACT EVENT phrases can well represent the EVENT, and it could be the type of the EVENT or the related concepts of the EVENT.
                 2. Strictly follow the provided format, do not add extra characters or words.
                 3. Write at least 3 or more phrases at different abstract level if possible.
                 4. Do not repeat the same word and the input in the answer.
                 5. Stop immediately if you can't think of any more phrases, and no explanation is needed.
                 EVENT: A man retreats to mountains and forests
                 Your answer: retreat, relaxation, escape, nature, solitude
-                
+
                 EVENT: A cat chased a prey into its shelter
                 Your answer: hunting, escape, predation, hiding, stalking
                 EVENT: Sam playing with his dog
@@ -348,18 +348,18 @@
 - **关系概念化提示 \(RELATION\_PROMPT\_EN\):**
 
     ```text
-    RELATION_PROMPT_EN = '''I will give you an RELATION. You need to give several phrases containing 1-2 words for 
+    RELATION_PROMPT_EN = '''I will give you an RELATION. You need to give several phrases containing 1-2 words for
                 the ABSTRACT RELATION of this RELATION.
                 You must return your answer in the following format: phrases1, phrases2, phrases3,...
                 You can't return anything other than answers.
                 These abstract intention words should fulfill the following requirements.
-                1. The ABSTRACT RELATION phrases can well represent the RELATION, and it could be the type of the RELATION 
+                1. The ABSTRACT RELATION phrases can well represent the RELATION, and it could be the type of the RELATION
                 or the simplest concepts of the RELATION.
                 2. Strictly follow the provided format, do not add extra characters or words.
                 3. Write at least 3 or more phrases at different abstract level if possible.
                 4. Do not repeat the same word and the input in the answer.
                 5. Stop immediately if you can't think of any more phrases, and no explanation is needed.
-                
+
                 RELATION: participated in
                 Your answer: become part of, attend, take part in, engage in, involve in
                 RELATION: be included in
@@ -496,16 +496,15 @@ def upload_files(file_list, loader_mng)
 **函数原型<a name="section18789201331417"></a>**
 
 ```python
-def build_graph(lang, pad_token, **kwargs)
+def build_graph(lang, **kwargs)
 ```
 
 **输入参数说明<a name="section1054013414143"></a>**
 
-|参数名|数据类型|是否必选|说明|
-|--|--|--|--|
-|lang|Lang|否|语料所用的语言，默认取值为Lang.EN，即英文语料。|
-|pad_token|str|否|大语言模型使用填充字符，默认为空字符，其取值范围为[0, 255]。|
-|kwargs|dict|否|扩展参数列表：<li>max_workers：构建知识图谱的线程数。默认值为5。</li><li>batch_size，节点向量化，检索等操作批大小，默认为32。</li><li>top_k：在对图节点概念进行聚类时，向量检索返回的最相似概念数量。默认值为5，取值范围为[1, 100]。</li><li>threshold：向量相似性阈值。低于此值的相似性结果将被过滤。默认值为0.3，取值范围为[0.0,1.0]。</li><li>triple_instructions: 用于指导大型语言模型（LLM）从文档中抽取关系的指令，字典类型。默认值为None，此时将根据语言使用默认值（中文为TRIPLE_INSTRUCTIONS_CN，英文为TRIPLE_INSTRUCTIONS_EN）。用户可以通过提供一个字典来覆盖默认的抽取指令。该字典必须包含以下键：<ul><li>entity_relation：对应的值定义实体关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。</li><li>event_entity：对应的值定义事件实体抽取的指令, 字符串类型，长度范围为[1, 1048576]。</li><li>event_relation：对应的值定义事件关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。<br>每个键对应的值定义了特定提取任务的指令。</li></ul></li><li>conceptualizer_prompts: 用于指导LLM进行概念化的提示，字典类型。默认值为None。用户可以通过提供一个字典来覆盖默认的概念化提示。该字典必须包含以下键：<ul><li>entity: 对应的值定义对图中实体进行概念化的提示， 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为ENTITY_PROMPT_CN，英文为ENTITY_PROMPT_EN）。</li><li>event: 定义对图中事件进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为EVENT_PROMPT_CN，英文为EVENT_PROMPT_EN）。</li><li>relation: 定义对图中关系进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为RELATION_PROMPT_CN，英文为RELATION_PROMPT_EN）。</li></ul></li>|
+| 参数名    | 数据类型 | 是否必选 | 说明                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|--------|------|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| lang   | Lang | 否    | 语料所用的语言，默认取值为Lang.EN，即英文语料。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| kwargs | dict | 否    | 扩展参数列表：<li>max_workers：构建知识图谱的线程数。默认值为5。</li><li>batch_size，节点向量化，检索等操作批大小，默认为32。</li><li>top_k：在对图节点概念进行聚类时，向量检索返回的最相似概念数量。默认值为5，取值范围为[1, 100]。</li><li>threshold：向量相似性阈值。低于此值的相似性结果将被过滤。默认值为0.3，取值范围为[0.0,1.0]。</li><li>triple_instructions: 用于指导大型语言模型（LLM）从文档中抽取关系的指令，字典类型。默认值为None，此时将根据语言使用默认值（中文为TRIPLE_INSTRUCTIONS_CN，英文为TRIPLE_INSTRUCTIONS_EN）。用户可以通过提供一个字典来覆盖默认的抽取指令。该字典必须包含以下键：<ul><li>entity_relation：对应的值定义实体关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。</li><li>event_entity：对应的值定义事件实体抽取的指令, 字符串类型，长度范围为[1, 1048576]。</li><li>event_relation：对应的值定义事件关系抽取的指令, 字符串类型，长度范围为[1, 1048576]。<br>每个键对应的值定义了特定提取任务的指令。</li></ul></li><li>conceptualizer_prompts: 用于指导LLM进行概念化的提示，字典类型。默认值为None。用户可以通过提供一个字典来覆盖默认的概念化提示。该字典必须包含以下键：<ul><li>entity: 对应的值定义对图中实体进行概念化的提示， 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为ENTITY_PROMPT_CN，英文为ENTITY_PROMPT_EN）。</li><li>event: 定义对图中事件进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为EVENT_PROMPT_CN，英文为EVENT_PROMPT_EN）。</li><li>relation: 定义对图中关系进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为RELATION_PROMPT_CN，英文为RELATION_PROMPT_EN）。</li></ul></li> |
 
 **返回值说明<a name="section14945144616426"></a>**
 
@@ -513,7 +512,7 @@ def build_graph(lang, pad_token, **kwargs)
 
 方法执行后会在work\_dir下生成过程文件：
 
-**表 1** 
+**表 1**
 
 |文件名|说明|
 |--|--|

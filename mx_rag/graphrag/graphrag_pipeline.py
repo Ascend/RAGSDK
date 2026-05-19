@@ -22,11 +22,12 @@ import os
 from typing import List, Optional, Callable
 from pathlib import Path
 
+import numpy as np
 from loguru import logger
 from langchain_core.embeddings import Embeddings
-from langchain_opengauss import openGaussAGEGraph
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_opengauss import openGaussAGEGraph
 from pydantic import ConfigDict
 
 from mx_rag.storage.document_store.base_storage import StorageError
@@ -59,11 +60,14 @@ class GraphRetriever(BaseRetriever):
     graph_rag_model: GraphRAGModel
 
     @validate_params(
-        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-                   message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]")
+        query=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+            message=f"query must be a str and length range (0, {TEXT_MAX_LEN}]",
+        )
     )
-    def _get_relevant_documents(self, query: str, *,
-                                run_manager: Optional[CallbackManagerForRetrieverRun] = None) -> str:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun] = None
+    ) -> str:
         return self.graph_rag_model.generate([query])[0]
 
 
@@ -78,26 +82,48 @@ class GraphRAGPipeline:
     FREE_SPACE_LIMIT = 5 * 1024 * 1024 * 1024  # 5GB
 
     @validate_params(
-        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM),
-                 message="llm must be an instance of Text2TextLLM"),
-        embedding_model=dict(validator=lambda x: isinstance(x, Embeddings),
-                             message="embedding_model must be an instance of Embeddings"),
-        rerank_model=dict(validator=lambda x: isinstance(x, Reranker) or (x is None),
-                          message="rerank_model must be an instance of Reranker or None"),
-        dim=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1024 * 1024,
-                 message="dim must be an integer, value range [1, 1024 * 1024]"),
-        graph_name=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) < 256 and x.isidentifier(),
-                        message="graph_name must be a str and length range [1, 255]"),
-        graph_type=dict(validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
-                        message="graph_type must be 'networkx' or 'opengauss'"),
-        encrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
-                        message="encrypt_fn must be None or callable function"),
-        decrypt_fn=dict(validator=lambda x: x is None or isinstance(x, Callable),
-                        message="decrypt_fn must be None or callable function")
+        llm=dict(validator=lambda x: isinstance(x, Text2TextLLM), message="llm must be an instance of Text2TextLLM"),
+        embedding_model=dict(
+            validator=lambda x: isinstance(x, Embeddings), message="embedding_model must be an instance of Embeddings"
+        ),
+        rerank_model=dict(
+            validator=lambda x: isinstance(x, Reranker) or (x is None),
+            message="rerank_model must be an instance of Reranker or None",
+        ),
+        dim=dict(
+            validator=lambda x: isinstance(x, int) and 0 < x <= 1024 * 1024,
+            message="dim must be an integer, value range [1, 1024 * 1024]",
+        ),
+        graph_name=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) < 256 and x.isidentifier(),
+            message="graph_name must be a str and length range [1, 255]",
+        ),
+        graph_type=dict(
+            validator=lambda x: isinstance(x, str) and x in ["networkx", "opengauss"],
+            message="graph_type must be 'networkx' or 'opengauss'",
+        ),
+        encrypt_fn=dict(
+            validator=lambda x: x is None or isinstance(x, Callable),
+            message="encrypt_fn must be None or callable function",
+        ),
+        decrypt_fn=dict(
+            validator=lambda x: x is None or isinstance(x, Callable),
+            message="decrypt_fn must be None or callable function",
+        ),
     )
-    def __init__(self, work_dir: str, llm, embedding_model, dim: int, rerank_model: Reranker = None,
-                 graph_type="networkx", graph_name: str = "graph", encrypt_fn=None,
-                 decrypt_fn=None, **kwargs):
+    def __init__(
+        self,
+        work_dir: str,
+        llm,
+        embedding_model,
+        dim: int,
+        rerank_model: Reranker = None,
+        graph_type="networkx",
+        graph_name: str = "graph",
+        encrypt_fn=None,
+        decrypt_fn=None,
+        **kwargs,
+    ):
         FileCheck.check_input_path_valid(work_dir, check_blacklist=True)
         FileCheck.check_filename_valid(work_dir)
         if check_disk_free_space(work_dir, self.FREE_SPACE_LIMIT):
@@ -109,6 +135,7 @@ class GraphRAGPipeline:
         self.graph_type = graph_type
         self.encrypt_fn = encrypt_fn
         self.decrypt_fn = decrypt_fn
+        self.graph = None
         self._setup_graph(**kwargs)
         self.llm = llm
         self.embedding_model = embedding_model
@@ -126,9 +153,11 @@ class GraphRAGPipeline:
         self._init_vector_store(**kwargs)
 
     @validate_params(
-        file_list=dict(validator=lambda x: isinstance(x, list) and 0 < len(x) <= 100,
-                       message="file_list must be list, and length range [1, 100]"),
-        loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng")
+        file_list=dict(
+            validator=lambda x: isinstance(x, list) and 0 < len(x) <= 100,
+            message="file_list must be list, and length range [1, 100]",
+        ),
+        loader_mng=dict(validator=lambda x: isinstance(x, LoaderMng), message="param must be instance of LoaderMng"),
     )
     def upload_files(self, file_list: list, loader_mng: LoaderMng):
         failed_files = []
@@ -155,17 +184,12 @@ class GraphRAGPipeline:
         lang=dict(
             validator=lambda x: isinstance(x, Lang),
             message="param must be a Lang instance",
-        ),
-        pad_token=dict(
-            validator=lambda x: isinstance(x, str) and len(x) < 256,
-            message="param must be a string, range [0, 255]",
         )
     )
     def build_graph(
-            self,
-            lang: Lang = Lang.EN,
-            pad_token: str = "",
-            **kwargs,
+        self,
+        lang: Lang = Lang.EN,
+        **kwargs,
     ):
         max_workers = kwargs.pop("max_workers", 5)
         top_k = kwargs.pop("top_k", 5)
@@ -179,7 +203,6 @@ class GraphRAGPipeline:
         try:
             extractor = LLMRelationExtractor(
                 llm=self.llm,
-                pad_token=pad_token,
                 language=lang,
                 max_workers=max_workers,
                 triple_instructions=self.triple_instructions,
@@ -196,6 +219,22 @@ class GraphRAGPipeline:
             if self.conceptualize:
                 self._process_concepts_and_clusters(lang, top_k, threshold, max_workers, batch_size)
             logger.info("Graph built successfully")
+
+            logger.info("Building node embedding to database...")
+
+            node_names = [str(node) for node in self.graph.get_nodes(with_data=False) if str(node).strip()]
+            node_vector_store_wrapper = VectorStoreWrapper(vector_store=self.node_vector_store)
+            node_vector_store_wrapper.clear()
+            for start_index in range(0, len(node_names), batch_size):
+                texts = node_names[start_index : start_index + batch_size]
+                # Batch embedding for efficiency
+                embeddings = self.embedding_model.embed_documents(texts, batch_size=batch_size)
+                actual_count = len(texts)
+                node_vector_store_wrapper.add(
+                    np.asarray(embeddings), np.arange(start_index, start_index + actual_count).tolist()
+                )
+            node_vector_store_wrapper.save()
+
         except ConnectionError as e:
             logger.error(f"Connection error: {e}")
             raise GraphRAGError("Graph building failed due to connection issue") from e
@@ -206,8 +245,11 @@ class GraphRAGPipeline:
             raise GraphRAGError("Graph building failed") from e
 
     @validate_params(
-        question=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-                      message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]"))
+        question=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+            message=f"param must be a str and its length meets (0, {TEXT_MAX_LEN}]",
+        )
+    )
     def retrieve_graph(self, question: str, **kwargs):
         if self.graph.number_of_nodes() == 0:
             raise GraphRAGError("Empty graph, first build the graph")
@@ -215,9 +257,6 @@ class GraphRAGPipeline:
         return self.as_retriever(**kwargs).invoke(question)
 
     def as_retriever(self, **kwargs):
-        self._setup_save_path(self.graph_name)
-        self._setup_graph()
-
         use_text = kwargs.pop("use_text", True)
         batch_size = kwargs.pop("batch_size", 4)
         similarity_tail_threshold = kwargs.pop("similarity_tail_threshold", 0.0)
@@ -231,7 +270,8 @@ class GraphRAGPipeline:
             concept_vector_store_wrapper = None
 
         rag_model = GraphRAGModel(
-            llm=self.llm, llm_config=self.llm.llm_config,
+            llm=self.llm,
+            llm_config=self.llm.llm_config,
             embed_func=self.embedding_model.embed_documents,
             graph_store=self.graph,
             vector_store=node_vector_store_wrapper,
@@ -242,7 +282,7 @@ class GraphRAGPipeline:
             similarity_tail_threshold=similarity_tail_threshold,
             retrieval_top_k=retrieval_top_k,
             reranker_top_k=reranker_top_k,
-            subgraph_depth=subgraph_depth
+            subgraph_depth=subgraph_depth,
         )
         return GraphRetriever(graph_rag_model=rag_model)
 
@@ -252,10 +292,7 @@ class GraphRAGPipeline:
 
         if self.node_vector_store is None:
             self.node_vector_store = VectorStorageFactory.create_storage(
-                vector_type="npu_faiss_db",
-                x_dim=self.dim,
-                load_local_index=self.node_vectors_path,
-                devs=self.devs
+                vector_type="npu_faiss_db", x_dim=self.dim, load_local_index=self.node_vectors_path, devs=self.devs
             )
         elif not isinstance(self.node_vector_store, VectorStore):
             raise GraphRAGError("node_vector_store must be an instance of VectorStore")
@@ -265,7 +302,7 @@ class GraphRAGPipeline:
                     vector_type="npu_faiss_db",
                     x_dim=self.dim,
                     load_local_index=self.concept_vectors_path,
-                    devs=self.devs
+                    devs=self.devs,
                 )
             elif not isinstance(self.concept_vector_store, VectorStore):
                 raise GraphRAGError("concept_vector_store must be an instance of VectorStore")
@@ -292,9 +329,7 @@ class GraphRAGPipeline:
 
     def _process_concepts_and_clusters(self, lang, top_k, threshold, max_workers, batch_size):
         if self.concept_embedding is None:
-            self.concept_embedding = ConceptEmbedding(
-                self.embedding_model.embed_documents
-            )
+            self.concept_embedding = ConceptEmbedding(self.embedding_model.embed_documents)
         concepts = GraphConceptualizer(
             self.llm,
             self.graph,

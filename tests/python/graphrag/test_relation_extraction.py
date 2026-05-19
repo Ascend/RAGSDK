@@ -27,16 +27,16 @@ from mx_rag.graphrag.relation_extraction import (
     _parse_and_repair_json,
     generate_relations_cn,
     generate_relations_en,
-    LLMRelationExtractor
+    LLMRelationExtractor,
 )
 from mx_rag.utils.common import Lang
+
 
 def mock_return_input(x, *args):
     return x
 
 
 class TestParseAndRepairJson(unittest.TestCase):
-
     def setUp(self):
         self.mock_llm = Mock()
         self.mock_llm.chat.return_value = '[{"entity": "test", "relation": "example"}]'
@@ -92,7 +92,6 @@ class TestParseAndRepairJson(unittest.TestCase):
 
 
 class TestGenerateRelations(unittest.TestCase):
-
     def setUp(self):
         self.mock_llm = Mock()
 
@@ -101,9 +100,7 @@ class TestGenerateRelations(unittest.TestCase):
         mock_parse.return_value = [{"entity": "test"}]
         repair_func = Mock()
 
-        result = generate_relations_cn(
-            self.mock_llm, "<pad>", ["text<pad>1", "text<pad>2"], repair_func
-        )
+        result = generate_relations_cn(self.mock_llm, ["text1", "text2"], repair_func)
 
         self.assertEqual(len(result), 2)
         self.assertEqual(mock_parse.call_count, 2)
@@ -122,60 +119,60 @@ class TestGenerateRelations(unittest.TestCase):
 
 
 class TestLLMRelationExtractor(unittest.TestCase):
-
     def setUp(self):
         self.mock_llm = Mock()
         self.mock_llm.model_name = "test_model"
 
-    @patch('mx_rag.graphrag.relation_extraction.TRIPLE_INSTRUCTIONS_CN', {
-        "entity_relation": "extract entities",
-        "event_entity": "extract events",
-        "event_relation": "extract event relations"
-    })
+    @patch(
+        'mx_rag.graphrag.relation_extraction.TRIPLE_INSTRUCTIONS_CN',
+        {
+            "entity_relation": "extract entities",
+            "event_entity": "extract events",
+            "event_relation": "extract event relations",
+        },
+    )
     def test_init_chinese(self):
-        extractor = LLMRelationExtractor(self.mock_llm, "<pad>", Lang.CH, max_workers=4)
+        extractor = LLMRelationExtractor(self.mock_llm, Lang.CH, max_workers=4)
 
         self.assertEqual(extractor.llm, self.mock_llm)
-        self.assertEqual(extractor.pad_token, "<pad>")
         self.assertEqual(extractor.language, Lang.CH)
         self.assertEqual(extractor.max_workers, 4)
         self.assertIn("entity_relation", extractor.user_prompts)
         self.assertIn("event_entity", extractor.user_prompts)
         self.assertIn("event_relation", extractor.user_prompts)
 
-    @patch('mx_rag.graphrag.relation_extraction.TRIPLE_INSTRUCTIONS_EN', {
-        "entity_relation": "extract entities en",
-        "event_entity": "extract events en",
-        "event_relation": "extract event relations en"
-    })
+    @patch(
+        'mx_rag.graphrag.relation_extraction.TRIPLE_INSTRUCTIONS_EN',
+        {
+            "entity_relation": "extract entities en",
+            "event_entity": "extract events en",
+            "event_relation": "extract event relations en",
+        },
+    )
     def test_init_english_default_template(self):
-        extractor = LLMRelationExtractor(self.mock_llm, "<pad>", Lang.EN)
+        extractor = LLMRelationExtractor(self.mock_llm, Lang.EN)
         self.assertEqual(extractor.language, Lang.EN)
 
     @patch('mx_rag.graphrag.relation_extraction.generate_relations_cn')
     def test_process_relations_chinese(self, mock_generate_cn):
         mock_generate_cn.return_value = [{"test": "result"}]
-        extractor = LLMRelationExtractor(self.mock_llm, "<pad>", Lang.CH)
+        extractor = LLMRelationExtractor(self.mock_llm, Lang.CH)
         repair_func = Mock()
 
         result = extractor._process_relations(["output1", "output2"], repair_func)
 
-        mock_generate_cn.assert_called_once_with(
-            self.mock_llm, "<pad>", ["output1", "output2"], repair_func
-        )
+        mock_generate_cn.assert_called_once_with(self.mock_llm, ["output1", "output2"], repair_func)
         self.assertEqual(result, [{"test": "result"}])
 
     @patch('mx_rag.graphrag.relation_extraction.generate_relations_en')
     def test_process_relations_english(self, mock_generate_en):
         mock_generate_en.return_value = [{"test": "result"}]
-        extractor = LLMRelationExtractor(self.mock_llm, "<pad>", Lang.EN)
+        extractor = LLMRelationExtractor(self.mock_llm, Lang.EN)
         repair_func = Mock()
 
         result = extractor._process_relations(["output1", "output2"], repair_func)
 
-        mock_generate_en.assert_called_once_with(
-            self.mock_llm, ["output1", "output2"]
-        )
+        mock_generate_en.assert_called_once_with(self.mock_llm, ["output1", "output2"])
         self.assertEqual(result, [{"test": "result"}])
 
     @patch('mx_rag.graphrag.relation_extraction.fix_entity_relation_json_string')
@@ -183,18 +180,18 @@ class TestLLMRelationExtractor(unittest.TestCase):
     @patch('mx_rag.graphrag.relation_extraction.fix_event_relation_json_string')
     def test_query(self, mock_fix_event_rel, mock_fix_entity_event, mock_fix_entity_rel):
         # Setup mocks
-        extractor = LLMRelationExtractor(self.mock_llm, "<pad>", max_workers=1)
+        extractor = LLMRelationExtractor(self.mock_llm, max_workers=1)
         extractor._process_relations = Mock()
         extractor._process_relations.side_effect = [
             [{"entity": "rel1"}, {"entity": "rel2"}],  # entity_relations
             [{"event": "ent1"}, {"event": "ent2"}],  # event_entity_relations
-            [{"event": "rel1"}, {"event": "rel2"}]  # event_relations
+            [{"event": "rel1"}, {"event": "rel2"}],  # event_relations
         ]
 
         # Create test documents
         docs = [
             Document(page_content="text1", metadata={"source": "file1"}, document_name="file1"),
-            Document(page_content="text2", metadata={"source": "file2"}, document_name="file2")
+            Document(page_content="text2", metadata={"source": "file2"}, document_name="file2"),
         ]
 
         result = extractor.query(docs)

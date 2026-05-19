@@ -21,6 +21,7 @@ See the Mulan PSL v2 for more details.
 import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, List, Optional
+from functools import partial
 
 from json_repair import repair_json
 from langchain_core.documents import Document
@@ -41,21 +42,19 @@ from mx_rag.utils.common import Lang, validate_params, MAX_PROMPT_LENGTH
 
 
 def _parse_and_repair_json(
-        llm: Text2TextLLM,
-        text: str,
-        answer_start_token: str = "",
-        repair_function: Optional[Callable[[str], str]] = None,
-        remove_space: bool = False,
-        handle_single_quote: bool = False,
-        llm_repair_prompt_template: str = JSON_REPAIR_PROMPT,
+    llm: Text2TextLLM,
+    text: str,
+    answer_start_str: str = "",
+    repair_function: Optional[Callable[[str], str]] = None,
+    remove_space: bool = False,
+    handle_single_quote: bool = False,
+    llm_repair_prompt_template: str = JSON_REPAIR_PROMPT,
 ) -> List[dict]:
     """
     Efficiently parse and repair a JSON-like string, escalating from local fixes to LLM repair.
     """
-    json_text = extract_json_like_substring(text, answer_start_token).strip()
-    normalized_json_text = normalize_json_string(
-        json_text, remove_space, handle_single_quote
-    )
+    json_text = extract_json_like_substring(text, answer_start_str).strip()
+    normalized_json_text = normalize_json_string(json_text, remove_space, handle_single_quote)
     repaired_json_text = repair_json(normalized_json_text, ensure_ascii=False)
 
     def try_parse(s: str) -> Optional[List[dict]]:
@@ -73,9 +72,7 @@ def _parse_and_repair_json(
         except Exception:
             return None
 
-    def attempt_repair_and_parse(
-            repair_strategy: Callable[[str], str], text
-    ) -> Optional[List[dict]]:
+    def attempt_repair_and_parse(repair_strategy: Callable[[str], str], text) -> Optional[List[dict]]:
         try:
             repaired = repair_strategy(text)
             return try_parse(repaired)
@@ -103,9 +100,7 @@ def _parse_and_repair_json(
             return result
 
     # Try LLM repair
-    result = attempt_repair_and_parse(
-        lambda s: llm.chat(llm_repair_prompt_template.format(q=s)), json_text
-    )
+    result = attempt_repair_and_parse(lambda s: llm.chat(llm_repair_prompt_template.format(q=s)), json_text)
     if result:
         return result
 
@@ -114,17 +109,15 @@ def _parse_and_repair_json(
 
 
 def generate_relations_cn(
-        llm: Text2TextLLM,
-        pad_token: str,
-        texts: List[str],
-        repair_function: Callable[[str], str],
+    llm: Text2TextLLM,
+    texts: List[str],
+    repair_function: Callable[[str], str],
 ) -> List[List[dict]]:
     """
     Generalized function to generate a list of relations from the model output (Chinese).
     """
-    processed_texts = [text.replace(pad_token, "") for text in texts]
     relations = []
-    for text in processed_texts:
+    for text in texts:
         relations.append(_parse_and_repair_json(llm, text, "", repair_function, True, True))
     return relations
 
@@ -143,8 +136,7 @@ def _check_triple_instructions(triple_instructions: Optional[dict] = None) -> bo
     if triple_instructions is None:
         return True
     return isinstance(triple_instructions, dict) and all(
-        isinstance(triple_instructions.get(k), str)
-        and 1 <= len(triple_instructions.get(k)) <= MAX_PROMPT_LENGTH
+        isinstance(triple_instructions.get(k), str) and 1 <= len(triple_instructions.get(k)) <= MAX_PROMPT_LENGTH
         for k in ["entity_relation", "event_entity", "event_relation"]
     )
 
@@ -155,7 +147,6 @@ class LLMRelationExtractor:
     It supports multiple configurations for different extraction tasks and languages.
     Attributes:
         llm (Text2TextLLM): The language model used for text-to-text generation.
-        pad_token (str): The token used for padding in the LLM.
         language (Lang): The language setting, defaulting to Chinese (Lang.CH).
         triple_instructions (dict): Instructions for extracting triples based on the language.
         user_prompts (dict): User prompts for different extraction tasks
@@ -170,21 +161,19 @@ class LLMRelationExtractor:
     )
     @validate_params(
         triple_instructions=dict(
-            validator=lambda x: _check_triple_instructions(x),
+            validator=_check_triple_instructions,
             message=f"Must be None or a dict with keys: 'entity_relation', 'event_entity', 'event_relation' "
-                    f"and each value must be a string with length in [1, {MAX_PROMPT_LENGTH}]",
+            f"and each value must be a string with length in [1, {MAX_PROMPT_LENGTH}]",
         )
     )
     def __init__(
-            self,
-            llm: Text2TextLLM,
-            pad_token: str,
-            language: Lang = Lang.CH,
-            max_workers=None,
-            triple_instructions: Optional[dict] = None,
+        self,
+        llm: Text2TextLLM,
+        language: Lang = Lang.CH,
+        max_workers=None,
+        triple_instructions: Optional[dict] = None,
     ):
         self.llm = llm
-        self.pad_token = pad_token
         self.language = language
         self.max_workers = max_workers
         triple_instructions = triple_instructions or (
@@ -199,8 +188,8 @@ class LLMRelationExtractor:
     @validate_params(
         docs=dict(
             validator=lambda x: isinstance(x, list)
-                                and all(isinstance(it, Document) for it in x)
-                                and 0 < len(x) <= 1000000,
+            and all(isinstance(it, Document) for it in x)
+            and 0 < len(x) <= 1000000,
             message="param must be a list of Document elements, length range [1, 1000000]",
         )
     )
@@ -210,25 +199,19 @@ class LLMRelationExtractor:
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             for key, user_prompt in self.user_prompts.items():
                 texts = [doc.page_content for doc in docs]
+                # 使用 partial 绑定当前的 user_prompt
+                chat_func = partial(lambda p, t: self.llm.chat(f"{p}{t}"), user_prompt)
                 outputs[key] = list(
                     tqdm(
-                        executor.map(
-                            lambda text: self.llm.chat(f"{user_prompt}{text}"), texts
-                        ),
+                        executor.map(chat_func, texts),
                         total=len(texts),
                         desc=f"Processing {key}",
                     )
                 )
 
-        entity_relations = self._process_relations(
-            outputs["entity_relation"], fix_entity_relation_json_string
-        )
-        event_entity_relations = self._process_relations(
-            outputs["event_entity"], fix_entity_event_json_string
-        )
-        event_relations = self._process_relations(
-            outputs["event_relation"], fix_event_relation_json_string
-        )
+        entity_relations = self._process_relations(outputs["entity_relation"], fix_entity_relation_json_string)
+        event_entity_relations = self._process_relations(outputs["event_entity"], fix_entity_event_json_string)
+        event_relations = self._process_relations(outputs["event_relation"], fix_event_relation_json_string)
 
         return [
             {
@@ -244,11 +227,7 @@ class LLMRelationExtractor:
             for i, doc in enumerate(docs)
         ]
 
-    def _process_relations(
-            self, outputs: List[str], repair_function: Callable
-    ) -> List[List[dict]]:
+    def _process_relations(self, outputs: List[str], repair_function: Callable) -> List[List[dict]]:
         if self.language == Lang.CH:
-            return generate_relations_cn(
-                self.llm, self.pad_token, outputs, repair_function
-            )
+            return generate_relations_cn(self.llm, outputs, repair_function)
         return generate_relations_en(self.llm, outputs)
