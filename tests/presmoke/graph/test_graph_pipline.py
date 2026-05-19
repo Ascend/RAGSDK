@@ -37,10 +37,12 @@ from mx_rag.utils import ClientParam
 
 class TestGraphPipline(unittest.TestCase):
     def test_graph_pipline(self):
-        test_file_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                       "../../data/test.txt"))
-        work_dir = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                 "../../data/test_pipeline"))
+        test_file_path = os.path.realpath(
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/test.txt")
+        )
+        work_dir = os.path.realpath(
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/test_pipeline")
+        )
         if not os.path.exists(work_dir):
             os.makedirs(work_dir)
         dev_id = 0
@@ -55,27 +57,25 @@ class TestGraphPipline(unittest.TestCase):
         data_load_mng = LoaderMng()
         data_load_mng.register_loader(TextLoader, [".txt"])
         data_load_mng.register_splitter(
-            RecursiveCharacterTextSplitter,
-            [".txt"],
-            dict(chunk_size=512, chunk_overlap=20)
+            RecursiveCharacterTextSplitter, [".txt"], dict(chunk_size=512, chunk_overlap=20)
         )
         graph_name = "test"
-        graph_type = "networkx"
         milvus_url: str = "http://my-release-milvus.milvus:19530"
         milvus_client = MilvusClient(milvus_url, server_name="localhost")
-        vector_store = MilvusDB.create(client=milvus_client,
-                                       x_dim=1024,
-                                       collection_name="test_vector")
-        pipeline = GraphRAGPipeline(work_dir, llm, embedding_model, 1024, rerank_model,
-                                    graph_name=graph_name, node_vector_store=vector_store,
-                                    concept_vector_store=vector_store)
+        vector_store = MilvusDB.create(client=milvus_client, x_dim=1024, collection_name="test_vector")
+        pipeline = GraphRAGPipeline(
+            work_dir,
+            llm,
+            embedding_model,
+            1024,
+            rerank_model,
+            graph_name=graph_name,
+            node_vector_store=vector_store,
+            concept_vector_store=vector_store,
+        )
         pipeline.upload_files([test_file_path], data_load_mng)
         pipeline.build_graph()
         question = "谁看电影？"
-        contexts = pipeline.retrieve_graph(question)
-        text2text_chain = GraphRagText2TextChain(
-            llm=llm,
-            retriever=pipeline.as_retriever(),
-            reranker=rerank_model)
+        text2text_chain = GraphRagText2TextChain(llm=llm, retriever=pipeline.as_retriever(), reranker=rerank_model)
         result = text2text_chain.query(question)
         self.assertGreaterEqual(len(result.get("result")), 0)

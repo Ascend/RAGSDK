@@ -18,7 +18,6 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-
 import re
 import json
 
@@ -29,7 +28,7 @@ def fix_event_relation_json_string(json_str: str) -> str:
     into a valid JSON array of event relation objects.
 
     Each event relation object is expected to have "头事件" (head event),
-    "关系" (relation), and "尾事件" (tail event) fields. 
+    "关系" (relation), and "尾事件" (tail event) fields.
 
     Args:
         json_str: The input string containing event relation information,
@@ -58,7 +57,7 @@ def fix_entity_relation_json_string(json_str: str) -> str:
     into a valid JSON array of entity relation objects.
 
     Each entity relation object is expected to have "头实体" (head entity),
-    "关系" (relation), and "尾实体" (tail entity) fields. 
+    "关系" (relation), and "尾实体" (tail entity) fields.
 
     Args:
         json_str: The input string containing entity relation information,
@@ -87,7 +86,7 @@ def fix_entity_event_json_string(json_str: str) -> str:
     into a valid JSON array of objects.
 
     Each object is expected to have an "事件" (event) field with a string value
-    and an "实体" (entity) field with a list of strings as its value. 
+    and an "实体" (entity) field with a list of strings as its value.
 
     Args:
         json_str: The input string containing entity and event information,
@@ -149,10 +148,10 @@ def extract_json_like_substring(text: str, start_marker: str) -> str:
     json_end_index = substring.rfind("]")
 
     if json_start_index != -1 and json_end_index > json_start_index:
-        return substring[json_start_index:json_end_index + 1]
+        return substring[json_start_index : json_end_index + 1]
     else:
         return substring
-    
+
 
 def normalize_json_string(json_text: str, remove_space: bool = False, handle_single_quote: bool = False) -> str:
     """

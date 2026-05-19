@@ -18,7 +18,6 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-
 import json
 import unittest
 
@@ -34,12 +33,11 @@ from mx_rag.graphrag.utils.json_util import (
 class TestFixEventRelationJsonString(unittest.TestCase):
     def test_standard_input(self):
         input_str = (
-            '"头事件": "事件A", "关系": "导致", "尾事件": "事件B", '
-            '"头事件": "事件C", "关系": "影响", "尾事件": "事件D"'
+            '"头事件": "事件A", "关系": "导致", "尾事件": "事件B", "头事件": "事件C", "关系": "影响", "尾事件": "事件D"'
         )
         expected = [
             {"头事件": "事件A", "关系": "导致", "尾事件": "事件B"},
-            {"头事件": "事件C", "关系": "影响", "尾事件": "事件D"}
+            {"头事件": "事件C", "关系": "影响", "尾事件": "事件D"},
         ]
         result = fix_event_relation_json_string(input_str)
         self.assertEqual(json.loads(result), expected)
@@ -85,13 +83,9 @@ class TestFixEventRelationJsonString(unittest.TestCase):
 
     def test_multiple_records_with_noise(self):
         input_str = (
-            'Some text "头事件": "A", "关系": "B", "尾事件": "C", '
-            'random "头事件": "D", "关系": "E", "尾事件": "F"'
+            'Some text "头事件": "A", "关系": "B", "尾事件": "C", random "头事件": "D", "关系": "E", "尾事件": "F"'
         )
-        expected = [
-            {"头事件": "A", "关系": "B", "尾事件": "C"},
-            {"头事件": "D", "关系": "E", "尾事件": "F"}
-        ]
+        expected = [{"头事件": "A", "关系": "B", "尾事件": "C"}, {"头事件": "D", "关系": "E", "尾事件": "F"}]
         result = fix_event_relation_json_string(input_str)
         self.assertEqual(json.loads(result), expected)
 
@@ -99,12 +93,11 @@ class TestFixEventRelationJsonString(unittest.TestCase):
 class TestFixEntityRelationJsonString(unittest.TestCase):
     def test_standard_input(self):
         input_str = (
-            '"头实体": "实体A", "关系": "属于", "尾实体": "实体B", '
-            '"头实体": "实体C", "关系": "包含", "尾实体": "实体D"'
+            '"头实体": "实体A", "关系": "属于", "尾实体": "实体B", "头实体": "实体C", "关系": "包含", "尾实体": "实体D"'
         )
         expected = [
             {"头实体": "实体A", "关系": "属于", "尾实体": "实体B"},
-            {"头实体": "实体C", "关系": "包含", "尾实体": "实体D"}
+            {"头实体": "实体C", "关系": "包含", "尾实体": "实体D"},
         ]
         result = fix_entity_relation_json_string(input_str)
         self.assertEqual(json.loads(result), expected)
@@ -148,27 +141,17 @@ class TestFixEntityRelationJsonString(unittest.TestCase):
 
     def test_multiple_records_with_noise(self):
         input_str = (
-            'Some text "头实体": "A", "关系": "B", "尾实体": "C", '
-            'random "头实体": "D", "关系": "E", "尾实体": "F"'
+            'Some text "头实体": "A", "关系": "B", "尾实体": "C", random "头实体": "D", "关系": "E", "尾实体": "F"'
         )
-        expected = [
-            {"头实体": "A", "关系": "B", "尾实体": "C"},
-            {"头实体": "D", "关系": "E", "尾实体": "F"}
-        ]
+        expected = [{"头实体": "A", "关系": "B", "尾实体": "C"}, {"头实体": "D", "关系": "E", "尾实体": "F"}]
         result = fix_entity_relation_json_string(input_str)
         self.assertEqual(json.loads(result), expected)
 
 
 class TestFixEntityEventJsonString(unittest.TestCase):
     def test_standard_input(self):
-        input_str = (
-            '"事件": "事件A", "实体": ["实体1", "实体2"], '
-            '"事件": "事件B", "实体": ["实体3"]'
-        )
-        expected = [
-            {"事件": "事件A", "实体": ["实体1", "实体2"]},
-            {"事件": "事件B", "实体": ["实体3"]}
-        ]
+        input_str = '"事件": "事件A", "实体": ["实体1", "实体2"], "事件": "事件B", "实体": ["实体3"]'
+        expected = [{"事件": "事件A", "实体": ["实体1", "实体2"]}, {"事件": "事件B", "实体": ["实体3"]}]
         result = fix_entity_event_json_string(input_str)
         self.assertEqual(json.loads(result), expected)
 
@@ -212,14 +195,8 @@ class TestFixEntityEventJsonString(unittest.TestCase):
         self.assertEqual(json.loads(result), expected)
 
     def test_multiple_records_with_noise(self):
-        input_str = (
-            'Some text "事件": "A", "实体": ["B", "C"], '
-            'random "事件": "D", "实体": ["E"]'
-        )
-        expected = [
-            {"事件": "A", "实体": ["B", "C"]},
-            {"事件": "D", "实体": ["E"]}
-        ]
+        input_str = 'Some text "事件": "A", "实体": ["B", "C"], random "事件": "D", "实体": ["E"]'
+        expected = [{"事件": "A", "实体": ["B", "C"]}, {"事件": "D", "实体": ["E"]}]
         result = fix_entity_event_json_string(input_str)
         self.assertEqual(json.loads(result), expected)
 
