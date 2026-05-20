@@ -38,7 +38,6 @@ get_version() {
 }
 
 get_version
-
 {
   echo "MindX SDK mxrag:${VERSION}"
   echo "Plat: linux $(uname -m)"
@@ -56,14 +55,13 @@ function package()
 
     cd "${ROOT_PATH}"/output/
     # package
-    cp -rf "${ROOT_PATH}"/dist/mx_rag*"${py_version}"*.whl .
-
+    cp -rf "${ROOT_PATH}"/dist/mx_rag*.whl .
     mv "${ROOT_PATH}"/version.info .
     cp -rf "${ROOT_PATH}"/requirements.txt .
     cp -rf "${ROOT_PATH}"/script .
 
     mkdir -p ./ops/transformer_adapter
-    cp -rf "${ROOT_PATH}"/ops/transformer_adapter/* ./ops/transformer_adapter
+    cp -rf "${ROOT_PATH}"/mx_rag/transformer_adapter/* ./ops/transformer_adapter
 
 
     cp "${ROOT_PATH}"/build/install.sh .
@@ -84,13 +82,13 @@ function package()
     #将所有文件设置640，特殊文件单独处理
     find ./ -type f -exec chmod 640 {} \;
 
-    find ./  \( -name "*.sh" -o -name "*.run"  -o -name "*.so" \)  -exec  chmod 550 {} \;
+    find ./  \( -name "*.sh" -o -name "*.run" \)  -exec  chmod 550 {} \;
 
     rm -f .gitkeep
 }
 
 function patch_makeself() {
-    cd "${ROOT_PATH}/opensource" || exit
+    mkdir -p "${ROOT_PATH}/opensource" && cd "${ROOT_PATH}/opensource" || exit
 
     if [ ! -e "${ROOT_PATH}/opensource/makeself" ]; then
         git clone https://gitcode.com/cann-src-third-party/makeself.git

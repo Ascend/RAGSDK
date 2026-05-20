@@ -41,26 +41,36 @@ function clean()
     echo "clean .c output dir"
 }
 
-function build_so_package()
+
+function update_install_requires()
 {
     local py=$1
-    find "${ROOT_PATH}/mx_rag"  \( -name "*.so" -o -name "*.c" \) -exec  rm -f {} \;
-
-    cd "${ROOT_PATH}/mx_rag"
-    ${py} ./setup.py build_ext -j"$(nproc)"
-    mkdir -p "${SO_OUTPUT_DIR}"
-    cp -arfv build/lib.linux-*/mx_rag/* .
-    rm ./setup*.so
-    rm ./version*.so
-    rm -rf build
+    ${py} -c '
+import re
+with open("requirements.txt", "r") as f:
+    reqs = []
+    for line in f:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        reqs.append(line)
+with open("setup.py", "r") as f:
+    content = f.read()
+new_lines = ["        \"" + r + "\"," for r in reqs]
+new_block = "install_requires=[\n" + "\n".join(new_lines) + "\n    ]"
+content = re.sub(r"install_requires=\[.*?\]", new_block, content, flags=re.DOTALL)
+with open("setup.py", "w") as f:
+    f.write(content)
+print("setup.py install_requires updated from requirements.txt")
+'
 }
-
 function build_wheel_package()
 {
     local py=$1
     tag=$2
     cd "${ROOT_PATH}"
-    ${py} ./setup.py bdist_wheel --plat-name linux_"${ARCH}" --python-tag "${tag}"
+    update_install_requires "${py}"
+    ${py} ./setup.py bdist_wheel --python-tag "${tag}"
     echo "prepare resource"
 }
 
@@ -69,22 +79,10 @@ function package()
   bash "${CUR_PATH}"/package.sh "$1"
 }
 
-function build_ops()
-{
-    platform=$1
-    local py=$2
-    echo "prepare ops build"
-    cd "${ROOT_PATH}/ops"
-    dos2unix build.sh
-    bash build.sh $platform "${py}"
-    echo "build $platform ops success"
-}
-
 function main()
 {
     clean
     build_wheel_package python3.11 "${PY311_VER}"
-
     package "${PY311_VER}"
 }
 

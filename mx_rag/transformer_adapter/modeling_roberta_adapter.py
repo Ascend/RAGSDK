@@ -18,12 +18,17 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-__all__ = ["enable_bert_speed",
-           "enable_roberta_speed",
-           "enable_xlm_roberta_speed",
-           "enable_clip_speed"]
+from mx_rag.transformer_adapter.common_adapter import (
+    custom_self_output_forward,
+    custom_output_forward,
+    custom_self_attention_forward,
+)
+from transformers.models.roberta.modeling_roberta import RobertaSelfOutput, RobertaOutput, RobertaSelfAttention
 
-from modeling_bert_adapter import enable_bert_speed
-from modeling_roberta_adapter import enable_roberta_speed
-from modeling_xlm_roberta_adapter import enable_xlm_roberta_speed
-from modeling_clip_adapter import enable_clip_speed
+
+enable_roberta_speed: bool = True
+
+
+RobertaSelfOutput.forward = custom_self_output_forward(RobertaSelfOutput.forward)
+RobertaOutput.forward = custom_output_forward(RobertaOutput.forward)
+RobertaSelfAttention.forward = custom_self_attention_forward(RobertaSelfAttention.forward)
