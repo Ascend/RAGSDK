@@ -17,6 +17,7 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
+
 import math
 import os
 from typing import Tuple, Optional
@@ -31,8 +32,7 @@ _MASK_CACHE_MAX_SIZE = 1
 def _get_processed_mask(attention_mask, expand_mask):
     if attention_mask is None:
         return None
-    cache_key = (attention_mask.data_ptr(), tuple(attention_mask.shape),
-                 attention_mask.dtype, expand_mask)
+    cache_key = (attention_mask.data_ptr(), tuple(attention_mask.shape), attention_mask.dtype, expand_mask)
     if cache_key in _mask_cache:
         return _mask_cache[cache_key]
     mask = attention_mask
@@ -51,12 +51,13 @@ def _make_output_forward_wrapper(old_forward):
         if enable_boost:
             hidden_states = self.dense(hidden_states)
             hidden_states = self.dropout(hidden_states)
-            hidden_states = torch_npu.npu_add_layer_norm(hidden_states,
-                                                         input_tensor,
-                                                         self.LayerNorm.weight,
-                                                         self.LayerNorm.bias,
-                                                         self.LayerNorm.eps,
-                                                         )[0]
+            hidden_states = torch_npu.npu_add_layer_norm(
+                hidden_states,
+                input_tensor,
+                self.LayerNorm.weight,
+                self.LayerNorm.bias,
+                self.LayerNorm.eps,
+            )[0]
             return hidden_states
         else:
             return old_forward(self, hidden_states, input_tensor)
@@ -68,12 +69,12 @@ custom_self_output_forward = _make_output_forward_wrapper
 custom_output_forward = _make_output_forward_wrapper
 
 
-
-def _npu_attention_forward_impl(self, hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = None,
-        expand_mask: bool=True,
-        *args,
-        **kwargs) -> Tuple[torch.Tensor]:
+def _npu_attention_forward_impl(
+    self,
+    hidden_states: torch.Tensor,
+    *args,
+    **kwargs,
+) -> Tuple[torch.Tensor]:
     """
     NPU加速的注意力前向传播实现
 
@@ -90,7 +91,8 @@ def _npu_attention_forward_impl(self, hidden_states: torch.Tensor,
     query_layer = self.query(hidden_states).view(new_shape)
     key_layer = self.key(hidden_states).view(new_shape)
     value_layer = self.value(hidden_states).view(new_shape)
-
+    attention_mask = kwargs.get('attention_mask', None)
+    expand_mask = kwargs.get('expand_mask', True)
     if attention_mask is not None:
         attention_mask = _get_processed_mask(attention_mask, expand_mask)
 
@@ -102,13 +104,14 @@ def _npu_attention_forward_impl(self, hidden_states: torch.Tensor,
         num_heads=self.num_attention_heads,
         input_layout="BSND",
         atten_mask=attention_mask,
-        scale=softmax_scale)[0]
+        scale=softmax_scale,
+    )[0]
     out = out.view(hidden_states.size())
 
     return (out,)
 
 
-def _make_attention_forward_wrapper(old_forward, expand_mask=True):
+def _make_attention_forward_wrapper(old_forward, *args, **kwargs):
     """
     创建注意力前向传播的包装函数
 
@@ -119,20 +122,22 @@ def _make_attention_forward_wrapper(old_forward, expand_mask=True):
     返回:
         新的forward函数
     """
+
     def new_forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = None,
         *args,
+        attention_mask: Optional[torch.FloatTensor] = None,
         **kwargs,
     ) -> Tuple[torch.Tensor]:
         enable_boost = os.getenv("ENABLE_BOOST", "false").lower() in ["true", "1"]
+        if attention_mask is not None:
+            kwargs['attention_mask'] = attention_mask
         if enable_boost:
-            return _npu_attention_forward_impl(self, hidden_states, attention_mask, expand_mask,
-                                               *args, **kwargs)
+            return _npu_attention_forward_impl(self, hidden_states, *args, **kwargs)
         else:
-            return old_forward(
-                self, hidden_states, attention_mask, *args,**kwargs)
+            return old_forward(self, hidden_states, *args, **kwargs)
+
     return new_forward
 
 

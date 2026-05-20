@@ -17,13 +17,20 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
-from common_adapter import custom_self_output_forward, custom_output_forward, custom_self_attention_forward
-from transformers.models.roberta.modeling_roberta import RobertaSelfOutput, RobertaOutput, RobertaSelfAttention
+
+from mx_rag.transformer_adapter.common_adapter import (
+    custom_self_output_forward,
+    custom_output_forward,
+    custom_self_attention_forward,
+    custom_bert_sdpa_self_attention_forward,
+)
+from transformers.models.bert.modeling_bert import BertSelfOutput, BertOutput, BertSelfAttention, BertSdpaSelfAttention
 
 
-enable_roberta_speed: bool = True
+enable_bert_speed: bool = True
 
 
-RobertaSelfOutput.forward = custom_self_output_forward(RobertaSelfOutput.forward)
-RobertaOutput.forward = custom_output_forward(RobertaOutput.forward)
-RobertaSelfAttention.forward = custom_self_attention_forward(RobertaSelfAttention.forward)
+BertSelfOutput.forward = custom_self_output_forward(BertSelfOutput.forward)
+BertOutput.forward = custom_output_forward(BertOutput.forward)
+BertSelfAttention.forward = custom_self_attention_forward(BertSelfAttention.forward)
+BertSdpaSelfAttention.forward = custom_bert_sdpa_self_attention_forward(BertSdpaSelfAttention.forward)

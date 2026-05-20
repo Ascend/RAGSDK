@@ -18,15 +18,9 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-from common_adapter import custom_self_output_forward, custom_output_forward,\
-    custom_self_attention_forward,custom_bert_sdpa_self_attention_forward
-from transformers.models.bert.modeling_bert import BertSelfOutput, BertOutput, BertSelfAttention, BertSdpaSelfAttention
+__all__ = ["enable_bert_speed", "enable_roberta_speed", "enable_xlm_roberta_speed", "enable_clip_speed"]
 
-
-enable_bert_speed: bool = True
-
-
-BertSelfOutput.forward = custom_self_output_forward(BertSelfOutput.forward)
-BertOutput.forward = custom_output_forward(BertOutput.forward)
-BertSelfAttention.forward = custom_self_attention_forward(BertSelfAttention.forward)
-BertSdpaSelfAttention.forward = custom_bert_sdpa_self_attention_forward(BertSdpaSelfAttention.forward)
+from mx_rag.transformer_adapter.modeling_bert_adapter import enable_bert_speed
+from mx_rag.transformer_adapter.modeling_roberta_adapter import enable_roberta_speed
+from mx_rag.transformer_adapter.modeling_xlm_roberta_adapter import enable_xlm_roberta_speed
+from mx_rag.transformer_adapter.modeling_clip_adapter import enable_clip_speed

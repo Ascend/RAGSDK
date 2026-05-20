@@ -28,14 +28,13 @@ import torch
 import torch_npu
 import torchair
 import torchvision
+from cn_clip import clip
 from cn_clip.clip.model import ResidualAttentionBlock
 from loguru import logger
 from torch import nn
 from torchair.configs.compiler_config import CompilerConfig
 from torchvision.transforms import Normalize, Resize, InterpolationMode
-from torchvision_npu.datasets._decode_jpeg import extract_jpeg_shape
 
-from cn_clip import clip
 
 old_load_from_name = clip.load_from_name
 old_init = ResidualAttentionBlock.__init__
@@ -44,6 +43,8 @@ enable_clip_speed: bool = True
 
 
 def read_img(image):
+    from torchvision_npu.datasets._decode_jpeg import extract_jpeg_shape
+
     try:
         f = io.BytesIO()
         image.save(f, format=image.format)
@@ -67,8 +68,7 @@ def read_img(image):
         uint8_tensor = torch.tensor(arr).npu(non_blocking=True)
         channels = 3
 
-        return torch.ops.torchvision._decode_jpeg_aclnn(
-            uint8_tensor, image_shape=image_shape, channels=channels)
+        return torch.ops.torchvision._decode_jpeg_aclnn(uint8_tensor, image_shape=image_shape, channels=channels)
     # For other imgae types, use PIL to decode, then convert to npu tensor with NCHW format.
     else:
         img = torch.from_numpy(np.array(image.convert("RGB")))
@@ -80,26 +80,27 @@ def new_image_transform(image_size=224):
     def image_processor(image):
         img_tensor = read_img(image)
         rs_img = Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC)(
-            img_tensor.squeeze(0).float() / 255)
+            img_tensor.squeeze(0).float() / 255
+        )
 
-        nl_img = Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))(
-            rs_img)
+        nl_img = Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))(rs_img)
         return nl_img
 
     return image_processor
 
 
-def new_load_from_name(name: str, device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu",
-                       download_root: str = None):
+def new_load_from_name(
+    name: str,
+    device: Union[str, torch.device] = "cuda" if torch.cuda.is_available() else "cpu",
+    download_root: str = None,
+):
     enable_boost = os.getenv("ENABLE_BOOST", "False")
     if enable_boost not in ("True", "False"):
         raise ValueError("env ENABLE_BOOST value must be True or False")
 
     if enable_boost == "True" and name.find("ViT") != -1:
         logger.info("enable clip model boost")
-        model, preprocess = old_load_from_name(name,
-                                               device=device,
-                                               download_root=download_root)
+        model, preprocess = old_load_from_name(name, device=device, download_root=download_root)
 
         tmp_preprocess = preprocess
         device_name = torch.npu.get_device_name()
@@ -118,13 +119,10 @@ def new_load_from_name(name: str, device: Union[str, torch.device] = "cuda" if t
 
     else:
         logger.info("disable clip model boost")
-        return old_load_from_name(name,
-                                  device=device,
-                                  download_root=download_root)
+        return old_load_from_name(name, device=device, download_root=download_root)
 
 
-def new__init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None,
-                use_flash_attention: bool = False):
+def new__init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None, use_flash_attention: bool = False):
     enable_boost = os.getenv("ENABLE_BOOST", "False")
     if enable_boost not in ("True", "False"):
         raise ValueError("env ENABLE_BOOST value must be True or False")
@@ -164,11 +162,13 @@ def new_attention(self, x):
     k_bsnd = reshape_to_bsnd(k)
     v_bsnd = reshape_to_bsnd(v)
     attn_output = torch_npu.npu_prompt_flash_attention(
-        q_bsnd, k_bsnd, v_bsnd,
+        q_bsnd,
+        k_bsnd,
+        v_bsnd,
         num_heads=self.n_head,
         input_layout="BSH",
         scale_value=1.0 / math.sqrt(head_dim),
-        atten_mask=self.attn_mask
+        atten_mask=self.attn_mask,
     )
 
     attn_output = attn_output.contiguous().permute(1, 0, 2)

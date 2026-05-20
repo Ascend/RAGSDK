@@ -26,7 +26,6 @@ import shutil
 import stat
 from pathlib import Path
 
-import yaml
 from setuptools import setup, find_packages
 from setuptools.command.build_py import build_py as build_py_orig
 
@@ -79,20 +78,21 @@ def build_dependencies():
 
 
 def clean():
-    for folder in cache_folder:
-        if os.path.exists(folder):
-            shutil.rmtree(folder)
     for pattern in build_folder:
         for name in glob.glob(pattern):
             if os.path.exists(name):
                 shutil.rmtree(name)
+
+    for folder in cache_folder:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
 
 
 def get_all_py_files():
     src_dir = f"{pwd}/mx_rag"
     file_list = []
     for name in glob.glob(f"{src_dir}/**/*.py", recursive=True):
-        file = name[len(src_dir) + 1:]
+        file = name[len(src_dir) + 1 :]
         file_list.append(file)
     return file_list
 
@@ -101,11 +101,11 @@ def get_all_json_files():
     src_dir = f"{pwd}/mx_rag"
     file_list = []
     for name in glob.glob(f"{src_dir}/evaluate/**/*.json", recursive=True):
-        file = name[len(src_dir) + 1:]
+        file = name[len(src_dir) + 1 :]
         file_list.append(file)
 
     for name in glob.glob(f"{src_dir}/tools/**/*.json", recursive=True):
-        file = name[len(src_dir) + 1:]
+        file = name[len(src_dir) + 1 :]
         file_list.append(file)
     return file_list
 
@@ -113,8 +113,6 @@ def get_all_json_files():
 clean()
 
 build_dependencies()
-
-required_package = []
 
 package_data = {'': get_all_py_files() + get_all_json_files()}
 
@@ -131,18 +129,20 @@ class BuildBy(build_py_orig):
 setup(
     name='mx_rag',
     version=get_ci_version_info(),
-    platforms=['linux', ],
+    platforms=[
+        'linux',
+    ],
     description='RAGSDK is library to build RAG system',
     python_requires='>= 3.10, <3.12',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    install_requires=required_package,
     package_data=package_data,
     packages=find_packages(exclude=["*test*"]),
     include_package_data=True,
     cmdclass={
         'build_py': BuildBy,
     },
+    install_requires=[],
 )
 
 clean()

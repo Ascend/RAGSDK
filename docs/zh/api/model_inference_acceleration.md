@@ -10,6 +10,8 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
 
 - 各类模型推理加速配置如下：
 
+1) 方式1:
+
     ```python
     from modeling_bert_adapter import enable_bert_speed
     from modeling_roberta_adapter import enable_roberta_speed
@@ -17,7 +19,18 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
     from modeling_clip_adapter import enable_clip_speed
     ```
 
-- 设置ENABLE\_BOOST变量是否使能模型推理加速，设置值为"True"、"true"、"1"时表示使能加速，设置其他值表示不使能加速。
+2) 方式2:
+
+    ```python
+    from mx_rag.transformer_adapter.modeling_bert_adapter import enable_bert_speed
+    from mx_rag.transformer_adapter.modeling_roberta_adapter import enable_roberta_speed
+    from mx_rag.transformer_adapter.modeling_xlm_roberta_adapter import enable_xlm_roberta_speed
+    from mx_rag.transformer_adapter.modeling_clip_adapter import enable_clip_speed
+    ```
+
+`说明`: 软件包如果是通过run包安装的，支持方式1和方式2；如果是通过whl包安装的，只支持方式2。执行`pip3 show mx_rag`命令获取软件包安装路径判断通过哪种包安装的，如果是run安装的，mx_rag安装在$HOME/./local/lib下。
+
+- 设置ENABLE\_BOOST变量是否使能模型推理加速，设置值为"True"、"true"、"1"时表示使能加速，设置其他值表示不使能加速。续会逐步废弃第一种方式导包使用。
 
     ```bash
     os.environ["ENABLE_BOOST"] = "True"

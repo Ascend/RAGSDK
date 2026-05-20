@@ -239,7 +239,7 @@ function print_usage() {
 ### 脚本入参的相关处理函数
 function check_script_args() {
     # 检测脚本参数的组合关系
-    ######################  check params confilct ###################
+    ######################  check params conflict ###################
     if [[ $# -lt 3 ]]; then
         print_usage
     fi
@@ -425,7 +425,18 @@ check_python_version()
 function install_whl() {
   check_python_version
 
-  whl_file_name=$(find ./ -maxdepth 1 -type f -name 'mx_rag*py311*.whl')
+  # 查找所有匹配的 whl 文件并存储为数组
+  whl_files=($(find ./ -maxdepth 1 -type f -name 'mx_rag*.whl'))
+
+  # 检查 whl 文件数量
+  if [[ ${#whl_files[@]} -eq 0 ]]; then
+      log "WARNING" "There is no wheel package to install."
+      return
+  elif [[ ${#whl_files[@]} -gt 1 ]]; then
+      log "WARNING" "Found multiple wheel packages, using the first one: ${whl_files[0]##*/}"
+  fi
+
+  whl_file_name="${whl_files[0]}"
   if test x"$quiet_flag" = xn; then
       log "INFO" "Begin to install wheel package(${whl_file_name##*/})."
   fi
