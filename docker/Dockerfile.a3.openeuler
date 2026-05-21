@@ -10,8 +10,6 @@ RUN pip3 config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && 
 
 RUN yum install -y vim tar zip unzip git curl wget dos2unix make gcc gcc-c++ ccache gcc-gfortran openssl-devel libpq-devel swig ffmpeg
 
-RUN yum install -y  python3-devel python3-setuptools 
-
 RUN pip3 install numpy==1.26.4
 
 # 先删除cmake老版本
@@ -37,7 +35,7 @@ ARG FAISS_INSTALL_PATH=/usr/local/faiss/faiss1.10.0
 RUN cd /tmp && wget https://github.com/facebookresearch/faiss/archive/v1.10.0.tar.gz && \
     tar -xf v1.10.0.tar.gz && \
     cd faiss-1.10.0/faiss && \
-    sed -i "149 i virtual void search_with_filter (idx_t n, const float *x, idx_t k, float *distances, idx_t *lables, const void *mask = nullptr) const{}" Index.h && \
+    sed -i "149 i virtual void search_with_filter (idx_t n, const float *x, idx_t k, float *distances, idx_t *labels, const void *mask = nullptr) const{}" Index.h && \
     sed -i "49 i template <typename IndexT> IndexIDMapTemplate<IndexT>::IndexIDMapTemplate (IndexT *index, std::vector<idx_t> &ids): index (index), own_fields (false) { this->is_trained = index->is_trained; this->metric_type = index->metric_type; this->verbose = index->verbose; this->d = index->d; id_map = ids; }" IndexIDMap.cpp && \
     sed -i "30 i explicit IndexIDMapTemplate (IndexT *index, std::vector<idx_t> &ids);" IndexIDMap.h && \
     sed -i "217 i utils/sorting.h" CMakeLists.txt && \
@@ -61,7 +59,7 @@ RUN ARCH=$(uname -m) && \
 
 RUN yum install -y patch
 
-# 安装torch-npu 
+# 安装torch-npu
 RUN pip3 install torch-npu==2.1.0.post13 --extra-index-url https://download.pytorch.org/whl/cpu
 
 # 安装mxrag
@@ -69,8 +67,9 @@ RUN ARCH=$(uname -m) && \
     cd /tmp && wget https://gitcode.com/Ascend/RAGSDK/releases/download/v${RAGSDK_VERSION}/Ascend-mindxsdk-mxrag_${RAGSDK_VERSION}_linux-${ARCH}.run && \
     bash /tmp/Ascend-mindxsdk-mxrag_*_linux-${ARCH}.run --install --install-path=/usr/local/Ascend --quiet --platform=${PLATFORM} && \
     pip3 install -r /usr/local/Ascend/mxRag/requirements.txt
+
 # 安装mxrag第三方依赖
-RUN pip3 install build mineru numpy==1.26.4 
+RUN pip3 install build mineru numpy==1.26.4
 
 # 安装ascendfaiss
 ARG DRIVER_INSTALL_PATH=/usr/local/Ascend
@@ -87,6 +86,13 @@ RUN cd /tmp && wget https://gitee.com/ascend/mindsdk-referenceapps/repository/ar
     cd dist && pip3 install ascendfaiss*.whl && rm -rf /tmp/mindsdk-referenceapps-master/
 
 RUN pip3 install nvidia-ml-py && pip3 uninstall -y pynvml
+
+# 下载 RAGSDK Samples 代码
+RUN cd /tmp && \
+    git clone --depth 1 https://gitcode.com/Ascend/mindsdk-referenceapps.git && \
+    mkdir -p /workspace && \
+    cp -r mindsdk-referenceapps/RAGSDK/MainRepo/Samples /workspace/RAGSDK_Samples && \
+    rm -rf mindsdk-referenceapps
 
 # 添加环境变量
 RUN sed -i '$a\export LD_PRELOAD=\$(find \$(python3 -c "import sklearn; print(sklearn.__path__[0])")/../scikit_learn.libs -name "libgomp-*" | head -1):\$LD_PRELOAD' /root/.bashrc && \
