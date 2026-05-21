@@ -25,7 +25,7 @@ Tag 遵循以下格式:
 | 字段                | 示例值   | 说明                                                         |
 | ------------------- | -------- | ------------------------------------------------------------ |
 | ragsdk版本                | 26.0.0  | ragsdk版本号                                                     |
-| 芯片系列                | 910、A3、atlas 800   | 目标昇腾芯片系列                         |
+| 芯片系列                | 910、A3、atlas 300I Pro   | 目标昇腾芯片系列                         |
 | 操作系统                | ubuntu22.04、openeuler24.03    | 目标操作系统                         |
 | python版本                | py3.11      | 目标python版本                         |
 
@@ -70,9 +70,9 @@ docker exec -it rag_sdk_demo bash
 
 ## RAGSDK使用说明
 
-RAGSDK 提供丰富的示例代码，帮助开发者快速上手。您可以通过以下链接获取最新的 Demo 示例：
+RAGSDK 提供丰富的示例代码，帮助开发者快速上手，示例代码路径：`/workspace/RAGSDK_Samples`。您也可以通过以下链接获取最新的 Demo 示例：
 
-- [RAGSDK Demo 示例代码](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/rag_with_api)
+- [RAGSDK Demo 示例代码](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples)
 
 ## 如何二次开发
 
@@ -90,7 +90,7 @@ RUN apt update -y &&
 | ------------------- | -------- | ------------------------------------------------------------ |
 | Atlas 910                | Atlas 800T A2、Atlas 900 A2 PoD  | ARM64/ X86_64                                                     |
 | Atlas A3                |  Atlas 800T A3    | ARM64/ X86_64                         |
-| Atlas 800                |  Atlas 300I Pro、 Atlas 300V Pro  | ARM64/ X86_64                         |
+| Atlas 300I Pro                |  Atlas 300I Pro、 Atlas 300V Pro  | ARM64/ X86_64                         |
 
 ## 许可证
 
