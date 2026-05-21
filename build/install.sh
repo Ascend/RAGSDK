@@ -408,6 +408,26 @@ function parse_script_args() {
     done
 }
 
+function handle_agreement() {
+    local action=$1
+    if [[ "$quiet_flag" = "y" ]]; then
+        log "INFO" "using quiet option implies acceptance of the agreement, start to ${action}"
+        return
+    fi
+    agreement_file=./agreement.conf
+    cat "${agreement_file}" 1>&2
+    read -t 60 -n1 -r -p "Do you accept the agreement to ${action} RAG SDK?[Y/N]" answer
+    case "${answer}" in
+        Y|y)
+            log "INFO" "accept agreement, start to ${action}"
+            ;;
+        *)
+            log "ERROR" "reject agreement, quit to ${action}"
+            exit 1
+            ;;
+    esac
+}
+
 function set_env() {
   sed -i "s!export RAG_SDK_HOME=.*!export RAG_SDK_HOME="${install_path}/mxRag"!g" "${install_path}"/mxRag/script/set_env.sh
 }
@@ -569,8 +589,10 @@ function upgrade_process() {
 
 function process() {
     if [[ "$install_flag" = "y" ]]; then
+        handle_agreement "install"
         install_process
     elif [[ "$upgrade_flag" = "y" ]]; then
+        handle_agreement "upgrade"
         upgrade_process
     fi
 }

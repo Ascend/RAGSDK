@@ -26,7 +26,7 @@ Tags follow this pattern:
 | Field                | Example Values  | Description                                                         |
 | ------------------- | -------- | ------------------------------------------------------------ |
 | RAGSDK Version                | 26.0.0  | RAGSDK version                                                     |
-| Chip Series                | 310, 910, A3    | Target Atlas chip family                         |
+| Chip Series                | 910, A3, atlas 800    | Target Atlas chip family                         |
 | Operating System                | ubuntu22.04, openeuler24.03    | Base operating system                         |
 | Python Version                | py3.11      |  Python version                         |
 
@@ -92,7 +92,7 @@ RUN apt update -y &&
 | ------------------- | -------- | ------------------------------------------------------------ |
 | Atlas 910                | Atlas 800T A2, Atlas 900 A2 PoD  | ARM64/ X86_64                                                     |
 | Atlas A3                | Atlas 800T A3    | ARM64/ X86_64                         |
-| Atlas 310                | Atlas 300I Pro、 Atlas 300V Pro    | ARM64/ X86_64                         |
+| Atlas 800                | Atlas 300I Pro、 Atlas 300V Pro    | ARM64/ X86_64                         |
 
 ## License
 

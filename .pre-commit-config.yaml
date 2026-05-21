@@ -37,9 +37,11 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
+        exclude: |
+          (?i)docker/.*
         args: [
             "-L",
-            "CANN,cann,NNAL,nnal,ASCEND,ascend,EnQue,CopyIn,ArchType,AND,ND,tbe,copyin,alog",
+            "CANN,cann,NNAL,nnal,ASCEND,ascend,EnQue,CopyIn,ArchType,AND,ND,tbe,copyin,alog,IndexT",
             "--skip",
             "*.py,*.cpp,*.hpp,*.c,*.h",
           ]
