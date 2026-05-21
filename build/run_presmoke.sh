@@ -30,12 +30,12 @@ changed=$(git diff ${servicebranch_1} --no-commit-id --name-only)
 echo "$changed" > changed_files.txt
 
 # 设置环境变量
-source /usr/local/Ascend/ascend-toolkit/set_env.sh 
+source /usr/local/Ascend/ascend-toolkit/set_env.sh
 export LD_LIBRARY_PATH=/usr/local/Ascend/driver/lib64/driver:$LD_LIBRARY_PATH
 
 # 安装依赖
 apt-get update -y
-apt-get install -y  libpq-dev 
+apt-get install -y  libpq-dev
 pip3 install uvicorn
 
 # 安装rag
@@ -44,7 +44,7 @@ mkdir -p ${PRESMOKE_DIR}/pkg
 cp ${RUN_PKG_PATH}/Ascend-mindxsdk-mxrag_*_linux-aarch64.run ${PRESMOKE_DIR}/pkg/
 cd ${PRESMOKE_DIR}/pkg/
 chmod +x *.run
-./Ascend-mindxsdk-mxrag_*_linux-aarch64.run --install --install-path=/usr/local/Ascend --platform=910B
+./Ascend-mindxsdk-mxrag_*_linux-aarch64.run --install --install-path=/usr/local/Ascend --quiet
 pip3 install -r  /usr/local/Ascend/mxRag/requirements.txt
 pip3 install pytest pytest-cov pytest-html
 

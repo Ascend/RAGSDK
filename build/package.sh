@@ -66,6 +66,7 @@ function package()
 
     cp "${ROOT_PATH}"/build/install.sh .
     cp "${ROOT_PATH}"/build/help.info .
+    cp "${ROOT_PATH}"/build/agreement.conf .
 
     pkg_version=$(sed -n '1p' version.info |awk -F ':' '{print $2}')
 
