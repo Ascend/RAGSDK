@@ -49,7 +49,7 @@ from mx_rag.knowledge.knowledge import KnowledgeStore
 from mx_rag.knowledge.handler import upload_files
 from mx_rag.knowledge import KnowledgeDB
 from mx_rag.retrievers import Retriever
-# STET1:构建知识库,首先注册文档处理器
+# STEP1:构建知识库,首先注册文档处理器
 loader_mng = LoaderMng()
 # 加载文档加载器，可以使用RAG SDK自有的，也可以使用langchain的
 loader_mng.register_loader(loader_class=TextLoader, file_types=[".txt"])
@@ -64,7 +64,7 @@ loader_mng.register_splitter(splitter_class=RecursiveCharacterTextSplitter,
 emb = TextEmbedding(model_path="/path/to/bge-large-zh-v1.5", dev_id=0)
 # 初始化向量数据库
 vector_store = MindFAISS(x_dim=1024,
-                         
+
                          devs=[0],
                          load_local_index="./faiss.index",
                          auto_save=True
@@ -90,7 +90,7 @@ upload_files(knowledge=knowledge_db,
              embed_func=emb.embed_documents,
              force=True
              )
-# STET2:初始化检索器
+# STEP2:初始化检索器
 text_retriever = Retriever(vector_store=vector_store,
                            document_store=chunk_store,
                            embed_func=emb.embed_documents,
@@ -140,7 +140,7 @@ MultiQueryRetriever(llm, prompt, parser, llm_config)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |llm|Text2TextLLM|必选|大模型对象实例，具体类型请参见[Text2TextLLM](./llm_client.md#text2textllm)。|
-|prompt|langchain_core.prompts.PromptTemplate|可选|默认值如下，其中question字符串是固定的，不能更改，表示输入的问题；prompt.input_variables必须包含question，prompt.template的长度取值范围为(0,1 \* 1024 \* 1024]，表示提示词。实际请求大模型的query为prompt拼接question,其有效取值依赖MindIE的配置，请参见《MindIE LLM开发指南》中的“核心概念与配置 > 配置参数说明（服务化）”章节中关于maxSeqLen的说明。注意：prompt和question的语言类型最好保持一致，或者指明大模型回答语言类型，否则会影响大模型回答效果。<br>```PromptTemplate(    input_variables=["question"],    template="""你是一个人工智能语言模型助理。您的任务是根据用户的原始问题，从不同角度改写生成3个问题。    请从1开始编号且用中文回答，每个问题用换行符分隔开。下面是一个改写例子：    样例原始问题：    你能告诉我关于爱因斯坦相关的信息吗？    样例改写生成后的3个问题：    1.爱因斯坦的生平和主要科学成就有哪些？    2.爱因斯坦在相对论和其他物理学领域有哪些重要贡献？    3.爱因斯坦的个人生活和他对社会的影响是怎样的？    需要改写的问题：{question}""")```|
+|prompt|langchain_core.prompts.PromptTemplate|可选|默认值如下，其中question字符串是固定的，不能更改，表示输入的问题；prompt.input_variables必须包含question，prompt.template的长度取值范围为(0,1 \* 1024 \* 1024]，表示提示词。注意：prompt和question的语言类型最好保持一致，或者指明大模型回答语言类型，否则会影响大模型回答效果。<br>```PromptTemplate(    input_variables=["question"],    template="""你是一个人工智能语言模型助理。您的任务是根据用户的原始问题，从不同角度改写生成3个问题。    请从1开始编号且用中文回答，每个问题用换行符分隔开。下面是一个改写例子：    样例原始问题：    你能告诉我关于爱因斯坦相关的信息吗？    样例改写生成后的3个问题：    1.爱因斯坦的生平和主要科学成就有哪些？    2.爱因斯坦在相对论和其他物理学领域有哪些重要贡献？    3.爱因斯坦的个人生活和他对社会的影响是怎样的？    需要改写的问题：{question}""")```|
 |parser|langchain_core.output_parsers.BaseOutputParser|可选|对大模型返回内容处理的类OutputParser的实现类，默认值是DefaultOutputParser。其继承实现了langchain_core.output_parsers.BaseOutputParser，对大模型返回的多个问题通过数字编号进行拆分。|
 |llm_config|LLMParameterConfig|可选|调用大模型的参数，详细描述可参见[LLMParameterConfig](./llm_client.md#llmparameterconfig)。|
 
@@ -192,7 +192,7 @@ BMRetriever(docs, llm, k, llm_config, prompt, preprocess_func)
 |llm|Text2TextLLM|必选|大模型对象实例，具体类型请参见[Text2TextLLM](./llm_client.md#text2textllm)。|
 |k|int|可选|检索返回的top k，取值范围：[1,10000]，默认值为1。|
 |llm_config|LLMParameterConfig|可选|调用大模型参数，此处默认值temperature为0.5，top_p为0.95，其余参数说明请参见[LLMParameterConfig](./llm_client.md#llmparameterconfig)。|
-|prompt|langchain_core.prompts.PromptTemplate|可选|默认值如下，其中question字符串是固定的，不能更改，表示输入的问题；prompt.input_variables必须包含question，prompt.template的长度取值范围为(0,1 \* 1024 \* 1024]，表示提示词。实际请求大模型的query为prompt拼接question,其有效取值依赖MindIE的配置，请参见《MindIE LLM开发指南》中的“核心概念与配置 > 配置参数说明（服务化）”章节中关于maxSeqLen的说明。注意：prompt和question的语言类型最好保持一致，或者指明大模型回答语言类型，否则会影响大模型回答效果。<br>PromptTemplate(<br>input_variables=["question"],<br>template="""根据问题提取关键词，不超过10个。关键词尽量切分为动词、名词、或形容词等单独的词，<br>不要长词组（目的是更好的匹配检索到语义相关但表述不同的相关资料）。请根据给定参考资料提取关键词，关键词之间使用逗号分隔，比如{{关键词1, 关键词2}}<br>Question: CANN如何安装？<br>Keywords: CANN, 安装, install<br>Question: MindStudio 容器镜像怎么制作<br>Keywords: MindStudio, 容器镜像, Docker build<br>Question: {question}<br>Keywords:<br>""")|
+|prompt|langchain_core.prompts.PromptTemplate|可选|默认值如下，其中question字符串是固定的，不能更改，表示输入的问题；prompt.input_variables必须包含question，prompt.template的长度取值范围为(0,1 \* 1024 \* 1024]，表示提示词。实际请求大模型的query为prompt拼接question。注意：prompt和question的语言类型最好保持一致，或者指明大模型回答语言类型，否则会影响大模型回答效果。<br>PromptTemplate(<br>input_variables=["question"],<br>template="""根据问题提取关键词，不超过10个。关键词尽量切分为动词、名词、或形容词等单独的词，<br>不要长词组（目的是更好的匹配检索到语义相关但表述不同的相关资料）。请根据给定参考资料提取关键词，关键词之间使用逗号分隔，比如{{关键词1, 关键词2}}<br>Question: CANN如何安装？<br>Keywords: CANN, 安装, install<br>Question: MindStudio 容器镜像怎么制作<br>Keywords: MindStudio, 容器镜像, Docker build<br>Question: {question}<br>Keywords:<br>""")|
 |preprocess_func|Callable[[str], List[str]]|可选|BM25检索前预处理，对大模型返回的文本串数据进行切分获取关键词列表。默认对字符串使用逗号进行切分。|
 
 **调用示例<a name="section129100236713"></a>**

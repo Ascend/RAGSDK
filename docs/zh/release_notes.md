@@ -38,7 +38,7 @@
 
 **表 1**  软件版本兼容性说明
 
-| MindSDK软件版本    |MindSDK待升级版本|CANN版本兼容性|Ascend HDK版本兼容性|
+| MindSDK软件版本   |MindSDK待升级版本|CANN版本兼容性|Ascend HDK版本兼容性|
 |---------------|---------------|-------------------------|------------------------|
 | RAG SDK 26.0.0 |<li>MindSDK 6.0.RC3及补丁版本</li><li>MindSDK 6.0.0及补丁版本</li><li>MindSDK 7.0.RC1及补丁版本</li><li>MindSDK 7.1.RC1及补丁版本</li><li>MindSDK 7.2.RC1及补丁版本</li><li>MindSDK 7.3.0及补丁版本</li>|<li>CANN 8.1.RC1及补丁版本</li><li>CANN 8.2.RC1及补丁版本</li><li>CANN 8.3.RC1及补丁版本</li><li>CANN 8.5.0及补丁版本</li><li>CANN 9.0.0及补丁版本</li>|<li>Ascend HDK 25.0.RC1及补丁版本</li><li>Ascend HDK 25.2.0及补丁版本</li><li>Ascend HDK 25.3.RC1及补丁版本</li><li>Ascend HDK 25.5.0及补丁版本</li><li>Ascend HDK 26.0.RC1及补丁版本</li>|
 
@@ -53,8 +53,8 @@
 
 ## 新增特性<a name="ZH-CN_TOPIC_0000002492282034"></a>
 
-|特性名称| 特性描述                               |配套产品型号|
-|--|------------------------------------|--|
+|特性名称|特性描述|配套产品型号|
+|--|---------------------------------|--|
 |RAG SDK| <li>bge系列embedding和reranker加速，bge-reranker-v2-m3和bge-m3模型性能优化。</li> |Atlas 300I Duo 推理卡<br>Atlas 800I A2 推理服务器|
 
 ## 业务接口变更<a name="ZH-CN_TOPIC_0000002492442008"></a>
@@ -87,7 +87,7 @@
 
 # 26.0.0版本配套文档<a name="ZH-CN_TOPIC_0000002524561717"></a>
 
-| 文档名称                  |内容简介| 更新说明                                            |
+| 文档名称                  | 内容简介| 更新说明                                            |
 |-----------------------|--|-------------------------------------------------|
 | 《RAG SDK 26.0.0 用户指南》 |主要包括RAG SDK的安装部署、应用开发流程、API接口说明及其他常用操作。| 变更详见《[RAG SDK 26.0.0 用户指南](./introduction.md)》。 |
 

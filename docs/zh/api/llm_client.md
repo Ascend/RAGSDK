@@ -41,7 +41,7 @@ llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
                    )
 res = llm.chat("请介绍下北京")
 print(res)
-for res in llm.chat_streamly("请介绍下北京"):    
+for res in llm.chat_streamly("请介绍下北京"):
     print(res)
 ```
 
@@ -288,7 +288,7 @@ LLMParameterConfig(max_tokens, presence_penalty, frequency_penalty, temperature,
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|max_tokens|int|可选|允许推理生成的最大token个数，取值范围[1，100000]，默认值为512。由kwargs传递获取。实际有效取值依赖MindIE的配置，请参见《MindIE LLM开发指南》中的“核心概念与配置 > 配置参数说明（服务化）”章节中关于maxSeqLen的说明。|
+|max_tokens|int|可选|允许推理生成的最大token个数，取值范围[1，100000]，默认值为512。由kwargs传递获取。|
 |presence_penalty|float, int|可选|影响模型如何根据到目前为止是否出现在文本中来惩罚新token。正值将通过惩罚已经使用的词，增加模型谈论新主题的可能性。取值范围：[-2.0, 2.0]，默认值为0.0。|
 |frequency_penalty|float, int|可选|影响模型如何根据文本中词汇（token）的现有频率惩罚新词汇（token）。正值将通过惩罚已经频繁使用的词来降低模型一行中重复用词的可能性。取值范围：[-2.0, 2.0]，默认值为0.0。|
 |seed|int|可选|用于指定推理过程的随机种子，相同的seed值可以确保推理结果的可重现性，不同的seed值会提升推理结果的随机性。取值范围[0, 2 ** 31 - 1]，不传递该参数，系统会产生一个随机seed值，默认值为None。|
@@ -309,7 +309,7 @@ llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
                    )
 res = llm.chat("请介绍下北京")
 print(res)
-for res in llm.chat_streamly("请介绍下北京"):    
+for res in llm.chat_streamly("请介绍下北京"):
     print(res)
 ```
 

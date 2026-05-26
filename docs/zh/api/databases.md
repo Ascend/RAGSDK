@@ -64,7 +64,7 @@ class ChunkModel(Base):
 
 #### 文本数据库继承关系<a name="ZH-CN_TOPIC_0000002237897244"></a>
 
-**图 1**  文本数据库继承关系<a name="fig1947119335531"></a>  
+**图 1**  文本数据库继承关系<a name="fig1947119335531"></a>
 ![](../figures/文本数据库继承关系.png "文本数据库继承关系")
 
 #### Docstore<a name="ZH-CN_TOPIC_0000002018714733"></a>
@@ -192,11 +192,11 @@ OpenGaussDocstore(engine, encrypt_fn, decrypt_fn, enable_bm25, index_name)
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|engine|Engine|必选|Engine实例，具体说明请参考<a href="https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine">Engine</a>。限制使用opengauss方言。<br>>[!NOTE] 说明 Engine由用户控制传入，请使用安全的连接方式。|
-|encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容加密，输出为字符串。add保存时，数据库保存的是chunk字段经过encrypt_fn方法处理后的数据。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
-|decrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过16*1024*1024，对ChunkModel类的chunk内容解密，输出为字符串。search返回时，返回的是chunk字段经过decrypt_fn方法处理后的数据。|
-|enable_bm25|bool|可选|配置数据库是否支持bm25稀疏检索，若此参数配置为False，则全文检索功能不可用(full_text_search方法始终返回[ ])，默认为True。|
-|index_name|str|可选|创建的bm25检索的名称，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$，即只能由大小写字母、数字、下划线组成，且长度为6-64，默认为"chunks_content_bm25"。|
+|engine|Engine|必选|Engine实例，具体说明请参考<a href="https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine">Engine</a>。限制使用opengauss方言。<br>说明： Engine由用户控制传入，请使用安全的连接方式。|
+|encrypt_fn|Callable[[str], str]|可选| 回调方法，返回值为字符串且长度不超过128*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容加密，输出为字符串。add保存时，数据库保存的是chunk字段经过encrypt_fn方法处理后的数据。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
+|decrypt_fn|Callable[[str], str]|可选| 回调方法，返回值为字符串且长度不超过16*1024*1024，对ChunkModel类的chunk内容解密，输出为字符串。search返回时，返回的是chunk字段经过decrypt_fn方法处理后的数据。|
+|enable_bm25|bool|可选| 配置数据库是否支持bm25稀疏检索，若此参数配置为False，则全文检索功能不可用(full_text_search方法始终返回[ ])，默认为True。|
+|index_name|str|可选| 创建的bm25检索的名称，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$，即只能由大小写字母、数字、下划线组成，且长度为6-64，默认为"chunks_content_bm25"。|
 
 **调用示例<a name="section139398168249"></a>**
 
@@ -456,14 +456,14 @@ MilvusDocstore(client, collection_name, enable_bm25, bm25_k1, bm25_b, auto_flush
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|client|MilvusClient|必选|MilvusClient实例，支持<a href="https://milvus.io/docs/zh/connect-to-milvus-server.md">服务模式</a>和<a href="https://milvus.io/docs/zh/milvus_lite.md">Lite模式</a>。<br>> [!NOTE] 说明 MilvusClient由用户控制传入，请使用安全的连接方式。|
+|client|MilvusClient|必选|MilvusClient实例，支持<a href="https://milvus.io/docs/zh/connect-to-milvus-server.md">服务模式</a>和<a href="https://milvus.io/docs/zh/milvus_lite.md">Lite模式</a>。<br>说明： MilvusClient由用户控制传入，请使用安全的连接方式。|
 |collection_name|str|可选|集合名称，不能为空，最大长度为1024，默认为doc_store|
-|enable_bm25|bool|可选|是否开启bm25稀疏向量检索，默认为True，如果此参数设置为False，则全文检索功能不可用(full_text_search方法始终返回[ ])|
-|bm25_k1|float|可选|bm25稀疏向量检索时控制词频饱和度。数值越大，术语频率在文档排序中的重要性越高。取值范围[1.2, 2.0], 默认为1.2，具体说明请参考<a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus全文检索</a>相关部分|
-|bm25_b|float|可选|bm25稀疏向量检索时控制文档长度标准化的程度。取值范围[0, 1]，默认为0.75。具体说明请参考<a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus全文检索</a>相关部分|
-|auto_flush|bool|可选|数据变更时是否自动刷新内存数据，默认为True。|
-|encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，enable_bm25为False时生效，当调用add或update时，使用encrypt_fn方法对文档page_content加密后入库。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
-|decrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过16*1024*1024，enable_bm25为False时生效，调用查询类接口时对使用decrypt_fn对page_content解密后返回。|
+|enable_bm25|bool|可选| 是否开启bm25稀疏向量检索，默认为True，如果此参数设置为False，则全文检索功能不可用(full_text_search方法始终返回[ ])|
+|bm25_k1|float|可选| bm25稀疏向量检索时控制词频饱和度。数值越大，术语频率在文档排序中的重要性越高。取值范围[1.2, 2.0], 默认为1.2，具体说明请参考<a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus全文检索</a>相关部分|
+|bm25_b|float|可选| bm25稀疏向量检索时控制文档长度标准化的程度。取值范围[0, 1]，默认为0.75。具体说明请参考<a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus全文检索</a>相关部分|
+|auto_flush|bool|可选| 数据变更时是否自动刷新内存数据，默认为True。|
+|encrypt_fn|Callable[[str], str]|可选| 回调方法，返回值为字符串且长度不超过128*1024*1024，enable_bm25为False时生效，当调用add或update时，使用encrypt_fn方法对文档page_content加密后入库。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
+|decrypt_fn|Callable[[str], str]|可选| 回调方法，返回值为字符串且长度不超过16*1024*1024，enable_bm25为False时生效，调用查询类接口时对使用decrypt_fn对page_content解密后返回。|
 
 **调用示例<a name="section139398168249"></a>**
 
@@ -766,7 +766,7 @@ SQLiteDocstore(db_path, encrypt_fn, decrypt_fn)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |db_path|str|必选|关系型数据库存储路径，必须为有效路径，路径的长度最大为1024，文件名长度不能超过200，不能包含".."，存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
-|encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容加密，输出为字符串。add保存时，数据库保存的是chunk字段经过encrypt_fn方法处理后的数据。<br>> [!NOTICE] 须知如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
+|encrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过128*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容加密，输出为字符串。add保存时，数据库保存的是chunk字段经过encrypt_fn方法处理后的数据。<br> <br/>须知：如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。|
 |decrypt_fn|Callable[[str], str]|可选|回调方法，返回值为字符串且长度不超过16*1024*1024，对[ChunkModel类](#chunkmodel类)的chunk内容解密，输出为字符串。search返回时，返回的是chunk字段经过decrypt_fn方法处理后的数据。|
 
 **调用示例<a name="section139398168249"></a>**
@@ -985,7 +985,7 @@ mx_document = MxDocument(page_content=document.page_content, metadata=document.m
 
 #### 向量数据库间继承关系<a name="ZH-CN_TOPIC_0000002237897600"></a>
 
-**图 1**  向量数据库间继承关系<a name="fig7330104615533"></a>  
+**图 1**  向量数据库间继承关系<a name="fig7330104615533"></a>
 ![](../figures/向量数据库间继承关系.png "向量数据库间继承关系")
 
 #### VectorStore<a name="ZH-CN_TOPIC_0000002020335701"></a>
@@ -1317,13 +1317,13 @@ OpenGaussDB(engine, collection_name, search_mode, index_type, metric_type)
 
 **参数说明<a name="section1054013414143"></a>**
 
-|参数名|数据类型|可选/必选|说明|
-|--|--|--|--|
-|engine|Engine|必选|Engine实例，具体说明请参考<a href="https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine">Engine</a>。限制使用opengauss方言。<br>> [!NOTE] 说明Engine由用户控制传入，请使用安全的连接方式。|
-|collection_name|str|可选|集合名称，不能为空，最大长度为1024，仅限python有效标识符，默认为vectorstore。|
-|search_mode|SearchMode|可选|检索模式，当前支持三种模式，包括稠密检索（DENSE），稀疏检索(SPARSE)和混合检索（HYBRID），默认为稠密检索。类型介绍可参见[SearchMode](#search_mode)。|
-|index_type|str|可选|向量检索类型，当前支持IVFFLAT，HNSW，默认为HNSW，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量检索类型为HNSW，不支持配置。|
-|metric_type|str|可选|向量距离计算方式，支持IP，L2，COSINE，默认为IP。|
+|参数名|数据类型|可选/必选| 说明                                                                                                                                                                     |
+|--|--|--|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|engine|Engine|必选| Engine实例，具体说明请参考<a href="https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine">Engine</a>。限制使用opengauss方言。<br>说明：Engine由用户控制传入，请使用安全的连接方式。 |
+|collection_name|str|可选| 集合名称，不能为空，最大长度为1024，仅限python有效标识符，默认为vectorstore。                                                                                                                      |
+|search_mode|SearchMode|可选| 检索模式，当前支持三种模式，包括稠密检索（DENSE），稀疏检索(SPARSE)和混合检索（HYBRID），默认为稠密检索。类型介绍可参见[SearchMode](#search_mode)。                                                                       |
+|index_type|str|可选| 向量检索类型，当前支持IVFFLAT，HNSW，默认为HNSW，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量检索类型为HNSW，不支持配置。                                                                                         |
+|metric_type|str|可选| 向量距离计算方式，支持IP，L2，COSINE，默认为IP。                                                                                                                                         |
 
 **返回类型<a name="section53998444524"></a>**
 
@@ -1347,7 +1347,7 @@ port = "<port here>"
 database = "testdb"
 
 # vector config
-dim = 128 
+dim = 128
 n_emb = 1000
 
 url = URL.create(
@@ -1367,7 +1367,7 @@ connect_args = {
 }
 
 # create an engine
-engine = create_engine(url, pool_size=20, max_overflow=10, pool_pre_ping=True, connect_args=connect_args) 
+engine = create_engine(url, pool_size=20, max_overflow=10, pool_pre_ping=True, connect_args=connect_args)
 # search mode defaults to DENSE
 # similarity strategy defaults to FLAT_IP
 dense_store = OpenGaussDB.create(
@@ -1640,15 +1640,15 @@ MilvusDB(client, collection_name, search_mode, auto_id, index_type, metric_type,
 
 **参数说明<a name="section1054013414143"></a>**
 
-|参数名|数据类型|可选/必选|说明|
-|--|--|--|--|
-|client|MilvusClient|必选|MilvusClient实例，支持<a href="https://milvus.io/docs/zh/connect-to-milvus-server.md">服务模式</a>和<a href="https://milvus.io/docs/zh/milvus_lite.md">Lite模式</a>。<br>> [!NOTE] 说明 MilvusClient由用户控制传入，请使用安全的连接方式。|
-|collection_name|str|可选|集合名称，不能为空，最大长度为1024，默认为rag_sdk。|
-|search_mode|SearchMode|可选|检索模式，当前支持三种模式，包括稠密检索（DENSE），稀疏检索(SPARSE)和混合检索（HYBRID），默认为稠密检索。类型介绍可参见[SearchMode](#search_mode)。|
-|auto_id|bool|可选|主键是否自增，默认为False。|
-|index_type|str|可选|向量检索类型，当前只支持FLAT, IVF_FLAT, IVF_PQ, HNSW，默认为FLAT，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量检索类型固定为SPARSE_INVERTED_INDEX，不支持配置。|
-|metric_type|str|可选|向量距离计算方式，支持IP，L2，COSINE，默认为L2，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量距离计算方式固定为IP，不支持配置。|
-|auto_flush|bool|可选|数据变更时是否自动刷新内存数据，默认为True。|
+|参数名|数据类型|可选/必选| 说明                                                                                                                                                                                             |
+|--|--|--|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|client|MilvusClient|必选| MilvusClient实例，支持<a href="https://milvus.io/docs/zh/connect-to-milvus-server.md">服务模式</a>和<a href="https://milvus.io/docs/zh/milvus_lite.md">Lite模式</a>。<br>说明：MilvusClient由用户控制传入，请使用安全的连接方式。 |
+|collection_name|str|可选| 集合名称，不能为空，最大长度为1024，默认为rag_sdk。                                                                                                                                                                |
+|search_mode|SearchMode|可选| 检索模式，当前支持三种模式，包括稠密检索（DENSE），稀疏检索(SPARSE)和混合检索（HYBRID），默认为稠密检索。类型介绍可参见[SearchMode](#search_mode)。                                                                                               |
+|auto_id|bool|可选| 主键是否自增，默认为False。                                                                                                                                                                               |
+|index_type|str|可选| 向量检索类型，当前只支持FLAT, IVF_FLAT, IVF_PQ, HNSW，默认为FLAT，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量检索类型固定为SPARSE_INVERTED_INDEX，不支持配置。                                                                             |
+|metric_type|str|可选| 向量距离计算方式，支持IP，L2，COSINE，默认为L2，该字段在稠密检索和混合检索模式时，针对稠密向量有效。稀疏向量距离计算方式固定为IP，不支持配置。                                                                                                                 |
+|auto_flush|bool|可选| 数据变更时是否自动刷新内存数据，默认为True。                                                                                                                                                                       |
 
 **返回类型<a name="section53998444524"></a>**
 

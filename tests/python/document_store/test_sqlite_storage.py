@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 -------------------------------------------------------------------------
-This file is part of the RAGSDK project.
+This file is part of the RAG SDK project.
 Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 
-RAGSDK is licensed under Mulan PSL v2.
+RAG SDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
 
@@ -48,7 +48,7 @@ class TestSQLiteStorage(unittest.TestCase):
         self.assertEqual(self.db.add([doc], 1), [1])
 
     def test_sqlite_storage_delete(self):
-        # 不删除任何chunk，返回空列表
+        # 不删除任何chunk，返回一个空列表
         self.assertEqual(self.db.delete(document_id=1), [])
 
     def test_sqlite_storage_search(self):
@@ -75,9 +75,11 @@ class TestSQLiteStorage(unittest.TestCase):
 
     def test_search_by_document_id(self):
         db = SQLiteDocstore(SQL_PATH)
-        doc = [MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test"),
-               MxDocument(page_content="Hello mxRAG1", metadata={"test": "test"}, document_name="test"),
-               MxDocument(page_content="Hello mxRAG2", metadata={"test": "test"}, document_name="test1"), ]
+        doc = [
+            MxDocument(page_content="Hello mxRAG", metadata={"test": "test"}, document_name="test"),
+            MxDocument(page_content="Hello mxRAG1", metadata={"test": "test"}, document_name="test"),
+            MxDocument(page_content="Hello mxRAG2", metadata={"test": "test"}, document_name="test1"),
+        ]
         db.add(doc, 1)
         q1 = db.search_by_document_id(1)
         self.assertEqual(len(q1), 3)
