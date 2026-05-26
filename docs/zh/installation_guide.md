@@ -7,21 +7,21 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 - 容器化部署流程如[图1](#fig66411525144113)所示，具体方法请参见[容器内部署RAG SDK](./installation_guide.md#容器内部署rag-sdk)。
 - 物理机内部署流程如[图2](#fig188855012335)所示，具体方法请参见[物理机内部署RAG SDK](./installation_guide.md#物理机内部署rag-sdk)。
 
-**图 1** RAG SDK容器化部署流程<a id="fig66411525144113"></a>  
+**图 1** RAG SDK容器化部署流程<a id="fig66411525144113"></a>
 ![](figures/RAG-SDK容器化部署流程.png "RAG-SDK容器化部署流程")
 
-**图 2** RAG SDK物理机内部署流程<a id="fig188855012335"></a>  
+**图 2** RAG SDK物理机内部署流程<a id="fig188855012335"></a>
 ![](figures/RAG-SDK物理机内部署流程.png "RAG-SDK物理机内部署流程")
 
 ## 获取RAG SDK软件包<a name="ZH-CN_TOPIC_0000001982155320"></a>
 
 **获取软件包<a name="section927075392218"></a>**
 
-请参考本章获取所需软件包和对应的数字签名文件，下载本软件即表示您同意[华为企业业务最终用户许可协议（EULA）](https://e.huawei.com/cn/about/eula)的条款和条件。
+请参考本章获取所需软件包和对应的数字签名文件，下载本软件即表示您同意[软件许可协议](https://www.hiascend.com/legal/softlicense)的条款和条件。
 
-|组件名称|软件包|获取链接|
-|--|--|--|
-|RAG SDK|检索增强软件包|<a href="https://www.hiascend.com/zh/developer/download/community/result?module=sdk+cann">获取链接</a>|
+|组件名称|软件包|软件包全名|获取链接|
+|--|--|--|--|
+|RAG SDK|知识增强软件包|Ascend-mindxsdk-mxrag_{version}_linux-{arch}.run|<a href="https://www.hiascend.com/developer/software/mindsdk/download">获取链接</a>|
 
 > [!NOTE]
 >容器内自带有RAG SDK，如果需要更新，请参见[升级](#升级)。
@@ -68,8 +68,8 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 <tr>
 <td>CANN软件包</td>
 <td>Ascend-cann-toolkit_<em id="i193132091185"><a name="i193132091185"></a><a name="i193132091185"></a><span id="ph33611452313"><a name="ph33611452313"></a><a name="ph33611452313"></a>&lt;version&gt;</span></em>_linux-<em id="i18718152018815"><a name="i18718152018815"></a><a name="i18718152018815"></a><span id="ph4968818194110"><a name="ph4968818194110"></a><a name="ph4968818194110"></a>&lt;arch&gt;</span></em>.run</td>
-<td rowspan="3">8.5.0</td>
-<td rowspan="3">商用版：<a href="https://www.hiascend.com/developer/download/commercial/result?module=cann">获取链接</a><br>社区版：<a href="https://www.hiascend.com/developer/download/commercial/result?module=cann">获取链接</a></td>
+<td rowspan="3">9.0.0</td>
+<td rowspan="3"><br><a href="https://www.hiascend.com/cann/download">获取链接</a></td>
 </tr>
 <tr>
 <td>CANN算子包ops</td>
@@ -83,7 +83,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 <td>npu-driver驱动包</td>
 <td>Ascend-hdk-<em id="i1935205617"><a name="i1935205617"></a><a name="i1935205617"></a>&lt;chip_type&gt;</em>-npu-driver_<em id="i7935130468"><a name="i7935130468"></a><a name="i7935130468"></a>&lt;version&gt;</em>_linux-<em id="i9935706611"><a name="i9935706611"></a><a name="i9935706611"></a>&lt;arch&gt;</em>.run</td>
 <td rowspan="2">25.5.0</td>
-<td rowspan="2">商用版：<a href="https://www.hiascend.com/zh/hardware/firmware-drivers/commercial">获取链接</a><br>社区版：<a href="https://www.hiascend.com/hardware/firmware-drivers?tag=community">获取链接</a></td>
+<td rowspan="2"><br><a href="https://www.hiascend.com/hardware/firmware-drivers?tag=community">获取链接</a></td>
 </tr>
 <tr>
 <td>npu-firmware固件包</td>
@@ -96,22 +96,10 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 <td><a href="https://www.hiascend.com/zh/developer/download/community/result?module=sdk+cann">获取链接</a></td>
 </tr>
 <tr>
-<td>MindIE推理引擎软件包</td>
-<td>Ascend-mindie_<em id="i97316211910"><a name="i97316211910"></a><a name="i97316211910"></a>&lt;version&gt;</em>_linux-<em id="i103261361689"><a name="i103261361689"></a><a name="i103261361689"></a>&lt;arch&gt;</em>.run</td>
-<td>2.3.0</td>
-<td><a href="https://www.hiascend.com/developer/download/community/result?module=ie%2Bpt%2Bcann">获取链接</a></td>
-</tr>
-<tr>
-<td>Ascend Docker Runtime</td>
-<td>Ascend-docker-runtime_<em id="i11398712911"><a name="i11398712911"></a><a name="i11398712911"></a>&lt;version&gt;</em>_linux-<em id="i104571346888"><a name="i104571346888"></a><a name="i104571346888"></a><span id="ph163221324173214"><a name="ph163221324173214"></a><a name="ph163221324173214"></a>&lt;arch&gt;</span></em>.run</td>
-<td>7.3.0</td>
-<td><a href="https://gitcode.com/Ascend/mind-cluster/releases">获取链接</a></td>
-</tr>
-<tr>
 <td>Python</td>
 <td>-</td>
-<td>3.11/3.12</td>
-<td>请从<a href="https://gitcode.com/Ascend/mind-cluster/releases">Python官网</a>获取依赖软件</td>
+<td>3.11</td>
+<td>请从<a href="https://www.python.org/">Python官网</a>获取依赖软件</td>
 </tr>
 </table>
 
@@ -242,7 +230,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     # for x86,安装torch:
     pip3 install torch==2.1.0+cpu  --index-url [https://download.pytorch.org/whl/cpu](https://download.pytorch.org/whl/cpu)
     # for aarch64,安装torch:
-    pip3 install torch==2.1.0 
+    pip3 install torch==2.1.0
     # for all,安装torch-npu
     pip3 install torch-npu==2.1.0.post12
     ```
@@ -312,7 +300,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
         ```bash
         # faiss 1.10.0
-        wget https://github.com/facebookresearch/faiss/archive/v1.10.0.tar.gz 
+        wget https://github.com/facebookresearch/faiss/archive/v1.10.0.tar.gz
         tar -xf v1.10.0.tar.gz && cd faiss-1.10.0/faiss
         ```
 
@@ -328,18 +316,18 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         export FAISS_INSTALL_PATH=/usr/local/faiss/faiss1.10.0
         # faiss安装后可能是${FAISS_INSTALL_PATH}/lib或者${FAISS_INSTALL_PATH}/lib64，与具体操作系统有关
         export FAISS_INSTALL_PATH_LIB=${FAISS_INSTALL_PATH}/lib
-        mkdir -p ${FAISS_INSTALL_PATH} 
-        sed -i "149 i virtual void search_with_filter (idx_t n, const float *x, idx_t k, float *distances, idx_t *labels, const void *mask = nullptr) const{}" Index.h     
-        sed -i "49 i template <typename IndexT> IndexIDMapTemplate<IndexT>::IndexIDMapTemplate (IndexT *index, std::vector<idx_t> &ids): index (index), own_fields (false) { this->is_trained = index->is_trained; this->metric_type = index->metric_type; this->verbose = index->verbose; this->d = index->d; id_map = ids; }" IndexIDMap.cpp     
-        sed -i "30 i explicit IndexIDMapTemplate (IndexT *index, std::vector<idx_t> &ids);" IndexIDMap.h     
-        sed -i "217 i utils/sorting.h" CMakeLists.txt   
-        cd .. && cmake -B build . -DFAISS_ENABLE_GPU=OFF -DPython_EXECUTABLE=/usr/bin/python3 -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${FAISS_INSTALL_PATH}    
-        make -C build -j faiss    
-        make -C build -j swigfaiss    
+        mkdir -p ${FAISS_INSTALL_PATH}
+        sed -i "149 i virtual void search_with_filter (idx_t n, const float *x, idx_t k, float *distances, idx_t *labels, const void *mask = nullptr) const{}" Index.h
+        sed -i "49 i template <typename IndexT> IndexIDMapTemplate<IndexT>::IndexIDMapTemplate (IndexT *index, std::vector<idx_t> &ids): index (index), own_fields (false) { this->is_trained = index->is_trained; this->metric_type = index->metric_type; this->verbose = index->verbose; this->d = index->d; id_map = ids; }" IndexIDMap.cpp
+        sed -i "30 i explicit IndexIDMapTemplate (IndexT *index, std::vector<idx_t> &ids);" IndexIDMap.h
+        sed -i "217 i utils/sorting.h" CMakeLists.txt
+        cd .. && cmake -B build . -DFAISS_ENABLE_GPU=OFF -DPython_EXECUTABLE=/usr/bin/python3 -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${FAISS_INSTALL_PATH}
+        make -C build -j faiss
+        make -C build -j swigfaiss
         # 如果报错没有wheel，使用pip安装
-        cd build/faiss/python && python3 setup.py bdist_wheel  
-        cd ../../.. && make -C build install  
-        cd build/faiss/python && cp libfaiss_python_callbacks.so ${FAISS_INSTALL_PATH_LIB}/ 
+        cd build/faiss/python && python3 setup.py bdist_wheel
+        cd ../../.. && make -C build install
+        cd build/faiss/python && cp libfaiss_python_callbacks.so ${FAISS_INSTALL_PATH_LIB}/
         cd dist
         # 该操作可能更新numpy到2.x.x版本，需要回退到1.26.4
         pip3 install faiss-1.10.0*.whl
@@ -372,7 +360,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         若显示如下信息，说明软件包已通过校验。
 
         ```ColdFusion
-        Verifying archive integrity...  100%   SHA256 checksums are OK. All good.    
+        Verifying archive integrity...  100%   SHA256 checksums are OK. All good.
         ```
 
     3. 创建软件包的安装路径。
@@ -406,7 +394,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     1. 下载源码包并解压
 
         ```bash
-        wget https://gitee.com/ascend/mindsdk-referenceapps/repository/archive/master.zip 
+        wget https://gitee.com/ascend/mindsdk-referenceapps/repository/archive/master.zip
         unzip master.zip && cd mindsdk-referenceapps-master/IndexSDK/faiss-python
         ```
 
@@ -430,14 +418,14 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         export DRIVER_INSTALL_PATH=/usr/local/Ascend/
         export OPENBLAS_INSTALL_PATH=/usr/local/Ascend/OpenBLAS
         export NUMPY_INCLUDE=$(python3 -c "import numpy; print(numpy.get_include())")
-        swig -python -c++ -Doverride= -module swig_ascendfaiss -I${PYTHON_HEADER} -I${FAISS_INSTALL_PATH}/include -I${INDEXSDK_INSTALL_PATH}/include -DSWIGWORDSIZE64 -o swig_ascendfaiss.cpp swig_ascendfaiss.swig 
-        
+        swig -python -c++ -Doverride= -module swig_ascendfaiss -I${PYTHON_HEADER} -I${FAISS_INSTALL_PATH}/include -I${INDEXSDK_INSTALL_PATH}/include -DSWIGWORDSIZE64 -o swig_ascendfaiss.cpp swig_ascendfaiss.swig
+
         g++ -std=c++11 -DFINTEGER=int -fopenmp -I/usr/local/include -I${ASCEND_INSTALL_PATH}/acllib/include -I${ASCEND_INSTALL_PATH}/runtime/include -fPIC -fstack-protector-all -Wall -Wreturn-type -D_FORTIFY_SOURCE=2 -g -O3 -Wall -Wextra -I${PYTHON_HEADER} -I${NUMPY_INCLUDE} -I${FAISS_INSTALL_PATH}/include -I${INDEXSDK_INSTALL_PATH}/include -c swig_ascendfaiss.cpp -o swig_ascendfaiss.o
-        
-        g++ -std=c++11 -shared -fopenmp -L${ASCEND_INSTALL_PATH}/lib64 -L${ASCEND_INSTALL_PATH}/acllib/lib64 -L${ASCEND_INSTALL_PATH}/runtime/lib64 -L${DRIVER_INSTALL_PATH}/driver/lib64 -L${DRIVER_INSTALL_PATH}/driver/lib64/common -L${DRIVER_INSTALL_PATH}/driver/lib64/driver -L${FAISS_INSTALL_PATH_LIB} -L${INDEXSDK_INSTALL_PATH}/lib -Wl,-rpath-link=${ASCEND_INSTALL_PATH}/acllib/lib64:${ASCEND_INSTALL_PATH}/runtime/lib64:${DRIVER_INSTALL_PATH}/driver/lib64:${DRIVER_INSTALL_PATH}/driver/lib64/common:${DRIVER_INSTALL_PATH}/driver/lib64/driver -L/usr/local/lib -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -s -o _swig_ascendfaiss.so swig_ascendfaiss.o -L.. -lascendfaiss -lfaiss -lascend_hal -lc_sec 
-        
+
+        g++ -std=c++11 -shared -fopenmp -L${ASCEND_INSTALL_PATH}/lib64 -L${ASCEND_INSTALL_PATH}/acllib/lib64 -L${ASCEND_INSTALL_PATH}/runtime/lib64 -L${DRIVER_INSTALL_PATH}/driver/lib64 -L${DRIVER_INSTALL_PATH}/driver/lib64/common -L${DRIVER_INSTALL_PATH}/driver/lib64/driver -L${FAISS_INSTALL_PATH_LIB} -L${INDEXSDK_INSTALL_PATH}/lib -Wl,-rpath-link=${ASCEND_INSTALL_PATH}/acllib/lib64:${ASCEND_INSTALL_PATH}/runtime/lib64:${DRIVER_INSTALL_PATH}/driver/lib64:${DRIVER_INSTALL_PATH}/driver/lib64/common:${DRIVER_INSTALL_PATH}/driver/lib64/driver -L/usr/local/lib -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack -s -o _swig_ascendfaiss.so swig_ascendfaiss.o -L.. -lascendfaiss -lfaiss -lascend_hal -lc_sec
+
         # 如果报错没有build，使用pip安装
-        python3 -m build 
+        python3 -m build
         # 该操作可能更新numpy到2.x.x版本，需要回退到1.26.4
         cd dist && pip3 install ascendfaiss*.whl
         export LD_LIBRARY_PATH=${INDEXSDK_INSTALL_PATH}/lib:${FAISS_INSTALL_PATH}/lib:$LD_LIBRARY_PATH
@@ -468,7 +456,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     --install安装命令同时支持输入可选参数，如[表1](#table7138521890)所示。输入不在列表中的参数可能正常安装或者报错。
 
-    > [!NOTICE]
+    > [!NOTE]
     >如果通过**./**_\{run\_file\_name\}__.run_** --help**命令查询出的参数未解释在如下表格，则说明该参数预留或适用于其他处理器版本，用户无需关注。
 
     **表 1**  安装包支持的参数表

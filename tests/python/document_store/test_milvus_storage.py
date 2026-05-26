@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 -------------------------------------------------------------------------
-This file is part of the RAGSDK project.
+This file is part of the RAG SDK project.
 Copyright (c) 2025 Huawei Technologies Co.,Ltd.
 
-RAGSDK is licensed under Mulan PSL v2.
+RAG SDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
 You may obtain a copy of Mulan PSL v2 at:
 
@@ -19,15 +19,13 @@ See the Mulan PSL v2 for more details.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from pymilvus import MilvusClient
 
 from mx_rag.storage.document_store import MilvusDocstore, MxDocument
-from mx_rag.storage.vectorstore.milvus import MilvusError
 
 
 class TestMilvusDocStore(unittest.TestCase):
-
     def setUp(self):
         # Mock the MilvusDB and MxDocument classes
         self.mock_client = MagicMock(spec=MilvusClient)
@@ -97,8 +95,13 @@ class TestMilvusDocStore(unittest.TestCase):
 
     def test_search_found(self):
         self.mock_client.get.return_value = [
-            {"id": 1, "page_content": "Some content here.",
-             "document_name": "Test Document", "metadata": self.mock_document.metadata}]
+            {
+                "id": 1,
+                "page_content": "Some content here.",
+                "document_name": "Test Document",
+                "metadata": self.mock_document.metadata,
+            }
+        ]
 
         # Call search method
         result = self.store.search(1)
@@ -164,18 +167,18 @@ class TestMilvusDocStore(unittest.TestCase):
     def test_full_text_search(self):
         self.mock_client.has_collection.return_value = False
         self.store._create_collection()
-        self.mock_client.search.return_value = [[
-            {
-                "distance": 0.1,
-                "entity": {
-                    "metadata": {
-                        "score": 0.1
+        self.mock_client.search.return_value = [
+            [
+                {
+                    "distance": 0.1,
+                    "entity": {
+                        "metadata": {"score": 0.1},
+                        "page_content": "Some content here.",
+                        "document_name": "test.doc",
                     },
-                    "page_content": "Some content here.",
-                    "document_name": "test.doc"
                 }
-            }
-        ]]
+            ]
+        ]
         result = self.store_bm25.full_text_search("here")
         self.assertIsInstance(result[0], MxDocument)  # Ensure result is an MxDocument instance
         self.assertEqual(result[0].page_content, "Some content here.")  # Check content is correct
@@ -186,14 +189,16 @@ class TestMilvusDocStore(unittest.TestCase):
         self.mock_client.query.return_value = [
             {'document_id': 1, 'page_content': 'Hello RAG SDK', 'document_name': '1.docx', 'metadata': {}},
             {'document_id': 1, 'page_content': 'Hello RAG SDK1', 'document_name': '1.docx', 'metadata': {}},
-            {'document_id': 1, 'page_content': 'Hello RAG SDK2', 'document_name': '1.docx', 'metadata': {}}]
+            {'document_id': 1, 'page_content': 'Hello RAG SDK2', 'document_name': '1.docx', 'metadata': {}},
+        ]
         results = self.store_bm25.search_by_document_id(1)
         self.assertEqual(len(results), 3)
         self.assertEqual(results[0].page_content, 'Hello RAG SDK')
 
     def test_update(self):
         self.mock_client.get.return_value = [
-            {'document_id': 1, 'page_content': 'Hello RAG SDK', 'document_name': '1.docx', 'id': 457929421432291896}]
+            {'document_id': 1, 'page_content': 'Hello RAG SDK', 'document_name': '1.docx', 'id': 457929421432291896}
+        ]
         self.mock_client.upsert.return_value = None
         self.mock_client.refresh_load.return_value = None
         self.store_bm25.update([1, 2, 3], ["Hello RAG SDK", "Hello RAG SDK1", "Hello RAG SDK2"])
