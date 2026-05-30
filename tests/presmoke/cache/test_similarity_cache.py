@@ -26,8 +26,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from pymilvus import MilvusClient
 
-from mx_rag.cache import (CacheChainChat, EvictPolicy, MxRAGCache,
-                          SimilarityCacheConfig)
+from mx_rag.cache import CacheChainChat, EvictPolicy, MxRAGCache, SimilarityCacheConfig
 from mx_rag.chain import SingleText2TextChain
 from mx_rag.document import LoaderMng
 from mx_rag.embedding.local import TextEmbedding
@@ -54,27 +53,28 @@ class TestSimilarityCacheDemo(unittest.TestCase):
         reranker_path = "/home/data/bge-reranker-large"
         llm_url: str = "http://127.0.0.1:8000/v1/chat/completions"
         model_name: str = "Llama3-8B-Chinese-Chat"
-        file_path: str = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                       "../../data/gaokao.txt"))
+        file_path: str = os.path.realpath(
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/gaokao.txt")
+        )
         similarity_config = SimilarityCacheConfig(
             vector_config={
                 "client": client,
                 "vector_type": "milvus_db",
                 "x_dim": dim,
                 "collection_name": "mxrag_cache",  # milvus db的标签
-                "param": None
+                "param": None,
             },
             cache_config="sqlite",
             emb_config={
                 "embedding_type": "local_text_embedding",
                 "x_dim": dim,
                 "model_path": embedding_path,  # emb 模型路径
-                "dev_id": dev
+                "dev_id": dev,
             },
             similarity_config={
                 "similarity_type": "local_reranker",
                 "model_path": reranker_path,  # reranker 模型路径
-                "dev_id": dev
+                "dev_id": dev,
             },
             retrieval_top_k=1,
             cache_size=100,
@@ -82,7 +82,7 @@ class TestSimilarityCacheDemo(unittest.TestCase):
             similarity_threshold=0.2,
             data_save_folder=self.path_to_cache_save_folder,
             disable_report=True,
-            eviction_policy=EvictPolicy.FIFO
+            eviction_policy=EvictPolicy.FIFO,
         )
         # cache 初始化
         cache = MxRAGCache("similarity_cache", similarity_config)
@@ -91,41 +91,37 @@ class TestSimilarityCacheDemo(unittest.TestCase):
         # 设置是否详细显示缓存过程
         cache.set_verbose(True)
         llm = Text2TextLLM(base_url=llm_url, model_name=model_name, client_param=ClientParam(use_http=True, timeout=60))
-        vector_store = MilvusDB.create(client=client,
-                                       x_dim=1024,
-                                       collection_name="test_vector")
+        vector_store = MilvusDB.create(client=client, x_dim=1024, collection_name="test_vector")
         chunk_store = MilvusDocstore(client, collection_name="test_chunk")
         loader_mng = LoaderMng()
         # 加载文档加载器，可以使用mxrag自有的，也可以使用langchain的
         loader_mng.register_loader(loader_class=TextLoader, file_types=[".txt", ".md"])
         # 加载文档切分器，使用langchain的
-        loader_mng.register_splitter(splitter_class=RecursiveCharacterTextSplitter,
-                                     file_types=[".pdf", ".docx", ".txt", ".md"],
-                                     splitter_params={"chunk_size": 750,
-                                                      "chunk_overlap": 150,
-                                                      "keep_separator": False
-                                                      }
-                                     )
+        loader_mng.register_splitter(
+            splitter_class=RecursiveCharacterTextSplitter,
+            file_types=[".pdf", ".docx", ".txt", ".md"],
+            splitter_params={"chunk_size": 750, "chunk_overlap": 150, "keep_separator": False},
+        )
         # 初始化知识管理关系数据库
         knowledge_store = KnowledgeStore(db_path="./sql.db")
         emb = TextEmbedding(embedding_path, dev)
         # 添加知识库
         knowledge_store.add_knowledge("test", "Default", "admin")
         # 初始化知识库管理
-        knowledge_db = KnowledgeDB(knowledge_store=knowledge_store,
-                                   chunk_store=chunk_store,
-                                   vector_store=vector_store,
-                                   knowledge_name="test",
-                                   user_id='Default',
-                                   white_paths=["/home"])
+        knowledge_db = KnowledgeDB(
+            knowledge_store=knowledge_store,
+            chunk_store=chunk_store,
+            vector_store=vector_store,
+            knowledge_name="test",
+            user_id='Default',
+            white_paths=["/home", "/workspace"],
+        )
         # 完成离线知识库构建,上传领域知识test.docx文档。
-        upload_files(knowledge_db, [file_path],
-                     loader_mng=loader_mng,
-                     embed_func=emb.embed_documents,
-                     force=True)
+        upload_files(knowledge_db, [file_path], loader_mng=loader_mng, embed_func=emb.embed_documents, force=True)
         # Step2在线问题答复,初始化检索器
-        retriever = vector_store.as_retriever(document_store=chunk_store,
-                                              embed_func=emb.embed_documents, k=3, score_threshold=0.1)
+        retriever = vector_store.as_retriever(
+            document_store=chunk_store, embed_func=emb.embed_documents, k=3, score_threshold=0.1
+        )
         text2text_chain = SingleText2TextChain(llm=llm, retriever=retriever)
         cache_chain = CacheChainChat(chain=text2text_chain, cache=cache)
         res1 = cache_chain.query("请描述2024年高考作文题目")

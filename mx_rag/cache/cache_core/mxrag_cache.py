@@ -16,15 +16,14 @@ EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
-"""
 
-"""
 MXRAGCache 核心功能类
 该类主要是给RAG框架提供数据缓存的能力，包括以下功能
 1、缓存实例的构造(get_cache, new_cache)
 2、缓存的查询(search)，更新(update)，以及刷新(flush)
 3、缓存的级联功能(join)
 """
+
 import os
 import re
 from typing import Any
@@ -61,13 +60,14 @@ class MxRAGCache:
     @validate_params(
         cache_name=dict(
             validator=lambda x: isinstance(x, str) and 0 < len(x) < 64 and bool(re.fullmatch(r'[0-9a-zA-Z_]+', x)),
-            message="param must meets: Type is str, length range (0, 64), match '[0-9a-zA-Z_]+'"),
-        config=dict(validator=lambda x: isinstance(x, CacheConfig) or isinstance(x, SimilarityCacheConfig),
-                    message="param must be instance of CacheConfig or SimilarityCacheConfig")
+            message="param must meets: Type is str, length range (0, 64), match '[0-9a-zA-Z_]+'",
+        ),
+        config=dict(
+            validator=lambda x: isinstance(x, (CacheConfig, SimilarityCacheConfig)),
+            message="param must be instance of CacheConfig or SimilarityCacheConfig",
+        ),
     )
-    def __init__(self,
-                 cache_name: str,
-                 config: CacheConfig):
+    def __init__(self, cache_name: str, config: CacheConfig):
         self.__cache_obj = Cache()
         self.config = config
         self.cache_name = cache_name
@@ -82,20 +82,15 @@ class MxRAGCache:
             logger.error("init rag cache failed")
 
     @staticmethod
-    def _update(
-            llm_data, update_cache_func, *args, **kwargs
-    ) -> None:
+    def _update(llm_data, update_cache_func, *args, **kwargs) -> None:
         """When updating cached data, do nothing, because currently only cached queries are processed"""
         from gptcache.adapter.api import _update_cache_callback
+
         _update_cache_callback(llm_data, update_cache_func, *args, **kwargs)
         return llm_data
 
     @classmethod
-    @validate_params(
-        verbose=dict(
-            validator=lambda x: isinstance(x, bool),
-            message="param value must be bool")
-    )
+    @validate_params(verbose=dict(validator=lambda x: isinstance(x, bool), message="param value must be bool"))
     def set_verbose(cls, verbose: bool):
         cls.verbose = verbose
 
@@ -103,7 +98,8 @@ class MxRAGCache:
     @validate_params(
         cache_limit=dict(
             validator=lambda x: isinstance(x, int) and 0 < x <= TEXT_MAX_LEN,
-            message="param value range (0, 1000 * 1000]")
+            message="param value range (0, 1000 * 1000]",
+        )
     )
     def set_cache_limit(cls, cache_limit: int):
         cls.cache_limit = cache_limit
@@ -113,14 +109,27 @@ class MxRAGCache:
         while next_cache is not None:
             next_cache.clear()
             next_cache = next_cache.next_cache
-        if "vector_db" in self.data_save_path:
-            self.data_save_path["vector_db"].delete_all()
-        if "txt_file" in self.data_save_path and os.path.exists(self.data_save_path["txt_file"]):
-            os.remove(self.data_save_path["txt_file"])
-        if "vector_file" in self.data_save_path and os.path.exists(self.data_save_path["vector_file"]):
-            os.remove(self.data_save_path["vector_file"])
-        if "sql_file" in self.data_save_path and os.path.exists(self.data_save_path["sql_file"]):
-            os.remove(self.data_save_path["sql_file"])
+        if not self.__cache_obj.has_init:
+            return
+
+        data_manager = self.__cache_obj.data_manager
+        if data_manager is None:
+            return
+
+        if hasattr(data_manager, 's') and hasattr(data_manager, 'v'):
+            scalar_store = data_manager.s
+            vector_store = data_manager.v
+
+            all_ids = scalar_store.get_ids(deleted=False)
+            if all_ids:
+                scalar_store.mark_deleted(all_ids)
+                scalar_store.clear_deleted_data()
+                vector_store.delete(all_ids)
+                vector_store.flush()
+
+        if hasattr(data_manager, 'data') and hasattr(data_manager, 'data_path'):
+            data_manager.data.clear()
+            data_manager.flush()
 
     @validate_params(
         query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH),
@@ -143,13 +152,7 @@ class MxRAGCache:
             """Do nothing on a cache miss"""
             return None
 
-        answer = adapt(
-            llm_handle_none,
-            _cache_data_converter,
-            self._update,
-            prompt=query,
-            cache_obj=self.__cache_obj
-        )
+        answer = adapt(llm_handle_none, _cache_data_converter, self._update, prompt=query, cache_obj=self.__cache_obj)
 
         if answer is not None:
             self._verbose_log("Hit!")
@@ -158,10 +161,14 @@ class MxRAGCache:
         return answer
 
     @validate_params(
-        query=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH,
-                   message="param must str and char range is (0, 128 * 1024 * 1024]"),
-        answer=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
-                    message="param must str and char range is (0, 1000 * 1000]")
+        query=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= MAX_QUERY_LENGTH,
+            message="param must str and char range is (0, 128 * 1024 * 1024]",
+        ),
+        answer=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
+            message="param must str and char range is (0, 1000 * 1000]",
+        ),
     )
     def update(self, query: str, answer: str):
         """
@@ -184,13 +191,9 @@ class MxRAGCache:
 
         def llm_handle(*llm_args, **llm_kwargs):
             return answer
+
         adapt(
-            llm_handle,
-            _cache_data_converter,
-            self._update,
-            cache_skip=True,
-            prompt=query,
-            cache_obj=self.__cache_obj
+            llm_handle, _cache_data_converter, self._update, cache_skip=True, prompt=query, cache_obj=self.__cache_obj
         )
         self._verbose_log("Update!")
 
@@ -203,8 +206,9 @@ class MxRAGCache:
         """
         if not self.__cache_obj.has_init:
             raise KeyError("cache not init pls init first")
-        if (hasattr(self.__cache_obj.data_manager, "data_path") and
-                os.path.exists(self.__cache_obj.data_manager.data_path)):
+        if hasattr(self.__cache_obj.data_manager, "data_path") and os.path.exists(
+            self.__cache_obj.data_manager.data_path
+        ):
             SecFileCheck(self.__cache_obj.data_manager.data_path, 100 * GB).check()
         self.__cache_obj.flush()
         self._verbose_log("Flush!")
@@ -247,7 +251,8 @@ class MxRAGCache:
 
         if MxRAGCache.current_join_size >= MxRAGCache.cache_join_size_limit:
             raise OverflowError(
-                f"the number of cache join deepth cannot be greater than {MxRAGCache.cache_join_size_limit}")
+                f"the number of cache join deepth cannot be greater than {MxRAGCache.cache_join_size_limit}"
+            )
 
         loop_cnt: int = 0
         next_cache_obj = next_cache.get_obj()
@@ -263,7 +268,7 @@ class MxRAGCache:
             loop_cnt = loop_cnt + 1
 
     def _check_limit(self, input_text: str):
-        return True if (len(input_text) < self.cache_limit) else False
+        return len(input_text) < self.cache_limit
 
     def _verbose_log(self, log_str: str):
         """
