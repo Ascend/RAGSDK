@@ -45,13 +45,17 @@ Tag 遵循以下格式:
 ## 如何本地构建
 
 ```bash
-docker build -t 镜像tag --network host --build-arg -f Dockerfile .
+# 在宿主机上任意目录下 clone 代码, 并进入 docker 目录, 获取dockerfile替换 {cann version} 为实际版本, 替换 {your_repo} 为实际镜像仓库
+git clone https://gitcode.com/Ascend/RAGSDK.git && cd RAGSDK/docker
+
+docker build --network host --build-arg CANN_VERSION={cann version} -t {your_repo}/ragsdk:latest -f Dockerfile.<芯片系列>.<操作系统> .
+
 ```
 
 ## 运行RAGSDK容器
 
 ```bash
- docker run -u <user> -itd --name=rag_sdk_demo --network=host \
+ docker run -itd --name=rag_sdk_demo --network=host \
      --device=/dev/davinci_manager \
      --device=/dev/hisi_hdc \
      --device=/dev/devmm_svm \
@@ -59,8 +63,13 @@ docker build -t 镜像tag --network host --build-arg -f Dockerfile .
      -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
      -v /usr/local/sbin:/usr/local/sbin:ro \
      -v /path/to/model:/path/to/model:ro \
-     <镜像名称>:<镜像tag> bash
+     {镜像名称}:{镜像tag} bash
 ```
+
+### 参数说明
+
+- `/path/to/model`：模型存放目录，如需加载模型，请将模型文件放入该目录。
+- `{镜像名称}`:`{镜像tag}`：指定要运行的 RAGSDK 镜像和标签。
 
 ## 进入容器
 
@@ -70,7 +79,7 @@ docker exec -it rag_sdk_demo bash
 
 ## RAGSDK使用说明
 
-RAGSDK 提供丰富的示例代码，帮助开发者快速上手，示例代码路径：`/workspace/RAGSDK_Samples`。您也可以通过以下链接获取最新的 Demo 示例：
+RAGSDK 提供丰富的示例代码，帮助开发者快速上手，容器内示例代码在`/workspace/RAGSDK_Samples`路径下。您也可以通过以下链接获取最新的 Demo 示例：
 
 - [RAGSDK Demo 示例代码](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples)
 

@@ -28,9 +28,9 @@ clip模型加速只支持ViT-B-16、ViT-L-14、ViT-L-14-336 、ViT-H-14，下载
     from mx_rag.transformer_adapter.modeling_clip_adapter import enable_clip_speed
     ```
 
-`说明`: 软件包如果是通过run包安装的，支持方式1和方式2；如果是通过whl包安装的，只支持方式2。执行`pip3 show mx_rag`命令获取软件包安装路径判断通过哪种包安装的，如果是run安装的，mx_rag安装在$HOME/./local/lib下。
+`说明`: 软件包如果是通过run包安装的，支持方式1和方式2；如果是通过whl包安装的，只支持方式2。执行`pip3 show mx_rag`命令获取软件包安装路径判断通过哪种包安装的，如果是run安装的，mx_rag安装在$HOME/./local/lib下，后续会逐步废弃第一种方式导包使用。
 
-- 设置ENABLE\_BOOST变量是否使能模型推理加速，设置值为"True"、"true"、"1"时表示使能加速，设置其他值表示不使能加速。续会逐步废弃第一种方式导包使用。
+- 设置ENABLE\_BOOST变量是否使能模型推理加速，设置值为"True"、"true"、"1"时表示使能加速，设置其他值表示不使能加速。
 
     ```bash
     os.environ["ENABLE_BOOST"] = "True"

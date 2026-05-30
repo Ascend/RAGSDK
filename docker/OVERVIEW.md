@@ -46,22 +46,31 @@ Tags follow this pattern:
 ## How to Build
 
 ```bash
-docker build -t image-tag --network host --build-arg -f Dockerfile .
+# Clone the repository on the host, enter the docker directory, replace {cann version} with the actual version, and replace {your_repo} with the actual image repository
+git clone https://gitcode.com/Ascend/RAGSDK.git && cd RAGSDK/docker
+
+docker build --network host --build-arg CANN_VERSION={cann version} -t {your_repo}/ragsdk:latest -f Dockerfile.<chip-series>.<os> .
+
 ```
 
 ## Run RAGSDK Container
 
 ```bash
-docker run -u <user> -itd --name=rag_sdk_demo --network=host \
-    --device=/dev/davinci_manager \
-    --device=/dev/hisi_hdc \
-    --device=/dev/devmm_svm \
-    --device=/dev/davinci0 \
-    -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
-    -v /usr/local/sbin:/usr/local/sbin:ro \
-    -v /path/to/model:/path/to/model:ro \
-    <image-name>:<image-tag> bash
+ docker run -itd --name=rag_sdk_demo --network=host \
+     --device=/dev/davinci_manager \
+     --device=/dev/hisi_hdc \
+     --device=/dev/devmm_svm \
+     --device=/dev/davinci0 \
+     -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
+     -v /usr/local/sbin:/usr/local/sbin:ro \
+     -v /path/to/model:/path/to/model:ro \
+     {image-name}:{image-tag} bash
 ```
+
+### Parameter Description
+
+- `/path/to/model`: Model storage directory. Place model files in this directory if you need to load models.
+- `{image-name}`:`{image-tag}`: Specify the RAGSDK image and tag to run.
 
 ## Enter the Container
 
@@ -71,19 +80,18 @@ docker exec -it rag_sdk_demo bash
 
 ## RAGSDK Usage
 
-RAGSDK provides comprehensive sample code to help developers get started quickly. You can access the latest demo examples through the following link:
+RAGSDK provides comprehensive sample code to help developers get started quickly. The sample code inside the container is located at `/workspace/RAGSDK_Samples`. You can also access the latest demo examples through the following link:
 
-- [RAGSDK Demo Samples](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/rag_with_api)
+- [RAGSDK Demo Samples](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples)
 
 ## Development
 
 ```dockerfile
-# Add required software by developer
+# Use the RAGSDK image as the base image and add user software
 FROM swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:26.0.0-910b-ubuntu22.04-py3.11
 RUN apt update -y &&
     apt install gcc ...
 ...
-
 ```
 
 ## Supported Hardware
