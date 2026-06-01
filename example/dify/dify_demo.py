@@ -23,6 +23,7 @@ from pymilvus import MilvusClient
 from starlette.responses import JSONResponse
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from paddle.base import libpaddle  # noqa: F401
 from mx_rag.embedding.service import TEIEmbedding
 from mx_rag.document import LoaderMng
 from mx_rag.document.loader import DocxLoader, PdfLoader
