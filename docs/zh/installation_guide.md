@@ -7,6 +7,9 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 - 容器化部署流程如[图1](#fig66411525144113)所示，具体方法请参见[容器内部署RAG SDK](./installation_guide.md#容器内部署rag-sdk)。
 - 物理机内部署流程如[图2](#fig188855012335)所示，具体方法请参见[物理机内部署RAG SDK](./installation_guide.md#物理机内部署rag-sdk)。
 
+> [!NOTE]
+> 建议容器内部署RAG SDK。
+
 **图 1** RAG SDK容器化部署流程<a id="fig66411525144113"></a>
 ![](figures/RAG-SDK容器化部署流程.png "RAG-SDK容器化部署流程")
 
@@ -47,10 +50,8 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 **安装依赖<a name="section10458105983310"></a>**
 
-1. 安装NPU驱动固件，详细步骤请参见《CANN 软件安装指南》中的“安装NPU驱动和固件”章节（商用版）或“安装NPU驱动和固件”章节（社区版）内容。为了让非root用户能够使用驱动，驱动的安装要添加**--install-for-all**选项。
-2. 安装CANN Toolkit、ops和NNAL加速库，详细步骤请参见《CANN 软件安装指南》中的“安装依赖”和“安装CANN软件包”章节。如果使用AscendHub镜像部署RAG SDK，无需执行该步骤。
-3. 安装并运行推理大模型，详细步骤请参见《MindIE安装指南》中的“方式三：容器安装方式”章节和“配置Server”章节。
-4. 安装Ascend Docker Runtime，详细步骤请参见《MindCluster  集群调度用户指南》的“安装 \> 安装部署”章节。
+1. 安装NPU驱动固件，详细步骤请参见《CANN 软件安装指南》中的“[安装NPU驱动和固件](https://www.hiascend.com/document/detail/zh/canncommercial/900/softwareinst/instg/instg_0005.html?Mode=PmIns&InstallType=local&OS=Debian)”章节（商用版）或“[安装NPU驱动和固件](https://www.hiascend.com/document/detail/zh/CANNCommunityEdition/900/softwareinst/instg/instg_0005.html?Mode=PmIns&InstallType=local&OS=openEuler)”章节（社区版）内容。为了让非root用户能够使用驱动，驱动的安装要添加**--install-for-all**选项。
+2. 安装CANN Toolkit、ops和NNAL加速库，详细步骤请参见《CANN 软件安装指南》中的“[准备软件包](https://www.hiascend.com/document/detail/zh/canncommercial/900/softwareinst/instg/instg_0003.html?OS=openEuler&InstallType=netconda)”和“[安装CANN软件包](https://www.hiascend.com/document/detail/zh/canncommercial/900/softwareinst/instg/instg_0093.html?OS=openEuler&InstallType=netconda)”章节。如果使用AscendHub镜像部署RAG SDK，无需执行该步骤。
 
 **下载依赖软件包<a name="section107791548183117"></a>**
 
@@ -206,7 +207,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     apt-get install -y --no-install-recommends $PY_VERSION $PY_VERSION-dev $PY_VERSION-distutils $PY_VERSION-venv
     # 设置默认的python
     ln -sf /usr/bin/$PY_VERSION /usr/bin/python3
-    ln -sf /usr/bin/$PY_VERSION /usr/bin/python
+    ln -sf /usr/bin/$PY_VERSION /usr/bin/unit_tests
     # 安装pip
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
     python3 get-pip.py
@@ -224,10 +225,15 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
 **操作步骤<a name="section539219178112"></a>**
 
-1. 安装torch-npu。
+1. 安装torch和torch-npu。
 
     ```bash
-    pip3 install torch-npu==2.1.0.post13
+    # for x86,安装torch:
+    pip3 install torch==2.1.0+cpu  --index-url [https://download.pytorch.org/whl/cpu](https://download.pytorch.org/whl/cpu)
+    # for aarch64,安装torch:
+    pip3 install torch==2.1.0
+    # for all,安装torch-npu
+    pip3 install torch-npu==2.1.0.post12
     ```
 
 2. 安装torchvision-npu
@@ -320,9 +326,9 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         make -C build -j faiss
         make -C build -j swigfaiss
         # 如果报错没有wheel，使用pip安装
-        cd build/faiss/python && python3 setup.py bdist_wheel
+        cd build/faiss/unit_tests && python3 setup.py bdist_wheel
         cd ../../.. && make -C build install
-        cd build/faiss/python && cp libfaiss_python_callbacks.so ${FAISS_INSTALL_PATH_LIB}/
+        cd build/faiss/unit_tests && cp libfaiss_python_callbacks.so ${FAISS_INSTALL_PATH_LIB}/
         cd dist
         # 该操作可能更新numpy到2.x.x版本，需要回退到1.26.4
         pip3 install faiss-1.10.0*.whl
@@ -390,7 +396,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
         ```bash
         wget https://gitee.com/ascend/mindsdk-referenceapps/repository/archive/master.zip
-        unzip master.zip && cd mindsdk-referenceapps-master/IndexSDK/faiss-python
+        unzip master.zip && cd mindsdk-referenceapps-master/IndexSDK/faiss-unit_tests
         ```
 
     2. 创建install\_ascendfaiss\_sh.sh脚本
@@ -413,7 +419,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
         export DRIVER_INSTALL_PATH=/usr/local/Ascend/
         export OPENBLAS_INSTALL_PATH=/usr/local/Ascend/OpenBLAS
         export NUMPY_INCLUDE=$(python3 -c "import numpy; print(numpy.get_include())")
-        swig -python -c++ -Doverride= -module swig_ascendfaiss -I${PYTHON_HEADER} -I${FAISS_INSTALL_PATH}/include -I${INDEXSDK_INSTALL_PATH}/include -DSWIGWORDSIZE64 -o swig_ascendfaiss.cpp swig_ascendfaiss.swig
+        swig -unit_tests -c++ -Doverride= -module swig_ascendfaiss -I${PYTHON_HEADER} -I${FAISS_INSTALL_PATH}/include -I${INDEXSDK_INSTALL_PATH}/include -DSWIGWORDSIZE64 -o swig_ascendfaiss.cpp swig_ascendfaiss.swig
 
         g++ -std=c++11 -DFINTEGER=int -fopenmp -I/usr/local/include -I${ASCEND_INSTALL_PATH}/acllib/include -I${ASCEND_INSTALL_PATH}/runtime/include -fPIC -fstack-protector-all -Wall -Wreturn-type -D_FORTIFY_SOURCE=2 -g -O3 -Wall -Wextra -I${PYTHON_HEADER} -I${NUMPY_INCLUDE} -I${FAISS_INSTALL_PATH}/include -I${INDEXSDK_INSTALL_PATH}/include -c swig_ascendfaiss.cpp -o swig_ascendfaiss.o
 
@@ -437,6 +443,8 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 
     ```bash
     bash  Ascend-mindxsdk-mxrag_<version>_linux-<arch>.run --install --install-path=<安装路径> --platform=<npu_type>
+    # 安装第三方依赖包
+    pip3 install  rank_bm25==0.2.2 langchain-opengauss==0.1.5
     # 安装依赖包
     pip3 install -r <安装路径>/mxRag/requirements.txt
     ```
@@ -647,6 +655,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
     <td class="cellrowborder" valign="top" width="64.82%" headers="mcps1.2.3.1.2 "><p id="p0755943163719"><a name="p0755943163719"></a><a name="p0755943163719"></a>对应<span id="ph075594383717"><a name="ph075594383717"></a><a name="ph075594383717"></a>昇腾AI处理器</span>类型。</p>
     <p id="p1399417513288"><a name="p1399417513288"></a><a name="p1399417513288"></a>请在安装昇腾AI处理器的服务器执行npu-smi info命令进行查询，将查询到的“Name”最后一位数字删掉，即是--platform的取值。</p>
     <p id="p145658372256"><a name="p145658372256"></a><a name="p145658372256"></a>若是<span id="ph12325145818223"><a name="ph12325145818223"></a><a name="ph12325145818223"></a>Atlas 800I A3 超节点服务器</span>则取值为A3。</p>
+    <p id="p_new002"><a name="p_new002"></a><a name="p_new002"></a><b>注意：--platform 该参数当前版本已废弃使用，无需配置。</b></p>
     </td>
     </tr>
     <tr id="row15756174312379"><td class="cellrowborder" valign="top" width="35.18%" headers="mcps1.2.3.1.1 "><p id="p12756114363719"><a name="p12756114363719"></a><a name="p12756114363719"></a>--install-path</p>

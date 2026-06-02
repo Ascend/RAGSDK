@@ -3,6 +3,7 @@
 感谢您考虑为 Ascend RAGSDK 做出贡献！我们欢迎任何形式的贡献，包括错误修复、功能增强、文档改进等，甚至只是反馈。无论您是经验丰富的开发者还是第一次参与开源项目，您的帮助都是非常宝贵的。
 
 您可以通过多种方式支持本项目：
+
 - 通过[Issues](https://gitcode.com/Ascend/RAGSDK/issues)反馈问题。
 - 建议或实现新功能。
 - 改进或扩展文档。
@@ -11,13 +12,48 @@
 
 ## 贡献流程
 
+### 编译流程
+
+在 RAGSDK 容器中，构建软件包以及执行 UT 的流程：
+
+1. 从 [AscendHub](https://www.hiascend.com/developer/ascendhub/detail/ragsdk) 下载 RAGSDK 镜像，运行容器。
+
+2. 在容器中克隆仓库：
+
+    ```bash
+    git clone https://gitcode.com/Ascend/RAGSDK.git
+    cd RAGSDK
+    ```
+
+3. 进入 `build` 子目录，执行构建脚本：
+
+    ```bash
+    cd build
+    bash build.sh
+    ```
+
+4. 构建完成后，软件包存放在 `output` 目录下，安装软件包：
+
+    ```bash
+    cd ./output/
+    pip3 uninstall mx_rag
+    pip3 install mx_rag*.whl
+    ```
+
+5. 安装完软件包后，进入 `tests` 目录执行测试用例：
+
+    ```bash
+    cd ./tests/
+    bash run_py_test.sh
+    ```
+
 ### 开发与测试
 
 1. Fork一份源代码到个人仓
 
 2. 将Fork到个人仓的代码克隆到本地进行代码开发
 
-   ```
+   ```bash
    git clone https://gitcode.com/<your-username>/RAGSDK.git
    ```
 
@@ -27,32 +63,23 @@
 
    请参见[代码测试](#代码测试)。
 
-
 4. 文档开发
 
    若涉及新增、变更或删除特性，请提供相关文档介绍，文档写作详细要求请参见[文档开发](#文档开发)。
 
 5. 提交Pull Request
 
-   请参见[提交Pull Request流程](#提交Pull-Request流程)。
+   请参见[提交Pull Request流程](#提交pull-request流程)。
 
 ### 代码规范
 
 #### Python代码规范
 
-- 遵循PEP 8编码规范
-- 使用4个空格进行缩进
-- 类名使用大驼峰命名法（如`DataManager`）
-- 函数和变量使用小写加下划线命名法（如`parse_data`）
-- 添加必要的类型注解和文档字符串
+参考[昇腾社区Python语言编程指导规范](https://gitcode.com/Ascend/community/blob/master/docs/contributor/Ascend-python-coding-style-guide.md)
 
 #### C++代码规范
 
-- 遵循项目现有的编码风格
-- 使用4个空格进行缩进
-- 类名使用大驼峰命名法
-- 函数名使用小驼峰命名法
-- 添加必要的注释说明复杂逻辑
+参考[昇腾社区C++语言编程指导规范](https://gitcode.com/Ascend/community/blob/master/docs/contributor/Ascend-cpp-coding-style-guide.md)
 
 ### 代码测试
 
@@ -99,6 +126,35 @@ bash run_py_test.sh
 - [ ] 更新了相关文档
 - [ ] 提交信息清晰明确
 - [ ] 代码已经过自我审查
+
+#### 执行pre-commit检查
+
+1. **配置国内镜像**
+
+   ```bash
+   pip config set global.index-url https://mirrors.huaweicloud.com/repository/pypi/simple
+   ```
+
+2. **安装pre-commit**
+
+   ```bash
+   pip install pre-commit
+   ```
+
+3. **安装Git钩子**
+
+   ```bash
+   pre-commit install
+   ```
+
+4. **执行代码检查**
+
+   ```bash
+   git add .
+   pre-commit run
+   ```
+
+   如果仍有疑问可参考[pre-commit本地运行指南](https://gitcode.com/Ascend/community/blob/master/docs/contributor/pre-commit-guide.md)。
 
 #### 提交流程
 
