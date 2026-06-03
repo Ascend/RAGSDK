@@ -14,7 +14,6 @@ from pymilvus import MilvusClient
 
 from mx_rag.document import LoaderMng
 from mx_rag.document.loader import DocxLoader, PdfLoader
-from mx_rag.embedding.local import TextEmbedding
 from mx_rag.embedding.service import TEIEmbedding
 from mx_rag.knowledge import KnowledgeDB
 from mx_rag.knowledge.handler import upload_files
@@ -34,12 +33,6 @@ class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter):
 
 def rag_demo_upload():
     parse = argparse.ArgumentParser(formatter_class=CustomFormatter)
-    parse.add_argument(
-        "--embedding_path",
-        type=str,
-        default="/home/data/bge-large-zh-v1.5",
-        help="embedding模型本地路径",
-    )
     parse.add_argument("--tei_emb", type=bool, default=False, help="是否使用TEI服务化的embedding模型")
     parse.add_argument(
         "--embedding_url",
@@ -47,7 +40,6 @@ def rag_demo_upload():
         default="http://127.0.0.1:8080/embed",
         help="使用TEI服务化的embedding模型url地址",
     )
-    parse.add_argument("--embedding_dim", type=int, default=1024, help="embedding模型向量维度")
     parse.add_argument("--white_path", type=str, nargs="+", default=["/home"], help="文件白名单路径")
     parse.add_argument(
         "--file_path",
@@ -58,10 +50,7 @@ def rag_demo_upload():
     parse.add_argument("--num_threads", type=int, default=2, help="可以根据实际情况调整线程数量")
 
     args = parse.parse_args().__dict__
-    embedding_path: str = args.pop("embedding_path")
     embedding_url: str = args.pop("embedding_url")
-    tei_emb: bool = args.pop("tei_emb")
-    embedding_dim: int = args.pop("embedding_dim")
     white_path: list[str] = args.pop("white_path")
     file_path: list[str] = args.pop("file_path")
     num_threads: int = args.pop("num_threads")
@@ -83,13 +72,9 @@ def rag_demo_upload():
                 "keep_separator": False,
             },
         )
-        # 设置向量检索使用的npu卡，具体可以用的卡可执行npu-smi info查询获取
-        dev = 0
         # 加载embedding模型，请根据模型具体路径适配
-        if tei_emb:
-            emb = TEIEmbedding(url=embedding_url, client_param=ClientParam(use_http=True))
-        else:
-            emb = TextEmbedding(model_path=embedding_path, dev_id=dev)
+        emb = TEIEmbedding(url=embedding_url, client_param=ClientParam(use_http=True))
+        embedding_dim = len(emb.embed_documents(["test"])[0])
         # 初始化向量数据库
         client = MilvusClient("./milvus.db")
         vector_store = MilvusDB.create(client=client, x_dim=embedding_dim, collection_name="milvus_vector")
