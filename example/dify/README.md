@@ -30,13 +30,21 @@ RAG SDK 提供知识库对接开源 Dify 框架的样例。通过 FastAPI 服务
 
 2. 部署mis-tei emb，reranker服务（[部署参考链接](https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d)）
 
-3. 如果需要解析docx、pdf文件中的图片进行图文并茂回答，启动demo时请配置 --parse_image 使能图片解析功能，需部署VLM模型服务（[部署参考链接](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen-VL-Dense.html)），LLM服务（[部署参考链接](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen3-Dense.html)），注意如果图片尺寸长或宽小于256，由于信息小，将被丢弃处理。
+3. 如果需要解析docx、pdf文件中的图片进行图文并茂回答，启动demo时请配置 --parse_image 使能图片解析功能，需部署VLM模型服务（[部署参考链接](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen-VL-Dense.html)），LLM服务（[部署参考链接](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen3-Dense.html)），注意如果图片尺寸长或宽小于256，由于信息小，将被丢弃处理
 
 4. 执行dify_demo.py运行服务,具体参数可执行 --help查看
 
     ```bash
-    python3 dify_demo.py
+    python3 dify_demo.py --host "${HOST_IP}" --port "${PORT}" --llm_base_url "${LLM_BASE_URL}" --vlm_base_url "${VLM_BASE_URL}" --embedding_url "${EMBEDDING_URL}" --reranker_url "${RERANKER_URL}"
     ```
+
+    > [!NOTE]
+    >- HOST_IP、PORT为用户服务的IP和端口信息
+    >- LLM_BASE_URL 为默认或者用户配置的LLM大模型服务地址
+    >- VLM_BASE_URL 为默认或者用户配置的VLM大模型服务地址
+    >- EMBEDDING_URL 为默认或者用户配置的向量模型服务地址
+    >- RERANKER_URL 为默认或者用户配置的排序模型服务地址
+    >- 若用户需要通过网页访问服务的doc文档，需要在PORT后拼接/docs，访问示例：http://{HOST_IP}:{PORT}/docs
 
 5. 通过接口上传、删除、查看文档等操作
 
@@ -85,5 +93,5 @@ render_markdown_with_images(markdown_text)
 WEB服务启动命令：
 
 ```bash
-streamlit run st.py --server.address "127.0.0.1" --server.port 服务端口
+streamlit run st.py --server.address "${HOST_IP}" --server.port "${PORT}"
 ```
