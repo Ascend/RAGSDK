@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 710" font-family="'Microsoft YaHei','PingFang SC','Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8faff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#eef2ff;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="header" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1a56db"/>
+      <stop offset="100%" style="stop-color:#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="stage" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="compat" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="stack" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#d1d5db"/>
+      <stop offset="100%" style="stop-color:#9ca3af"/>
+    </linearGradient>
+
+    <linearGradient id="footerBg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f8fafc"/>
+      <stop offset="100%" style="stop-color:#eff6ff"/>
+    </linearGradient>
+
+    <linearGradient id="cardBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#eff6ff"/>
+      <stop offset="100%" style="stop-color:#ffffff"/>
+    </linearGradient>
+
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+    <filter id="shadowSm" x="-2%" y="-2%" width="104%" height="108%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#000" flood-opacity="0.12"/>
+    </filter>
+    <clipPath id="round-corner">
+      <rect width="1100" height="710" rx="16"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1100" height="710" rx="16" fill="url(#bg)"/>
+
+  <rect x="0" y="0" width="1100" height="52" fill="url(#header)" clip-path="url(#round-corner)"/>
+
+  <g transform="translate(310, 26)">
+    <circle cx="0" cy="0" r="11" fill="none" stroke="#93c5fd" stroke-width="2"/>
+    <polygon points="3,-9 -5,1 1,1 -3,9 5,-1 -1,-1" fill="#ffffff" stroke="#ffffff" stroke-width="1" stroke-linejoin="round"/>
+  </g>
+
+  <text x="336" y="34" text-anchor="start" fill="white" font-size="18" font-weight="bold">昇腾 RAG SDK 知识检索增强架构全景图</text>
+
+  <rect x="20" y="60" width="1060" height="32" rx="8" fill="url(#compat)" filter="url(#shadow)"/>
+  <text x="550" y="81" text-anchor="middle" fill="white" font-size="14" font-weight="bold">兼容 Langchain、Dify 接口</text>
+
+  <rect x="12" y="102" width="530" height="280" rx="10" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <rect x="558" y="102" width="522" height="280" rx="10" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <rect x="10" y="392" width="1070" height="170" rx="10" fill="none" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="6 4"/>
+
+  <rect x="20" y="110" width="510" height="38" rx="8" fill="url(#stage)" filter="url(#shadow)"/>
+  <text x="275" y="135" text-anchor="middle" fill="white" font-size="15" font-weight="bold">智能文档解析</text>
+
+  <rect x="20" y="156" width="510" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="275" y="179" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">OCR</text>
+  <text x="275" y="196" text-anchor="middle" fill="#64748b" font-size="11">多场景文字识别</text>
+
+  <rect x="20" y="212" width="510" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="275" y="235" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">目录结构切分</text>
+  <text x="275" y="252" text-anchor="middle" fill="#64748b" font-size="11">还原文档目录层次结构</text>
+
+  <rect x="20" y="268" width="510" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="275" y="291" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">多模态理解</text>
+  <text x="275" y="308" text-anchor="middle" fill="#64748b" font-size="11">图文跨模态语义理解</text>
+
+  <rect x="20" y="324" width="510" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="275" y="347" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">文档版面识别</text>
+  <text x="275" y="364" text-anchor="middle" fill="#64748b" font-size="11">版式分析与元素定位</text>
+
+  <rect x="564" y="110" width="510" height="38" rx="8" fill="url(#stage)" filter="url(#shadow)"/>
+  <text x="819" y="135" text-anchor="middle" fill="white" font-size="15" font-weight="bold">向量化与重排序加速</text>
+
+  <rect x="564" y="156" width="510" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="819" y="179" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">多模态向量化模型</text>
+  <text x="819" y="196" text-anchor="middle" fill="#64748b" font-size="11">文本 / 图像跨模态</text>
+
+  <rect x="564" y="212" width="510" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="819" y="235" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">向量化模型</text>
+  <text x="819" y="252" text-anchor="middle" fill="#64748b" font-size="11">本地 / TEI 服务化双形态</text>
+
+  <rect x="564" y="268" width="510" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="819" y="291" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">重排序模型</text>
+  <text x="819" y="308" text-anchor="middle" fill="#64748b" font-size="11">检索结果精排</text>
+
+  <rect x="564" y="324" width="510" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="819" y="347" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">垂域微调</text>
+  <text x="819" y="364" text-anchor="middle" fill="#64748b" font-size="11">Embedding 领域适配</text>
+
+  <rect x="20" y="400" width="1050" height="38" rx="8" fill="url(#stage)" filter="url(#shadow)"/>
+  <text x="545" y="425" text-anchor="middle" fill="white" font-size="15" font-weight="bold">知识库管理与高性能高精度检索</text>
+
+  <rect x="20" y="446" width="340" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="190" y="469" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">知识图谱管理</text>
+  <text x="190" y="486" text-anchor="middle" fill="#64748b" font-size="11">实体 / 关系抽取与存储</text>
+
+  <rect x="375" y="446" width="340" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="545" y="469" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">混合检索</text>
+  <text x="545" y="486" text-anchor="middle" fill="#64748b" font-size="11">向量 + BM25 多路融合</text>
+
+  <rect x="730" y="446" width="340" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="900" y="469" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">多模态检索</text>
+  <text x="900" y="486" text-anchor="middle" fill="#64748b" font-size="11">文 / 图 / 表跨模态召回</text>
+
+  <rect x="20" y="504" width="520" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="280" y="527" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">向量数据库</text>
+  <text x="280" y="544" text-anchor="middle" fill="#64748b" font-size="10">OpenGauss / Faiss / Milvus</text>
+
+  <rect x="550" y="504" width="520" height="50" rx="8" fill="url(#cardBlue)" filter="url(#shadowSm)" stroke="#dbeafe" stroke-width="1"/>
+  <text x="810" y="527" text-anchor="middle" fill="#1e40af" font-size="12" font-weight="bold">图数据库</text>
+  <text x="810" y="544" text-anchor="middle" fill="#64748b" font-size="10">OpenGauss / NetworkX</text>
+
+  <rect x="20" y="572" width="1060" height="26" rx="6" fill="url(#stack)" filter="url(#shadowSm)"/>
+  <text x="40" y="590" fill="#1e40af" font-size="13" font-weight="bold">推理引擎</text>
+  <text x="540" y="590" text-anchor="middle" fill="#1e40af" font-size="13">MindIE / vLLM-Ascend</text>
+
+  <rect x="20" y="604" width="1060" height="26" rx="6" fill="url(#stack)" filter="url(#shadowSm)"/>
+  <text x="40" y="622" fill="#1e40af" font-size="13" font-weight="bold">CANN</text>
+  <text x="540" y="622" text-anchor="middle" fill="#1e40af" font-size="13">异构计算架构</text>
+
+  <rect x="20" y="636" width="1060" height="26" rx="6" fill="url(#stack)" filter="url(#shadowSm)"/>
+  <text x="40" y="654" fill="#1e40af" font-size="13" font-weight="bold">昇腾 / 鲲鹏硬件</text>
+  <text x="540" y="654" text-anchor="middle" fill="#1e40af" font-size="13">昇腾 310 系列 | 昇腾 910 系列</text>
+
+  <rect x="20" y="670" width="1060" height="26" rx="8" fill="url(#footerBg)" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="400" y="688" text-anchor="end" fill="#1e40af" font-size="13" font-weight="bold">面向昇腾 NPU</text>
+  <circle cx="415" cy="683" r="2.5" fill="#94a3b8"/>
+  <text x="520" y="688" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">模块化接口</text>
+  <circle cx="600" cy="683" r="2.5" fill="#94a3b8"/>
+  <text x="615" y="688" text-anchor="start" fill="#1e40af" font-size="13" font-weight="bold">向量模型加速</text>
+</svg>
