@@ -1,0 +1,149 @@
+--- mineru_client.py.orig	2026-05-30 07:52:46.110981814 +0000
++++ mineru_client.py	2026-05-27 07:55:19.214616535 +0000
+@@ -1,6 +1,7 @@
+ import asyncio
+ import math
+ import os
++import io
+ import re
+ from concurrent.futures import Executor
+ from typing import Literal, Sequence
+@@ -323,6 +324,8 @@
+         debug: bool = False,
+         max_retries: int = 3,  # for http-client backend only
+         retry_backoff_factor: float = 0.5,  # for http-client backend only
++        dynamic_resolution=True,
++
+     ) -> None:
+         env_debug_value = os.getenv('MINERU_VL_DEBUG_ENABLE', '')
+         if env_debug_value:
+@@ -456,6 +459,12 @@
+         self.use_tqdm = use_tqdm
+         self.debug = debug
+
++        if dynamic_resolution:
++            from .scaler import Scaler
++            self.scaler = Scaler()
++        else:
++            self.scaler = None
++
+         if backend in ("http-client", "vllm-async-engine", "lmdeploy-engine"):
+             self.batching_mode = "concurrent"
+         else:  # backend in ("transformers", "vllm-engine")
+@@ -671,6 +680,22 @@
+             blocks,
+             not_extract_list,
+         )
++
++        if self.scaler:
++            for i, image in enumerate(block_images):
++                if isinstance(image, bytes):
++                    image = Image.open(io.BytesIO(image))
++                if image.size[0] * image.size[1] < 64 ** 2: # skip small images
++                    block_images[i] = image
++                    continue
++                # Apply only for text images (about 90% of all images)
++                if not "text" in prompts[i].lower():
++                    continue
++
++                block_images[i] = self.scaler.scale_image(
++                    image,
++                )
++
+         outputs = await self.client.aio_batch_predict(block_images, prompts, params, priority, semaphore=semaphore)
+         for idx, output in zip(indices, outputs):
+             blocks[idx].content = output
+--- /dev/null	2026-05-23 03:09:03.637016666 +0000
++++ scaler.py	2026-05-23 03:17:56.472091313 +0000
+@@ -0,0 +1,91 @@
++import numpy as np
++from PIL import Image
++import cv2
++import io
++from typing import Union, List
++
++class Scaler:
++
++    def __init__(self,
++                min_word_height: int = 6,         # Min height of a text block in pixels
++                max_word_height: int = 200,     # Max height of a text block
++                text_threshold: float = 0.3      # Fraction of max projection to consider a row as text
++               ):
++        self.min_word_height = min_word_height
++        self.max_word_height = max_word_height
++        self.text_threshold = text_threshold
++
++    def _process_single_image(self, image: Union[np.ndarray, Image.Image]) -> List[int]:
++
++        if isinstance(image, Image.Image):
++            if image.mode != "RGB":
++                image = image.convert('RGB')
++            np_img = np.array(image)
++        else:
++            np_img = image
++
++        if len(np_img.shape) == 3:  # (H, W, C)
++            if np_img.shape[2] == 4:  # RGB
++                np_img = np_img[:, :, :3]
++        gray = np_img
++
++        if len(gray.shape) == 3:
++            gray = cv2.cvtColor(gray, cv2.COLOR_RGB2GRAY)
++
++        # binarization
++        threshold = np.median(gray)
++        if threshold >= 127:
++            binary = (gray < threshold).astype(np.float32)
++        else:
++            binary = (gray > threshold).astype(np.float32)
++        horizontal_proj = np.sum(binary, axis=1)
++        threshold = np.max(horizontal_proj) * self.text_threshold
++        text_mask = horizontal_proj > threshold
++
++        # use diff to find the boundaries of regions
++        padded_mask = np.pad(text_mask, (1, 1), 'constant', constant_values=0)
++        diff = np.diff(padded_mask.astype(np.int8))
++
++        # indexes for text area
++        starts = np.where(diff == 1)[0]
++        ends = np.where(diff == -1)[0]
++        heights = ends - starts
++        valid_mask = (heights >= self.min_word_height) & (heights <= self.max_word_height)
++        word_heights = heights[valid_mask]
++
++        return np.array(word_heights)
++
++    def calculate_scale_factors(self,
++                               image: Image.Image,
++                               target_word_height) -> float:
++
++        word_heights = self._process_single_image(image)
++        if len(word_heights) == 0:
++            return 1.0
++
++        height = np.median(word_heights)
++        # calculate scaling factor
++        if height > target_word_height:
++            scale = target_word_height / height
++        else:
++            scale = 1.0
++
++        # clip scale factor
++        scale = max(0.4, min(1.0, scale))
++
++        return scale
++
++    def scale_image(self,
++                    image: Image.Image,
++                    target_word_height: int = 18) -> Image.Image:
++
++        scale = self.calculate_scale_factors(image, target_word_height)
++        if abs(scale - 1.0) < 0.05:
++            return image
++
++        width, height = image.size
++        new_size = (int(width * scale), int(height * scale))
++
++        scaled = image.resize(new_size, resample=Image.Resampling.BILINEAR)
++        return scaled
++
