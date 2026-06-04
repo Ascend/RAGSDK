@@ -30,17 +30,20 @@ Based on the vllm-ascend image, MinerU acceleration optimization is integrated f
 ### Tag Specification
 
 Tags follow the format:
-`<mineru-image-version>`
+`<image-version>-<os>-<python-version>-<architecture>`
 
 | Field | Example | Description |
 | ----- | ------- | ----------- |
-| mineru-image-version | 0.1.22 | The supported mineru_vl_utils version is 0.1.22 |
+| image-version | 0.1.22 | The supported mineru_vl_utils version is 0.1.22 |
+| os | ubuntu22.04 | Target operating system |
+| python-version | py3.11 | Target Python version |
+| architecture | aarch64 | Target architecture type |
 
 ### Dockerfile Links
 
 | Tag | Dockerfile |
 | --- | ---------- |
-| 0.1.22 | [Dockerfile](https://gitcode.com/Ascend/RAGSDK/blob/master/example/mineru-accelerate/Dockerfile) |
+| 0.1.22-ubuntu22.04-py3.11-aarch64 | [Dockerfile](https://gitcode.com/Ascend/RAGSDK/blob/master/example/mineru-accelerate/Dockerfile) |
 
 ## Run Container
 
@@ -53,7 +56,7 @@ docker run -u root -itd --name=mineru-accelerate --network=host \
     -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
     -v /usr/local/sbin:/usr/local/sbin:ro \
     -v /path/to/model:/path/to/model \
-    mineru:0.1.22 bash
+    mineru:0.1.22-ubuntu22.04-py3.11-aarch64 bash
 ```
 
 ### Parameter Description
@@ -88,7 +91,7 @@ After entering the container, you can refer to [MinerU Quick Start](https://open
 # Clone the repository on the host, enter the mineru-accelerate directory
 git clone https://gitcode.com/Ascend/RAGSDK.git && cd RAGSDK/example/mineru-accelerate
 
-docker build -t mineru:0.1.22 --network host -f Dockerfile .
+docker build -t mineru:0.1.22-ubuntu22.04-py3.11-aarch64 --network host -f Dockerfile .
 ```
 
 ## File Description

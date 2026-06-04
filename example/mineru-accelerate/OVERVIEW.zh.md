@@ -30,17 +30,20 @@
 ### Tag 规范
 
 Tag 遵循以下格式:
-`<mineru镜像版本>`
+`<镜像版本>-<操作系统>-<python版本>-<架构类型>`
 
 | 字段                | 示例值   | 说明                                                         |
 | ------------------- | -------- | ------------------------------------------------------------ |
-| mineru镜像版本                | 0.1.22     | 支持的mineru_vl_utils版本为0.1.22                         |
+| mineru镜像版本                | 0.1.22     | 支持的mineru_vl_utils版本为0.1.22     |
+| 操作系统                | ubuntu22.04   | 目标操作系统                         |
+| python版本                | py3.11      | 目标python版本                         |
+| 架构类型                | aarch64      | 目标架构类型                         |
 
 ### Dockerfile 链接
 
 | Tag                | Dockerfile  |
 | ------------------- | -------- |
-| 0.1.22         | [Dockerfile](https://gitcode.com/Ascend/RAGSDK/blob/master/example/mineru-accelerate/Dockerfile)  |
+| 0.1.22-ubuntu22.04-py3.11-aarch64     | [Dockerfile](https://gitcode.com/Ascend/RAGSDK/blob/master/example/mineru-accelerate/Dockerfile)  |
 
 ## 运行容器
 
@@ -53,7 +56,7 @@ docker run -u root -itd --name=mineru-accelerate --network=host \
     -v /usr/local/Ascend/driver:/usr/local/Ascend/driver:ro \
     -v /usr/local/sbin:/usr/local/sbin:ro \
     -v /path/to/model:/path/to/model \
-    mineru:0.1.22 bash
+    mineru:0.1.22-ubuntu22.04-py3.11-aarch64 bash
 ```
 
 ### 参数说明
@@ -88,7 +91,7 @@ docker exec -it mineru-accelerate bash
 # 在宿主机上任意目录下 clone 代码, 并进入 mineru-accelerate 目录
 git clone https://gitcode.com/Ascend/RAGSDK.git && cd RAGSDK/example/mineru-accelerate
 
-docker build -t mineru:0.1.22 --network host -f Dockerfile .
+docker build -t mineru:0.1.22-ubuntu22.04-py3.11-aarch64 --network host -f Dockerfile .
 ```
 
 ## 文件说明
