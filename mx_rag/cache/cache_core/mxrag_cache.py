@@ -76,10 +76,12 @@ class MxRAGCache:
             from mx_rag.cache.cache_api.cache_init import _init_mxrag_cache
 
             self.data_save_path = _init_mxrag_cache(self.__cache_obj, cache_name, config)
-        except KeyError:
-            logger.error("init rag cache failed because key error")
-        except Exception:
-            logger.error("init rag cache failed")
+        except KeyError as e:
+            logger.error(f"init rag cache failed because key error: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"init rag cache failed: {e}")
+            raise
 
     @staticmethod
     def _update(llm_data, update_cache_func, *args, **kwargs) -> None:
