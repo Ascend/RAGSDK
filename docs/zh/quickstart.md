@@ -6,24 +6,56 @@ RAG SDK 提供基于昇腾平台的知识库问答能力，支持文档解析、
 
 开始之前，请确认：
 
-- **硬件**：Atlas 300I Duo 推理卡或Atlas 800I A2/A3 推理服务器，并安装对应的驱动、依赖和固件，详见 [安装部署](./installation_guide.md#容器内部署rag-sdk)
+- **硬件**：Atlas 300I Duo 推理卡或Atlas 800I A2/A3 推理服务器，并安装对应的驱动、依赖和固件
 - **Docker**：已安装 Docker，且当前用户可运行容器
-- **模型**：参考[链接](https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d)部署embedding模型bge-large-zh-v1.5
-- **LLM 服务**：参考[链接](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen3-Dense.html)部署好LLM模型Qwen3-4B
+- **向量模型服务**：参考[mis-tei文档](https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d)部署好embedding模型bge-large-zh-v1.5
+- **大模型服务**：参考[Qwen3-Dense文档](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen3-Dense.html)部署好LLM模型Qwen3-4B
 
 ## 步骤 1：拉取镜像
 
-```bash
-docker pull swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:26.0.0-910b-ubuntu22.04-py3.11
-docker tag swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:26.0.0-910b-ubuntu22.04-py3.11 ragsdk:26.0.0-910b-ubuntu22.04-py3.11
-```
+1. **确定待下载镜像版本**
+   - 访问昇腾社区[镜像仓](https://www.hiascend.com/developer/ascendhub/detail/7f91c3663b5d4a97b3ae40e3cabbb3a2)，查看RAG SDK镜像配套表，获取镜像最新版本以及与之配套的CANN版本
+   - 根据当前硬件型号（如 Atlas 800I A2 推理服务器）选择对应版本
+
+    > [!NOTE]
+    > 镜像中已安装CANN，无需重复安装<br>
+    > 注意区分 CPU 架构（x86_64 / aarch64）
+
+2. **环境预检查**
+   - 执行 `npu-smi info` 命令查看当前环境安装的 NPU 驱动版本
+   - 通过RAG SDK镜像配套表中获取到的配套CANN版本去[固件与驱动文档](https://www.hiascend.com/hardware/firmware-drivers/community)中查看对应的NPU驱动版本，如果和当前环境安装的驱动版本不配套，请更新NPU驱动至对应版本，NPU驱动更新指导详见[驱动和固件安装指南](https://support.huawei.com/enterprise/zh/doc/EDOC1100568434/36e8d875?idPath=23710424|251366513|254884019|261408772|252764743)。
+
+3. **镜像拉取示例**
+
+   镜像 Tag 格式为 `{version}-{chip}-{os}-{python}`，各变量含义如下：
+
+   | 变量 | 含义         | 示例值 |
+   |------|------------|--------|
+   | `{version}` | RAG SDK 版本 | `26.0.0` |
+   | `{chip}` | 昇腾芯片系列     | `910b` |
+   | `{os}` | 基础操作系统     | `ubuntu22.04` / `openeuler24.03` |
+   | `{python}` | Python 版本  | `py3.11` |
+
+   ```bash
+   TAG={version}-{chip}-{os}-{python}
+   docker pull swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:${TAG}
+   docker tag swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:${TAG} \
+       ragsdk:${TAG}
+   ```
+
+   以 26.0.0 版本、910b 芯片、Ubuntu 22.04、Python 3.11为例：
+
+   ```bash
+   docker pull swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:26.0.0-910b-ubuntu22.04-py3.11
+   docker tag swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:26.0.0-910b-ubuntu22.04-py3.11 ragsdk:26.0.0-910b-ubuntu22.04-py3.11
+    ```
 
 ## 步骤 2：启动容器
 
 > [!NOTE] 说明
 >
 > - `--device /dev/davinci0` 中的设备编号需按宿主机实际 NPU 编号调整
-> - `-v /path/to/model:/home/data` 将宿主机模型目录挂载到容器内
+> - `-v /path/to/model:/home/data` 挂载宿主机目录到容器（可选）
 > - 容器内示例代码位于 `/workspace/RAGSDK_Samples`
 
 ```bash
@@ -71,7 +103,7 @@ EOF
 ```bash
 cd /workspace/RAGSDK_Samples/rag_with_api
 python3 rag_demo_knowledge.py \
-    --embedding_url http://127.0.0.1:8080/embed \
+    --embedding_url http://127.0.0.1:8080/v1/embeddings \
     --white_path /workspace \
     --file_path /workspace/testdata/gaokao.txt
 ```
@@ -91,7 +123,7 @@ python3 rag_demo_knowledge.py \
 
 ```bash
 python3 rag_demo_query.py \
-    --embedding_url http://127.0.0.1:8080/embed \
+    --embedding_url http://127.0.0.1:8080/v1/embeddings \
     --llm_url http://127.0.0.1:1025/v1/chat/completions \
     --model_name Qwen3-4B \
     --query "请描述2024年高考作文题目"
