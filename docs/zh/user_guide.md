@@ -6,7 +6,7 @@ RAG SDK的完整开发流程如[图1](#fig1495610311102)所示。用户可参见
 
 知识库构建和在线问答支持并发，具体参见对应Demo。
 
-**图 1** RAG SDK开发流程<a id="fig1495610311102"></a>  
+**图 1** RAG SDK开发流程<a id="fig1495610311102"></a>
 
 ![](figures/240914150147412.png)
 
@@ -28,175 +28,143 @@ RAG SDK的完整开发流程如[图1](#fig1495610311102)所示。用户可参见
 
 ## 文生文场景<a name="ZH-CN_TOPIC_0000002024300245"></a>
 
-### FlatL2检索方式<a name="ZH-CN_TOPIC_0000002043290941"></a>
+### 前置条件
 
-#### 总体说明<a name="ZH-CN_TOPIC_0000002019748828"></a>
+开始之前，请确认：
 
-**样例介绍<a name="section297581914254"></a>**
+- **硬件**：Atlas 300I Duo 推理卡或Atlas 800I A2/A3 推理服务器，并安装对应的驱动、依赖和固件
+- **Docker**：已安装 Docker，且当前用户可运行容器
+- **向量模型服务**：参考[mis-tei文档](https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d)部署好embedding模型bge-large-zh-v1.5
+- **大模型服务**：参考[Qwen3-Dense文档](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen3-Dense.html)部署好LLM模型Qwen3-4B
 
-本章节介绍基于Atlas 800I A2 推理服务器，使用RAG SDK  Python接口开发基于知识库的问答系统。RAG SDK运行框架如[图1](#fig17633219113617)所示，其运行步骤分为“构建知识库”和“检索问答”。
+### 步骤 1：拉取镜像
 
-本样例是一个文生文场景，检索方法为距离检索“FLAT:L2”方法，其中框架图中每个步骤的“\[xxx\]”表示可选的方法类。推理大模型使用Llama3-8B-Chinese-Chat，embedding模型使用模型bge-large-zh-v1.5，reranker（可选）模型使用bge-reranker-large。
-
-**图 1**  基于知识库的问答流程<a id="fig17633219113617"></a>  
-![](figures/基于知识库的问答流程.png "基于知识库的问答流程")
-
-**前提条件<a name="section896201815106"></a>**
-
-- 已经在MindIE容器中下载和运行Llama3-8B-Chinese-Chat大模型，模型下载链接：<a href="https://www.modelscope.cn/models/LLM-Research/Llama3-8B-Chinese-Chat">链接</a>。
-- 已经基于《MindIE安装指南》中的“安装MindIE \> 方式三：容器安装方式”章节完成在宿主机上的容器化部署，并参考《MindIE Motor开发指南》中的“快速入门 \> 启动服务”章节启动服务。
-- 已经完成[安装RAG SDK](./installation_guide.md#安装rag-sdk)。
-- 已经下载嵌入模型“bge-large-zh-v1.5”和reranker模型“bge-reranker-large”，并放在[2.a](./installation_guide.md#容器内部署rag-sdk)中运行容器时配置的模型存放目录下。模型下载链接：
-    - bge-large-zh-v1.5模型：<a href="https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5">链接</a>
-    - bge-reranker-large模型：<a href="https://www.modelscope.cn/models/BAAI/bge-reranker-large">链接</a>
-
-**TEI服务化说明<a name="section1734316490"></a>**
-
-Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服务化方式，请完成Embedding服务运行和Reranker服务运行，请参见<a href="https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d">链接</a>。
-
-#### 构建知识库<a name="ZH-CN_TOPIC_0000002018714889"></a>
-
-**操作步骤<a name="section37221226145019"></a>**
-
-1. 编译检索算子，以实现检索功能。
-
-    ```bash
-    cd $MX_INDEX_INSTALL_PATH/tools/ && python3 aicpu_generate_model.py -t <chip_type> && python3 flat_generate_model.py -d <dim> -t <chip_type>  && cp op_models/* $MX_INDEX_MODELPATH 
-    ```
+1. **确定待下载镜像版本**
+   - 访问昇腾社区[镜像仓](https://www.hiascend.com/developer/ascendhub/detail/b875f781df984480b0385a96fa1b03c9)，查看RAG SDK镜像配套表，获取镜像最新版本以及与之配套的CANN版本
+   - 根据当前硬件型号（如 Atlas 800I A2 推理服务器）选择对应版本
 
     > [!NOTE]
-    >- MX\_INDEX\_INSTALL\_PATH、MX\_INDEX\_MODELPATH变量已在\~/.bashrc中配置，无需单独配置。具体配置值请查看\~/.bashrc。
-    >- **-d** <dim\>表示embedding模型向量化后的维度，因bge-large-zh-v1.5嵌入模型向量维度为1024，这里设置为-d 1024。
-    >- **-t** <i><chip\_type\></i>表示芯片类型。对于Atlas 300I Duo 推理卡，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删掉，即是<i><chip\_type\></i>的取值。对于Atlas 800I A2 推理服务器，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，取“Name”对应的字段。对于Atlas 800I A3 超节点服务器，可以通过**npu-smi info -t board -i 0 -c 0**命令进行查询，获取**NPU Name**信息，910\_<b><i>\<NPU Name></i></b>即是<i><chip\_type\></i>的取值。
+    > 镜像中已安装CANN，无需重复安装<br>
+    > 注意区分 CPU 架构（x86_64 / aarch64）
 
-2. 创建领域知识文档。
+2. **环境预检查**
+   - 执行 `npu-smi info` 命令查看当前环境安装的 NPU 驱动版本
+   - 通过RAG SDK镜像配套表中获取到的配套CANN版本去[固件与驱动文档](https://www.hiascend.com/hardware/firmware-drivers/community)中查看对应的NPU驱动版本，如果和当前环境安装的驱动版本不配套，请更新NPU驱动至对应版本，NPU驱动更新指导详见[驱动和固件安装指南](https://support.huawei.com/enterprise/zh/doc/EDOC1100568434/36e8d875?idPath=23710424|251366513|254884019|261408772|252764743)。
 
-    在/workspace目录下创建文档gaokao.txt，编码格式为utf-8，内容如下：
+3. **镜像拉取示例**
 
-    ```text
-    2024年高考语文作文试题
-    新课标I卷
-    阅读下面的材料，根据要求写作。（60分）
-    随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？
-    以上材料引发了你怎样的联想和思考？请写一篇文章。
-    要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。
+   镜像 Tag 格式为 `{version}-{chip}-{os}-{python}`，各变量含义如下：
+
+   | 变量 | 含义         | 示例值 |
+   |------|------------|--------|
+   | `{version}` | RAG SDK 版本 | `26.0.0` |
+   | `{chip}` | 昇腾芯片系列     | `910b` |
+   | `{os}` | 基础操作系统     | `ubuntu22.04` / `openeuler24.03` |
+   | `{python}` | Python 版本  | `py3.11` |
+
+   ```bash
+   TAG={version}-{chip}-{os}-{python}
+   docker pull swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:${TAG}
+   docker tag swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:${TAG} \
+       ragsdk:${TAG}
+   ```
+
+   以 26.0.0 版本、910b 芯片、Ubuntu 22.04、Python 3.11为例：
+
+   ```bash
+   docker pull swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:26.0.0-910b-ubuntu22.04-py3.11
+   docker tag swr.cn-south-1.myhuaweicloud.com/ascendhub/ragsdk:26.0.0-910b-ubuntu22.04-py3.11 ragsdk:26.0.0-910b-ubuntu22.04-py3.11
     ```
 
-    > [!NOTE]
-    >所选大模型训练截止日在2024年以前，模型本身未学习“2024年高考语文作文试题”相关知识。
+### 步骤 2：启动容器
 
-3. 构建领域知识库。
+> [!NOTE] 说明
+>
+> - `--device /dev/davinci0` 中的设备编号需按宿主机实际 NPU 编号调整
+> - `-v /path/to/model:/home/data` 挂载宿主机目录到容器（可选）
+> - 容器内示例代码位于 `/workspace/RAGSDK_Samples`
 
-    参考并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/rag_with_api)中rag\_demo\_knowledge.py样例代码，请根据实际情况修改代码中的文件路径、模型路径等默认参数，详细参数设置请参见readme.md文件。
+```bash
+docker run \
+    --name ragsdk_demo \
+    --device /dev/davinci0 \
+    --device /dev/davinci_manager \
+    --device /dev/devmm_svm \
+    --device /dev/hisi_hdc \
+    -v /usr/local/dcmi:/usr/local/dcmi \
+    -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi \
+    -v /usr/local/Ascend/driver:/usr/local/Ascend/driver \
+    -v /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info \
+    -v /etc/ascend_install.info:/etc/ascend_install.info \
+    -v /path/to/model:/home/data \
+    -itd ragsdk:26.0.0-910b-ubuntu22.04-py3.11 bash
+```
 
-    ```python
-    python3 rag_demo_knowledge.py --file_path "/path/to/gaokao.txt"
-    ```
+### 步骤 3：进入容器
 
-4. 运行程序获取结果。
+```bash
+docker exec -it ragsdk_demo bash
+```
 
-    样例代码能打印出上传的文件名列表，则表示构建知识库成功。
+### 步骤 4：创建测试文档
 
-    ```text
-    [‘gaokao.txt’]
-    ```
+在工作目录下创建测试文档：
 
-#### 检索问答<a name="ZH-CN_TOPIC_0000001990176706"></a>
+```bash
+mkdir -p /workspace/testdata
+cat > /workspace/testdata/gaokao.txt << 'EOF'
+2024年高考语文作文试题
+新课标I卷
+阅读下面的材料，根据要求写作。（60分）
+随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？
+以上材料引发了你怎样的联想和思考？请写一篇文章。
+要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。
+EOF
+```
 
-**操作步骤<a name="section37221226145019"></a>**
+### 步骤 5：构建知识库
 
-1. 执行在线问答样例。参考并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/rag_with_api)中rag\_demo\_query.py代码文件，请根据实际情况修改代码中的模型路径、mindie服务IP和port等默认参数，详细参数设置请参见readme.md文件。
+进入示例目录，运行知识库构建脚本：
 
-    ```python
-    python3 rag_demo_query.py --query "请描述2024年高考作文题目" 
-    ```
-
-2. 运行程序获取结果。
-
-    ```text
-    {
-        'query': '请描述2024年高考作文题目',
-        'result': '题目：新时代下的生活\n\n材料：\n\n随着科技的不断发展，人们的生活逐渐便利。各种智能设备的应用，让我们的生活更加便捷。然而，在这种便利背后，我们是否面临着一些问题？\n\n请根据以上材料，结合自己的思考，以新时代下的生活为题材，自拟标题，写一篇议论文。',
-        'source_documents': [
-            {
-                'metadata':
-                {
-                    'source': '/workspace/gaokao.txt'
-                },
-                'page_content': '2024年高考语文作文试题\n新课标I卷\n阅读下面的材料，根据要求写作。（60分）\n随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？\n以上材料引发了你怎样的联想和思考？请写一篇文章。\n要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。'
-            }
-        ]
-    }
-    ```
+```bash
+cd /workspace/RAGSDK_Samples/rag_with_api
+python3 rag_demo_knowledge.py \
+    --embedding_url http://127.0.0.1:8080/v1/embeddings \
+    --white_path /workspace \
+    --file_path /workspace/testdata/gaokao.txt
+```
 
 > [!NOTE]
->
->- “构建知识库”和“检索回答”过程使用的embedding模型、关系数据库路径、向量数据库路径需对应保持一致，才能正常执行样例。
->- 执行样例代码时，当参数<b>"tei\_emb"</b>为“False”，表示本地启动embedding模型，embedding\_path传入本地模型存放目录；当参数<b>"tei\_emb"</b>为“True”，表示启动服务化模型，embedding_url传入服务化模型URI地址；reranker同理。
+> http://127.0.0.1:8080为示例url参数，具体url配置以用户本地部署使用参数为准。
 
-### MxRAGCache缓存和自动生成QA<a name="ZH-CN_TOPIC_0000001988965500"></a>
+### 步骤 6：验证知识库构建成功
 
-**样例介绍<a name="section28311549181418"></a>**
+若输出以下结果，表示知识库构建成功：
 
-本样例基于[构建知识库](#构建知识库)和[检索问答](#检索问答)增加MxRAGCache缓存和生成QA的功能，自动生成QA功能支持解析markdown文档，并存入MxRAGCache缓存功能。使用memory cache和similarity cache作为缓存使用。
+```text
+['gaokao.txt']
+```
 
-**图 1**  基于Cache缓存的RAG SDK问答流程<a name="fig3211467423"></a>  
-![](figures/基于Cache缓存的RAG-SDK问答流程.png "基于Cache缓存的RAG-SDK问答流程")
+### 步骤 7：执行问答
 
-**前提条件<a name="section1736555225910"></a>**
+```bash
+python3 rag_demo_query.py \
+    --embedding_url http://127.0.0.1:8080/v1/embeddings \
+    --llm_url http://127.0.0.1:1025/v1/chat/completions \
+    --model_name Qwen3-4B \
+    --query "请描述2024年高考作文题目"
+```
 
-- 已经在MindIE容器中下载和运行Llama3-8B-Chinese-Chat大模型，模型下载链接：<a href="https://www.modelscope.cn/models/LLM-Research/Llama3-8B-Chinese-Chat">链接</a>。
+> [!NOTE]
+> 注意http://127.0.0.1:8080和http://127.0.0.1:1025为示例url参数，具体url配置以用户本地部署使用参数配置为准。
 
-- RAG SDK的容器内能够访问Llama3-8B-Chinese-Chat大模型的路径下的config.json和tokenizer.json，用于计算文本token大小。
-- 已经基于《MindIE安装指南》中的“安装MindIE \> 方式三：容器安装方式”章节完成在宿主机上的容器化部署，并参考《MindIE Motor开发指南》中的“快速入门 \> 启动服务”章节启动服务。
-- 已经完成[安装RAG SDK](./installation_guide.md#安装rag-sdk)。
-- 已经下载嵌入模型“bge-large-zh-v1.5”和“bge-reranker-large”，并放在[2.a](./installation_guide.md#容器内部署rag-sdk)中运行容器时配置的模型存放目录下。模型下载链接：
-    - bge-large-zh-v1.5模型：<a href="https://www.modelscope.cn/models/BAAI/bge-large-zh-v1.5">链接</a>
-    - bge-reranker-large模型：<a href="https://www.modelscope.cn/models/BAAI/bge-reranker-large">链接</a>
+### 步骤 8：验证问答成功
 
-**操作步骤<a name="section599518311318"></a>**
+若输出包含检索到的文档内容和生成的回答，表示问答流程运行正常：
 
-1. 编译检索算子，以实现检索功能。
-
-    ```bash
-    cd $MX_INDEX_INSTALL_PATH/tools/ && python3 aicpu_generate_model.py -t <chip_type> && python3 flat_generate_model.py -d <dim> -t <chip_type>  && cp op_models/* $MX_INDEX_MODELPATH 
-    ```
-
-    > [!NOTE]
-    >- MX\_INDEX\_INSTALL\_PATH、MX\_INDEX\_MODELPATH变量已在\~/.bashrc中配置，无需单独配置。具体配置值请查看\~/.bashrc。
-    >- **-d** <i><dim\></i>表示embedding模型向量化后的维度，因bge-large-zh-v1.5嵌入模型向量维度为1024，这里设置为-d 1024。
-    >- **-t** <i><chip\_type\></i>表示芯片类型。对于Atlas 300I Duo 推理卡，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，将查询到的“Name”最后一位数字删掉，即是<i><chip\_type\></i>的取值。对于Atlas 800I A2 推理服务器，可在安装昇腾AI处理器的服务器执行**npu-smi info**命令进行查询，取“Name”对应的字段。对于Atlas 800I A3 超节点服务器，可以通过**npu-smi info -t board -i 0 -c 0**命令进行查询，获取**NPU Name**信息，910\_<b><i>\<NPU Name></i></b>即是<i><chip\_type\></i>的取值。
-
-2. 创建领域知识文档。
-
-    在/workspace目录下创建文档gaokao.md，编码格式为utf-8，内容如下：
-
-    ```text
-    2024年高考语文作文试题
-    新课标I卷
-    阅读下面的材料，根据要求写作。（60分）
-    随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？
-    以上材料引发了你怎样的联想和思考？请写一篇文章。
-    要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。
-    ```
-
-    > [!NOTE]
-    >所选大模型训练截止日在2024年以前，模型本身未学习“2024年高考语文作文试题”相关知识。
-
-3. 参见并运行[Demo](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/qa_cache)中rag\_demo\_cache\_qa.py代码文件，请根据实际情况修改代码中的文件路径、模型路径和大模型IP和port等默认参数，详细参数设置请参见readme.md文件。
-4. 执行样例代码。
-
-    ```python
-    python3 rag_demo_cache_qa.py  --query "请描述2024年高考作文题目"
-    ```
-
-5. 运行两次样例代码，获取结果。
-
-    ```ColdFusion
-    # 第一次运行结果和第二次回答一致，但第二次运行时命中缓存返回，回答时间大幅减少
-    {'query': '请描述2024年高考作文题目', 'result': '根据您提供的信息，2024年高考语文作文试题的具体内容尚未公开。通常，高考作文题目会在考试当天或考试前一段时间由教育部门公布。因此，无法为您提供2024年高考作文题目具体内容。\n\n不过，根据您提供的信息，题目可能会围绕“随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？”这一主题展开。学生需要根据这个问题，选准角度，确定立意，明确文体，自拟标题，并在不少于800字的范围内进行写作。\n\n如果您需要进一步的指导或帮助，例如如何构思作文、如何组织思路、如何提高写作质量等，我可以提供一些一般性的建议。', 'source_documents': [{'metadata': {'source': '/workspace/gaokao.md'}, 'page_content': '2024年高考语文作文试题\n新课标I卷\n阅读下面的材料，根据要求写作。（60分）\n随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？\n以上材料引发了你怎样的联想和思考？请写一篇文章。\n要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。\n'}]}
-    耗时：0.0007343292236328125s
-    ```
+```text
+{'query': '请描述2024年高考作文题目', 'result': '...", 'source_documents': [...]}
+```
 
 ## 文本检索图片<a name="ZH-CN_TOPIC_0000002272375173"></a>
 
@@ -204,7 +172,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 **前提条件<a name="section1734316490"></a>**
 
-已经完成[安装RAG SDK](./installation_guide.md#安装rag-sdk)。
+已经完成[安装RAG SDK](./installation_guide.md#安装方式)。
 
 **样例流程介绍<a name="section1281432091612"></a>**
 
@@ -216,55 +184,55 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     ```python
     import argparse
-    
+
     from mx_rag.document import LoaderMng
     from mx_rag.document.loader import ImageLoader
-    
+
     from mx_rag.embedding.local import ImageEmbedding
     from mx_rag.knowledge import KnowledgeDB, upload_files
     from mx_rag.knowledge.knowledge import KnowledgeStore
     from mx_rag.retrievers import Retriever
     from mx_rag.storage.document_store import SQLiteDocstore
     from mx_rag.storage.vectorstore import MindFAISS
-    
-    
+
+
     if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         parser.add_argument('--query', type=str, help="查询图片文本内容")
         parser.add_argument("--image-path", type=str, action='append', help="待入库图片路径")
-    
+
         args = parser.parse_args().__dict__
         images: list[str] = args.pop("image_path")
         query = args.pop("query")
         loader_mng = LoaderMng()
         loader_mng.register_loader(ImageLoader, [".jpg"])
-    
+
         dev = 0
         img_emb = ImageEmbedding("ViT-B-16", model_path="path to clip model", dev_id=dev)
-    
+
         img_vector_store = MindFAISS(x_dim=512, devs=[dev],
                                      load_local_index="./image_faiss.index",
                                      auto_save=True)
         chunk_store = SQLiteDocstore(db_path="./sql.db")
-    
+
         # 初始化知识管理关系数据库
         knowledge_store = KnowledgeStore(db_path="./sql.db")
-    
+
         user_id = "fc557af8-5973-4893-9624-4a510c3e18fb"
         knowledge_store.add_knowledge("test", user_id=user_id)
-    
+
         knowledge_db = KnowledgeDB(knowledge_store=knowledge_store, chunk_store=chunk_store, vector_store=img_vector_store,
                                    knowledge_name="test", white_paths=["/home"], user_id=user_id)
-    
+
         upload_files(knowledge_db, images, loader_mng=loader_mng,
                      embed_func=img_emb.embed_images, force=True)
-    
+
         img_retriever = Retriever(vector_store=img_vector_store, document_store=chunk_store,
                                   embed_func=img_emb.embed_documents, k=1, score_threshold=0.4)
         res = img_retriever.invoke(query)
         # res中包含检索到的图片路径
         print(res)
-    
+
     ```
 
 2. 执行如下命令运行，其他参数按实际情况配置，参考[ClientParam](./api/universal_api.md#clientparam)。
@@ -279,9 +247,8 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 **前提条件<a name="section1736555225910"></a>**
 
-- 已经完成[安装RAG SDK](./installation_guide.md#安装rag-sdk)。
-- 已经基于《MindIE安装指南》中的“安装MindIE \> 方式三：容器安装方式”章节完成容器化部署。
-- 已经运行Llama3-8B-Chinese-Chat大模型。
+- 已经完成[安装RAG SDK](./installation_guide.md#安装方式)。
+- 已经参考[Qwen3-Dense文档](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen3-Dense.html)部署好LLM模型Qwen3-4B。
 
 **操作步骤<a name="section599518311318"></a>**
 
@@ -295,7 +262,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
     from mx_rag.utils import ClientParam
     if __name__ == '__main__':
         template = """You are a chatbot having a conversation with a human. Please answer as briefly as possible.
-    
+
         {chat_history}
         Human: {human_input}"""
         dev = 1
@@ -305,8 +272,8 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
         # k可以设置保存的历史会话轮数，还支持ConversationBufferMemory和ConversationTokenBufferMemory，参考langchain官方文档
         memory = ConversationBufferWindowMemory(memory_key="chat_history", k=3)
         client_param = ClientParam(ca_file="/path/to/ca.crt")
-        chat = Text2TextLLM(base_url="https://ip:port/v1/chat/completions", 
-                            model_name="Llama3-8B-Chinese-Chat", 
+        chat = Text2TextLLM(base_url="https://ip:port/v1/chat/completions",
+                            model_name="Llama3-8B-Chinese-Chat",
                             client_param=client_param)
         llm_chain = LLMChain(llm=chat, prompt=prompt, memory=memory, verbose=True)
         questions = ["请记住小明的爸爸是小刚",
@@ -314,7 +281,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
                      "后三个呢？"]
         for question in questions:
             llm_chain.predict(human_input=question)
-        completion = llm_chain.predict(human_input="请问小明的爸爸是谁？")   
+        completion = llm_chain.predict(human_input="请问小明的爸爸是谁？")
         print(completion)
     ```
 
@@ -322,7 +289,7 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
     ```ColdFusion
     You are a chatbot having a conversation with a human. Please answer as briefly as possible.
-    
+
     Human: 请记住小明的爸爸是小刚
     AI: 记住了，小明的爸爸是小刚。
     Human: 七大洲前四个是啥？
@@ -335,8 +302,8 @@ Embedding模型和Reranker模型可以支持服务化运行，如果选择TEI服
 
 ## 调用Agentic RAG样例<a name="ZH-CN_TOPIC_0000002041731821"></a>
 
-详细介绍可参见：[RAG SDK基于LangGraph知识检索增强应用使能方案](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples/langgraph)。
+详细介绍可参见：[RAG SDK基于LangGraph知识检索增强应用使能方案](https://gitcode.com/Ascend/RAGSDK/tree/master/example/langgraph)。
 
 ## chat with ragsdk<a name="ZH-CN_TOPIC_0000002485964970"></a>
 
-启动WEB服务，进行参数配置、文档上传、删除、问答等操作，详细流程见：[chat\_with\_ragsdk](https://gitcode.com/Ascend/mindsdk-referenceapps/blob/master/RAGSDK/MainRepo/Samples/chat_with_ascend/README.md)
+启动WEB服务，进行参数配置、文档上传、删除、问答等操作，详细流程见：[chat\_with\_ragsdk](https://gitcode.com/Ascend/RAGSDK/blob/master/example/chat_with_ascend/README.md)

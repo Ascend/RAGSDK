@@ -6,7 +6,7 @@
 
 - Where to get help
   - [Issue Feedback](https://gitcode.com/Ascend/RAGSDK/issues)
-  - [RAGSDK Code](https://gitcode.com/Ascend/RAGSDK)
+  - [RAG SDK Code](https://gitcode.com/Ascend/RAGSDK)
   - [Image Repository](https://www.hiascend.com/developer/ascendhub/detail/mineru)
 
 ## MinerU Acceleration Image

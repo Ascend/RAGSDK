@@ -16,7 +16,7 @@
 
 ## 样例说明
 
-详细的样例介绍请参考[《RAG SDK 用户指南》](https://www.hiascend.com/document/detail/zh/mindsdk/730/rag/ragug/mxragug_0001.html)"应用开发"章节说明。 其中：
+详细的样例介绍请参考[《RAG SDK 用户指南》](https://www.hiascend.com/document/detail/zh/mindsdk/730/rag/ragug/mxragug_0001.html)"应用开发"章节说明。
 
 > [!NOTE]
 > 注意：创建知识库过程和在线问答过程使用的embedding模型、关系数据库路径、向量数据库路径需对应保持一致。其中关系数据库和向量数据库路径在样例代码中已经默认设置成一致，embedding模型需用户手动设置成一致。

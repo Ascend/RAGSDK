@@ -76,9 +76,9 @@ docker exec -it rag_sdk_demo bash
 
 ## RAG SDK使用说明
 
-RAG SDK 提供丰富的示例代码，帮助开发者快速上手，容器内示例代码在`/workspace/RAGSDK_Samples`路径下。您也可以通过以下链接获取最新的 Demo 示例：
+RAG SDK 提供丰富的示例代码，帮助开发者快速上手，容器内示例代码在`/workspace/RAGSDK/example`路径下。您也可以通过以下链接获取最新的 Demo 示例：
 
-- [RAG SDK Demo 示例代码](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples)
+- [RAG SDK Demo 示例代码](https://gitcode.com/Ascend/RAGSDK/tree/master/example)
 
 ## 如何二次开发
 

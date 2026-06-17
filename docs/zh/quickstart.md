@@ -14,7 +14,7 @@ RAG SDK 提供基于昇腾平台的知识库问答能力，支持文档解析、
 ## 步骤 1：拉取镜像
 
 1. **确定待下载镜像版本**
-   - 访问昇腾社区[镜像仓](https://www.hiascend.com/developer/ascendhub/detail/7f91c3663b5d4a97b3ae40e3cabbb3a2)，查看RAG SDK镜像配套表，获取镜像最新版本以及与之配套的CANN版本
+   - 访问昇腾社区[镜像仓](https://www.hiascend.com/developer/ascendhub/detail/b875f781df984480b0385a96fa1b03c9)，查看RAG SDK镜像配套表，获取镜像最新版本以及与之配套的CANN版本
    - 根据当前硬件型号（如 Atlas 800I A2 推理服务器）选择对应版本
 
     > [!NOTE]
