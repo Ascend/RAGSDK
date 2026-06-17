@@ -44,7 +44,7 @@ reranker tei [安装地址](https://www.hiascend.com/developer/ascendhub/detail/
 
 ## 3 环境安装
 
-参考[RAG SDK 用户指南](https://www.hiascend.com/document/detail/zh/mindsdk/730/rag/ragug/mxragug_0001.html)"安装部署"章节，分别安装cann、rag SDK、以及部署embedding, reranker, mindie Service服务，安装langgraph包:
+参考[RAG SDK 用户指南](https://www.hiascend.com/document/detail/zh/mindsdk/730/rag/ragug/mxragug_0001.html)"安装部署"章节，分别安装cann、RAG SDK、以及部署embedding, reranker服务，安装langgraph包:
 
 ```bash
 pip3 install langgraph==0.2.19
@@ -52,7 +52,7 @@ pip3 install langgraph==0.2.19
 
 ## 4 总体介绍
 
-基于langgraph和rag sdk搭建RAG应用, 根据langgraph的定义需要包含node和graph，node中使用rag sdk完成相应的功能。
+基于langgraph和RAG SDK搭建RAG应用, 根据langgraph的定义需要包含node和graph，node中使用RAG SDK完成相应的功能。
 
 **RAG 节点(Node)定义**
 
@@ -109,7 +109,7 @@ def create_loader_and_spliter(mxrag_component: Dict[str, Any],
 
 ### 5.2 RAG远端服务
 
-以下是分别初始化mindie Service，AIM embedding，AIM reranker服务，用户需要传入相应的地址。
+以下是分别初始化embedding，reranker服务，用户需要传入相应的地址。
 
 ```python
 def create_remote_connector(mxrag_component: Dict[str, Any],
@@ -579,9 +579,6 @@ if __name__ == "__main__":
     mis_tei_reranker_url = "http://127.0.0.1:port/rerank"
     # mind inference microservice tei embed
     mis_tei_embedding_url = "http://127.0.0.1:port/embed"
-
-    # mindie llm server
-    llm_url = "http://127.0.0.1:port/v1/chat/completions"
 
     # llm model name like Llama3-8B-Chinese-Chat etc
     llm_model_name = "Llama3-8B-Chinese-Chat"

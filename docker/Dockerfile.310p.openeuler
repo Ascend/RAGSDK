@@ -88,10 +88,10 @@ RUN pip3 install nvidia-ml-py && pip3 uninstall -y pynvml
 
 # 下载 RAGSDK Samples 代码
 RUN cd /tmp && \
-    git clone --depth 1 https://gitcode.com/Ascend/mindsdk-referenceapps.git && \
+    git clone --depth 1 https://gitcode.com/Ascend/RAGSDK.git && \
     mkdir -p /workspace && \
-    cp -r mindsdk-referenceapps/RAGSDK/MainRepo/Samples /workspace/RAGSDK_Samples && \
-    rm -rf mindsdk-referenceapps
+    cp -r RAGSDK/example /workspace/RAGSDK && \
+    rm -rf RAGSDK
 
 # 添加环境变量
 RUN sed -i '$a\export LD_PRELOAD=\$(find \$(python3 -c "import sklearn; print(sklearn.__path__[0])")/../scikit_learn.libs -name "libgomp-*" | head -1):\$LD_PRELOAD' /root/.bashrc && \

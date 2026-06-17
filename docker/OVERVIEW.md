@@ -77,9 +77,9 @@ docker exec -it rag_sdk_demo bash
 
 ## RAG SDK Usage
 
-RAG SDK provides comprehensive sample code to help developers get started quickly. The sample code inside the container is located at `/workspace/RAGSDK_Samples`. You can also access the latest demo examples through the following link:
+RAG SDK provides comprehensive sample code to help developers get started quickly. The sample code inside the container is located at `/workspace/RAGSDK/example`. You can also access the latest demo examples through the following link:
 
-- [RAG SDK Demo Samples](https://gitcode.com/Ascend/mindsdk-referenceapps/tree/master/RAGSDK/MainRepo/Samples)
+- [RAG SDK Demo Samples](https://gitcode.com/Ascend/RAGSDK/tree/master/example)
 
 ## Development
 

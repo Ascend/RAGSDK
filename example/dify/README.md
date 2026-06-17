@@ -48,7 +48,7 @@ RAG SDK 提供知识库对接开源 Dify 框架的样例。通过 FastAPI 服务
 
 5. 通过接口上传、删除、查看文档等操作
 
-6. 支持在dify界面配置外接知识库，[部署参考参考链接](https://docs.dify.ai/zh-hans/guides/knowledge-base/connect-external-knowledge-base)
+6. 支持在dify界面配置外接知识库，[部署参考链接](https://docs.dify.ai/zh-hans/guides/knowledge-base/connect-external-knowledge-base)
 
 7. 可调用/query接口问答测试,代码执行路径下存放了LLM回答文件response.md，可通过如下代码启动web网页可直观展示答复内容，复制如下代码在dify_demo.py同级目录下创建st.py
 

@@ -6,7 +6,7 @@
 
 - 从哪里获取帮助
   - [issue 反馈](https://gitcode.com/Ascend/RAGSDK/issues)
-  - [RAGSDK 代码](https://gitcode.com/Ascend/RAGSDK)
+  - [RAG SDK 代码](https://gitcode.com/Ascend/RAGSDK)
   - [镜像仓库](https://www.hiascend.com/developer/ascendhub/detail/mineru)
 
 ## MinerU 加速镜像
