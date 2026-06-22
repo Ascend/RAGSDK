@@ -1,12 +1,10 @@
-# 接口参考——对接模型客户端
+# 对接模型客户端<a name="ZH-CN_TOPIC_0000001990172976"></a>
 
-## 对接模型客户端<a name="ZH-CN_TOPIC_0000001990172976"></a>
+## 大语言模型<a name="ZH-CN_TOPIC_0000002018595309"></a>
 
-### 大语言模型<a name="ZH-CN_TOPIC_0000002018595309"></a>
+### Text2TextLLM<a name="ZH-CN_TOPIC_0000001982155120"></a>
 
-#### Text2TextLLM<a name="ZH-CN_TOPIC_0000001982155120"></a>
-
-##### 类功能<a name="ZH-CN_TOPIC_0000002018595341"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002018595341"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -45,7 +43,7 @@ for res in llm.chat_streamly("请介绍下北京"):
     print(res)
 ```
 
-##### chat<a name="ZH-CN_TOPIC_0000002018595377"></a>
+#### chat<a name="ZH-CN_TOPIC_0000002018595377"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -72,7 +70,7 @@ def chat(query, sys_messages, role, llm_config)
 |--|--|
 |str|LLM文本推理的结果。|
 
-##### chat\_streamly<a name="ZH-CN_TOPIC_0000002018595177"></a>
+#### chat\_streamly<a name="ZH-CN_TOPIC_0000002018595177"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -99,11 +97,11 @@ def chat_streamly(query, sys_messages, role, llm_config)
 |--|--|
 |Iterator[str]|LLM文本推理的流式结果。|
 
-### 图像生成模型<a name="ZH-CN_TOPIC_0000001981995332"></a>
+## 图像生成模型<a name="ZH-CN_TOPIC_0000001981995332"></a>
 
-#### Text2ImgMultiModel<a name="ZH-CN_TOPIC_0000001982155112"></a>
+### Text2ImgMultiModel<a name="ZH-CN_TOPIC_0000001982155112"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000001981995300"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000001981995300"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -141,7 +139,7 @@ res = multi_model.text2img(prompt="dog wearing black glasses", output_format="jp
 print(res)
 ```
 
-##### text2img<a name="ZH-CN_TOPIC_0000002018714797"></a>
+#### text2img<a name="ZH-CN_TOPIC_0000002018714797"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -178,9 +176,9 @@ def text2img(prompt, output_format, size)
 |--|--|
 |dict|返回格式为{"prompt": prompt, "result": data}，其中prompt为图片生成的提示词，result为大模型推理结果的图片base64编码后的数据。|
 
-#### Img2ImgMultiModel<a name="ZH-CN_TOPIC_0000001981995588"></a>
+### Img2ImgMultiModel<a name="ZH-CN_TOPIC_0000001981995588"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002018714685"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002018714685"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -231,7 +229,7 @@ print(res)
 
 ```
 
-##### img2img<a name="ZH-CN_TOPIC_0000001982155128"></a>
+#### img2img<a name="ZH-CN_TOPIC_0000001982155128"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -267,11 +265,11 @@ def img2img(prompt, image_content, size)
 |--|--|
 |dict|返回格式为{"prompt": prompt, "result": data}，其中prompt为图片生成的提示词，result为大模型推理结果的图片base64编码后的数据。|
 
-### 参数类说明<a name="ZH-CN_TOPIC_0000002005999484"></a>
+## 参数类说明<a name="ZH-CN_TOPIC_0000002005999484"></a>
 
-#### LLMParameterConfig<a name="ZH-CN_TOPIC_0000002042197585"></a>
+### LLMParameterConfig<a name="ZH-CN_TOPIC_0000002042197585"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002006157752"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002006157752"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -313,11 +311,11 @@ for res in llm.chat_streamly("请介绍下北京"):
     print(res)
 ```
 
-### 视觉大模型<a name="ZH-CN_TOPIC_0000002445441861"></a>
+## 视觉大模型<a name="ZH-CN_TOPIC_0000002445441861"></a>
 
-#### Img2TextLLM<a name="ZH-CN_TOPIC_0000002411922676"></a>
+### Img2TextLLM<a name="ZH-CN_TOPIC_0000002411922676"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002411762796"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002411762796"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -389,7 +387,7 @@ res = vlm.chat(image_url=image_url)
 print(res)
 ```
 
-##### chat<a name="ZH-CN_TOPIC_0000002445521929"></a>
+#### chat<a name="ZH-CN_TOPIC_0000002445521929"></a>
 
 **功能描述<a name="section53998444524"></a>**
 

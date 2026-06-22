@@ -1,12 +1,10 @@
-# 接口参考——大模型Chain
-
-## 大模型Chain<a name="ZH-CN_TOPIC_0000001981995492"></a>
+# 大模型Chain<a name="ZH-CN_TOPIC_0000001981995492"></a>
 
 Chain定义实现了对接大模型客户端。
 
-### Chain抽象类<a name="ZH-CN_TOPIC_0000001982155020"></a>
+## Chain抽象类<a name="ZH-CN_TOPIC_0000001982155020"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000001983469186"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000001983469186"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -19,7 +17,7 @@ from mx_rag.chain.base import Chain
 Chain()
 ```
 
-#### query<a name="ZH-CN_TOPIC_0000002020148565"></a>
+### query<a name="ZH-CN_TOPIC_0000002020148565"></a>
 
 **功能描述<a name="section177691234412"></a>**
 
@@ -40,9 +38,9 @@ def query(text, llm_config, *args, **kwargs)
 |args|-|可选|传入的有效参数根据具体的Chain而定。|
 |kwargs|-|可选|传入的有效参数根据具体的Chain而定。|
 
-### Text2ImgChain<a name="ZH-CN_TOPIC_0000001981995532"></a>
+## Text2ImgChain<a name="ZH-CN_TOPIC_0000001981995532"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002018595501"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002018595501"></a>
 
 **功能描述<a name="section439205710473"></a>**
 
@@ -61,7 +59,7 @@ Text2ImgChain(multi_model)
 |--|--|--|--|
 |multi_model|Text2ImgMultiModel|必选|对接大模型对象，传入[Text2ImgMultiModel](./llm_client.md#text2imgmultimodel)实例。|
 
-#### query<a name="ZH-CN_TOPIC_0000002018595241"></a>
+### query<a name="ZH-CN_TOPIC_0000002018595241"></a>
 
 **功能描述<a name="section1933110414379"></a>**
 
@@ -102,9 +100,9 @@ llm_data = text2img_chain.query("dog wearing black glasses", output_format="jpg"
 print(llm_data)
 ```
 
-### Img2ImgChain<a name="ZH-CN_TOPIC_0000002018714905"></a>
+## Img2ImgChain<a name="ZH-CN_TOPIC_0000002018714905"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002018595397"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002018595397"></a>
 
 **功能描述<a name="section99771719978"></a>**
 
@@ -124,7 +122,7 @@ Img2ImgChain(multi_model, retriever)
 |multi_model|Img2ImgMultiModel|必选|对接大模型对象，[Img2ImgMultiModel](./llm_client.md#img2imgmultimodel)实例。|
 |retriever|BaseRetriever|必选|相似检索器，[Retriever](./retrieval.md#retriever)实例。|
 
-#### query<a name="ZH-CN_TOPIC_0000001982155060"></a>
+### query<a name="ZH-CN_TOPIC_0000001982155060"></a>
 
 **功能描述<a name="section1945141620153"></a>**
 
@@ -182,9 +180,9 @@ llm_data = img2img_chain.query("查找小男孩图片",
 print(llm_data)
 ```
 
-### SingleText2TextChain<a name="ZH-CN_TOPIC_0000002018595485"></a>
+## SingleText2TextChain<a name="ZH-CN_TOPIC_0000002018595485"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000001981995500"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000001981995500"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -247,7 +245,7 @@ def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
     return final_prompt
 ```
 
-#### query<a name="ZH-CN_TOPIC_0000002018714737"></a>
+### query<a name="ZH-CN_TOPIC_0000002018714737"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -256,7 +254,7 @@ RAG SDK对话功能。
 **函数原型<a name="section18789201331417"></a>**
 
 ```python
-def query(text, llm_config, *args, **kwargs) 
+def query(text, llm_config, *args, **kwargs)
 ```
 
 **输入参数说明<a name="section19434210583"></a>**
@@ -332,8 +330,8 @@ knowledge_db = KnowledgeDB(knowledge_store=knowledge_store,
 # 上传文档到知识库
 upload_files(knowledge_db, ["/path/to/file1", "/path/to/file2"], loader_mng, emb.embed_documents, True)
 client_param = ClientParam(ca_file="/path/to/ca.crt")
-llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct", 
-                   base_url="https://x.x.x.x:port/v1/chat/completions", 
+llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct",
+                   base_url="https://x.x.x.x:port/v1/chat/completions",
                    client_param=client_param)
 r = Retriever(vector_store=vector_store, document_store=chunk_store, embed_func=emb.embed_documents, k=1, score_threshold=0.6)
 rag = SingleText2TextChain(retriever=r, llm=llm)
@@ -461,8 +459,8 @@ You are a helpful question-answering assistant. Your task is to generate a inter
 
 client_param = ClientParam(ca_file="/path/to/ca.crt")
 # 用于对话的语言大模型
-llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct", 
-                   base_url="https://x.x.x.x:port/v1/chat/completions", 
+llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct",
+                   base_url="https://x.x.x.x:port/v1/chat/completions",
                    client_param=client_param)
 sys_messages=[{"role": "system", "content": TEXT_INFER_PROMPT}]
 r = Retriever(vector_store=vector_store, document_store=chunk_store, embed_func=emb.embed_documents, k=1, score_threshold=0.6)
@@ -472,9 +470,9 @@ response = rag.query("mxVision软件架构包含哪些模块？", LLMParameterCo
 print(response)
 ```
 
-### ParallelText2TextChain<a name="ZH-CN_TOPIC_0000001987173374"></a>
+## ParallelText2TextChain<a name="ZH-CN_TOPIC_0000001987173374"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002023612945"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002023612945"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -537,7 +535,7 @@ def _user_content_builder(query: str, docs: List[Document], prompt: str) -> str:
     return final_prompt
 ```
 
-#### query<a name="ZH-CN_TOPIC_0000002023613429"></a>
+### query<a name="ZH-CN_TOPIC_0000002023613429"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -590,9 +588,9 @@ answer = parallel_chain.query(text="123456")
 print(answer)
 ```
 
-### GraphRagText2TextChain<a name="ZH-CN_TOPIC_0000002195845708"></a>
+## GraphRagText2TextChain<a name="ZH-CN_TOPIC_0000002195845708"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002195686116"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002195686116"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -615,7 +613,7 @@ GraphRagText2TextChain(llm, retriever, reranker)
 
 其余参数见父类。
 
-#### 函数query<a name="ZH-CN_TOPIC_0000002231091445"></a>
+### 函数query<a name="ZH-CN_TOPIC_0000002231091445"></a>
 
 **功能描述<a name="section53998444524"></a>**
 

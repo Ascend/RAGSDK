@@ -1,18 +1,16 @@
-# 接口参考——知识管理
+# 知识管理<a name="ZH-CN_TOPIC_0000002018595433"></a>
 
-## 知识管理<a name="ZH-CN_TOPIC_0000002018595433"></a>
+## 知识库文档管理<a name="ZH-CN_TOPIC_0000002018595305"></a>
 
-### 知识库文档管理<a name="ZH-CN_TOPIC_0000002018595305"></a>
-
-#### 知识库依赖关系<a name="ZH-CN_TOPIC_0000002273067881"></a>
+### 知识库依赖关系<a name="ZH-CN_TOPIC_0000002273067881"></a>
 
 ![](../figures/知识库.png)
 
 KnowledgeDB依赖了KnowledgeStore、Docstore、VectorStore实现对知识库文档片段及向量化入库。KnowledgeStore负责对知识库增删查操作，Docstore负责对文档片段增删改查操作，具体配置实例为（OpenGaussDocstore、MilvusDocstore、SQLiteDocstore），VectorStore负责对向量增删改查操作，具体实例配置为（OpenGaussDB、MilvusDB、MindFAISS）。
 
-#### KnowledgeStore<a name="ZH-CN_TOPIC_0000001981995476"></a>
+### KnowledgeStore<a name="ZH-CN_TOPIC_0000001981995476"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002018595389"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002018595389"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -53,7 +51,7 @@ print(knowledge_store.check_document_exist("name", "1.txt", user_id))
 print(knowledge_store.delete_doc_info("name", "1.txt", user_id))
 ```
 
-##### add\_knowledge<a name="ZH-CN_TOPIC_0000002218885156"></a>
+#### add\_knowledge<a name="ZH-CN_TOPIC_0000002218885156"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -79,7 +77,7 @@ def add_knowledge(knowledge_name, user_id, role)
 |--|--|
 |int|返回添加的知识库对应的knowledge_id|
 
-##### check\_knowledge\_exist<a name="ZH-CN_TOPIC_0000002254016469"></a>
+#### check\_knowledge\_exist<a name="ZH-CN_TOPIC_0000002254016469"></a>
 
 **功能描述<a name="section51573195915"></a>**
 
@@ -104,7 +102,7 @@ def check_knowledge_exist(knowledge_name, user_id)
 |--|--|
 |bool|user_id下是否存在该知识库knowledge_name。|
 
-##### add\_usr\_id\_to\_knowledge<a name="ZH-CN_TOPIC_0000002253685057"></a>
+#### add\_usr\_id\_to\_knowledge<a name="ZH-CN_TOPIC_0000002253685057"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -124,7 +122,7 @@ def add_usr_id_to_knowledge(knowledge_name, user_id, role)
 |user_id|str|必选|用户ID，区分不同知识库，需要满足正则表达式^[a-zA-Z0-9_-]{6,64}$。|
 |role|str|必选|用户角色，只能为知识库管理员'admin'或对知识库仅有查询权限的成员'member'，添加后使用对应user_id可以进行查询该知识库。|
 
-##### delete\_usr\_id\_from\_knowledge<a name="ZH-CN_TOPIC_0000002089941390"></a>
+#### delete\_usr\_id\_from\_knowledge<a name="ZH-CN_TOPIC_0000002089941390"></a>
 
 **功能描述<a name="section1653621022013"></a>**
 
@@ -145,7 +143,7 @@ def delete_usr_id_from_knowledge(knowledge_name, user_id, role, force=False)
 |role|str|必选|用户对应的角色，只能为知识库管理员'admin'或对知识库仅有查询权限的成员'member'。如果user_id和role记录不存在，则报错。|
 |force|bool|可选|若删除的知识库关联的用户只剩一个，是否继续强制删除，默认为False。|
 
-##### get\_all\_knowledge\_info<a name="ZH-CN_TOPIC_0000002124527517"></a>
+#### get\_all\_knowledge\_info<a name="ZH-CN_TOPIC_0000002124527517"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -169,7 +167,7 @@ def get_all_knowledge_info(user_id)
 |--|--|
 |List[KnowledgeModel]|返回user_id下的知识库信息，KnowledgeModel参见[KnowledgeModel类](./databases.md#knowledgemodel类)。
 
-##### get\_all\_usr\_role\_by\_knowledge<a name="ZH-CN_TOPIC_0000002253844937"></a>
+#### get\_all\_usr\_role\_by\_knowledge<a name="ZH-CN_TOPIC_0000002253844937"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -193,7 +191,7 @@ def get_all_usr_role_by_knowledge(knowledge_name)
 |--|--|
 |dict{user_id: role}|返回指定知识库下所有的用户id和用户角色，key为用户id，value为用户角色|
 
-##### add\_doc\_info<a name="ZH-CN_TOPIC_0000002018595217"></a>
+#### add\_doc\_info<a name="ZH-CN_TOPIC_0000002018595217"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -220,7 +218,7 @@ def add_doc_info(knowledge_name, doc_name, file_path, user_id)
 |--|--|
 |int|在表document_table增加记录，返回文档的document_id。|
 
-##### delete\_doc\_info<a name="ZH-CN_TOPIC_0000001981995340"></a>
+#### delete\_doc\_info<a name="ZH-CN_TOPIC_0000001981995340"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -246,7 +244,7 @@ def delete_doc_info(knowledge_name, doc_name, user_id)
 |--|--|
 |int/None|在表document_table删除记录，返回删除文档的document_id，删除失败返回None。|
 
-##### check\_document\_exist<a name="ZH-CN_TOPIC_0000002018714725"></a>
+#### check\_document\_exist<a name="ZH-CN_TOPIC_0000002018714725"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -272,7 +270,7 @@ def check_document_exist(knowledge_name, doc_name, user_id)
 |--|--|
 |bool|文档是否存在。|
 
-##### get\_all\_documents<a name="ZH-CN_TOPIC_0000001981995464"></a>
+#### get\_all\_documents<a name="ZH-CN_TOPIC_0000001981995464"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -297,9 +295,9 @@ def get_all_documents(knowledge_name, user_id)
 |--|--|
 |List[DocumentModel]|返回对应user_id和knowledge_name下的文档信息，DocumentModel参见[DocumentModel类](./databases.md#documentmodel类)。|
 
-#### KnowledgeDB<a name="ZH-CN_TOPIC_0000001982155292"></a>
+### KnowledgeDB<a name="ZH-CN_TOPIC_0000001982155292"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000001982155200"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000001982155200"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -342,7 +340,7 @@ dev = 0
 # 加载embedding模型
 embed_func = TextEmbedding("/path/to/model", dev_id=dev)
 # 初始化向量数据库
-vector_store = MindFAISS(x_dim=1024, devs=[dev], 
+vector_store = MindFAISS(x_dim=1024, devs=[dev],
                          load_local_index="./faiss.index", auto_save=True)
 # 初始化文档chunk 关系数据库
 chunk_store = SQLiteDocstore(db_path="./sql.db")
@@ -366,7 +364,7 @@ knowledge_db.delete_file(doc_name=file_path.name)
 knowledge_db.delete_all()
 ```
 
-##### add\_file<a name="ZH-CN_TOPIC_0000001981995424"></a>
+#### add\_file<a name="ZH-CN_TOPIC_0000001981995424"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -387,7 +385,7 @@ def add_file(file, texts, embed_func, metadatas)
 |embed_func|dict|必选|嵌入函数，将文本或图片转换为向量。只允许{'dense': x, 'sparse': y}形式，x和y分别为稠密和稀疏向量的回调函数，xy不能同时为None。|
 |metadatas|List[dict]|可选|文档切片的metadata，默认值为None，列表中元素字典的字符串长度不能超过128*1024*1024，字典长度不能超过1024，字典嵌套不能超过1层。需要和texts的数量保持一致，列表长度取值范围为[1, 1000 * 1000]。|
 
-##### delete\_file<a name="ZH-CN_TOPIC_0000001981995624"></a>
+#### delete\_file<a name="ZH-CN_TOPIC_0000001981995624"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -405,7 +403,7 @@ def delete_file(doc_name)
 |--|--|--|--|
 |doc_name|str|必选|待删除文档名，文档需已存在，长度取值范围为[1, 1024]。|
 
-##### get\_all\_documents<a name="ZH-CN_TOPIC_0000001981995420"></a>
+#### get\_all\_documents<a name="ZH-CN_TOPIC_0000001981995420"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -423,7 +421,7 @@ def get_all_documents()
 |--|--|
 |List[DocumentModel]|返回对应user_id下的文档信息，DocumentModel参见[DocumentModel类](./databases.md#documentmodel类)。|
 
-##### check\_document\_exist<a name="ZH-CN_TOPIC_0000002018714825"></a>
+#### check\_document\_exist<a name="ZH-CN_TOPIC_0000002018714825"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -447,7 +445,7 @@ def check_document_exist(doc_name)
 |--|--|
 |bool|文档是否存在。|
 
-##### delete\_all<a name="ZH-CN_TOPIC_0000002089277208"></a>
+#### delete\_all<a name="ZH-CN_TOPIC_0000002089277208"></a>
 
 **功能描述<a name="section2073173175111"></a>**
 
@@ -463,9 +461,9 @@ def delete_all()
 
 无
 
-#### 文档管理<a name="ZH-CN_TOPIC_0000001982155132"></a>
+### 文档管理<a name="ZH-CN_TOPIC_0000001982155132"></a>
 
-##### upload\_files<a name="ZH-CN_TOPIC_0000002018595361"></a>
+#### upload\_files<a name="ZH-CN_TOPIC_0000002018595361"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -522,7 +520,7 @@ dev = 0
 # 加载embedding模型
 emb = TextEmbedding("/path/to/model", dev_id=dev)
 # 初始化向量数据库
-vector_store = MindFAISS(x_dim=1024, devs=[dev], 
+vector_store = MindFAISS(x_dim=1024, devs=[dev],
                          load_local_index="/path/to/index", auto_save=True)
 # 初始化文档chunk 关系数据库
 chunk_store = SQLiteDocstore(db_path="./sql.db")
@@ -547,7 +545,7 @@ delete_files(knowledge_db, ["test.docx"])
 
 ```
 
-##### upload\_dir<a name="ZH-CN_TOPIC_0000001982155264"></a>
+#### upload\_dir<a name="ZH-CN_TOPIC_0000001982155264"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -616,7 +614,7 @@ dev = 0
 # 加载embedding模型
 emb = TextEmbedding("/path/to/model", dev_id=dev)
 # 初始化向量数据库
-vector_store = MindFAISS(x_dim=1024, devs=[dev], 
+vector_store = MindFAISS(x_dim=1024, devs=[dev],
                          load_local_index="/path/to/index", auto_save=True)
 # 初始化文档chunk 关系数据库
 chunk_store = SQLiteDocstore(db_path="./sql.db")
@@ -641,7 +639,7 @@ delete_files(knowledge_db, ["test.docx"])
 
 ```
 
-##### delete\_files<a name="ZH-CN_TOPIC_0000002018714805"></a>
+#### delete\_files<a name="ZH-CN_TOPIC_0000002018714805"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -685,7 +683,7 @@ dev = 0
 # 加载embedding模型
 emb = TextEmbedding("/path/to/model", dev_id=dev)
 # 初始化向量数据库
-vector_store = MindFAISS(x_dim=1024, devs=[dev], 
+vector_store = MindFAISS(x_dim=1024, devs=[dev],
                          load_local_index="/path/to/index", auto_save=True)
 # 初始化文档chunk 关系数据库
 chunk_store = SQLiteDocstore(db_path="./sql.db")
@@ -710,11 +708,11 @@ delete_files(knowledge_db, ["test.docx"])
 
 ```
 
-### 文档解析<a name="ZH-CN_TOPIC_0000002018595273"></a>
+## 文档解析<a name="ZH-CN_TOPIC_0000002018595273"></a>
 
-#### LoaderMng<a name="ZH-CN_TOPIC_0000001983248130"></a>
+### LoaderMng<a name="ZH-CN_TOPIC_0000001983248130"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000001983250102"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000001983250102"></a>
 
 **功能描述<a name="section417673045914"></a>**
 
@@ -755,14 +753,14 @@ loader_mng.unregister_loader(ExcelLoader)
 loader_mng.unregister_splitter(RecursiveCharacterTextSplitter)
 ```
 
-##### 依赖关系<a name="ZH-CN_TOPIC_0000002238084840"></a>
+#### 依赖关系<a name="ZH-CN_TOPIC_0000002238084840"></a>
 
-**图 1**  依赖关系<a name="fig1325663483420"></a>  
+**图 1**  依赖关系<a name="fig1325663483420"></a>
 ![](../figures/依赖关系.png "依赖关系")
 
 实现了BaseLoader和TextSplitter抽象基类的对象都支持注册到LoaderMng类中。
 
-##### register\_loader<a name="ZH-CN_TOPIC_0000002019849945"></a>
+#### register\_loader<a name="ZH-CN_TOPIC_0000002019849945"></a>
 
 **功能描述<a name="section19326282005"></a>**
 
@@ -782,7 +780,7 @@ def register_loader(loader_class, file_types, loader_params)
 |file_types|List[str]|必选|文件扩展名列表。支持文档类型数取值范围[1, 32]，文档扩展名长度取值范围为[1,32]。参数配置如[".txt", ".docx"]|
 |loader_params|Dict[str, Any]|可选|文档加载函数所需要传入的参数，默认为None，参数配置中的字符串长度不能超过1024，字典长度不能超过1024，字典嵌套不能超过1层。|
 
-##### register\_splitter<a name="ZH-CN_TOPIC_0000001983409838"></a>
+#### register\_splitter<a name="ZH-CN_TOPIC_0000001983409838"></a>
 
 **功能描述<a name="section179971573816"></a>**
 
@@ -802,7 +800,7 @@ def register_splitter(splitter_class, file_types, splitter_param)
 |file_types|List[str]|必选|文件扩展名列表。支持文档类型数取值范围[1, 32]，文档扩展名长度取值范围为[1,32]。不支持“.jpg”和“.png”格式的文件。参数配置如[".txt", ".docx"]|
 |splitter_params|Dict[str, Any]|可选|文档切分函数所需要传入的参数，默认为None，参数配置中的字符串长度不能超过1024，字典长度不能超过1024，字典嵌套不能超过2层。以langchain为例，当使用的splitter_class为RecursiveCharacterTextSplitter时，splitter_params可以传入的参数为{"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False}，其中chunk_size定义切割块大小，chunk_overlap定义切割块之间重叠部分大小，keep_separator表示切分符是否保留，默认的切分符是["\n\n", "\n", " ", ""]。|
 
-##### get\_loader<a name="ZH-CN_TOPIC_0000002019969469"></a>
+#### get\_loader<a name="ZH-CN_TOPIC_0000002019969469"></a>
 
 **功能描述<a name="section198410241691"></a>**
 
@@ -826,7 +824,7 @@ def get_loader(file_suffix)
 |--|--|
 |LoaderInfo|返回的LoaderInfo实例包含了对应文件类型的加载器的信息，包括加载器的类以及需要传递的参数。|
 
-##### get\_splitter<a name="ZH-CN_TOPIC_0000001983250110"></a>
+#### get\_splitter<a name="ZH-CN_TOPIC_0000001983250110"></a>
 
 **功能描述<a name="section198410241691"></a>**
 
@@ -850,7 +848,7 @@ def get_splitter(file_suffix)
 |--|--|
 |SplitterInfo|返回的SplitterInfo实例包含了对应文件类型的切分器的信息，包括切分器的类以及需要传递的参数。|
 
-##### unregister\_loader<a name="ZH-CN_TOPIC_0000002029049120"></a>
+#### unregister\_loader<a name="ZH-CN_TOPIC_0000002029049120"></a>
 
 **功能描述<a name="section198410241691"></a>**
 
@@ -869,7 +867,7 @@ def unregister_loader(loader_class, file_suffix)
 |loader_class|BaseLoader|必选|文档加载函数，只能为继承自langchain的BaseLoader的子类。|
 |file_suffix|str|可选|文件扩展名，长度取值范围为[1,32]，默认值为None，将解析函数为loader_class的全部卸载；若不为空，则卸载对应文档类型的对应解析函数。|
 
-##### unregister\_splitter<a name="ZH-CN_TOPIC_0000002065288593"></a>
+#### unregister\_splitter<a name="ZH-CN_TOPIC_0000002065288593"></a>
 
 **功能描述<a name="section198410241691"></a>**
 
@@ -888,9 +886,9 @@ def unregister_splitter(splitter_class, file_suffix)
 |splitter_class|TextSplitter|必选|文档切分函数，只能为继承自langchain的TextSplitter的子类。|
 |file_suffix|str|可选|文件扩展名，长度取值范围为[1,32]，默认值为None，将切分函数为splitter_class的全部卸载，若不为空，则卸载对应文档类型的对应切分函数。|
 
-#### DocxLoader<a name="ZH-CN_TOPIC_0000002018714765"></a>
+### DocxLoader<a name="ZH-CN_TOPIC_0000002018714765"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002018714773"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002018714773"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -927,7 +925,7 @@ docs = loader.lazy_load()
 print(list(docs))
 ```
 
-##### lazy\_load<a name="ZH-CN_TOPIC_0000002018595245"></a>
+#### lazy\_load<a name="ZH-CN_TOPIC_0000002018595245"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -945,9 +943,9 @@ def lazy_load()
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
 
-#### ExcelLoader<a name="ZH-CN_TOPIC_0000001982155044"></a>
+### ExcelLoader<a name="ZH-CN_TOPIC_0000001982155044"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002018595229"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002018595229"></a>
 
 **功能描述<a name="section18486931141019"></a>**
 
@@ -976,7 +974,7 @@ docs = loader.lazy_load()
 print(list(docs))
 ```
 
-##### lazy\_load<a name="ZH-CN_TOPIC_0000002018714729"></a>
+#### lazy\_load<a name="ZH-CN_TOPIC_0000002018714729"></a>
 
 **功能描述<a name="section37831034111910"></a>**
 
@@ -999,9 +997,9 @@ def lazy_load()
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
 
-#### PdfLoader<a name="ZH-CN_TOPIC_0000001981995544"></a>
+### PdfLoader<a name="ZH-CN_TOPIC_0000001981995544"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002018595413"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002018595413"></a>
 
 **功能描述<a name="section69409519339"></a>**
 
@@ -1032,7 +1030,7 @@ docs = loader.lazy_load()
 print(list(docs))
 ```
 
-##### lazy\_load<a name="ZH-CN_TOPIC_0000001981995440"></a>
+#### lazy\_load<a name="ZH-CN_TOPIC_0000001981995440"></a>
 
 **功能描述<a name="section7701541173917"></a>**
 
@@ -1053,9 +1051,9 @@ def lazy_load()
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
 
-#### PowerPointLoader<a name="ZH-CN_TOPIC_0000001982155208"></a>
+### PowerPointLoader<a name="ZH-CN_TOPIC_0000001982155208"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002018714885"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002018714885"></a>
 
 **功能描述<a name="section69409519339"></a>**
 
@@ -1091,7 +1089,7 @@ docs = loader.lazy_load()
 print(list(docs))
 ```
 
-##### lazy\_load<a name="ZH-CN_TOPIC_0000001981995428"></a>
+#### lazy\_load<a name="ZH-CN_TOPIC_0000001981995428"></a>
 
 **功能描述<a name="section7701541173917"></a>**
 
@@ -1109,7 +1107,7 @@ def lazy_load()
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
 
-#### BaseLoader<a name="ZH-CN_TOPIC_0000001981995352"></a>
+### BaseLoader<a name="ZH-CN_TOPIC_0000001981995352"></a>
 
 **类功能<a name="section69409519339"></a>**
 
@@ -1130,9 +1128,9 @@ BaseLoader(file_path)
 |--|--|--|--|
 |file_path|str|必选|文档路径，路径长度取值范围为[1,1024]，不能为软链接且不允许存在".."，文档不大于100MB。|
 
-#### ImageLoader<a name="ZH-CN_TOPIC_0000001983384854"></a>
+### ImageLoader<a name="ZH-CN_TOPIC_0000001983384854"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002019944493"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002019944493"></a>
 
 **功能描述<a name="section69409519339"></a>**
 
@@ -1160,7 +1158,7 @@ docs= loader.lazy_load()
 print(list(docs))
 ```
 
-##### lazy\_load<a name="ZH-CN_TOPIC_0000002019824973"></a>
+#### lazy\_load<a name="ZH-CN_TOPIC_0000002019824973"></a>
 
 **功能描述<a name="section7701541173917"></a>**
 
@@ -1178,9 +1176,9 @@ def lazy_load()
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
 
-#### MarkdownLoader<a name="ZH-CN_TOPIC_0000002479664244"></a>
+### MarkdownLoader<a name="ZH-CN_TOPIC_0000002479664244"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002479507318"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002479507318"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -1218,7 +1216,7 @@ docs = loader.lazy_load()
 print(list(docs))
 ```
 
-##### lazy\_load<a name="ZH-CN_TOPIC_0000002511547205"></a>
+#### lazy\_load<a name="ZH-CN_TOPIC_0000002511547205"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -1241,11 +1239,11 @@ def lazy_load()
 |--|--|
 |Iterator[Document]|返回langchain中Document对象迭代器。|
 
-### 文档切分<a name="ZH-CN_TOPIC_0000002511544151"></a>
+## 文档切分<a name="ZH-CN_TOPIC_0000002511544151"></a>
 
-#### MarkdownTextSplitter<a name="ZH-CN_TOPIC_0000002511624175"></a>
+### MarkdownTextSplitter<a name="ZH-CN_TOPIC_0000002511624175"></a>
 
-##### 类功能<a name="ZH-CN_TOPIC_0000002479667312"></a>
+#### 类功能<a name="ZH-CN_TOPIC_0000002479667312"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -1289,7 +1287,7 @@ for doc in docs:
      print(chunks)
 ```
 
-##### split\_text<a name="ZH-CN_TOPIC_0000002511627227"></a>
+#### split\_text<a name="ZH-CN_TOPIC_0000002511627227"></a>
 
 **功能描述<a name="section53998444524"></a>**
 

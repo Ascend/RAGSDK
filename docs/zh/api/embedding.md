@@ -1,10 +1,8 @@
-# 接口参考——向量化
+# 向量化<a name="ZH-CN_TOPIC_0000002419262684"></a>
 
-## 向量化<a name="ZH-CN_TOPIC_0000002419262684"></a>
+## TextEmbedding<a name="ZH-CN_TOPIC_0000002419262688"></a>
 
-### TextEmbedding<a name="ZH-CN_TOPIC_0000002419262688"></a>
-
-#### 类功能<a name="ZH-CN_TOPIC_0000002452701717"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002452701717"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -83,7 +81,7 @@ if __name__ == '__main__':
         thread.join()
 ```
 
-#### create<a name="ZH-CN_TOPIC_0000002419102840"></a>
+### create<a name="ZH-CN_TOPIC_0000002419102840"></a>
 
 **功能描述<a name="section118111227123016"></a>**
 
@@ -108,7 +106,7 @@ def create(**kwargs)
 |--|--|
 |TextEmbedding|TextEmbedding对象。|
 
-#### embed\_documents<a name="ZH-CN_TOPIC_0000002452821605"></a>
+### embed\_documents<a name="ZH-CN_TOPIC_0000002452821605"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -133,7 +131,7 @@ def embed_documents(texts, batch_size)
 |--|--|
 |List[List[float]]|texts转换后的向量数组。如果texts为长度是4的数组，embedding模型的输出是1024维向量，最终的输出结果为（4，1024）大小的数组。|
 
-#### embed\_query<a name="ZH-CN_TOPIC_0000002419262692"></a>
+### embed\_query<a name="ZH-CN_TOPIC_0000002419262692"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -157,9 +155,9 @@ def embed_query(text)
 |--|--|
 |List[float]|text转换后的向量。如果embedding模型的输出是1024维向量，最终的输出结果为（1，1024）大小的数组。|
 
-### SparseEmbedding<a name="ZH-CN_TOPIC_0000002452701721"></a>
+## SparseEmbedding<a name="ZH-CN_TOPIC_0000002452701721"></a>
 
-#### 类功能<a id="ZH-CN_TOPIC_0000002419102844"></a>
+### 类功能<a id="ZH-CN_TOPIC_0000002419102844"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -194,7 +192,7 @@ print(embed.embed_documents(['abc', 'bcd']))
 print(embed.embed_query('abc'))
 ```
 
-#### create<a name="ZH-CN_TOPIC_0000002452821609"></a>
+### create<a name="ZH-CN_TOPIC_0000002452821609"></a>
 
 **功能描述<a name="section118111227123016"></a>**
 
@@ -219,7 +217,7 @@ def create(**kwargs)
 |--|--|
 |SparseEmbedding|SparseEmbedding对象。|
 
-#### embed\_documents<a name="ZH-CN_TOPIC_0000002419262696"></a>
+### embed\_documents<a name="ZH-CN_TOPIC_0000002419262696"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -244,7 +242,7 @@ def embed_documents(texts, batch_size)
 |--|--|
 |List[Dict[int, float]]|texts转换后的向量数组。如果texts为长度是4的数组，embedding模型的输出是key为token_id，value为token_weights的字典，最终的输出结果为4维的数组，每个元素为一组字典。|
 
-#### embed\_query<a name="ZH-CN_TOPIC_0000002452701725"></a>
+### embed\_query<a name="ZH-CN_TOPIC_0000002452701725"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -268,9 +266,9 @@ def embed_query(text)
 |--|--|
 |Dict[int, float]|text转换后的稀疏向量。|
 
-### TEIEmbedding<a name="ZH-CN_TOPIC_0000002419102848"></a>
+## TEIEmbedding<a name="ZH-CN_TOPIC_0000002419102848"></a>
 
-#### 类功能<a id="ZH-CN_TOPIC_0000002452821613"></a>
+### 类功能<a id="ZH-CN_TOPIC_0000002452821613"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -308,7 +306,7 @@ print(tei_embed.embed_documents(['abc', 'bcd']))
 print(tei_embed.embed_query('abc'))
 ```
 
-#### create<a name="ZH-CN_TOPIC_0000002419262700"></a>
+### create<a name="ZH-CN_TOPIC_0000002419262700"></a>
 
 **功能描述<a name="section118111227123016"></a>**
 
@@ -333,7 +331,7 @@ def create(**kwargs)
 |--|--|
 |TEIEmbedding|TEIEmbedding对象。|
 
-#### embed\_documents<a name="ZH-CN_TOPIC_0000002452701729"></a>
+### embed\_documents<a name="ZH-CN_TOPIC_0000002452701729"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -358,7 +356,7 @@ def embed_documents(texts, batch_size)
 |--|--|
 |List[List[float]]|texts转换后的向量数组。如果texts为长度是4的数组，embedding模型的输出是1024维向量，最终的输出结果为（4，1024）大小的数组。|
 
-#### embed\_query<a name="ZH-CN_TOPIC_0000002419102852"></a>
+### embed\_query<a name="ZH-CN_TOPIC_0000002419102852"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -382,9 +380,9 @@ def embed_query(text)
 |--|--|
 |List[float]|text转换后的向量数组。如果embedding模型的输出是1024维向量，最终的输出结果为（1，1024）大小的数组。|
 
-### CLIPEmbedding<a name="ZH-CN_TOPIC_0000002452821617"></a>
+## CLIPEmbedding<a name="ZH-CN_TOPIC_0000002452821617"></a>
 
-#### 类功能<a id="ZH-CN_TOPIC_0000002419262704"></a>
+### 类功能<a id="ZH-CN_TOPIC_0000002419262704"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -420,7 +418,7 @@ print(clip_embed.embed_documents(['abc', 'bcd']))
 print(clip_embed.embed_query('abc'))
 ```
 
-#### create<a name="ZH-CN_TOPIC_0000002452701733"></a>
+### create<a name="ZH-CN_TOPIC_0000002452701733"></a>
 
 **功能描述<a name="section118111227123016"></a>**
 
@@ -445,7 +443,7 @@ def create(**kwargs)
 |--|--|
 |CLIPEmbedding|CLIPEmbedding对象。|
 
-#### embed\_documents<a name="ZH-CN_TOPIC_0000002419102856"></a>
+### embed\_documents<a name="ZH-CN_TOPIC_0000002419102856"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -470,7 +468,7 @@ def embed_documents(texts, batch_size)
 |--|--|
 |List[List[float]]|texts转换后的向量数组。如果texts为长度是4的数组，embedding模型的输出是512维向量，最终的输出结果为（4，512）大小的数组。|
 
-#### embed\_images<a name="ZH-CN_TOPIC_0000002452821621"></a>
+### embed\_images<a name="ZH-CN_TOPIC_0000002452821621"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -495,7 +493,7 @@ def embed_images(images, batch_size)
 |--|--|
 |List[List[float]]|images转换后的向量数组。如果images为长度是4的数组，embedding模型的输出是512维向量，最终的输出结果为（4，512）大小的数组。|
 
-#### embed\_query<a name="ZH-CN_TOPIC_0000002419262708"></a>
+### embed\_query<a name="ZH-CN_TOPIC_0000002419262708"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -519,9 +517,9 @@ def embed_query(text)
 |--|--|
 |List[float]|text转换后的向量数组。如果embedding模型的输出是512维向量，最终的输出结果为大小为512的浮点数列表。|
 
-### ImageEmbedding<a name="ZH-CN_TOPIC_0000002452701737"></a>
+## ImageEmbedding<a name="ZH-CN_TOPIC_0000002452701737"></a>
 
-#### 类功能<a id="ZH-CN_TOPIC_0000002419102860"></a>
+### 类功能<a id="ZH-CN_TOPIC_0000002419102860"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -559,17 +557,17 @@ from mx_rag.embedding.local import ImageEmbedding
 embed = ImageEmbedding.create(model_name="ViT-B-16", model_path="/data/chinese-clip-vit-base-patch16")
 print(embed.embed_documents(['abc', 'bcd']))
 print(embed.embed_query('abc'))
-                                
+
 loader = ImageLoader("image path")
 docs = loader.load()
 if len(docs) < 1:
     print("load image failed")
     sys.exit(1)
-    
+
 print(embed.embed_images([docs[0].page_content]))
 ```
 
-#### create<a name="ZH-CN_TOPIC_0000002452821625"></a>
+### create<a name="ZH-CN_TOPIC_0000002452821625"></a>
 
 **功能描述<a name="section118111227123016"></a>**
 
@@ -594,7 +592,7 @@ def create(**kwargs)
 |--|--|
 |ImageEmbedding|ImageEmbedding对象。|
 
-#### embed\_documents<a name="ZH-CN_TOPIC_0000002419262712"></a>
+### embed\_documents<a name="ZH-CN_TOPIC_0000002419262712"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -619,7 +617,7 @@ def embed_documents(texts, batch_size)
 |--|--|
 |List[List[float]]|texts转换后的向量数组。如果texts为长度是4的数组，embedding模型的输出是512维向量，最终的输出结果为（4，512）大小的数组|
 
-#### embed\_query<a name="ZH-CN_TOPIC_0000002452701741"></a>
+### embed\_query<a name="ZH-CN_TOPIC_0000002452701741"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -643,7 +641,7 @@ def embed_query(text)
 |--|--|
 |List[float]|text转换后的向量。如果embedding模型的输出是512维向量，最终的输出结果为大小为512的浮点数列表。|
 
-#### embed\_images<a name="ZH-CN_TOPIC_0000002419102864"></a>
+### embed\_images<a name="ZH-CN_TOPIC_0000002419102864"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -668,9 +666,9 @@ def embed_images(images, batch_size)
 |--|--|
 |List[List[float]]|images转换后的向量数组。如果images为长度是4的数组，embedding模型的输出是512维向量，最终的输出结果为（4，512）大小的数组。|
 
-### EmbeddingFactory<a name="ZH-CN_TOPIC_0000002452821629"></a>
+## EmbeddingFactory<a name="ZH-CN_TOPIC_0000002452821629"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002419262716"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002419262716"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -697,12 +695,12 @@ tei_embed = EmbeddingFactory.create_embedding(embedding_type="tei_embedding",
                                               url="https://ip:port/embed",
                                               client_param=ClientParam(ca_file="/path/to/ca.crt"))
 print(tei_embed.embed_query("abc"))
-img_embed = EmbeddingFactory.create_embedding(embedding_type="local_images_embedding", model_name="model_name", 
+img_embed = EmbeddingFactory.create_embedding(embedding_type="local_images_embedding", model_name="model_name",
                                               model_path="path to model", dev_id=0)
 print(img_embed.embed_query("abc"))
 ```
 
-#### create\_embedding<a name="ZH-CN_TOPIC_0000002452701745"></a>
+### create\_embedding<a name="ZH-CN_TOPIC_0000002452701745"></a>
 
 **功能描述<a name="section957011509130"></a>**
 

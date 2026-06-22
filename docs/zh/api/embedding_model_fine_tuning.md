@@ -1,8 +1,6 @@
-# 接口参考——embedding模型微调
+# embedding模型微调<a name="ZH-CN_TOPIC_0000002452821649"></a>
 
-## embedding模型微调<a name="ZH-CN_TOPIC_0000002452821649"></a>
-
-### 总体说明<a name="ZH-CN_TOPIC_0000002419262736"></a>
+## 总体说明<a name="ZH-CN_TOPIC_0000002419262736"></a>
 
 由于一般的embedding模型是在通用的数据集上进行训练的，导致在一些用户的特殊应用领域上存在精度不足进而导致检索增强效果较差的现象，为了解决这一问题，提供了可以帮助用户在相应特殊领域上快速方便的进行embedding模型微调的方法。该方法主要包括评估数据辅助生成、模型评估、微调合成数据自动生成、模型微调这几个部分。
 
@@ -15,9 +13,9 @@
 
 ![](../figures/zh-cn_image_0000002452701797.png "zh-cn_image_0000002452701797")
 
-### 微调合成数据自动生成方法<a name="ZH-CN_TOPIC_0000002452701765"></a>
+## 微调合成数据自动生成方法<a name="ZH-CN_TOPIC_0000002452701765"></a>
 
-#### 类功能<a id="ZH-CN_TOPIC_0000002419102888"></a>
+### 类功能<a id="ZH-CN_TOPIC_0000002419102888"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -69,7 +67,7 @@ GENERATE\_QD\_PROMPT和SCORING\_QD\_PROMPT定义如下：
 
 ```text
 GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
-文章：气候变化对海洋生态系统造成了严重的影响，其中包括海洋温度上升、海平面上升、酸化等问题。这些变化对海洋生物种群分布、生态圈的稳定性以及渔业等方面都产生了深远影响。在全球变暖的背景下，保护海洋生态系统已经成为当务之急。 
+文章：气候变化对海洋生态系统造成了严重的影响，其中包括海洋温度上升、海平面上升、酸化等问题。这些变化对海洋生物种群分布、生态圈的稳定性以及渔业等方面都产生了深远影响。在全球变暖的背景下，保护海洋生态系统已经成为当务之急。
 问题：气候变化对海洋生态系统的影响主要体现在哪些方面？
 文章：零售业是人工智能应用的另一个重要领域。通过数据分析和机器学习算法，零售商可以更好地了解消费者的购买行为、趋势和偏好。人工智能技术可以帮助零售商优化库存管理、推荐系统、市场营销等方面的工作，提高销售额和客户满意度。
 问题：人工智能是如何帮助零售商改善客户体验和销售业绩的？
@@ -122,7 +120,7 @@ from mx_rag.tools.finetune.generator import TrainDataGenerator, DataProcessConfi
 from mx_rag.utils import ClientParam
 
 
-llm = Text2TextLLM(model_name="Llama3-8B-Chinese-Chat", base_url="https://{ip}:{port}/v1/chat/completions", 
+llm = Text2TextLLM(model_name="Llama3-8B-Chinese-Chat", base_url="https://{ip}:{port}/v1/chat/completions",
 client_param=ClientParam(ca_file="/path/to/ca.crt")
 )
 reranker = LocalReranker("/home/data/bge-reranker-large", dev_id=0)
@@ -152,7 +150,7 @@ train_data_generator.generate_train_data(split_doc_list, config)
 
 ```
 
-#### generate\_origin\_document<a name="ZH-CN_TOPIC_0000002452821653"></a>
+### generate\_origin\_document<a name="ZH-CN_TOPIC_0000002452821653"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -178,7 +176,7 @@ def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_f
 |--|--|
 |list[str]|原始文本文档切分列表|
 
-#### generate\_train\_data<a name="ZH-CN_TOPIC_0000002419262740"></a>
+### generate\_train\_data<a name="ZH-CN_TOPIC_0000002419262740"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -198,9 +196,9 @@ def generate_train_data(split_doc_list: list[str], data_process_config: DataProc
 |data_process_config|DataProcessConfig|必选|微调合成数据方法配置选项，详情请参考[类功能](#ZH-CN_TOPIC_0000002419102888)中DataProcessConfig类描述|
 |batch_size|int|可选|微调数据生成时并发条数，默认值为8，取值范围(0, 1024]|
 
-### 评估数据辅助生成方法<a name="ZH-CN_TOPIC_0000002452701769"></a>
+## 评估数据辅助生成方法<a name="ZH-CN_TOPIC_0000002452701769"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002419102892"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002419102892"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -234,7 +232,7 @@ from mx_rag.llm import Text2TextLLM
 from mx_rag.tools.finetune.generator.eval_data_generator import EvalDataGenerator
 from mx_rag.utils import ClientParam
 
-llm = Text2TextLLM(model_name="Llama3-8B-Chinese-Chat", base_url="https://{ip}:{port}/v1/chat/completions", 
+llm = Text2TextLLM(model_name="Llama3-8B-Chinese-Chat", base_url="https://{ip}:{port}/v1/chat/completions",
 client_param=ClientParam(ca_file="/path/to/ca.crt")
 )
 
@@ -263,7 +261,7 @@ split_doc_list = eval_data_generator.generate_origin_document(document_path=docu
 eval_data_generator.generate_evaluate_data(split_doc_list)
 ```
 
-#### generate\_origin\_document<a name="ZH-CN_TOPIC_0000002452821657"></a>
+### generate\_origin\_document<a name="ZH-CN_TOPIC_0000002452821657"></a>
 
 **功能描述<a name="zh-cn_topic_0000002212438517_section5434255810"></a>**
 
@@ -289,7 +287,7 @@ def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_f
 |--|--|
 |list[str]|原始文本文档切分列表|
 
-#### generate\_evaluate\_data<a name="ZH-CN_TOPIC_0000002419262744"></a>
+### generate\_evaluate\_data<a name="ZH-CN_TOPIC_0000002419262744"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -314,7 +312,7 @@ GENERATE\_QD\_PROMPT定义如下：
 
 ```text
 GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
-文章：气候变化对海洋生态系统造成了严重的影响，其中包括海洋温度上升、海平面上升、酸化等问题。这些变化对海洋生物种群分布、生态圈的稳定性以及渔业等方面都产生了深远影响。在全球变暖的背景下，保护海洋生态系统已经成为当务之急。 
+文章：气候变化对海洋生态系统造成了严重的影响，其中包括海洋温度上升、海平面上升、酸化等问题。这些变化对海洋生物种群分布、生态圈的稳定性以及渔业等方面都产生了深远影响。在全球变暖的背景下，保护海洋生态系统已经成为当务之急。
 问题：气候变化对海洋生态系统的影响主要体现在哪些方面？
 文章：零售业是人工智能应用的另一个重要领域。通过数据分析和机器学习算法，零售商可以更好地了解消费者的购买行为、趋势和偏好。人工智能技术可以帮助零售商优化库存管理、推荐系统、市场营销等方面的工作，提高销售额和客户满意度。
 问题：人工智能是如何帮助零售商改善客户体验和销售业绩的？
@@ -329,11 +327,11 @@ GENERATE_QD_PROMPT = """阅读文章，生成一个相关的问题，例如：
 """:
 ```
 
-### 模型评估和微调方法<a name="ZH-CN_TOPIC_0000002452701773"></a>
+## 模型评估和微调方法<a name="ZH-CN_TOPIC_0000002452701773"></a>
 
 评估和微调功能均基于sentence-transformers框架，本章节指导用户如何使用。
 
-#### 评估功能<a name="ZH-CN_TOPIC_0000002419102896"></a>
+### 评估功能<a name="ZH-CN_TOPIC_0000002419102896"></a>
 
 主要基于sentence-transformers框架提供的InformationRetrievalEvaluator方法，使用前述评估数据辅助生成方法生成的评估数据集对embedding模型进行评估，评估成功后将会返回以下指标：
 
@@ -375,7 +373,7 @@ result = evaluator(model)
 print(result)
 ```
 
-#### 微调功能<a name="ZH-CN_TOPIC_0000002452821661"></a>
+### 微调功能<a name="ZH-CN_TOPIC_0000002452821661"></a>
 
 主要基于sentence-transformers框架提供的SentenceTransformerTrainer，通过前述微调合成数据自动生成方法生成的数据集对embedding模型进行微调，相关微调训练参数及超参按照实际进行调整。
 

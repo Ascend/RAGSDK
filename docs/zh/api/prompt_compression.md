@@ -1,10 +1,8 @@
-# 接口参考——Prompt压缩
+# Prompt压缩<a name="ZH-CN_TOPIC_0000002319268421"></a>
 
-## Prompt压缩<a name="ZH-CN_TOPIC_0000002319268421"></a>
+## PromptCompressor<a name="ZH-CN_TOPIC_0000002284793848"></a>
 
-### PromptCompressor<a name="ZH-CN_TOPIC_0000002284793848"></a>
-
-#### 类功能<a name="ZH-CN_TOPIC_0000002319451761"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002319451761"></a>
 
 **功能描述<a name="section29524313490"></a>**
 
@@ -17,7 +15,7 @@ from mx_rag.compress.base_compressor import PromptCompressor
 class PromptCompressor(ABC)
 ```
 
-#### compress\_texts<a name="ZH-CN_TOPIC_0000002284802432"></a>
+### compress\_texts<a name="ZH-CN_TOPIC_0000002284802432"></a>
 
 **功能描述<a name="section1031631414920"></a>**
 
@@ -37,9 +35,9 @@ def compress_texts(self, context, question)
 |context|str|必选|待总结的长文本。|
 |question|str|必选|总结长文本的指令。|
 
-### RerankCompressor<a name="ZH-CN_TOPIC_0000002319290097"></a>
+## RerankCompressor<a name="ZH-CN_TOPIC_0000002319290097"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002284699168"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002284699168"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -82,7 +80,7 @@ res=compressor.compress_texts(context, question, 0.3)
 print(res)
 ```
 
-#### compress\_texts<a name="ZH-CN_TOPIC_0000002284690566"></a>
+### compress\_texts<a name="ZH-CN_TOPIC_0000002284690566"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -109,9 +107,9 @@ def compress_texts(context, question, compress_rate, context_reorder)
 |--|--|
 |str|压缩后的文本。|
 
-### ClusterCompressor<a name="ZH-CN_TOPIC_0000002319443213"></a>
+## ClusterCompressor<a name="ZH-CN_TOPIC_0000002319443213"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002319298729"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002319298729"></a>
 
 **功能描述<a name="section5434255810"></a>**
 
@@ -163,7 +161,7 @@ res=compressor.compress_texts(context, question, 0.6)
 print(res)
 ```
 
-#### compress\_texts<a name="ZH-CN_TOPIC_0000002284793852"></a>
+### compress\_texts<a name="ZH-CN_TOPIC_0000002284793852"></a>
 
 **功能描述<a name="section5434255810"></a>**
 

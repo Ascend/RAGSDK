@@ -1,6 +1,4 @@
-# 接口参考——知识图谱
-
-## 知识图谱<a name="ZH-CN_TOPIC_0000002340395433"></a>
+# 知识图谱<a name="ZH-CN_TOPIC_0000002340395433"></a>
 
 实现基于知识图谱的RAG（Retrieval-Augmented Generation）流程。它结合了大模型（LLM）、图数据库（如NetworkX或OpenGauss）、向量检索、重排序等多种技术，实现了文档的结构化知识抽取、图谱构建、概念聚类、向量化检索和多跳推理等能力。该模块适用于复杂知识问答、企业知识管理、智能检索等场景。
 
@@ -369,9 +367,9 @@
                 '''
     ```
 
-### GraphRAGPipeline<a name="ZH-CN_TOPIC_0000002306556168"></a>
+## GraphRAGPipeline<a name="ZH-CN_TOPIC_0000002306556168"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002340515621"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002340515621"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -464,7 +462,7 @@ print(contexts)
 print(result)
 ```
 
-#### upload\_files<a name="ZH-CN_TOPIC_0000002306396444"></a>
+### upload\_files<a name="ZH-CN_TOPIC_0000002306396444"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -487,7 +485,7 @@ def upload_files(file_list, loader_mng)
 
 无
 
-#### build\_graph<a name="ZH-CN_TOPIC_0000002340395437"></a>
+### build\_graph<a name="ZH-CN_TOPIC_0000002340395437"></a>
 
 **功能<a name="section53998444524"></a>**
 
@@ -523,7 +521,7 @@ def build_graph(lang, **kwargs)
 |"{graph_name}_node_vectors.index"|实体的向量索引文件。|
 |"{graph_name}_concept_vectors.index"|概念的向量索引文件。|
 
-#### retrieve\_graph<a name="ZH-CN_TOPIC_0000002340515629"></a>
+### retrieve\_graph<a name="ZH-CN_TOPIC_0000002340515629"></a>
 
 **功能<a name="section53998444524"></a>**
 
@@ -548,7 +546,7 @@ def retrieve_graph(question, **kwargs)
 |--|--|
 |List[str]|检索到的上下文片段。|
 
-#### as\_retriever<a name="ZH-CN_TOPIC_0000002306396448"></a>
+### as\_retriever<a name="ZH-CN_TOPIC_0000002306396448"></a>
 
 **功能<a name="section53998444524"></a>**
 
@@ -572,9 +570,9 @@ def as_retriever(**kwargs)
 |--|--|
 |GraphRetriever|该检索器继承自langchain_core.retrievers.BaseRetriever。|
 
-### GraphEvaluator<a name="ZH-CN_TOPIC_0000002336118394"></a>
+## GraphEvaluator<a name="ZH-CN_TOPIC_0000002336118394"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002370116525"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002370116525"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -621,7 +619,7 @@ with open(relations_path, "r", encoding="utf-8") as f:
     graph_evaluator.evaluate(relations)
 ```
 
-#### evaluate<a name="ZH-CN_TOPIC_0000002370036373"></a>
+### evaluate<a name="ZH-CN_TOPIC_0000002370036373"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
