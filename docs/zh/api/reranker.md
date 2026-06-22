@@ -1,10 +1,10 @@
 # 接口参考——排序
 
-## 排序<a name="ZH-CN_TOPIC_0000002452701713"></a>
+# 排序<a name="ZH-CN_TOPIC_0000002452701713"></a>
 
-### Reranker<a name="ZH-CN_TOPIC_0000002452821633"></a>
+## Reranker<a name="ZH-CN_TOPIC_0000002452821633"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002419262720"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002419262720"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -27,7 +27,7 @@ Reranker(k) # 抽象类
 
 Reranker对象。
 
-#### rerank<a name="ZH-CN_TOPIC_0000002452701749"></a>
+### rerank<a name="ZH-CN_TOPIC_0000002452701749"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -54,7 +54,7 @@ def rerank(query, texts, batch_size)
 |--|--|
 |np.array|与texts对应的得分数组。|
 
-#### rerank\_top\_k<a name="ZH-CN_TOPIC_0000002419102872"></a>
+### rerank\_top\_k<a name="ZH-CN_TOPIC_0000002419102872"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -79,9 +79,9 @@ def rerank_top_k(objs, scores)
 |--|--|
 |List|返回k个得分最高对象。|
 
-### LocalReranker<a name="ZH-CN_TOPIC_0000002452821637"></a>
+## LocalReranker<a name="ZH-CN_TOPIC_0000002452821637"></a>
 
-#### 类功能<a id="ZH-CN_TOPIC_0000002419262724"></a>
+### 类功能<a id="ZH-CN_TOPIC_0000002419262724"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -132,7 +132,7 @@ res = rerank.rerank_top_k(docs, scores)
 print(res)
 ```
 
-#### create<a name="ZH-CN_TOPIC_0000002452701753"></a>
+### create<a name="ZH-CN_TOPIC_0000002452701753"></a>
 
 **功能描述<a name="section118111227123016"></a>**
 
@@ -157,7 +157,7 @@ def create(**kwargs)
 |--|--|
 |LocalReranker|LocalReranker对象。|
 
-#### rerank<a name="ZH-CN_TOPIC_0000002419102876"></a>
+### rerank<a name="ZH-CN_TOPIC_0000002419102876"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -183,9 +183,9 @@ def rerank(query, texts, batch_size)
 |--|--|
 |numpy.array|和texts长度一致的numpy数组，保存每个text和query的相关性得分。|
 
-### TEIReranker<a name="ZH-CN_TOPIC_0000002452821641"></a>
+## TEIReranker<a name="ZH-CN_TOPIC_0000002452821641"></a>
 
-#### 类功能<a id="ZH-CN_TOPIC_0000002419262728"></a>
+### 类功能<a id="ZH-CN_TOPIC_0000002419262728"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -225,7 +225,7 @@ res = rerank.rerank_top_k(docs, scores)
 print(res)
 ```
 
-#### create<a name="ZH-CN_TOPIC_0000002452701757"></a>
+### create<a name="ZH-CN_TOPIC_0000002452701757"></a>
 
 **功能描述<a name="section118111227123016"></a>**
 
@@ -250,7 +250,7 @@ def create(**kwargs)
 |--|--|
 |TEIReranker|TEIReranker对象。|
 
-#### rerank<a name="ZH-CN_TOPIC_0000002419102880"></a>
+### rerank<a name="ZH-CN_TOPIC_0000002419102880"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -276,9 +276,9 @@ def rerank(query, texts, batch_size)
 |--|--|
 |numpy.array|和texts长度一致的numpy数组，保存每个text和query的相关性得分。|
 
-### RerankerFactory<a name="ZH-CN_TOPIC_0000002452821645"></a>
+## RerankerFactory<a name="ZH-CN_TOPIC_0000002452821645"></a>
 
-#### 类功能<a id="ZH-CN_TOPIC_0000002419262732"></a>
+### 类功能<a id="ZH-CN_TOPIC_0000002419262732"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -313,7 +313,7 @@ tei_scores = local_reranker.rerank('你好', docs)
 print(tei_scores)
 ```
 
-#### create\_reranker<a name="ZH-CN_TOPIC_0000002452701761"></a>
+### create\_reranker<a name="ZH-CN_TOPIC_0000002452701761"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -333,9 +333,9 @@ def create_reranker(cls, **kwargs):
 |similarity_type|str|必选|该参数在kwargs中，reranker的类型。<br>可取值：<li>local_reranker</li><li>tei_reranker</li>|
 |**kwargs|Any|可选|除去similarity_type，其余参数为构造reranker的参数。<li>如果是local_reranker，请参见[类功能](#ZH-CN_TOPIC_0000002419262724)。</li><li>如果是tei_reranker，请参见[类功能](#ZH-CN_TOPIC_0000002419262728)。</li>|
 
-### MixRetrieveReranker<a name="ZH-CN_TOPIC_0000002419102832"></a>
+## MixRetrieveReranker<a name="ZH-CN_TOPIC_0000002419102832"></a>
 
-#### 类功能<a name="ZH-CN_TOPIC_0000002419408806"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002419408806"></a>
 
 **功能描述<a name="section53998444524"></a>**
 
@@ -392,7 +392,7 @@ reranker = MixRetrieveReranker(k=100, baseline=0.4, amplitude=0.3, slope=1, midp
 res = reranker.rerank(query, docs)
 ```
 
-#### rerank<a name="ZH-CN_TOPIC_0000002452967713"></a>
+### rerank<a name="ZH-CN_TOPIC_0000002452967713"></a>
 
 **功能描述<a name="section53998444524"></a>**
 

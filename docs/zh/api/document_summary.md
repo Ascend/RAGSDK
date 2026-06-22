@@ -1,10 +1,8 @@
-# 接口参考——文档总结
+# 文档总结<a name="ZH-CN_TOPIC_0000002026578193"></a>
 
-## 文档总结<a name="ZH-CN_TOPIC_0000002026578193"></a>
+## Summary<a name="ZH-CN_TOPIC_0000001989939282"></a>
 
-### Summary<a name="ZH-CN_TOPIC_0000001989939282"></a>
-
-#### 类功能<a name="ZH-CN_TOPIC_0000002026657721"></a>
+### 类功能<a name="ZH-CN_TOPIC_0000002026657721"></a>
 
 **功能描述<a name="section957011509130"></a>**
 
@@ -44,7 +42,7 @@ res = summary.merge_text_summarize(sub_summaries)
 print(res)
 ```
 
-#### summarize<a name="ZH-CN_TOPIC_0000001990103142"></a>
+### summarize<a name="ZH-CN_TOPIC_0000001990103142"></a>
 
 **功能描述<a name="section1933110414379"></a>**
 
@@ -70,7 +68,7 @@ def summarize(texts, not_summarize_threshold, prompt)
 |--|--|
 |List[str]|对应总结后的文本列表|
 
-#### merge\_text\_summarize<a name="ZH-CN_TOPIC_0000002026662581"></a>
+### merge\_text\_summarize<a name="ZH-CN_TOPIC_0000002026662581"></a>
 
 **功能描述<a name="section1933110414379"></a>**
 
