@@ -278,7 +278,7 @@ def query(text, llm_config, *args, **kwargs)
 
 ```python
 from paddle.base import libpaddle
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.chain import SingleText2TextChain
 from mx_rag.document import LoaderMng
 from mx_rag.document.loader import DocxLoader, PdfLoader, PowerPointLoader
@@ -344,7 +344,7 @@ print(response)
 
 ```python
 from paddle.base import libpaddle
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.chain import SingleText2TextChain
 from mx_rag.document import LoaderMng
 from mx_rag.document.loader import DocxLoader, PdfLoader, PowerPointLoader

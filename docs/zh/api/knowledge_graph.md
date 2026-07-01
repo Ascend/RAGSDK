@@ -408,7 +408,7 @@ GraphRAGPipeline对象。
 import getpass
 from paddle.base import libpaddle  # fix std::bad_alloc
 from langchain_opengauss import OpenGaussSettings, openGaussAGEGraph
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from mx_rag.chain.single_text_to_text import GraphRagText2TextChain
 from mx_rag.document import LoaderMng

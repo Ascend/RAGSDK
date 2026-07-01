@@ -542,7 +542,7 @@ CacheChainChat(cache,chain,convert_data_to_cache,convert_data_to_user)
 ```python
 import time
 from paddle.base import libpaddle
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.chain import SingleText2TextChain
 from mx_rag.document.loader import DocxLoader
 from mx_rag.embedding.local import TextEmbedding

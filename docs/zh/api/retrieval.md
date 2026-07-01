@@ -38,7 +38,7 @@ Retriever(vector_store, document_store, embed_func, k, score_threshold)
 ```python
 from paddle.base import libpaddle
 from langchain_community.document_loaders import TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.embedding.local import TextEmbedding
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore import MindFAISS

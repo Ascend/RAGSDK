@@ -28,9 +28,17 @@ from pymilvus import MilvusClient, DataType
 from pymilvus.client.types import ExtraList
 
 from mx_rag.storage.vectorstore.vectorstore import VectorStore, SearchMode
-from mx_rag.utils.common import validate_params, MAX_VEC_DIM, MAX_TOP_K, validate_embeddings, \
-    _check_sparse_and_dense, BOOL_TYPE_CHECK_TIP, MAX_IDS_SIZE, validate_sequence
-from mx_rag.utils.common import validate_list_str, validate_embeddings
+from mx_rag.utils.common import (
+    validate_params,
+    MAX_VEC_DIM,
+    MAX_TOP_K,
+    validate_embeddings,
+    _check_sparse_and_dense,
+    BOOL_TYPE_CHECK_TIP,
+    MAX_IDS_SIZE,
+    validate_sequence,
+)
+from mx_rag.utils.common import validate_list_str
 
 
 class MilvusError(Exception):
@@ -101,30 +109,36 @@ class MilvusDB(VectorStore):
     MAX_QUERY_LENGTH = 1000
     MAX_DICT_LENGTH = 100000
 
-    SCALE_MAP = {
-        "IP": lambda x: min(x, 1.0),
-        "L2": lambda x: max(1.0 - x / 2.0, 0.0),
-        "COSINE": lambda x: min(x, 1.0)
-    }
+    SCALE_MAP = {"IP": lambda x: min(x, 1.0), "L2": lambda x: max(1.0 - x / 2.0, 0.0), "COSINE": lambda x: min(x, 1.0)}
 
     @validate_params(
-        client=dict(validator=lambda x: isinstance(x, MilvusClient),
-                    message="param must be instance of MilvusClient"),
+        client=dict(validator=lambda x: isinstance(x, MilvusClient), message="param must be instance of MilvusClient"),
         collection_name=dict(
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
-            message="param must be str and length range (0, 1024]"),
-        search_mode=dict(validator=lambda x: isinstance(x, SearchMode),
-                         message="param must be instance of SearchMode"),
+            message="param must be str and length range (0, 1024]",
+        ),
+        search_mode=dict(validator=lambda x: isinstance(x, SearchMode), message="param must be instance of SearchMode"),
         auto_id=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
-        index_type=dict(validator=lambda x: isinstance(x, str) and x in ("FLAT", "IVF_FLAT", "IVF_PQ", "HNSW"),
-                        message="param must str and one of [FLAT, IVF_FLAT, IVF_PQ, HNSW]"),
-        metric_type=dict(validator=lambda x: isinstance(x, str) and x in ("IP", "L2", "COSINE"),
-                         message="param must str and one of  [IP, L2, COSINE]"),
+        index_type=dict(
+            validator=lambda x: isinstance(x, str) and x in ("FLAT", "IVF_FLAT", "IVF_PQ", "HNSW"),
+            message="param must str and one of [FLAT, IVF_FLAT, IVF_PQ, HNSW]",
+        ),
+        metric_type=dict(
+            validator=lambda x: isinstance(x, str) and x in ("IP", "L2", "COSINE"),
+            message="param must str and one of  [IP, L2, COSINE]",
+        ),
         auto_flush=dict(validator=lambda x: isinstance(x, bool), message=BOOL_TYPE_CHECK_TIP),
     )
-    def __init__(self, client: MilvusClient, collection_name: str = "rag_sdk",
-                 search_mode: SearchMode = SearchMode.DENSE, auto_id=False,
-                 index_type: str = "FLAT", metric_type: str = "L2", auto_flush=True):
+    def __init__(
+        self,
+        client: MilvusClient,
+        collection_name: str = "rag_sdk",
+        search_mode: SearchMode = SearchMode.DENSE,
+        auto_id=False,
+        index_type: str = "FLAT",
+        metric_type: str = "L2",
+        auto_flush=True,
+    ):
         super().__init__()
         self._client = client
         self._collection_name = collection_name
@@ -177,9 +191,15 @@ class MilvusDB(VectorStore):
         search_mode = kwargs.pop("search_mode", SearchMode.DENSE)
         auto_id = kwargs.pop("auto_id", False)
         auto_flush = kwargs.pop("auto_flush", True)
-        milvus_db = MilvusDB(client, collection_name=collection_name, search_mode=search_mode,
-                             auto_id=auto_id, index_type=index_type, metric_type=metric_type,
-                             auto_flush=auto_flush)
+        milvus_db = MilvusDB(
+            client,
+            collection_name=collection_name,
+            search_mode=search_mode,
+            auto_id=auto_id,
+            index_type=index_type,
+            metric_type=metric_type,
+            auto_flush=auto_flush,
+        )
 
         try:
             milvus_db.create_collection(x_dim=x_dim, params=params)
@@ -192,34 +212,39 @@ class MilvusDB(VectorStore):
 
         return milvus_db
 
-    @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
-                                          message="param length range (0, 1024]"))
+    @validate_params(
+        collection_name=dict(
+            validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
+            message="param length range (0, 1024]",
+        )
+    )
     def set_collection_name(self, collection_name: str):
         self._collection_name = collection_name
 
     @validate_params(
-        x_dim=dict(validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
-                   message="param value range (0, 1024 * 1024]"),
-        params=dict(validator=lambda x: x is None or (isinstance(x, dict) and validate_sequence(x, max_check_depth=2)),
-                    message="params requires to be None or dict")
+        x_dim=dict(
+            validator=lambda x: x is None or (isinstance(x, int) and 0 < x <= MAX_VEC_DIM),
+            message="param value range (0, 1024 * 1024]",
+        ),
+        params=dict(
+            validator=lambda x: x is None or (isinstance(x, dict) and validate_sequence(x, max_check_depth=2)),
+            message="params requires to be None or dict",
+        ),
     )
     def create_collection(self, x_dim: Optional[int] = None, params=None):
         if self._client.has_collection(self._collection_name):
             logger.warning(f"Collection {self._collection_name} already exists")
+            self._client.load_collection(self._collection_name)
             return
 
-        if (self.search_mode == SearchMode.DENSE or self.search_mode == SearchMode.HYBRID) and x_dim is None:
+        if self.search_mode in (SearchMode.DENSE, SearchMode.HYBRID) and x_dim is None:
             raise MilvusError("x_dim can't be None in mode DENSE or HYBRID")
 
         if params is None:
             params = {}
         schema = self._create_schema(x_dim)
         index_params = self._prepare_index_params(params)
-        self.client.create_collection(
-            collection_name=self._collection_name,
-            schema=schema,
-            index_params=index_params
-        )
+        self.client.create_collection(collection_name=self._collection_name, schema=schema, index_params=index_params)
 
     def drop_collection(self):
         if not self.client.has_collection(self._collection_name):
@@ -228,8 +253,10 @@ class MilvusDB(VectorStore):
             self.client.drop_collection(self._collection_name)
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
-                 message="param must be List[int]")
+        ids=dict(
+            validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+            message="param must be List[int]",
+        )
     )
     def delete(self, ids: List[int]):
         if len(ids) == 0:
@@ -248,13 +275,18 @@ class MilvusDB(VectorStore):
         return res
 
     @validate_params(
-        embeddings=dict(validator=lambda x: validate_embeddings(x)[0],
-                        message="param must be Union[List[List[float]], List[Dict[int, float]]]"),
+        embeddings=dict(
+            validator=lambda x: validate_embeddings(x)[0],
+            message="param must be Union[List[List[float]], List[Dict[int, float]]]",
+        ),
         k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= MAX_TOP_K, message="param length range (0, 10000]"),
-        filter_dict=dict(validator=lambda x: isinstance(x, dict) or x is None,
-                         message="param filter_dict must be dict or None"))
-    def search(self, embeddings: Union[List[List[float]], List[Dict[int, float]]],
-               k: int = 3, filter_dict=None, **kwargs):
+        filter_dict=dict(
+            validator=lambda x: isinstance(x, dict) or x is None, message="param filter_dict must be dict or None"
+        ),
+    )
+    def search(
+        self, embeddings: Union[List[List[float]], List[Dict[int, float]]], k: int = 3, filter_dict=None, **kwargs
+    ):
         self._filter_dict = filter_dict
         self._validate_collection_existence()
         # Retrieval additional arguments
@@ -266,15 +298,21 @@ class MilvusDB(VectorStore):
             return self._perform_dense_search(np.array(embeddings), k, output_fields, **kwargs)
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
-                 message="param must be List[int]"),
-        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
-                         message="param must greater equal than 0")
+        ids=dict(
+            validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+            message="param must be List[int]",
+        ),
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"),
     )
-    def add(self, ids: List[int], embeddings: np.ndarray, document_id: int = 0, docs: Optional[List[str]] = None,
-            metadatas: Optional[List[Dict]] = None):
-        """往向量数据库添加稠密向量，仅适用于稠密模式
-        """
+    def add(
+        self,
+        ids: List[int],
+        embeddings: np.ndarray,
+        document_id: int = 0,
+        docs: Optional[List[str]] = None,
+        metadatas: Optional[List[Dict]] = None,
+    ):
+        """往向量数据库添加稠密向量，仅适用于稠密模式"""
         self._validate_collection_existence()
         if self.search_mode != SearchMode.DENSE:
             raise MilvusError("search mode needs to be DENSE")
@@ -286,13 +324,20 @@ class MilvusDB(VectorStore):
         logger.info(f"success add {len(ids)} ids in MilvusDB.")
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
-                 message="param must be List[int]"),
-        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0,
-                         message="param must greater equal than 0")
+        ids=dict(
+            validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+            message="param must be List[int]",
+        ),
+        document_id=dict(validator=lambda x: isinstance(x, int) and x >= 0, message="param must greater equal than 0"),
     )
-    def add_sparse(self, ids, sparse_embeddings, document_id: int = 0, docs: Optional[List[str]] = None,
-                   metadatas: Optional[List[Dict]] = None):
+    def add_sparse(
+        self,
+        ids,
+        sparse_embeddings,
+        document_id: int = 0,
+        docs: Optional[List[str]] = None,
+        metadatas: Optional[List[Dict]] = None,
+    ):
         self._validate_collection_existence()
         if self.search_mode != SearchMode.SPARSE:
             raise MilvusError("search mode must be SPARSE")
@@ -305,12 +350,20 @@ class MilvusDB(VectorStore):
         logger.info(f"successfully add {len(ids)} vectors in MilvusDB.")
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
-                 message="param must be List[int]")
+        ids=dict(
+            validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+            message="param must be List[int]",
+        )
     )
-    def add_dense_and_sparse(self, ids: List[int], dense_embeddings: np.ndarray,
-                             sparse_embeddings: List[Dict[int, float]], docs: Optional[List[str]] = None,
-                             metadatas: Optional[List[Dict]] = None, **kwargs):
+    def add_dense_and_sparse(
+        self,
+        ids: List[int],
+        dense_embeddings: np.ndarray,
+        sparse_embeddings: List[Dict[int, float]],
+        docs: Optional[List[str]] = None,
+        metadatas: Optional[List[Dict]] = None,
+        **kwargs,
+    ):
         self._validate_collection_existence()
         if self.search_mode != SearchMode.HYBRID:
             raise MilvusError("search mode must be HYBRID")
@@ -331,20 +384,23 @@ class MilvusDB(VectorStore):
         return ids
 
     @validate_params(
-        ids=dict(validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
-                 message="param must be List[int]"),
-        dense=dict(validator=lambda x: x is None or isinstance(x, np.ndarray),
-                   message="dense must be Optional[np.ndarray]"),
-        sparse=dict(validator=lambda x: x is None or validate_embeddings(x)[0],
-                    message="sparse must to be Optional[List[Dict[int, float]]]")
+        ids=dict(
+            validator=lambda x: all(isinstance(it, int) for it in x) and 0 <= len(x) < MAX_IDS_SIZE,
+            message="param must be List[int]",
+        ),
+        dense=dict(
+            validator=lambda x: x is None or isinstance(x, np.ndarray), message="dense must be Optional[np.ndarray]"
+        ),
+        sparse=dict(
+            validator=lambda x: x is None or validate_embeddings(x)[0],
+            message="sparse must to be Optional[List[Dict[int, float]]]",
+        ),
     )
-    def update(self, ids: List[int], dense: Optional[np.ndarray] = None,
-               sparse: Optional[List[Dict[int, float]]] = None):
+    def update(
+        self, ids: List[int], dense: Optional[np.ndarray] = None, sparse: Optional[List[Dict[int, float]]] = None
+    ):
         _check_sparse_and_dense(ids, dense, sparse)
-        responses = self.client.get(
-            collection_name=self.collection_name,
-            ids=ids
-        )
+        responses = self.client.get(collection_name=self.collection_name, ids=ids)
         if len(responses) != len(ids):
             queried_ids = [res.get("id") for res in responses]
             raise MilvusError(f"the input id {set(ids) - set(queried_ids)} in ids not exists in milvus")
@@ -365,8 +421,12 @@ class MilvusDB(VectorStore):
                 self.flush()
             logger.info(f"Successfully updated chunk ids {ids}")
 
-    @validate_params(collection_name=dict(validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
-                                          message="param length range (0, 1024]"))
+    @validate_params(
+        collection_name=dict(
+            validator=lambda x: 0 < len(x) <= MilvusDB.MAX_COLLECTION_NAME_LENGTH,
+            message="param length range (0, 1024]",
+        )
+    )
     def has_collection(self, collection_name):
         return self.client.has_collection(collection_name)
 
@@ -431,16 +491,10 @@ class MilvusDB(VectorStore):
 
     def _validate_sparse_input(self, data):
         if not (isinstance(data, list) and all(isinstance(x, dict) for x in data)):
-            raise ValueError(
-                f"param must be List[Dict] with max length {self.MAX_DICT_LENGTH}"
-            )
+            raise ValueError(f"param must be List[Dict] with max length {self.MAX_DICT_LENGTH}")
 
     def _validate_docs(self, data):
-        ret = validate_list_str(
-            data,
-            [1, self.MAX_SEARCH_BATCH],
-            [1, self.MAX_QUERY_LENGTH]
-        )
+        ret = validate_list_str(data, [1, self.MAX_SEARCH_BATCH], [1, self.MAX_QUERY_LENGTH])
         if not ret:
             raise ValueError(
                 f"param must be List[str] with max length {self.MAX_SEARCH_BATCH} "
@@ -460,8 +514,9 @@ class MilvusDB(VectorStore):
         for i, e in enumerate(embeddings.astype(np.float32)):
             data[i]["vector"] = e
 
-    def _handle_sparse_input(self, sparse_embeddings: Optional[List[Dict[int, float]]],
-                             ids: List[int], data: List[Dict]):
+    def _handle_sparse_input(
+        self, sparse_embeddings: Optional[List[Dict[int, float]]], ids: List[int], data: List[Dict]
+    ):
         self._validate_sparse_input(sparse_embeddings)
         if len(sparse_embeddings) != len(ids):
             raise MilvusError("Length of sparse_embeddings is not equal to number of ids")
@@ -481,7 +536,7 @@ class MilvusDB(VectorStore):
             "anns_field": "vector",
             "limit": k,
             "data": embeddings,
-            "output_fields": output_fields
+            "output_fields": output_fields,
         }
         if doc_filter:
             search_kwargs["filter"] = "document_id IN {document_list}"
@@ -506,7 +561,7 @@ class MilvusDB(VectorStore):
                 output_fields=output_fields,
                 filter="document_id IN {document_list}",
                 filter_params={"document_list": doc_filter},
-                **kwargs
+                **kwargs,
             )
         else:
             res = self.client.search(
@@ -515,7 +570,7 @@ class MilvusDB(VectorStore):
                 limit=k,
                 data=sparse_embeddings,
                 output_fields=output_fields,
-                **kwargs
+                **kwargs,
             )
         return self._process_search_results(res, output_fields)
 

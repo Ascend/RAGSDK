@@ -26,20 +26,21 @@ import multiprocessing.synchronize
 import os
 import pathlib
 import stat
-from datetime import datetime
 from enum import Enum
 from json import JSONDecodeError
 from typing import List, Union, Callable, Dict, Optional, Tuple, Any
 
 import numpy as np
-from OpenSSL import crypto
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from langchain_core.documents import Document
 from loguru import logger
 
 from mx_rag.utils.file_check import FileCheck
 
 FILE_COUNT_MAX = 8000
-INT_32_MAX = 2 ** 31 - 1
+INT_32_MAX = 2**31 - 1
 MAX_DEVICE_ID = 63
 MAX_TOP_K = 10000
 MAX_QUERY_LENGTH = 128 * 1024 * 1024
@@ -85,8 +86,10 @@ INT_RANGE_CHECK_TIP = "param must be int and value range (0, 2**31-1]"
 CALLABLE_TYPE_CHECK_TIP = "param must be callable function"
 STR_LENGTH_CHECK_1024 = "param length range [1, 1024]"
 STR_TYPE_CHECK_TIP_1024 = "param must be str, length range [1, 1024]"
-EMBED_FUNC_TIP = ("embed_func must be callable or {'dense': x, 'sparse': y}, "
-                  "and xy is callable or None, and cannot be None at the same time.")
+EMBED_FUNC_TIP = (
+    "embed_func must be callable or {'dense': x, 'sparse': y}, "
+    "and xy is callable or None, and cannot be None at the same time."
+)
 NO_SPLIT_FILE_TYPE = [".jpg", ".png"]
 IMAGE_TYPE = (".jpg", ".png")
 HEADER_MARK = "#"
@@ -159,12 +162,16 @@ def validate_params(**validators):
                 # 运行验证函数
                 try:
                     if not validator['validator'](value):
-                        raise ValueError(f"The parameter '{arg_name}' of function '{func.__name__}' "
-                                         f"is invalid, message: {validator.get('message')}")
+                        raise ValueError(
+                            f"The parameter '{arg_name}' of function '{func.__name__}' "
+                            f"is invalid, message: {validator.get('message')}"
+                        )
                 except Exception as e:
-                    raise ValueError(f"An exception occur during check parameter. "
-                                     f"The parameter '{arg_name}' of function '{func.__name__}' "
-                                     f"is invalid, message: {validator.get('message')}") from e
+                    raise ValueError(
+                        f"An exception occur during check parameter. "
+                        f"The parameter '{arg_name}' of function '{func.__name__}' "
+                        f"is invalid, message: {validator.get('message')}"
+                    ) from e
             # 如果所有参数都通过验证，则调用原始函数
             return func(*args, **kwargs)
 
@@ -188,34 +195,69 @@ class Lang(Enum):
 class ParseCertInfo:
     """解析根证书信息类"""
 
+    _KEY_USAGE_ATTRS = [
+        ("digital_signature", "Digital Signature"),
+        ("content_commitment", "Content Commitment"),
+        ("key_encipherment", "Key Encipherment"),
+        ("data_encipherment", "Data Encipherment"),
+        ("key_agreement", "Key Agreement"),
+        ("key_cert_sign", "Key Cert Sign"),
+        ("crl_sign", "CRL Sign"),
+        ("encipher_only", "Encipher Only"),
+        ("decipher_only", "Decipher Only"),
+    ]
+
     def __init__(self, cert_buffer: str):
         if not cert_buffer:
             raise ValueError("Cert buffer is null.")
 
-        self.cert_info = crypto.load_certificate(crypto.FILETYPE_PEM, str.encode(cert_buffer))
-        self.serial_num = hex(self.cert_info.get_serial_number())[2:].upper()
-        self.subject_components = self.cert_info.get_subject().get_components()
-        self.issuer_components = self.cert_info.get_issuer().get_components()
-        self.fingerprint = self.cert_info.digest("sha256").decode()
-        self.start_time = datetime.strptime(self.cert_info.get_notBefore().decode(), '%Y%m%d%H%M%SZ')
-        self.end_time = datetime.strptime(self.cert_info.get_notAfter().decode(), '%Y%m%d%H%M%SZ')
-        self.signature_algorithm = self.cert_info.get_signature_algorithm().decode()
-        self.signature_len = self.cert_info.get_pubkey().bits()
-        self.cert_version = self.cert_info.get_version() + 1
-        self.pubkey_type = self.cert_info.get_pubkey().type()
-        self.ca_pub_key = self.cert_info.get_pubkey().to_cryptography_key()
+        self.cert_info = x509.load_pem_x509_certificate(str.encode(cert_buffer))
+        self.serial_num = format(self.cert_info.serial_number, 'X')
+        self.subject_components = [(attr.oid._name.encode(), attr.value.encode()) for attr in self.cert_info.subject]
+        self.issuer_components = [(attr.oid._name.encode(), attr.value.encode()) for attr in self.cert_info.issuer]
+        self.fingerprint = ":".join(f"{b:02X}" for b in self.cert_info.fingerprint(hashes.SHA256()))
+        self.start_time = self.cert_info.not_valid_before_utc.replace(tzinfo=None)
+        self.end_time = self.cert_info.not_valid_after_utc.replace(tzinfo=None)
+        self.signature_algorithm = self.cert_info.signature_algorithm_oid._name
+        pubkey = self.cert_info.public_key()
+        self.signature_len = pubkey.key_size
+        self.cert_version = self.cert_info.version.value + 1
+        if isinstance(pubkey, rsa.RSAPublicKey):
+            self.pubkey_type = PubkeyType.EVP_PKEY_RSA.value
+        elif isinstance(pubkey, ec.EllipticCurvePublicKey):
+            self.pubkey_type = PubkeyType.EVP_PKEY_EC.value
+        else:
+            self.pubkey_type = -1
+        self.ca_pub_key = pubkey
         self.extensions = {}
-        for i in range(self.cert_info.get_extension_count()):
-            ext = self.cert_info.get_extension(i)
-            ext_name = ext.get_short_name().decode()
+        for ext in self.cert_info.extensions:
+            ext_name = ext.oid._name
             try:
-                self.extensions[ext_name] = str(ext)
+                self.extensions[ext_name] = self._format_extension(ext)
             except (TypeError, ValueError) as e:
                 logger.warning(f"Type error or value error, format {ext_name}: {e}")
                 continue
             except Exception as e:
                 logger.warning(f"format '{ext_name}' str info in certificate failed: {e}")
                 continue
+
+    @staticmethod
+    def _format_extension(ext) -> str:
+        if isinstance(ext.value, x509.BasicConstraints):
+            parts = [f"CA:{'TRUE' if ext.value.ca else 'FALSE'}"]
+            if ext.value.path_length is not None:
+                parts.append(f"pathlen:{ext.value.path_length}")
+            return ", ".join(parts)
+        if isinstance(ext.value, x509.KeyUsage):
+            usages = []
+            for attr, label in ParseCertInfo._KEY_USAGE_ATTRS:
+                try:
+                    if getattr(ext.value, attr):
+                        usages.append(label)
+                except ValueError:
+                    pass
+            return ", ".join(usages)
+        return str(ext.value)
 
     @property
     def subject(self) -> str:
@@ -297,10 +339,7 @@ def validate_list_str(texts, length_limit: List[int], str_limit: List[int]):
     return True
 
 
-def validate_list_list_str(texts,
-                           length_limit: List[int],
-                           inner_length_limit: List[int],
-                           str_limit: List[int]):
+def validate_list_list_str(texts, length_limit: List[int], inner_length_limit: List[int], str_limit: List[int]):
     """
     用于List[List[str]]类型的数据校验
     Args:
@@ -340,7 +379,7 @@ def check_db_file_limit(db_path: str, limit: int = DB_FILE_LIMIT):
     if not os.path.exists(db_path):
         return
     if os.path.getsize(db_path) > limit:
-        raise Exception(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")
+        raise ValueError(f"The db file '{db_path}' size exceed limit {limit}, failed to add.")
 
 
 def check_header(headers):
@@ -368,11 +407,13 @@ def check_header(headers):
     return True
 
 
-def validate_sequence(param: Union[str, dict, list, tuple, set],
-                      max_str_length: int = 1024,
-                      max_sequence_length: int = 1024,
-                      max_check_depth: int = 1,
-                      current_depth: int = 0) -> bool:
+def validate_sequence(
+    param: Union[str, dict, list, tuple, set],
+    max_str_length: int = 1024,
+    max_sequence_length: int = 1024,
+    max_check_depth: int = 1,
+    current_depth: int = 0,
+) -> bool:
     """
     递归校验序列值是否超过允许范围
     Args:
@@ -398,16 +439,17 @@ def validate_sequence(param: Union[str, dict, list, tuple, set],
 
     def check_dict(data):
         for k, v in data.items():
-            if not (check_str(k) and validate_sequence(v, max_str_length, max_sequence_length, max_check_depth - 1,
-                                                       current_depth + 1)):
+            if not (
+                check_str(k)
+                and validate_sequence(v, max_str_length, max_sequence_length, max_check_depth - 1, current_depth + 1)
+            ):
                 return False
 
         return True
 
     def check_list_tuple_set(data):
         for item in data:
-            if not validate_sequence(item, max_str_length, max_sequence_length, max_check_depth - 1,
-                                     current_depth + 1):
+            if not validate_sequence(item, max_str_length, max_sequence_length, max_check_depth - 1, current_depth + 1):
                 return False
 
         return True
@@ -456,7 +498,7 @@ def get_lang_param(input_param: dict) -> str:
         if not isinstance(input_param.get("lang"), str):
             raise KeyError("lang param error, it should be str type")
         if input_param.get("lang") not in ["zh", "en"]:
-            raise ValueError(f"lang param error, value must be in [zh, en]")
+            raise ValueError("lang param error, value must be in [zh, en]")
     return input_param.get("lang", "zh")
 
 
@@ -522,8 +564,9 @@ def validate_embeddings(embeddings: Any) -> Tuple[bool, str]:
         # Validate List[Dict[int, float]] case
         if not all(isinstance(x, dict) for x in embeddings):
             return False, "Embeddings must contain only dictionaries"
-        if not all(isinstance(k, int) and isinstance(v, (int, float, np.floating))
-                   for x in embeddings for k, v in x.items()):
+        if not all(
+            isinstance(k, int) and isinstance(v, (int, float, np.floating)) for x in embeddings for k, v in x.items()
+        ):
             return False, "All keys must be ints and values must be float or int values"
     else:
         return False, "Embeddings must be lists of floats or dicts of int to float"
@@ -531,8 +574,9 @@ def validate_embeddings(embeddings: Any) -> Tuple[bool, str]:
     return True, ""
 
 
-def _check_sparse_and_dense(vec_ids: List[int], dense: Optional[np.ndarray] = None,
-                            sparse: Optional[List[Dict[int, float]]] = None):
+def _check_sparse_and_dense(
+    vec_ids: List[int], dense: Optional[np.ndarray] = None, sparse: Optional[List[Dict[int, float]]] = None
+):
     if len(set(vec_ids)) != len(vec_ids):
         raise ValueError("vec_ids contain duplicated value")
     if dense is None and sparse is None:

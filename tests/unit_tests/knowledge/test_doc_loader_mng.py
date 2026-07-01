@@ -18,10 +18,9 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-
 import os
 import unittest
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from mx_rag.document import LoaderMng
 from mx_rag.document.doc_loader_mng import LoaderInfo, SplitterInfo
@@ -42,19 +41,27 @@ class LoaderMngTestCase(unittest.TestCase):
 
     def test_register_splitter(self):
         loader_mng = LoaderMng()
-        loader_mng.register_splitter(RecursiveCharacterTextSplitter, [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
-                                     {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False})
-        loader_mng.register_splitter(RecursiveCharacterTextSplitter, [".docx"],
-                                     {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False})
+        loader_mng.register_splitter(
+            RecursiveCharacterTextSplitter,
+            [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
+            {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False},
+        )
+        loader_mng.register_splitter(
+            RecursiveCharacterTextSplitter,
+            [".docx"],
+            {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False},
+        )
         splitter_info = loader_mng.get_splitter(".xlsx")
         splitter = splitter_info.splitter_class(**splitter_info.splitter_params)
         self.assertIsInstance(splitter, RecursiveCharacterTextSplitter)
         with self.assertRaises(ValueError):
-            loader_mng.register_splitter(RecursiveCharacterTextSplitter, [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
-                                         {"chunk_size": 4000, 'test': {"chunk_overlap": {"keep_separator": False}}})
+            loader_mng.register_splitter(
+                RecursiveCharacterTextSplitter,
+                [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
+                {"chunk_size": 4000, 'test': {"chunk_overlap": {"keep_separator": False}}},
+            )
         with self.assertRaises(KeyError):
-            loader_mng.register_splitter(RecursiveCharacterTextSplitter, [".jpg", ".png"],
-                                         {"chunk_size": 4000})
+            loader_mng.register_splitter(RecursiveCharacterTextSplitter, [".jpg", ".png"], {"chunk_size": 4000})
 
     def test_unregister_loader(self):
         loader_mng = LoaderMng()
@@ -72,8 +79,11 @@ class LoaderMngTestCase(unittest.TestCase):
         loader_mng = LoaderMng()
         with self.assertRaises(KeyError):
             loader_mng.unregister_splitter(RecursiveCharacterTextSplitter, '.docx')
-        loader_mng.register_splitter(RecursiveCharacterTextSplitter, [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
-                                     {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False})
+        loader_mng.register_splitter(
+            RecursiveCharacterTextSplitter,
+            [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
+            {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False},
+        )
         loader_mng.unregister_splitter(RecursiveCharacterTextSplitter, '.docx')
         with self.assertRaises(KeyError):
             loader_mng.unregister_splitter(RecursiveCharacterTextSplitter, '.docxx')
@@ -90,10 +100,14 @@ class LoaderMngTestCase(unittest.TestCase):
 
     def test_get_splitter(self):
         loader_mng = LoaderMng()
-        loader_mng.register_splitter(RecursiveCharacterTextSplitter, [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
-                                     {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False})
+        loader_mng.register_splitter(
+            RecursiveCharacterTextSplitter,
+            [".xlsx", ".docx", ".doc", ".pdf", ".pptx"],
+            {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False},
+        )
         splitter_info = loader_mng.get_splitter(".xlsx")
         self.assertIsInstance(splitter_info, SplitterInfo)
+
 
 if __name__ == '__main__':
     unittest.main()

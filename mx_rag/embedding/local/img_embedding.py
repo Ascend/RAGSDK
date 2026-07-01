@@ -19,6 +19,7 @@ See the Mulan PSL v2 for more details.
 """
 
 import base64
+import importlib
 import io
 import os
 from typing import List, Union
@@ -31,13 +32,21 @@ from langchain_core.embeddings import Embeddings
 from loguru import logger
 from transformers import is_torch_npu_available
 
-from mx_rag.utils.common import validate_params, MAX_DEVICE_ID, EMBEDDING_TEXT_COUNT, \
-    IMG_EMBEDDING_TEXT_LEN, validate_list_str, MB, GB, EMBEDDING_IMG_COUNT, MAX_BATCH_SIZE
+from mx_rag.utils.common import (
+    validate_params,
+    MAX_DEVICE_ID,
+    EMBEDDING_TEXT_COUNT,
+    IMG_EMBEDDING_TEXT_LEN,
+    validate_list_str,
+    MB,
+    GB,
+    EMBEDDING_IMG_COUNT,
+    MAX_BATCH_SIZE,
+)
 from mx_rag.utils.file_check import SecFileCheck, SecDirCheck, safetensors_check
 
 try:
-    import torch_npu
-
+    importlib.import_module("torch_npu")
     torch.npu.set_compile_mode(jit_compile=False)
 except ImportError as e:
     logger.warning(f"Failed to import torch_npu: {e}. ImageEmbedding will run on cpu.")
@@ -45,36 +54,25 @@ except Exception as e:
     logger.error(f"Unexpected error while importing torch_npu: {e}. ImageEmbedding will run on cpu.")
 
 _CLIP_MODELS = {
-    "ViT-B-16": {
-        "checkpoint": "clip_cn_vit-b-16.pt",
-        "image_size": 224
-    },
-    "ViT-L-14": {
-        "checkpoint": "clip_cn_vit-l-14.pt",
-        "image_size": 224
-    },
-    "ViT-L-14-336": {
-        "checkpoint": "clip_cn_vit-l-14-336.pt",
-        "image_size": 336
-    },
-    "ViT-H-14": {
-        "checkpoint": "clip_cn_vit-h-14.pt",
-        "image_size": 224},
-    "RN50": {
-        "checkpoint": "clip_cn_rn50.pt",
-        "image_size": 224
-    },
+    "ViT-B-16": {"checkpoint": "clip_cn_vit-b-16.pt", "image_size": 224},
+    "ViT-L-14": {"checkpoint": "clip_cn_vit-l-14.pt", "image_size": 224},
+    "ViT-L-14-336": {"checkpoint": "clip_cn_vit-l-14-336.pt", "image_size": 336},
+    "ViT-H-14": {"checkpoint": "clip_cn_vit-h-14.pt", "image_size": 224},
+    "RN50": {"checkpoint": "clip_cn_rn50.pt", "image_size": 224},
 }
 
 
 class ImageEmbedding(Embeddings):
     @validate_params(
-        model_name=dict(validator=lambda x: isinstance(x, str) and x in _CLIP_MODELS,
-                        message=f"param must be str,supported model: {_CLIP_MODELS.keys()}"),
-        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
-                    message="param must be int and value range [0, 63]"),
-        model_path=dict(validator=lambda x: isinstance(x, str),
-                        message=f"param must be str")
+        model_name=dict(
+            validator=lambda x: isinstance(x, str) and x in _CLIP_MODELS,
+            message=f"param must be str,supported model: {_CLIP_MODELS.keys()}",
+        ),
+        dev_id=dict(
+            validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
+            message="param must be int and value range [0, 63]",
+        ),
+        model_path=dict(validator=lambda x: isinstance(x, str), message="param must be str"),
     )
     def __init__(self, model_name: str, model_path: str, dev_id: int = 0):
         self.model_name = model_name
@@ -89,11 +87,19 @@ class ImageEmbedding(Embeddings):
             if is_torch_npu_available():
                 self.device = f'npu:{dev_id}'
         except ImportError:
-            logger.warning('unable to import torch_npu, please check if torch_npu is properly installed. '
-                           'currently running on cpu.')
+            logger.warning(
+                'unable to import torch_npu, please check if torch_npu is properly installed. currently running on cpu.'
+            )
         import cn_clip.clip as cnclip
         from cn_clip.clip import load_from_name
-        self.model, self.preprocess = load_from_name(self.model_name, self.device, self.model_path)
+
+        self.model, self.preprocess = load_from_name(self.model_name, device="cpu", download_root=self.model_path)
+        if self.device != "cpu":
+            try:
+                self.model.to(self.device)
+            except Exception as e:
+                logger.warning(f"Failed to move CLIP model to {self.device}, falling back to cpu: {e}")
+                self.device = "cpu"
         self.tokenizer = cnclip
         self.model.eval()
 
@@ -106,17 +112,20 @@ class ImageEmbedding(Embeddings):
         return ImageEmbedding(**kwargs)
 
     @validate_params(
-        texts=dict(validator=lambda x: validate_list_str(x, [1, EMBEDDING_TEXT_COUNT], [1, IMG_EMBEDDING_TEXT_LEN]),
-                   message="param must meets: Type is List[str], "
-                           "list length range [1, 1000 * 1000], str length range [1, 256]"),
-
-        batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
-                        message=f"param must be int and value valid range is [1, {MAX_BATCH_SIZE}]")
+        texts=dict(
+            validator=lambda x: validate_list_str(x, [1, EMBEDDING_TEXT_COUNT], [1, IMG_EMBEDDING_TEXT_LEN]),
+            message="param must meets: Type is List[str], "
+            "list length range [1, 1000 * 1000], str length range [1, 256]",
+        ),
+        batch_size=dict(
+            validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
+            message=f"param must be int and value valid range is [1, {MAX_BATCH_SIZE}]",
+        ),
     )
     def embed_documents(self, texts: List[str], batch_size: int = 32) -> List[List[float]]:
         result = []
         for start_index in tqdm(range(0, len(texts), batch_size), desc='text embedding ...'):
-            batch_texts = texts[start_index:start_index + batch_size]
+            batch_texts = texts[start_index : start_index + batch_size]
             encode_texts = self.tokenizer.tokenize(batch_texts, context_length=52).to(self.device)
 
             with torch.no_grad():
@@ -128,8 +137,11 @@ class ImageEmbedding(Embeddings):
         return result
 
     @validate_params(
-        text=dict(validator=lambda x: isinstance(x, str) and 0 < len(x) <= IMG_EMBEDDING_TEXT_LEN,
-                  message=f"param must be str, and length range [1, {IMG_EMBEDDING_TEXT_LEN}]"))
+        text=dict(
+            validator=lambda x: isinstance(x, str) and 0 < len(x) <= IMG_EMBEDDING_TEXT_LEN,
+            message=f"param must be str, and length range [1, {IMG_EMBEDDING_TEXT_LEN}]",
+        )
+    )
     def embed_query(self, text: str) -> List[float]:
         embeddings = self.embed_documents([text])
         if not embeddings:
@@ -140,15 +152,18 @@ class ImageEmbedding(Embeddings):
     @validate_params(
         images=dict(
             validator=lambda x: (isinstance(x, list) and len(x) <= EMBEDDING_IMG_COUNT),
-            message=f"param must meets: Type is list, list length range [1, {EMBEDDING_IMG_COUNT}]"),
-        batch_size=dict(validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
-                        message=f"param must be int and value range [1, {MAX_BATCH_SIZE}]")
+            message=f"param must meets: Type is list, list length range [1, {EMBEDDING_IMG_COUNT}]",
+        ),
+        batch_size=dict(
+            validator=lambda x: isinstance(x, int) and 1 <= x <= MAX_BATCH_SIZE,
+            message=f"param must be int and value range [1, {MAX_BATCH_SIZE}]",
+        ),
     )
     def embed_images(self, images: Union[List[str], List[Image.Image]], batch_size: int = 32) -> List[List[float]]:
         image_features = []
 
         for start_idx in tqdm(range(0, len(images), batch_size), desc='image embedding ...'):
-            batch_images = images[start_idx: start_idx + batch_size]
+            batch_images = images[start_idx : start_idx + batch_size]
             tensors_batch = self._preprocess_images(batch_images)
             tensors_batch = torch.stack(tensors_batch).to(self.device)
 
@@ -159,14 +174,15 @@ class ImageEmbedding(Embeddings):
                 image_features.extend(batch_image_features.cpu().tolist())
 
         if not image_features:
-            raise Exception("embedding image failed")
+            raise ValueError("embedding image failed")
 
         return image_features
 
     @validate_params(
         images=dict(
             validator=lambda x: all((isinstance(i, str) for i in x)) or all((isinstance(i, Image.Image) for i in x)),
-            message=f"param must meets: all item is str or Image.Image")
+            message="param must meets: all item is str or Image.Image",
+        )
     )
     def _preprocess_images(self, images: Union[List[str], List[Image.Image]]) -> List[torch.Tensor]:
         tensors_batch = []

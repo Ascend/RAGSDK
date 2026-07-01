@@ -504,7 +504,7 @@ from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, delete_f
 from mx_rag.document import LoaderMng
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore import MindFAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.knowledge import upload_dir
 from mx_rag.document.loader import DocxLoader, PdfLoader, ExcelLoader
 
@@ -598,7 +598,7 @@ from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, delete_f
 from mx_rag.document import LoaderMng
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore import MindFAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.knowledge import upload_dir
 from mx_rag.document.loader import DocxLoader, PdfLoader, ExcelLoader
 
@@ -667,7 +667,7 @@ from mx_rag.knowledge import KnowledgeStore, KnowledgeDB, upload_files, delete_f
 from mx_rag.document import LoaderMng
 from mx_rag.storage.document_store import SQLiteDocstore
 from mx_rag.storage.vectorstore import MindFAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.knowledge import upload_dir
 from mx_rag.document.loader import DocxLoader, PdfLoader, ExcelLoader
 
@@ -732,7 +732,7 @@ LoaderMng()
 ```python
 from mx_rag.document.loader import ExcelLoader
 from mx_rag.document import LoaderMng
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 loader_mng = LoaderMng()
 # 调用register_loader
 loader_mng.register_loader(ExcelLoader, [".xlsx"])

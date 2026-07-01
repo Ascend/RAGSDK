@@ -21,7 +21,7 @@ See the Mulan PSL v2 for more details.
 import os
 import unittest
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from pymilvus import MilvusClient
 
@@ -47,7 +47,7 @@ class TestGraphPipline(unittest.TestCase):
             os.makedirs(work_dir)
         dev_id = 0
         llm = Text2TextLLM(
-            base_url="http://127.0.0.1:1025/v1/chat/completions",
+            base_url="http://127.0.0.1:8000/v1/chat/completions",
             model_name="Llama3-8B-Chinese-Chat",
             llm_config=LLMParameterConfig(temperature=0.6, top_p=0.9),
             client_param=ClientParam(use_http=True),

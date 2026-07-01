@@ -1,7 +1,9 @@
 import argparse
+
+# pylint: disable=duplicate-code
 from concurrent.futures import ThreadPoolExecutor
 from fastapi import FastAPI, HTTPException
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.chain import SingleText2TextChain
 from mx_rag.document import LoaderMng
 from mx_rag.document.loader import DocxLoader

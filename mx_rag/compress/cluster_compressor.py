@@ -21,34 +21,48 @@ See the Mulan PSL v2 for more details.
 from typing import List, Callable, Union
 
 from langchain_text_splitters.base import TextSplitter
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.embeddings import Embeddings
 import torch
 import numpy as np
 from loguru import logger
 
 from mx_rag.compress import PromptCompressor
-from mx_rag.utils.common import validate_params, STR_TYPE_CHECK_TIP, MAX_PAGE_CONTENT, MAX_DEVICE_ID, TEXT_MAX_LEN, \
-    MAX_CHUNKS_NUM
+from mx_rag.utils.common import (
+    validate_params,
+    STR_TYPE_CHECK_TIP,
+    MAX_PAGE_CONTENT,
+    MAX_DEVICE_ID,
+    TEXT_MAX_LEN,
+    MAX_CHUNKS_NUM,
+)
 
 
 class ClusterCompressor(PromptCompressor):
     @validate_params(
-        dev_id=dict(validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
-                    message="param must be int and value range [0, 63]"),
-        embed=dict(validator=lambda x: isinstance(x, Embeddings),
-                   message="param must be instance of LangChain's Embeddings"),
-        cluster_func=dict(validator=lambda x: isinstance(x, Callable),
-                          message="param must be Callable[[List[List[float]]], Union[List[int], np.ndarray]] function"),
-        splitter=dict(validator=lambda x: isinstance(x, TextSplitter) or x is None,
-                      message="param must be instance of LangChain's TextSplitter or None"),
+        dev_id=dict(
+            validator=lambda x: isinstance(x, int) and 0 <= x <= MAX_DEVICE_ID,
+            message="param must be int and value range [0, 63]",
+        ),
+        embed=dict(
+            validator=lambda x: isinstance(x, Embeddings), message="param must be instance of LangChain's Embeddings"
+        ),
+        cluster_func=dict(
+            validator=lambda x: isinstance(x, Callable),
+            message="param must be Callable[[List[List[float]]], Union[List[int], np.ndarray]] function",
+        ),
+        splitter=dict(
+            validator=lambda x: isinstance(x, TextSplitter) or x is None,
+            message="param must be instance of LangChain's TextSplitter or None",
+        ),
     )
-    def __init__(self,
-                 cluster_func: Callable[[List[List[float]]], Union[List[int], np.ndarray]],
-                 embed: Embeddings,
-                 splitter: TextSplitter = None,
-                 dev_id: int = 0,
-                 ):
+    def __init__(
+        self,
+        cluster_func: Callable[[List[List[float]]], Union[List[int], np.ndarray]],
+        embed: Embeddings,
+        splitter: TextSplitter = None,
+        dev_id: int = 0,
+    ):
         self.embed = embed
         self.cluster_func = cluster_func
         self.splitter = splitter
@@ -67,7 +81,7 @@ class ClusterCompressor(PromptCompressor):
         for _, value in community.items():
             similarity_temp = [similarity[i] for i in value]
             sorted_sentences = np.argsort(similarity_temp)
-            reserved_index = sorted_sentences[int(len(value) * compress_rate):]
+            reserved_index = sorted_sentences[int(len(value) * compress_rate) :]
             for left_index in reserved_index:
                 reserved_sentences.append(value[left_index])
 
@@ -76,18 +90,25 @@ class ClusterCompressor(PromptCompressor):
         return compress_context
 
     @validate_params(
-        context=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PAGE_CONTENT,
-                     message=f"param must be str, and length range [1, {MAX_PAGE_CONTENT}]"),
-        question=dict(validator=lambda x: isinstance(x, str) and 1 <= len(x) <= TEXT_MAX_LEN,
-                      message=STR_TYPE_CHECK_TIP + f", and length range [1, {TEXT_MAX_LEN}]"),
-        compress_rate=dict(validator=lambda x: isinstance(x, (float, int)) and 0 < x < 1,
-                           message=f"param must be float or int and value range (0, 1)"),
+        context=dict(
+            validator=lambda x: isinstance(x, str) and 1 <= len(x) <= MAX_PAGE_CONTENT,
+            message=f"param must be str, and length range [1, {MAX_PAGE_CONTENT}]",
+        ),
+        question=dict(
+            validator=lambda x: isinstance(x, str) and 1 <= len(x) <= TEXT_MAX_LEN,
+            message=STR_TYPE_CHECK_TIP + f", and length range [1, {TEXT_MAX_LEN}]",
+        ),
+        compress_rate=dict(
+            validator=lambda x: isinstance(x, (float, int)) and 0 < x < 1,
+            message="param must be float or int and value range (0, 1)",
+        ),
     )
-    def compress_texts(self,
-                       context: str,
-                       question: str,
-                       compress_rate: float = 0.6,
-                       ):
+    def compress_texts(
+        self,
+        context: str,
+        question: str,
+        compress_rate: float = 0.6,
+    ):
         if self.splitter is None:
             sentence_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=100,
@@ -114,14 +135,20 @@ class ClusterCompressor(PromptCompressor):
         logger.info("Starting community division ")
         label = self.cluster_func(sentences_embedding)
         if not isinstance(label, (np.ndarray, list)):
-            raise TypeError(f"callback function {self.cluster_func.__name__} "
-                            f"returned invalid result, must be List[int] or np.ndarray")
+            raise TypeError(
+                f"callback function {self.cluster_func.__name__} "
+                f"returned invalid result, must be List[int] or np.ndarray"
+            )
         if len(label) > MAX_CHUNKS_NUM:
-            raise ValueError(f"callback function {self.cluster_func.__name__} "
-                             f"returned invalid result, length exceeds {MAX_CHUNKS_NUM}.")
+            raise ValueError(
+                f"callback function {self.cluster_func.__name__} "
+                f"returned invalid result, length exceeds {MAX_CHUNKS_NUM}."
+            )
         if not len(label) == len(sentences):
-            raise ValueError(f"callback function {self.cluster_func.__name__} returned invalid result."
-                             f" length must match sentences length {len(sentences)}.")
+            raise ValueError(
+                f"callback function {self.cluster_func.__name__} returned invalid result."
+                f" length must match sentences length {len(sentences)}."
+            )
         # 压缩文本
         logger.info("Starting text compression ")
         compress_context = self._assemble_result(sentences, label, similarity, compress_rate)

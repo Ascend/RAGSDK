@@ -23,7 +23,7 @@ import unittest
 from pathlib import Path
 from typing import List, Tuple, Dict
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from mx_rag.document.loader import DocxLoader, ExcelLoader, PdfLoader, MarkdownLoader
 from mx_rag.document.splitter import MarkdownTextSplitter
@@ -43,8 +43,7 @@ class TestTokenParseDocumentFile(unittest.TestCase):
     data_dir = os.path.realpath(os.path.join(current_dir, "../../../data"))
 
     @staticmethod
-    def token_parse_document_file(filepath, tokenizer, max_tokens) -> Tuple[
-        List[str], List[Dict[str, str]]]:
+    def token_parse_document_file(filepath, tokenizer, max_tokens) -> Tuple[List[str], List[Dict[str, str]]]:
         file = Path(filepath)
         loader, splitter = DOC_PARSER_MAP.get(file.suffix, (None, None))
         if loader is None:
@@ -63,8 +62,8 @@ class TestTokenParseDocumentFile(unittest.TestCase):
     def test_token_parse_document_file_unsupported_file_type(self):
         with self.assertRaises(ValueError):
             TestTokenParseDocumentFile.token_parse_document_file(
-                os.path.join(os.path.join(self.data_dir, "Sample.img")),
-                None, 100)
+                os.path.join(os.path.join(self.data_dir, "Sample.img")), None, 100
+            )
 
     def test_token_parse_document_file_sample(self):
         tokenizer = None

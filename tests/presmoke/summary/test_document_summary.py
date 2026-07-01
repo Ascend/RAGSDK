@@ -21,6 +21,7 @@ See the Mulan PSL v2 for more details.
 import os
 import unittest
 
+# pylint: disable=duplicate-code
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from mx_rag.document.loader import DocxLoader
@@ -31,11 +32,15 @@ from mx_rag.utils import ClientParam
 
 class TestDocumentSummary(unittest.TestCase):
     def test_document_summary(self):
-        test_file_path = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                       "../../data/test.docx"))
+        test_file_path = os.path.realpath(
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/test.docx")
+        )
         client_param = ClientParam(use_http=True)
-        llm = Text2TextLLM(base_url="http://127.0.0.1:1025/v1/chat/completions", model_name="Llama3-8B-Chinese-Chat",
-                           client_param=client_param)
+        llm = Text2TextLLM(
+            base_url="http://127.0.0.1:8000/v1/chat/completions",
+            model_name="Llama3-8B-Chinese-Chat",
+            client_param=client_param,
+        )
         loader = DocxLoader(test_file_path)
         docs = loader.load_and_split(RecursiveCharacterTextSplitter(chunk_size=750, chunk_overlap=150))
         summary = Summary(llm=llm)

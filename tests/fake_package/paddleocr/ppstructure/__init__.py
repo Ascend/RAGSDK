@@ -18,7 +18,7 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock  # noqa
 
 
-PPStructure = MagicMock()
+PPStructureV3 = MagicMock()

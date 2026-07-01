@@ -274,7 +274,7 @@ def grade_generation_v_documents_and_question(
 def create_loader_and_spliter(  # pylint: disable=redefined-outer-name
     mxrag_component: Dict[str, Any], chunk_size: int = 200, chunk_overlap: int = 50
 ):
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     from mx_rag.document import LoaderMng
     from mx_rag.document.loader import DocxLoader

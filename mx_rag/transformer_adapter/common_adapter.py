@@ -108,7 +108,7 @@ def _npu_attention_forward_impl(
     )[0]
     out = out.view(hidden_states.size())
 
-    return (out,)
+    return (out, None)
 
 
 def _make_attention_forward_wrapper(old_forward, *args, **kwargs):
