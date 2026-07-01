@@ -24,7 +24,12 @@ from mx_rag.transformer_adapter.common_adapter import (
     custom_self_attention_forward,
     custom_bert_sdpa_self_attention_forward,
 )
-from transformers.models.bert.modeling_bert import BertSelfOutput, BertOutput, BertSelfAttention, BertSdpaSelfAttention
+from transformers.models.bert.modeling_bert import BertSelfOutput, BertOutput, BertSelfAttention
+
+try:
+    from transformers.models.bert.modeling_bert import BertSdpaSelfAttention
+except ImportError:
+    BertSdpaSelfAttention = None
 
 
 enable_bert_speed: bool = True
@@ -33,4 +38,5 @@ enable_bert_speed: bool = True
 BertSelfOutput.forward = custom_self_output_forward(BertSelfOutput.forward)
 BertOutput.forward = custom_output_forward(BertOutput.forward)
 BertSelfAttention.forward = custom_self_attention_forward(BertSelfAttention.forward)
-BertSdpaSelfAttention.forward = custom_bert_sdpa_self_attention_forward(BertSdpaSelfAttention.forward)
+if BertSdpaSelfAttention is not None:
+    BertSdpaSelfAttention.forward = custom_bert_sdpa_self_attention_forward(BertSdpaSelfAttention.forward)

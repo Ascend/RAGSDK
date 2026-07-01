@@ -48,6 +48,8 @@ chmod +x *.run
 pip3 install -r  /usr/local/Ascend/mxRag/requirements.txt
 pip3 install pytest pytest-cov pytest-html
 
+pip3 install "torch-npu==2.10.0" "torchvision==0.25.0" "numpy<2"
+
 cd $CODE_PATH
 # 清理milvus数据库
 python3 tests/presmoke/clean_milvus_collections.py

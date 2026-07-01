@@ -18,9 +18,6 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-"""
-embedding的工厂类，用于生产mxrag的embedding
-"""
 from abc import ABC
 from typing import Dict, Any, Callable
 from loguru import logger
@@ -38,10 +35,11 @@ class EmbeddingFactory(ABC):
     Attributes:
         NPU_SUPPORT_EMB 字典，用于映射embedding和对应的构造函数
     """
+
     NPU_SUPPORT_EMB: Dict[str, Callable[[Dict[str, Any]], Embeddings]] = {
         "local_text_embedding": TextEmbedding.create,
         "local_images_embedding": ImageEmbedding.create,
-        "tei_embedding": TEIEmbedding.create
+        "tei_embedding": TEIEmbedding.create,
     }
 
     @classmethod
@@ -77,10 +75,10 @@ class EmbeddingFactory(ABC):
         try:
             embedding = creator(**kwargs)
         except KeyError:
-            logger.error(f"create embedding key error")
+            logger.error("create embedding key error")
             return None
         except Exception:
-            logger.error(f"exception occurred while constructing embedding")
+            logger.exception("exception occurred while constructing embedding")
             return None
 
         return embedding

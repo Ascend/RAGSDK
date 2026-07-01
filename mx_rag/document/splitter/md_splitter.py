@@ -20,8 +20,8 @@ See the Mulan PSL v2 for more details.
 
 from typing import List
 
-from langchain.text_splitter import MarkdownHeaderTextSplitter
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import MarkdownHeaderTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 from mx_rag.utils.common import validate_params, HEADER_MARK, MAX_SPLIT_SIZE

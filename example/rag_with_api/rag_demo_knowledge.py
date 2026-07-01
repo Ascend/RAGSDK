@@ -6,8 +6,7 @@
 import argparse
 import threading
 import traceback
-
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from loguru import logger
 from pymilvus import MilvusClient
@@ -77,13 +76,16 @@ def rag_demo_upload():
         embedding_dim = len(emb.embed_documents(["test"])[0])
         # 初始化向量数据库
         client = MilvusClient("./milvus.db")
-        vector_store = MilvusDB.create(client=client, x_dim=embedding_dim, collection_name="milvus_vector")
+        vector_store = MilvusDB.create(
+            client=client, x_dim=embedding_dim, collection_name="milvus_vector", auto_flush=False
+        )
         # 初始化文档chunk关系数据库
-        chunk_store = MilvusDocstore(client=client, collection_name="milvus_chunk")
+        chunk_store = MilvusDocstore(client=client, collection_name="milvus_chunk", auto_flush=False)
         # 初始化知识管理关系数据库
-        knowledge_store = KnowledgeStore(db_path="./milvus.db")
+        knowledge_store = KnowledgeStore(db_path="./milvus-knowledge.db")
         # 添加知识库
         knowledge_store.add_knowledge("test", "Default", "admin")
+        milvus_lock = threading.Lock()
         # 初始化知识库管理
         knowledge_db = KnowledgeDB(
             knowledge_store=knowledge_store,
@@ -92,6 +94,7 @@ def rag_demo_upload():
             knowledge_name="test",
             white_paths=white_path,
             user_id="Default",
+            lock=milvus_lock,
         )
 
         # 多线程上传文件
@@ -115,6 +118,7 @@ def rag_demo_upload():
         # 检验文件是否上传成功
         documents = [document.document_name for document in knowledge_db.get_all_documents()]
         logger.info(documents)
+        client.close()
     except Exception:
         stack_trace = traceback.format_exc()
         logger.error(stack_trace)

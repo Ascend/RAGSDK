@@ -55,7 +55,7 @@ class RerankCompressor(reranker, splitter)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |reranker|Reranker|必选|排序模型实例，实现对文本切片进行精排，只能为mx_rag.reranker的Reranker对象，具体可参见[Reranker](./reranker.md#reranker)。|
-|splitter|TextSplitter|可选|文档切分函数，只能为继承自langchain的TextSplitter的子类。默认为langchain.text_splitter的RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=0, separators=["\n", ""], keep_separator=True)|
+|splitter|TextSplitter|可选|文档切分函数，只能为继承自langchain_text_splitters.base的TextSplitter的子类。默认为langchain_text_splitters的RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=0, separators=["\n", ""], keep_separator=True)|
 
 **调用示例<a name="section11818153884917"></a>**
 
@@ -63,7 +63,7 @@ class RerankCompressor(reranker, splitter)
 from mx_rag.compress.rerank_compressor import RerankCompressor
 from mx_rag.reranker.local import LocalReranker
 from mx_rag.reranker.service import TEIReranker
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from mx_rag.utils import ClientParam
 
 context="""需要压缩的prompt文本"""
@@ -128,13 +128,13 @@ class ClusterCompressor(cluster_func, embed, splitter, dev_id):
 |--|--|--|--|
 |cluster_func|Callable[[List[List[float]]], Union[List[int], np.ndarray]]|必选|聚类函数，将嵌入后的文本切片进行聚类，将其划分为多个语义簇，返回的结果必须为List[int]或ndarray，长度不能超过1000*1000，且长度要和文本切片数量一致。|
 |embed|Embeddings|必选|嵌入对象，把文本切片转换为向量，只能为继承自langchain_core.embeddings的Embeddings的子类。|
-|splitter|TextSplitter|可选|文档切分对象，只能为继承自langchain_text_splitters.base的TextSplitter的子类。默认为langchain.text_splitter的RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=0, separators=["。", "！", "？", "\n", "，", "；", " ", ""])|
+|splitter|TextSplitter|可选|文档切分对象，只能为继承自langchain_text_splitters.base的TextSplitter的子类。默认为langchain_text_splitters的RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=0, separators=["。", "！", "？", "\n", "，", "；", " ", ""])|
 |dev_id|int|可选|NPU id，通过**npu-smi info**查询可用ID，取值范围[0, 63]，默认为卡0。|
 
 **调用示例<a name="section11818153884917"></a>**
 
 ```python
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sklearn.cluster import HDBSCAN
 from mx_rag.compress.cluster_compressor import ClusterCompressor
 from mx_rag.embedding.local import TextEmbedding

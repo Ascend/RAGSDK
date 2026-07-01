@@ -18,7 +18,7 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-from .ppstructure import PPStructure
+from .ppstructure import PPStructureV3  # noqa
 
 
 class PaddleOCR:
@@ -27,5 +27,3 @@ class PaddleOCR:
 
     def ocr(self, *args, **kwargs):
         return [[("1", ["1111"])]]
-
-

@@ -22,7 +22,7 @@ import os
 import unittest
 
 from docx import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from mx_rag.document.loader import DocxLoader
 

@@ -95,7 +95,7 @@ SDK的使用手册。
 def create_loader_and_spliter(mxrag_component: Dict[str, Any],
                               chunk_size:int = 200,
                               chunk_overlap:int = 50):
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     from mx_rag.knowledge.doc_loader_mng import LoaderMng
     from mx_rag.document.loader import DocxLoader

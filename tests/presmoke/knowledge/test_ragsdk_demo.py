@@ -17,12 +17,13 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
+
 import os.path
 import unittest
+# pylint: disable=duplicate-code
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
-from paddle.base import libpaddle
 from pymilvus import MilvusClient
 
 from mx_rag.chain import SingleText2TextChain
@@ -44,9 +45,10 @@ class TestQADemo(unittest.TestCase):
             os.remove("./sql.db")
 
     def test_query(self):
-        white_path: list[str] = ["/home","/workspace"]
-        file_path: str = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                                       "../../data/gaokao.txt"))
+        white_path: list[str] = ["/home", "/workspace"]
+        file_path: str = os.path.realpath(
+            os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../data/gaokao.txt")
+        )
         llm_url: str = "http://127.0.0.1:8000/v1/chat/completions"
         embedding_url: str = "http://127.0.0.1:8000/v1/embeddings"
         model_name: str = "Llama3-8B-Chinese-Chat"
@@ -58,19 +60,15 @@ class TestQADemo(unittest.TestCase):
         # 加载文档加载器，可以使用mxrag自有的，也可以使用langchain的
         loader_mng.register_loader(loader_class=TextLoader, file_types=[".txt", ".md"])
         # 加载文档切分器，使用langchain的
-        loader_mng.register_splitter(splitter_class=RecursiveCharacterTextSplitter,
-                                     file_types=[".pdf", ".docx", ".txt", ".md"],
-                                     splitter_params={"chunk_size": 750,
-                                                      "chunk_overlap": 150,
-                                                      "keep_separator": False
-                                                      }
-                                     )
+        loader_mng.register_splitter(
+            splitter_class=RecursiveCharacterTextSplitter,
+            file_types=[".pdf", ".docx", ".txt", ".md"],
+            splitter_params={"chunk_size": 750, "chunk_overlap": 150, "keep_separator": False},
+        )
         emb = TEIEmbedding(url=embedding_url, client_param=ClientParam(use_http=True))
         # 初始化向量数据库
         milvus_client = MilvusClient(milvus_url)
-        vector_store = MilvusDB.create(client=milvus_client,
-                                       x_dim=1024,
-                                       collection_name="test_vector")
+        vector_store = MilvusDB.create(client=milvus_client, x_dim=1024, collection_name="test_vector")
         # 初始化文档chunk关系数据库
         chunk_store = MilvusDocstore(milvus_client, collection_name="test_chunk")
         # 初始化知识管理关系数据库
@@ -78,27 +76,26 @@ class TestQADemo(unittest.TestCase):
         # 添加知识库
         knowledge_store.add_knowledge("test", "Default", "admin")
         # 初始化知识库管理
-        knowledge_db = KnowledgeDB(knowledge_store=knowledge_store,
-                                   chunk_store=chunk_store,
-                                   vector_store=vector_store,
-                                   knowledge_name="test",
-                                   white_paths=white_path,
-                                   user_id="Default"
-                                   )
-        upload_files(knowledge=knowledge_db,
-                     files=[file_path],
-                     loader_mng=loader_mng,
-                     embed_func=emb.embed_documents,
-                     force=True
-                     )
+        knowledge_db = KnowledgeDB(
+            knowledge_store=knowledge_store,
+            chunk_store=chunk_store,
+            vector_store=vector_store,
+            knowledge_name="test",
+            white_paths=white_path,
+            user_id="Default",
+        )
+        upload_files(
+            knowledge=knowledge_db, files=[file_path], loader_mng=loader_mng, embed_func=emb.embed_documents, force=True
+        )
 
         # 初始化Retriever检索器
-        text_retriever = Retriever(vector_store=vector_store,
-                                   document_store=chunk_store,
-                                   embed_func=emb.embed_documents,
-                                   k=3,
-                                   score_threshold=score_threshold
-                                   )
+        text_retriever = Retriever(
+            vector_store=vector_store,
+            document_store=chunk_store,
+            embed_func=emb.embed_documents,
+            k=3,
+            score_threshold=score_threshold,
+        )
 
         # 配置text生成text大模型chain，具体ip端口请根据实际情况适配修改
         llm = Text2TextLLM(base_url=llm_url, model_name=model_name, client_param=ClientParam(use_http=True, timeout=60))

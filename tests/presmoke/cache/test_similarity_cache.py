@@ -21,8 +21,9 @@ See the Mulan PSL v2 for more details.
 import os
 import shutil
 import unittest
+# pylint: disable=duplicate-code
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from pymilvus import MilvusClient
 

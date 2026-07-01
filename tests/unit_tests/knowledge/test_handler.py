@@ -20,11 +20,12 @@ See the Mulan PSL v2 for more details.
 
 import os
 import unittest
+
+# pylint: disable=duplicate-code
 from unittest.mock import MagicMock, patch
 
 import numpy as np
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from paddle.base import libpaddle
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from mx_rag.document import LoaderMng
 from mx_rag.document.loader import DocxLoader, PdfLoader, ImageLoader
@@ -54,9 +55,11 @@ class TestHandler(unittest.TestCase):
     loader_mng.register_loader(PdfLoader, [".pdf"])
     loader_mng.register_loader(ImageLoader, [".png"])
 
-    loader_mng.register_splitter(RecursiveCharacterTextSplitter,
-                                 [".docx", ".pdf"],
-                                 {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False})
+    loader_mng.register_splitter(
+        RecursiveCharacterTextSplitter,
+        [".docx", ".pdf"],
+        {"chunk_size": 4000, "chunk_overlap": 20, "keep_separator": False},
+    )
 
     def setUp(self):
         # 先清空临时数据库
@@ -69,7 +72,7 @@ class TestHandler(unittest.TestCase):
             'knowledge': self.knowledge_db,
             'loader_mng': self.loader_mng,
             'embed_func': embed_func,
-            'force': True
+            'force': True,
         }
 
     def create_knowledge_db(self, knowledge_name="test001"):
@@ -78,8 +81,14 @@ class TestHandler(unittest.TestCase):
         chunk_store = SQLiteDocstore(db_path=SQL_PATH)
         knowledge_store = KnowledgeStore(db_path=SQL_PATH)
         knowledge_store.add_knowledge(knowledge_name, 'Default')
-        return KnowledgeDB(knowledge_store=knowledge_store, chunk_store=chunk_store, vector_store=vector_store,
-                           knowledge_name=knowledge_name, white_paths=[self.white_paths], user_id='Default')
+        return KnowledgeDB(
+            knowledge_store=knowledge_store,
+            chunk_store=chunk_store,
+            vector_store=vector_store,
+            knowledge_name=knowledge_name,
+            white_paths=[self.white_paths],
+            user_id='Default',
+        )
 
     def test_upload_with_invalid_knowledge(self):
         self.common_params['knowledge'] = None
