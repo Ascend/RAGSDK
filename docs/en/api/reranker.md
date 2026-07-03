@@ -1,5 +1,3 @@
-# API Reference - Reranking
-
 # Reranking
 
 ## `Reranker`

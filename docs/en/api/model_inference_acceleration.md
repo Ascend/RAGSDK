@@ -1,5 +1,3 @@
-# API Reference - Model Inference Acceleration
-
 # Model Inference Acceleration
 
 **Model Inference Acceleration Configuration Instructions**

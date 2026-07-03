@@ -1,5 +1,3 @@
-# Interface Reference - Model Client Integration
-
 # Model Client Integration
 
 ## `LLM`

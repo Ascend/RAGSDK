@@ -167,7 +167,7 @@ def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_f
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |document_path|str|Required|The directory that contains the original document set provided by the user. The directory length must be in the range `[1, 1024]`. The path cannot contain symlinks, and `..` is not allowed.|
-|loader_mng|LoaderMng|Required|The file loading and parsing component. For details, see [LoaderMng]（需补充链接）.|
+|loader_mng|LoaderMng|Required|The file loading and parsing component. For details, see [LoaderMng](./knowledge_management.md#loadermng).|
 |filter_func|Callable|Optional|A callback function for cleaning the parsed and chunked document fragments. The input and output are both `List[str]`. The default value is `None`.|
 
 **Return Values**
@@ -278,7 +278,7 @@ def generate_origin_document(document_path: str, loader_mng: LoaderMng, filter_f
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |document_path|str|Required|The directory that contains the original document set provided by the user. The directory length must be in the range `[1, 1024]`. The path cannot contain symlinks, and `..` is not allowed.|
-|loader_mng|LoaderMng|Required|The file loading and parsing component. For details, see [LoaderMng]（需补充链接）.|
+|loader_mng|LoaderMng|Required|The file loading and parsing component. For details, see [LoaderMng](./knowledge_management.md#loadermng).|
 |filter_func|Callable|Optional|A callback function for cleaning the parsed and chunked document fragments. The input and output are both `List[str]`. The default value is `None`.|
 
 **Return Values**
