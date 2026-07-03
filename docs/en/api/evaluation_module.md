@@ -1,5 +1,3 @@
-# Interface Reference - Evaluation Module
-
 # Evaluation Module
 
 ## Overview

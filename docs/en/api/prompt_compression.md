@@ -1,5 +1,3 @@
-# API Reference - Prompt Compression
-
 # Prompt Compression
 
 ## `PromptCompressor`
