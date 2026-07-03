@@ -94,8 +94,8 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
     ## 要求
     1. 一句视为一个独立事件，保留原句，不做任何省略。
     2. 仅使用指定关系类型：在之前、在之后、同时、因为、结果。
-    3. 每个三元组中的“头事件”与“尾事件”均须为段落中完整原句，且语义对应具体、可独立理解。
-    4. “头事件”和“尾事件”不能为空字符串，且不能重叠；
+    3. 每个三元组中的"头事件"与"尾事件"均须为段落中完整原句，且语义对应具体、可独立理解。
+    4. "头事件"和"尾事件"不能为空字符串，且不能重叠；
     5. 关系不能为空字符串；
     6. 输出严格使用下方 JSON 格式，不允许添加、删减或省略任何字段。
     ## JSON 格式
@@ -207,6 +207,8 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
 
 **English Default Prompts:**
 
+- **Triple Extraction Prompt (`TRIPLE_INSTRUCTIONS_EN`):**
+
     ```text
     TRIPLE_INSTRUCTIONS_EN = {
         "entity_relation": """Given a passage, summarize all the important entities and the relations between them in
@@ -281,7 +283,7 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
     }
     ```
 
-- **Entity conceptualization prompt (`ENTITY_PROMPT_CN`):**
+- **Entity Conceptualization Prompt (`ENTITY_PROMPT_EN`):**
 
     ```text
     ENTITY_PROMPT_EN = '''I will give you an ENTITY. You need to give several phrases containing 1-2 words for the
@@ -316,7 +318,7 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
                 '''
     ```
 
-- **Event conceptualization prompt (`EVENT_PROMPT_CN`):**
+- **Event Conceptualization Prompt (`EVENT_PROMPT_EN`):**
 
     ```text
     EVENT_PROMPT_EN = '''I will give you an EVENT. You need to give several phrases containing 1-2 words for the
@@ -341,7 +343,7 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
                 '''
     ```
 
-- **Relation conceptualization prompt (`RELATION_PROMPT_CN`):**
+- **Relation Conceptualization Prompt (`RELATION_PROMPT_EN`):**
 
     ```text
     RELATION_PROMPT_EN = '''I will give you an RELATION. You need to give several phrases containing 1-2 words for
@@ -477,7 +479,7 @@ def upload_files(file_list, loader_mng)
 | Parameter | Data Type | Optional/Required | Description |
 |--|--|--|--|
 | file_list | list | Required | The document list. A batch of documents supports only one language type. Uploading too many documents at once will slow down knowledge graph construction. The number of documents is limited to `[1, 100]`. <br>The path length of a single document must be in the range `[1, 1024]`. The document path cannot be a symbolic link and must not contain `..`. Each document must be no larger than 10 GB. |
-| loader_mng | LoaderMng | Required | The manager object that provides document parsing functions. See LoaderMng（需补充链接）for the data type. |
+| loader_mng | LoaderMng | Required | The manager object that provides document parsing functions. See [LoaderMng](./knowledge_management.md#loadermng) for the data type. |
 
 **Returns**
 
@@ -500,7 +502,7 @@ def build_graph(lang, **kwargs)
 | Parameter | Data Type | Optional/Required | Description |
 |--------|------|------|------|
 | lang | Lang | Optional | The language of the corpus. The default value is `Lang.EN`, which indicates English corpus. |
-| kwargs | dict | Optional | Extended parameters: <li>`max_workers`: The number of threads used to build the knowledge graph. The default value is `5`.</li><li>`batch_size`: The batch size for node vectorization, retrieval, and other operations. The default value is `32`.</li><li>`top_k`: When clustering graph node concepts, the number of most similar concepts returned by vector retrieval. The default value is `5`, and the value range is `[1, 100]`.</li><li>`threshold`: The vector similarity threshold. Results below this value are filtered out. The default value is `0.3`, and the value range is `[0.0, 1.0]`.</li><li>`triple_instructions`: The instructions used to guide the LLM to extract relations from documents. The type is `dict`. The default value is `None`. In that case, the default value is selected according to the language, with `TRIPLE_INSTRUCTIONS_CN` for Chinese and `TRIPLE_INSTRUCTIONS_EN` for English. You can override the default extraction instructions by providing a dictionary. The dictionary must include the following keys:<ul><li>`entity_relation`: The corresponding value defines the instructions for entity-relation extraction. The type is `str`, and the length range is `[1, 1048576]`.</li><li>`event_entity`: The corresponding value defines the instructions for event-entity extraction. The type is `str`, and the length range is `[1, 1048576]`.</li><li>`event_relation`: The corresponding value defines the instructions for event-relation extraction. The type is `str`, and the length range is `[1, 1048576]`.<br>Each key maps to the instructions for a specific extraction task.</li></ul></li><li>`conceptualizer_prompts`: Prompts used to guide the LLM in conceptualization. The type is `dict`. The default value is `None`. You can override the default conceptualization prompts by providing a dictionary. The dictionary must include the following keys:<ul><li>`entity`: The corresponding value defines the prompt for conceptualizing graph entities. The type is `... [truncated]entity: 对应的值定义对图中实体进行概念化的提示， 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为ENTITY_PROMPT_CN，英文为ENTITY_PROMPT_EN）。</li><li>event: 定义对图中事件进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为EVENT_PROMPT_CN，英文为EVENT_PROMPT_EN）。</li><li>relation: 定义对图中关系进行概念化的提示, 字符串类型，长度范围为[1, 1048576]。当conceptualizer_prompts为None时将根据语言使用默认值（中文为RELATION_PROMPT_CN，英文为RELATION_PROMPT_EN）。</li></ul></li>
+| kwargs | dict | Optional | Extended parameters: <li>`max_workers`: The number of threads used to build the knowledge graph. The default value is `5`.</li><li>`batch_size`: The batch size for node vectorization, retrieval, and other operations. The default value is `32`.</li><li>`top_k`: When clustering graph node concepts, the number of most similar concepts returned by vector retrieval. The default value is `5`, and the value range is `[1, 100]`.</li><li>`threshold`: The vector similarity threshold. Results below this value are filtered out. The default value is `0.3`, and the value range is `[0.0, 1.0]`.</li><li>`triple_instructions`: The instructions used to guide the LLM to extract relations from documents. The type is `dict`. The default value is `None`. In that case, the default value is selected according to the language, with `TRIPLE_INSTRUCTIONS_CN` for Chinese and `TRIPLE_INSTRUCTIONS_EN` for English. You can override the default extraction instructions by providing a dictionary. The dictionary must include the following keys:<ul><li>`entity_relation`: The corresponding value defines the instructions for entity-relation extraction. The type is `str`, and the length range is `[1, 1048576]`.</li><li>`event_entity`: The corresponding value defines the instructions for event-entity extraction. The type is `str`, and the length range is `[1, 1048576]`.</li><li>`event_relation`: The corresponding value defines the instructions for event-relation extraction. The type is `str`, and the length range is `[1, 1048576]`.<br>Each key maps to the instructions for a specific extraction task.</li></ul></li><li>`conceptualizer_prompts`: Prompts used to guide the LLM in conceptualization. The type is `dict`. The default value is `None`. You can override the default conceptualization prompts by providing a dictionary. The dictionary must include the following keys:<ul><li>`entity`: The corresponding value defines the prompt for conceptualizing graph entities. The type is `str`, and the length range is `[1, 1048576]`. When `conceptualizer_prompts` is `None`, the default value is selected based on the language (`ENTITY_PROMPT_CN` for Chinese, `ENTITY_PROMPT_EN` for English).</li><li>`event`: The corresponding value defines the prompt for conceptualizing graph events. The type is `str`, and the length range is `[1, 1048576]`. When `conceptualizer_prompts` is `None`, the default value is selected based on the language (`EVENT_PROMPT_CN` for Chinese, `EVENT_PROMPT_EN` for English).</li><li>`relation`: The corresponding value defines the prompt for conceptualizing graph relations. The type is `str`, and the length range is `[1, 1048576]`. When `conceptualizer_prompts` is `None`, the default value is selected based on the language (`RELATION_PROMPT_CN` for Chinese, `RELATION_PROMPT_EN` for English).</li></ul></li> |
 
 **Returns**
 
@@ -595,7 +597,7 @@ GraphEvaluator(llm, llm_config)
 
 `GraphEvaluator` object.
 
-**Usage Example<a name="section8509453104117"></a>**
+**Usage Example**
 
 ```python
 import json
