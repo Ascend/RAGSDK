@@ -1,5 +1,3 @@
-# API Reference - LLM Chain
-
 # LLM Chain
 
 The `Chain` definition implements integration with LLM clients.
