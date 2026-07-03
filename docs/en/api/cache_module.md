@@ -17,7 +17,7 @@ Compared with GPTCache, `MxRAGCache` adds the following functions:
 - Semantic approximate cache similarity calculation supports RAG-optimized TEI Reranker.
 - Cache support for RAG SDK chains, including image-to-image, text-to-text, and text-to-image.
 
-In the original RAG SDK workflow, a question-answer cache is added before knowledge document retrieval. If a query hits the cache, it bypasses the LLM inference process. Therefore, it saves knowledge document retrieval latency and LLM inference latency, and improves end-to-end performance. Performance tests show that a cache hit can be 50 times faster than a cache miss.
+In the original RAG SDK workflow, a question-answer cache is added before knowledge document retrieval. If a query hits the cache, it bypasses the LLM inference process. Therefore, it saves knowledge document retrieval latency and LLM inference latency, and improves end-to-end performance. Performance tests show that a cache hit can greatly boost end-to-end performance.
 
 ## Module Introduction
 
