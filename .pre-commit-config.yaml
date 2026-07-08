@@ -37,14 +37,12 @@ repos:
     rev: v2.4.1
     hooks:
       - id: codespell
-        exclude: |
-          (?i)docker/.*
         args: [
-            "-L",
-            "CANN,cann,NNAL,nnal,ASCEND,ascend,EnQue,CopyIn,ArchType,AND,ND,tbe,copyin,alog,IndexT",
-            "--skip",
-            "*.py,*.cpp,*.hpp,*.c,*.h",
-          ]
+          "-L",
+          "CANN,cann,NNAL,nnal,ASCEND,ascend,EnQue,CopyIn,ArchType,AND,ND,tbe,copyin,alog,Aks,aks",
+          "--skip",
+          "*.py,*.cpp,*.hpp,*.c,*.h,*.toml",
+        ]
 
   # pylint：指定 pre-commit/pyproject.toml
   - repo: https://gitcode.com/gh_mirrors/pyl/pylint
@@ -86,4 +84,17 @@ repos:
           - "--verbose"
           - "-i"
         exclude: ^build/|tests/third_party/
-
+  # -------------------------- Gitleaks 本地离线二进制扫描 --------------------------
+  - repo: local
+    hooks:
+      - id: gitleaks-offline-scan
+        name: Gitleaks Secret Scan(Local Binary)
+        entry: ./gitleaks
+        language: system
+        pass_filenames: true
+        args:
+          - protect
+          - --verbose
+          - --redact
+          - --config=pre-commit/.gitleaks.toml
+        stages: [pre-commit]
