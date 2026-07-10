@@ -43,12 +43,15 @@ Tags follow this pattern:
 ## How to Build
 
 ```bash
-# Clone the repository on the host, enter the docker directory, replace {cann version} with the actual version, and replace {your_repo} with the actual image repository
+# Clone the repository on the host, enter the docker directory, select a Dockerfile for the target chip series and operating system, and replace {your_repo} with the actual image repository
 git clone https://gitcode.com/Ascend/RAGSDK.git && cd RAGSDK/docker
 
-docker build --network host --build-arg CANN_VERSION={cann version} -t {your_repo}/ragsdk:latest -f Dockerfile.<chip-series>.<os> .
+docker build --network host -t {your_repo}/ragsdk:<ragsdk-version>-<chip-series>-<os>-<python-version> -f Dockerfile.<chip-series>.<os> .
 
 ```
+
+> [!NOTE]
+> The CANN base image version is specified by the `FROM` instruction in the selected Dockerfile. Select the Dockerfile that matches the target chip series and operating system.
 
 ## Run RAG SDK Container
 

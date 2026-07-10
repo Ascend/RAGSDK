@@ -42,12 +42,15 @@ Tag 遵循以下格式:
 ## 如何本地构建
 
 ```bash
-# 在宿主机上任意目录下 clone 代码, 并进入 docker 目录, 获取dockerfile替换 {cann version} 为实际版本, 替换 {your_repo} 为实际镜像仓库
+# 在宿主机上任意目录下 clone 代码, 并进入 docker 目录, 根据目标芯片和操作系统选择 Dockerfile, 替换 {your_repo} 为实际镜像仓库
 git clone https://gitcode.com/Ascend/RAGSDK.git && cd RAGSDK/docker
 
-docker build --network host --build-arg CANN_VERSION={cann version} -t {your_repo}/ragsdk:latest -f Dockerfile.<芯片系列>.<操作系统> .
+docker build --network host -t {your_repo}/ragsdk:<ragsdk版本>-<芯片系列>-<操作系统>-<python版本> -f Dockerfile.<芯片系列>.<操作系统> .
 
 ```
+
+> [!NOTE]
+> CANN 基础镜像版本由所选 Dockerfile 的 `FROM` 指令指定，请选择与目标芯片和操作系统匹配的 Dockerfile。
 
 ## 运行RAG SDK容器
 
