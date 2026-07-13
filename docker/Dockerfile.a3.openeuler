@@ -87,11 +87,11 @@ RUN cd /tmp && wget https://gitee.com/ascend/mindsdk-referenceapps/repository/ar
 
 RUN pip3 install nvidia-ml-py && pip3 uninstall -y pynvml
 
-# 下载 RAGSDK Samples 代码
+# 下载 RAGSDK example 代码
 RUN cd /tmp && \
     git clone --depth 1 https://gitcode.com/Ascend/RAGSDK.git && \
     mkdir -p /workspace && \
-    cp -r RAGSDK/example /workspace/RAGSDK && \
+    cp -r RAGSDK/example /workspace && \
     rm -rf RAGSDK
 
 # 添加环境变量

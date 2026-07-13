@@ -26,15 +26,15 @@ export PYTHONPATH=$TOP_PATH:$PYTHONPATH:$FAKE_PACKAGE_PATH
 export LD_PRELOAD=/usr/lib/$(uname -m)-linux-gnu/libgomp.so.1:$LD_PRELOAD
 export LD_PRELOAD=/usr/lib/$(uname -m)-linux-gnu/libGLdispatch.so.0:$LD_PRELOAD
 
-mkdir test_results
+mkdir -p test_results
 
 function run_test_cases() {
-    echo "Get testcases final result."
-    python3 -m pytest --cov="${CUR_PATH}"/../mx_rag --cov-report=html --cov-report=xml --junit-xml=./final.xml --html=./final.html --self-contained-html --durations=5 -vs --cov-branch --cov-config=.coveragerc --ignore="${CUR_PATH}/presmoke/*" ${CUR_PATH}/unit_tests/
-    coverage xml -i --omit="build/*,cust_op/*,src/*,*/libs/*,*/evaluate/*,*/train_data_generator.py,*/ops/*"
-    cp coverage.xml final.xml final.html ./test_results
-    cp -r htmlcov ./test_results
-    rm -rf coverage.xml final.xml final.html htmlcov
+   echo "Get testcases final result."
+   python3 -m pytest --cov="${CUR_PATH}"/../mx_rag --cov-report=html --cov-report=xml --junit-xml=./final.xml --html=./final.html --self-contained-html --durations=5 -vs --cov-branch --cov-config=.coveragerc --ignore="${CUR_PATH}/presmoke/*" ${CUR_PATH}/unit_tests/
+   coverage xml -i --omit="build/*,cust_op/*,src/*,*/libs/*,*/evaluate/*,*/train_data_generator.py,*/ops/*"
+   cp coverage.xml final.xml final.html ./test_results
+   cp -r htmlcov ./test_results
+   rm -rf coverage.xml final.xml final.html htmlcov
 }
 
 pip3 install pytest pytest-cov pytest-html langchain_opengauss==0.1.5
