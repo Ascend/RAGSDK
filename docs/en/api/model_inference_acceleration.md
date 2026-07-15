@@ -4,7 +4,7 @@
 
 The `TextEmbedding` model currently supports vector inference acceleration for `bert`, `roberta`, and `xlm_roberta` embedding models, and only the `float16` data type is supported. To use this feature, install the operator module together with RAG SDK package, and ensure that you have enabled this feature. It is disabled by default. For a specific example, see the [example of enabling inference acceleration](./embedding.md#class-description).
 
-CLIP model acceleration supports only ViT-B-16, ViT-L-14, ViT-L-14-336, and ViT-H-14. For the download [link](https://github.com/OFA-Sys/Chinese-CLIP), see the model download instructions. After you enable acceleration, the first inference triggers graph compilation and is expected to take 1 to 2 minutes.
+CLIP model acceleration supports only ViT-B-16, ViT-L-14, ViT-L-14-336, and ViT-H-14. For the download <https://github.com/OFA-Sys/Chinese-CLIP>, see the model download instructions. After you enable acceleration, the first inference triggers graph compilation and is expected to take 1 to 2 minutes.
 
 - The inference acceleration configuration for each model is as follows.
 
