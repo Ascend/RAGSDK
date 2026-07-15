@@ -31,7 +31,7 @@
 # 2. 用例分析
 
 多模态数据集：ScienceQA数据集
-https://github.com/lupantech/ScienceQA
+<https://github.com/lupantech/ScienceQA>
 数据集简介：ScienceQA(2022)包含21,208道来自中小学科学课程的问答多选题。一道典型的问题包含多模态的背景（context）、正确的选项、通用的背景知识（lecture）以及具体的解释（explanation）。
 
 名称: 训练集
