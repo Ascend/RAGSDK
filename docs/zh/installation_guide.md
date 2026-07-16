@@ -68,7 +68,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 <tr>
 <td>CANN软件包</td>
 <td>Ascend-cann-toolkit_<em id="i193132091185"><a name="i193132091185"></a><a name="i193132091185"></a><span id="ph33611452313"><a name="ph33611452313"></a><a name="ph33611452313"></a>&lt;version&gt;</span></em>_linux-<em id="i18718152018815"><a name="i18718152018815"></a><a name="i18718152018815"></a><span id="ph4968818194110"><a name="ph4968818194110"></a><a name="ph4968818194110"></a>&lt;arch&gt;</span></em>.run</td>
-<td rowspan="3">8.5.0</td>
+<td rowspan="3">9.0.0</td>
 <td rowspan="3">商用版：<a href="https://www.hiascend.com/developer/download/commercial/result?module=cann">获取链接</a><br>社区版：<a href="https://www.hiascend.com/developer/download/commercial/result?module=cann">获取链接</a></td>
 </tr>
 <tr>
@@ -82,7 +82,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 <tr>
 <td>npu-driver驱动包</td>
 <td>Ascend-hdk-<em id="i1935205617"><a name="i1935205617"></a><a name="i1935205617"></a>&lt;chip_type&gt;</em>-npu-driver_<em id="i7935130468"><a name="i7935130468"></a><a name="i7935130468"></a>&lt;version&gt;</em>_linux-<em id="i9935706611"><a name="i9935706611"></a><a name="i9935706611"></a>&lt;arch&gt;</em>.run</td>
-<td rowspan="2">25.5.0</td>
+<td rowspan="2">26.0.RC1</td>
 <td rowspan="2">商用版：<a href="https://www.hiascend.com/zh/hardware/firmware-drivers/commercial">获取链接</a><br>社区版：<a href="https://www.hiascend.com/hardware/firmware-drivers?tag=community">获取链接</a></td>
 </tr>
 <tr>
@@ -92,7 +92,7 @@ RAG SDK支持在容器内部署和在物理机内部署两种安装方式。
 <tr>
 <td>Index SDK检索软件包</td>
 <td>Ascend-mindxsdk-mxindex_<em id="i13839185810816"><a name="i13839185810816"></a><a name="i13839185810816"></a>&lt;version&gt;</em>_linux-<em id="i21954331981"><a name="i21954331981"></a><a name="i21954331981"></a>&lt;arch&gt;</em>.run</td>
-<td>7.3.0</td>
+<td>26.0.0</td>
 <td><a href="https://www.hiascend.com/zh/developer/download/community/result?module=sdk+cann">获取链接</a></td>
 </tr>
 <tr>
