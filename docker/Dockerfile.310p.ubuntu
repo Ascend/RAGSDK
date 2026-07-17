@@ -8,7 +8,7 @@ ARG INDEXSDK_VERSION=26.0.0
 RUN pip3 config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
     pip3 config set install.trusted-host mirrors.aliyun.com
 
-RUN apt-get update && apt-get install -y vim tar zip unzip git curl wget dos2unix make gcc g++ ccache gfortran libssl-dev libpq-dev swig ffmpeg ca-certificates
+RUN apt-get update && apt-get install -y vim tar zip unzip git curl wget dos2unix make gcc g++ ccache gfortran libssl-dev libpq-dev swig ffmpeg patch ca-certificates
 
 RUN apt-get update && apt-get install -y build-essential ${PYTHON_VERSION}-dev ${PYTHON_VERSION}-distutils ${PYTHON_VERSION}-venv
 
@@ -31,6 +31,14 @@ RUN cd /tmp && git clone https://github.com/OpenMathLib/OpenBLAS.git && \
     make FC=gfortran USE_OPENMP=1 -j$(nproc) && \
 	make PREFIX=${OPENBLAS_INSTALL_PATH} install
 ENV LD_LIBRARY_PATH=${OPENBLAS_INSTALL_PATH}/lib:$LD_LIBRARY_PATH
+
+# 安装mxrag
+RUN ARCH=$(uname -m) && \
+    cd /tmp && wget https://gitcode.com/Ascend/RAGSDK/releases/download/v${RAGSDK_VERSION}/Ascend-mindxsdk-mxrag_${RAGSDK_VERSION}_linux-${ARCH}.run && \
+    bash /tmp/Ascend-mindxsdk-mxrag_*_linux-${ARCH}.run --install --install-path=/usr/local/Ascend --quiet --platform=${PLATFORM} && \
+    pip3 install -r /usr/local/Ascend/mxRag/requirements.txt
+# 安装mxrag第三方依赖
+RUN pip3 uninstall faiss-cpu -y && pip3 install build mineru streamlit>=1.40.0 fastapi build
 
 # 安装faiss
 ARG FAISS_INSTALL_PATH=/usr/local/faiss/faiss1.10.0
@@ -58,16 +66,6 @@ RUN ARCH=$(uname -m) && \
     bash /tmp/Ascend-mindxsdk-mxindex_*_linux-${ARCH}.run --quiet --install --install-path=/usr/local/Ascend --platform=${PLATFORM} && \
     cd ${MX_INDEX_INSTALL_PATH}/ops && ./custom_opp_${ARCH}.run && \
     mkdir -p ${MX_INDEX_MODELPATH}
-
-# 安装torch-npu
-RUN pip3 install torch-npu==2.1.0.post13 --extra-index-url https://download.pytorch.org/whl/cpu
-# 安装mxrag
-RUN ARCH=$(uname -m) && \
-    cd /tmp && wget https://gitcode.com/Ascend/RAGSDK/releases/download/v${RAGSDK_VERSION}/Ascend-mindxsdk-mxrag_${RAGSDK_VERSION}_linux-${ARCH}.run && \
-    bash /tmp/Ascend-mindxsdk-mxrag_*_linux-${ARCH}.run --install --install-path=/usr/local/Ascend --quiet --platform=${PLATFORM} && \
-    pip3 install -r /usr/local/Ascend/mxRag/requirements.txt
-# 安装mxrag第三方依赖
-RUN pip3 install build mineru numpy==1.26.4
 
 # 安装ascendfaiss
 ARG DRIVER_INSTALL_PATH=/usr/local/Ascend

@@ -37,8 +37,14 @@ function run_test_cases() {
    rm -rf coverage.xml final.xml final.html htmlcov
 }
 
-pip3 install pytest pytest-cov pytest-html langchain_opengauss==0.1.5
+pip3 install pytest pytest-cov pytest-html
+
+wget https://mindcluster.obs.cn-north-4.myhuaweicloud.com/blueImageDependency/torch-2.10.0%2Bcpu-cp311-cp311-manylinux_2_28_x86_64.whl && pip3 install torch*.whl --no-deps
 pip3.11 install -r ../requirements.txt --exists-action i
+pip3 list |grep trans
+pip3 uninstall -y torch_npu  torchvision
+
+pip3 list |grep torch
 echo "************************************* Start mxRAG LLT Test *************************************"
 start=$(date +%s)
 run_test_cases
