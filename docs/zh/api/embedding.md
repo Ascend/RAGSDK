@@ -46,7 +46,7 @@ import os
 from paddle.base import libpaddle
 import torch_npu
 # 适配向量化推理加速
-from modeling_bert_adapter import enable_bert_speed
+from mx_rag.transformer_adapter.modeling_bert_adapter import enable_bert_speed
 # 使能向量化推理加速（设置为"True"时表示使能,"False"表示不使能）
 os.environ["ENABLE_BOOST"] = "True"
 from mx_rag.embedding.local import TextEmbedding

@@ -46,7 +46,7 @@ import os
 from paddle.base import libpaddle
 import torch_npu
 # Adapt the embedding inference acceleration
-from modeling_bert_adapter import enable_bert_speed
+from mx_rag.transformer_adapter.modeling_bert_adapter import enable_bert_speed
 # Enable embedding inference acceleration. Setting it to "True" enables the feature, and setting it to "False" disables it
 os.environ["ENABLE_BOOST"] = "True"
 from mx_rag.embedding.local import TextEmbedding
