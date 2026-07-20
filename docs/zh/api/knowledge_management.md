@@ -126,7 +126,7 @@ def add_usr_id_to_knowledge(knowledge_name, user_id, role)
 
 **功能描述<a name="section1653621022013"></a>**
 
-删除knowledge知识库中的用户，删除knowledge\_table表中的记录，参见[KnowledgeModel类](./databases.md#knowledgemodel类)
+删除knowledge知识库中的用户，删除knowledge\_table表中的记录，参见[KnowledgeModel类](./databases.md#knowledgemodel类)。
 
 **函数原型<a name="section12411139493"></a>**
 

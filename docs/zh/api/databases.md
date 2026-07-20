@@ -149,7 +149,7 @@ def get_all_document_id(self) -> List[int]
 
 **功能描述<a name="section126871434117"></a>**
 
-更新关系数据库的chunk片段
+更新关系数据库的chunk片段。
 
 **函数原型<a name="section868519111050"></a>**
 
@@ -162,7 +162,7 @@ def update(chunk_ids: List[int], texts: List[str])
 
 **功能描述<a name="section126871434117"></a>**
 
-根据document\_id返回对应的文档片段
+根据document\_id返回对应的文档片段。
 
 **函数原型<a name="section868519111050"></a>**
 
@@ -384,7 +384,7 @@ def full_text_search(query, top_k, filter_dict) -> List[MxDocument]
 
 **功能描述<a name="section5434255810"></a>**
 
-删除当前实例管理的数据库
+删除当前实例管理的数据库。
 
 **函数原型<a name="section18789201331417"></a>**
 
@@ -681,7 +681,7 @@ def drop_collection()
 
 **功能描述<a name="section5434255810"></a>**
 
-通过document\_id获取对应文档片段
+通过document\_id获取对应文档片段。
 
 **函数原型<a name="section18789201331417"></a>**
 
@@ -1969,7 +1969,7 @@ def get_all_ids() -> List[int]
 
 **功能描述<a name="section5434255810"></a>**
 
-根据id更新向量数据库中的向量
+根据id更新向量数据库中的向量。
 
 **函数原型<a name="section18789201331417"></a>**
 
