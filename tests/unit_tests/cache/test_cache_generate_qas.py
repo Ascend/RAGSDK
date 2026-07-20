@@ -66,7 +66,7 @@ class TestQAGenerate(unittest.TestCase):
         titles, contents = parser.parse()
         # 验证结果
         self.assertIn('test.md', titles)
-        self.assertIn('# Test Tile\n\nthis is a test', contents)
+        self.assertIn('# Test Tile\n\nthis is a test\n', contents)
 
 
 
