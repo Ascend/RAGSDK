@@ -49,7 +49,7 @@ RAG SDK的完整开发流程如[图1](#fig1495610311102)所示。用户可参见
 
 2. **环境预检查**
    - 执行 `npu-smi info` 命令查看当前环境安装的 NPU 驱动版本
-   - 通过RAG SDK镜像配套表中获取到的配套CANN版本去[固件与驱动文档](https://www.hiascend.com/hardware/firmware-drivers/community)中查看对应的NPU驱动版本，如果和当前环境安装的驱动版本不配套，请更新NPU驱动至对应版本，NPU驱动更新指导详见[驱动和固件安装指南](https://support.huawei.com/enterprise/zh/doc/EDOC1100568434/36e8d875?idPath=23710424|251366513|254884019|261408772|252764743)。
+   - 通过RAG SDK镜像配套表中获取配套CANN版本，并参见《[固件与驱动](https://www.hiascend.com/hardware/firmware-drivers/community)》页面查看对应的NPU驱动版本，如果和当前环境安装的驱动版本不配套，需更新NPU驱动至对应版本，更新指导详见《[驱动和固件安装指南](https://support.huawei.com/enterprise/zh/doc/EDOC1100568434/36e8d875?idPath=23710424|251366513|254884019|261408772|252764743)》。
 
 3. **镜像拉取示例**
 
@@ -78,7 +78,7 @@ RAG SDK的完整开发流程如[图1](#fig1495610311102)所示。用户可参见
 
 ### 步骤 2：启动容器
 
-> [!NOTE] 说明
+> [!NOTE]
 >
 > - `--device /dev/davinci0` 中的设备编号需按宿主机实际 NPU 编号调整
 > - `-v /path/to/model:/home/data` 挂载宿主机目录到容器（可选）
@@ -306,4 +306,4 @@ python3 rag_demo_query.py \
 
 ## chat with ragsdk<a name="ZH-CN_TOPIC_0000002485964970"></a>
 
-启动WEB服务，进行参数配置、文档上传、删除、问答等操作，详细流程见：[chat\_with\_ragsdk](https://gitcode.com/Ascend/RAGSDK/blob/master/example/chat_with_ascend/README.md)
+启动WEB服务，进行参数配置、文档上传、删除、问答等操作，详细流程见：[chat\_with\_ragsdk](https://gitcode.com/Ascend/RAGSDK/blob/master/example/chat_with_ascend/README.md)。

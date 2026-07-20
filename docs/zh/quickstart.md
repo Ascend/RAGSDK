@@ -21,7 +21,7 @@ RAG SDK 提供基于昇腾平台的知识库问答能力，支持文档解析、
 
 2. **环境预检查**
    - 执行 `npu-smi info` 命令查看当前环境安装的 NPU 驱动版本
-   - 通过RAG SDK镜像配套表中获取到的配套CANN版本去[固件与驱动文档](https://www.hiascend.com/hardware/firmware-drivers/community)中查看对应的NPU驱动版本，如果和当前环境安装的驱动版本不配套，请更新NPU驱动至对应版本，NPU驱动更新指导详见[驱动和固件安装指南](https://support.huawei.com/enterprise/zh/doc/EDOC1100568434/36e8d875?idPath=23710424|251366513|254884019|261408772|252764743)。
+   - 通过RAG SDK镜像配套表中获取配套CANN版本，并参见《[固件与驱动](https://www.hiascend.com/hardware/firmware-drivers/community)》页面查看对应的NPU驱动版本，如果和当前环境安装的驱动版本不配套，需更新NPU驱动至对应版本，更新指导详见《[驱动和固件安装指南](https://support.huawei.com/enterprise/zh/doc/EDOC1100568434/36e8d875?idPath=23710424|251366513|254884019|261408772|252764743)》。
 
 3. **镜像拉取示例**
 
@@ -49,7 +49,7 @@ RAG SDK 提供基于昇腾平台的知识库问答能力，支持文档解析、
 
 ## 步骤 2：启动容器
 
-> [!NOTE] 说明
+> [!NOTE]
 >
 > - `--device /dev/davinci0` 中的设备编号需按宿主机实际 NPU编号调整（可选，当前样例未使用NPU卡）
 > - `-v /path/to/model:/home/data` 挂载宿主机目录到容器（可选，当前样例未使用模型文件）
@@ -78,7 +78,7 @@ docker exec -it ragsdk_demo bash
 
 ## 步骤 4： 准备测试样例代码
 
-通常容器镜像中已包含/workspace/example/parse_document示例代码，无需额外拷贝；如果该示例代码不存在，请拷贝[样例代码目录example](../../example)到容器内/workspace目录下
+通常容器镜像中已包含/workspace/example/parse_document示例代码，无需额外拷贝；如果该示例代码不存在，请拷贝[样例代码目录example](../../example)到容器内/workspace目录下。
 
 ## 步骤 5：执行测试样例
 

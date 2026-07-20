@@ -235,7 +235,7 @@ This section guides you through deploying RAG SDK on a physical machine on Ubunt
 
 **Procedure**
 
-1. Install `torch` and `torch-npu`.
+1. Install `torch` and `TorchNPU`.
 
     ```bash
     # For x86, install torch:
