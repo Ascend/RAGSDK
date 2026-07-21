@@ -1,0 +1,520 @@
+OPEN SOURCE SOFTWARE NOTICE
+
+Please note we provide an open source software notice along with this product and/or this product firmware (in the following just "this product"). The open source software licenses are granted by the respective right holders. And the open source licenses prevail all other license information with regard to the respective open source software contained in the product, including but not limited to End User Software Licensing Agreement. This notice is provided on behalf of Huawei Technologies Co., Ltd. and any of its local subsidiaries which may have provided this product to you in your local country.
+
+
+Warranty Disclaimer
+THE OPEN SOURCE SOFTWARE IN THIS PRODUCT IS DISTRIBUTED IN THE HOPE THAT IT WILL BE USEFUL, BUT WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. SEE THE APPLICABLE LICENSES FOR MORE DETAILS.
+
+
+Copyright Notice and License Texts
+
+Software: RAGSDK (mxRag)
+Copyright notice:
+Copyright (c) Huawei Technologies Co., Ltd. 2025-2026. All rights reserved.
+License: Mulan PSL v2
+
+---
+
+Software: IndexSDK
+Copyright notice:
+Copyright (c) Huawei Technologies Co., Ltd. 2025-2026. All rights reserved.
+License: Mulan PSL v2
+
+---
+
+Copyright (c) 2005-2025, NumPy Developers. All rights reserved.
+(NumPy)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2016-2024, PyTorch contributors. All rights reserved.
+(PyTorch)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2016-2024, PyTorch contributors. All rights reserved.
+(torchvision)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2023-2025, Huawei Technologies Co., Ltd. All rights reserved.
+(torch-npu)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2018-2024, The Hugging Face Team. All rights reserved.
+(transformers)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2018-2024, The Hugging Face Team. All rights reserved.
+(accelerate)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2018-2024, Nils Reimers and the UKP Lab. All rights reserved.
+(sentence_transformers)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2022-2024, OFA-Sys. All rights reserved.
+(cn_clip / Chinese-CLIP)
+License: MIT License
+
+---
+
+Copyright (c) 2007-2024, The scikit-learn developers. All rights reserved.
+(scikit-learn)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2017-2024, Leland McInnes. All rights reserved.
+(umap-learn)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2008-2024, The Pandas Development Team. All rights reserved.
+(pandas)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2004-2024, NetworkX Developers. All rights reserved.
+(networkx)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2001-2024, SciPy Developers. All rights reserved.
+(SciPy)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2005-2022, Michele Simionato. All rights reserved.
+(decorator)
+License: BSD 2-Clause License
+
+---
+
+Copyright (c) 2015-present, Facebook, Inc. and affiliates. All rights reserved.
+(Faiss)
+License: MIT License
+
+---
+
+Copyright (c) 2011-2014, The OpenBLAS Project. All rights reserved.
+Copyright (c) 2011-2014, University of Texas at Austin. All rights reserved.
+(OpenBLAS)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2002-2024, Kitware Inc. and contributors. All rights reserved.
+(CMake)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2023-2025, Hugging Face. All rights reserved.
+(datasets)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2019-2024, Kenneth Reitz. All rights reserved.
+(requests)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2008-2024, Google Inc. All rights reserved.
+(Protocol Buffers)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2018-2024, Sebastián Ramírez and contributors. All rights reserved.
+(FastAPI)
+License: MIT License
+
+---
+
+Copyright (c) 2019-2024, Streamlit Inc. All rights reserved.
+(Streamlit)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2013-2024, tqdm developers. All rights reserved.
+(tqdm)
+License: MIT License
+
+---
+
+Copyright (c) 2017-2024, Delve Labs Inc. All rights reserved.
+(loguru)
+License: MIT License
+
+---
+
+Copyright (c) 2023-2024, Manuel Meurer. All rights reserved.
+(json-repair)
+License: MIT License
+
+---
+
+Copyright (c) 2019-2024, Alex Rogozhnikov. All rights reserved.
+(einops)
+License: MIT License
+
+---
+
+Copyright (c) 2009-2024, Jay Loden, Dave Daeschler, Giampaolo Rodola'. All rights reserved.
+(psutil)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2015-2024, Hynek Schlawack. All rights reserved.
+(attrs)
+License: MIT License
+
+---
+
+Copyright (c) 2017-2024, Pydantic Services Inc. All rights reserved.
+(pydantic)
+License: MIT License
+
+---
+
+Copyright (c) 2005-2024, SQLAlchemy Project. All rights reserved.
+(SQLAlchemy)
+License: MIT License
+
+---
+
+Copyright (c) 2013-2024, Thomas Kemmer. All rights reserved.
+(cachetools)
+License: MIT License
+
+---
+
+Copyright (c) 2021-2024, Zilliz Technologies Inc. and contributors. All rights reserved.
+(milvus-lite / PyMilvus)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2021-2024, Zilliz Technologies Inc. and contributors. All rights reserved.
+(gptcache)
+License: MIT License
+
+---
+
+Copyright (c) 2022-2024, LangChain Inc. and contributors. All rights reserved.
+(langchain / langchain_text_splitters / langchain_community)
+License: MIT License
+
+---
+
+Copyright (c) 2023-2025, Huawei Technologies Co., Ltd. All rights reserved.
+(langchain_opengauss)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2023-2025, Huawei Technologies Co., Ltd. All rights reserved.
+(opengauss-sqlalchemy)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2007-2024, The Python Markdown Project. All rights reserved.
+(Markdown)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2013-2024, Steve Canny. All rights reserved.
+(python-pptx)
+License: MIT License
+
+---
+
+Copyright (c) 2010-2024, Eric Gazoni and contributors. All rights reserved.
+(openpyxl)
+License: MIT License
+
+---
+
+Copyright (c) 2010-2024, John Machin and contributors. All rights reserved.
+(xlrd)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2010-2024, Jeffrey A. Clark and contributors. All rights reserved.
+(Pillow)
+License: HPND License (MIT-CMU)
+
+---
+
+Copyright (c) 2002-2024, Artifex Software LLC. All rights reserved.
+(PyMuPDF)
+License: AGPL-3.0 License
+
+---
+
+Copyright (c) 2016-2024, Baidu Inc. and PaddlePaddle contributors. All rights reserved.
+(PaddleOCR)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2016-2024, Baidu Inc. and PaddlePaddle contributors. All rights reserved.
+(PaddlePaddle)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2000-2024, OpenCV team. All rights reserved.
+(opencv-python)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2001-2024, The OpenSSL Project Authors. All rights reserved.
+(pyOpenSSL)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2013-2024, The Cryptography Developers. All rights reserved.
+(cryptography)
+License: Apache License 2.0 OR BSD 3-Clause License
+
+---
+
+Copyright (c) 2013-2024, Sun Junyi. All rights reserved.
+(jieba)
+License: MIT License
+
+---
+
+Copyright (c) 2009-2024, Steve Canny. All rights reserved.
+(python-docx)
+License: MIT License
+
+---
+
+Copyright (c) 2014-2024, Dior Lior and contributors. All rights reserved.
+(rank_bm25)
+License: MIT License
+
+---
+
+Copyright (c) 1999-2024, Psycopg Authors. All rights reserved.
+(psycopg2)
+License: LGPL-3.0-or-later License
+
+---
+
+Copyright (c) 2022-2024, Shahul ES and contributors. All rights reserved.
+(ragas)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2022-2024, Unstructured Technologies. All rights reserved.
+(unstructured)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2020-2024, The DeepSpeed Team. All rights reserved.
+(DeepSpeed)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2022-2024, OpenDataLab and contributors. All rights reserved.
+(MinerU)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2017-2024, NVIDIA Corporation. All rights reserved.
+(nvidia-ml-py)
+License: BSD 3-Clause License
+
+---
+
+Copyright (c) 2017-2024, Ingy döt Net. All rights reserved.
+Copyright (c) 2006-2016, Kirill Simonov. All rights reserved.
+(PyYAML)
+License: MIT License
+
+---
+
+Copyright (c) 2005-2023, Armin Rigo, Maciej Fijalkowski. All rights reserved.
+(cffi)
+License: MIT License
+
+---
+
+Copyright (c) 2001-2024, Stefan Behnel, Robert Bradshaw, Dag Sverre Seljebotn, Greg Ewing, William Stein, Gabriel Gellner, et al. All rights reserved.
+(Cython)
+License: Apache License 2.0
+
+---
+
+Copyright (c) 2006-2024, GitHub Inc. and contributors. All rights reserved.
+(urllib3)
+License: MIT License
+
+---
+
+License: BSD 3-Clause License
+Copyright (c) ,
+All rights reserved.
+
+1. Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+2. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+3. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+---
+
+License: MIT License
+Copyright (c) ,
+All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+License: Apache License 2.0
+Copyright (c) ,
+All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+---
+
+License: BSD 2-Clause License
+Copyright (c) ,
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+---
+
+License: Mulan Permissive Software License, Version 2 (Mulan PSL v2)
+Copyright (c) ,
+All rights reserved.
+
+Your reproduction, use, modification and distribution of the software shall be subject to Mulan PSL v2 (this License) with the terms and conditions:
+
+1. Definitions
+
+   "Contribution" means the copyrightable work licensed by a particular contributor under this License and other contributors' software contributed by other copyright holders.
+
+   "Contributor" means the individual or legal entity who licenses its copyrightable work under this License.
+
+   "You" (or "Your") means an individual or a legal entity exercising rights granted under this License.
+
+2. Grant of Copyright License
+
+   Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, royalty-free, non-exclusive, irrevocable copyright license to reproduce, use, modify, or distribute its Contribution or modification thereof, either in source code form or in binary form, with or without modification, and to prepare derivative works based on its Contribution or modification thereof.
+
+3. Grant of Patent License
+
+   Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, royalty-free, non-exclusive, irrevocable (except for revocation under this Section) patent license to make, have made, use, offer for sale, sell, import or otherwise transfer its Contribution, where such patent license is applicable to all patents now owned or controlled by the Contributor and acquired hereunder, to make, use, sell, offer for sale, have made, and import the Contribution or modification thereof or derivative works thereof, to the extent that the Contributor's patent would otherwise be infringed by such Contribution or modification thereof or derivative works thereof.
+
+   If You or any of Your subsidiaries institute patent litigation against any entity (including a cross-claim or counterclaim in a lawsuit) alleging that the Contribution or any modification thereof or derivative works thereof directly or indirectly infringes any patent, then any patent license granted to You under this License for the Contribution shall terminate as of the date such litigation is filed.
+
+4. Distribution and Redistribution
+
+   You may reproduce, distribute and redistribute the Contribution or modification thereof, in source code form or in binary form, with or without modification, provided that the following conditions are met:
+
+   a) Redistribution shall reproduce all copyright notices and licenses in the Contribution and the documentation and/or other materials provided with the redistribution;
+
+   b) The name of the Contributor may not be used to endorse or promote products derived from the Contribution or modification thereof, without specific prior written permission.
+
+5. Disclaimer of Warranty and Limitation of Liability
+
+   THE CONTRIBUTION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THE CONTRIBUTION, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+6. Language
+
+   THIS LICENSE IS WRITTEN IN BOTH CHINESE AND ENGLISH. IF THERE IS ANY CONFLICT OR INCONSISTENCY BETWEEN THE CHINESE AND ENGLISH VERSIONS, THE CHINESE VERSION SHALL PREVAIL.
+
+---
+
+License: GNU Affero General Public License v3.0 (AGPL-3.0-only)
+Copyright (c) ,
+All rights reserved.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3 of the License.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+---
+
+License: GNU Lesser General Public License v3.0 or later (LGPL-3.0-or-later)
+Copyright (c) ,
+All rights reserved.
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+---
+
+License: Historical Permission Notice and Disclaimer (HPND / MIT-CMU)
+Copyright (c) ,
+All rights reserved.
+
+Permission to use, copy, modify, and distribute this software and its documentation for any purpose and without fee is hereby granted, provided that the above copyright notice appear in all copies and that both that copyright notice and this permission notice appear in supporting documentation, and that the name of the copyright holder not be used in advertising or publicity pertaining to distribution of the software without specific, written prior permission.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
