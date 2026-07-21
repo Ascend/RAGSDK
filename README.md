@@ -59,6 +59,7 @@ RAG SDK的使用指南请参阅完整文档导航 **[RAG SDK 开发者文档](do
 🔹 《[许可证声明](./LICENSE.md)》<br>
 🔹 《[安全声明](docs/zh/security_hardening.md)》<br>
 🔹 《[免责声明](docs/zh/disclaimer.md)》<br>
+🔹 《[第三方开源软件声明](Third_Party_Open_Source_Software_Notice)》<br>
 
 ## 🤝 建议与交流
 
