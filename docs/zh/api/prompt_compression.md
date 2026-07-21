@@ -6,7 +6,7 @@
 
 **功能描述<a name="section29524313490"></a>**
 
-prompt压缩抽象类
+prompt压缩抽象类。
 
 **函数原型<a name="section546771414342"></a>**
 
@@ -19,7 +19,7 @@ class PromptCompressor(ABC)
 
 **功能描述<a name="section1031631414920"></a>**
 
-压缩prompt文本
+压缩prompt文本。
 
 **函数原型<a name="section1247913102108"></a>**
 
@@ -84,7 +84,7 @@ print(res)
 
 **功能描述<a name="section5434255810"></a>**
 
-根据指令（question）、长文本（context）以及压缩率（compress\_rate）压缩文本
+根据指令（question）、长文本（context）以及压缩率（compress\_rate）压缩文本。
 
 **函数原型<a name="section18789201331417"></a>**
 

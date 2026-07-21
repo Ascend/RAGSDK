@@ -4,7 +4,7 @@
 
 RAG SDK编译的开源软件中会存在公开网址和邮箱地址，SDK本身不会访问，不会造成风险。
 
-更多公网地址和邮箱地址请参考[RAG SDK 7.3.0 公网地址.xlsx](./resource/RAG_SDK_7.3.0%20%E5%85%AC%E7%BD%91%E5%9C%B0%E5%9D%80.xlsx)。
+更多公网地址和邮箱地址请参考[RAG SDK 公网地址](./resource/RAG_SDK_7.3.0%20%E5%85%AC%E7%BD%91%E5%9C%B0%E5%9D%80.xlsx)。
 
 ## 环境变量说明<a name="ZH-CN_TOPIC_0000002353214097"></a>
 
