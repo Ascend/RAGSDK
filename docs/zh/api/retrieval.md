@@ -155,13 +155,7 @@ llm = Text2TextLLM(base_url="https://<ip>:<port>/v1/chat/completions",
                    model_name="Llama3-8B-Chinese-Chat",
                    client_param=ClientParam(ca_file="/path/to/ca.crt"))
 # 初始化检索器
-multi_text_retriever = MultiQueryRetriever(llm=llm,
-                                           vector_store=vector_store,
-                                           document_store=chunk_store,
-                                           embed_func=emb.embed_documents,
-                                           k=1,
-                                           score_threshold=0.2
-                                           )
+multi_text_retriever = MultiQueryRetriever(llm, prompt, parser, llm_config)
 res = multi_text_retriever.invoke("请描述一下2024年高考语文作文题目？")
 print(res)
 ```

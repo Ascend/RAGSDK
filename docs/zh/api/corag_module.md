@@ -16,7 +16,7 @@ CoRAG基础配置类，包含共享的核心参数，用于初始化CoRAG相关�
 
 ```python
 from mx_rag.corag.config import CoRagBaseConfig
-CoRagBaseConfig(base_llm, retrieve_api_url, num_threads, max_path_length, final_llm, sub_answer_llm, judge_llm)
+CoRagBaseConfig(base_llm, retrieve_api_url, num_threads, max_path_length, final_llm, sub_answer_llm, judge_llm, retrieve_top_k, client_param)
 ```
 
 **参数说明**
@@ -205,7 +205,7 @@ llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
 # 初始化CoRagAgent
 agent = CoRagAgent(
     base_llm=llm,
-    retrieve_api_url="http://your-retrieve-api.com/retrieve",
+    retrieve_api_url="https://your-retrieve-api.com/retrieve",
     retrieve_top_k=5,
     client_param=ClientParam(ca_file="/path/to/ca.crt")
 )
@@ -318,7 +318,7 @@ llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
 # 初始化配置
 config = CoRagBaseConfig(
     base_llm=llm,
-    retrieve_api_url="http://your-retrieve-api.com/query",
+    retrieve_api_url="https://your-retrieve-api.com/query",
     num_threads=4,
     max_path_length=3,
     client_param=ClientParam(ca_file="/path/to/ca.crt")
@@ -511,7 +511,7 @@ llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
 # 初始化配置
 config = CoRagBaseConfig(
     base_llm=llm,
-    retrieve_api_url="http://your-retrieve-api.com/retrieve",
+    retrieve_api_url="https://your-retrieve-api.com/retrieve",
     num_threads=4,
     max_path_length=3,
     client_param=ClientParam(ca_file="/path/to/ca.crt")

@@ -1093,7 +1093,7 @@ print(list(docs))
 
 **功能描述<a name="section7701541173917"></a>**
 
-加载并解析pptx文件，转换为字符串列表。不能为一个ZIP bomb文件（具体要求参考BaseLoader）
+加载并解析pptx文件，返回langchain中Document对象迭代器。不能为一个ZIP bomb文件（具体要求参考BaseLoader）
 
 **函数原型<a name="section19107115214394"></a>**
 
@@ -1147,7 +1147,7 @@ ImageLoader(file_path)
 
 |参数名|类型|可选/必选|说明|
 |--|--|--|--|
-|file_path|str|必选|图片文件路径。路径长度取值范围为[1,1024]，文档路径不能为软链接且不允许存在".."，图片文件小于16M。|
+|file_path|str|必选|图片文件路径。路径长度取值范围为[1,1024]，文档路径不能为软链接且不允许存在".."，图片文件小于16MB。|
 
 **调用示例<a name="section679174612413"></a>**
 

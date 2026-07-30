@@ -177,16 +177,16 @@ RAG SDK 提供三种安装方式：离线安装（run 包 / Wheel 包）、源�
 
     若能检索到 `mxRag` 相关包，说明安装成功。
 
-> [!NOTE]
-> 安装 RAG SDK 时可能出现报错信息：
-> `ERROR: Cannot uninstall 'xxx'. It is a distutils installed project and thus we cannot accurately determine which files belong to it which would lead to only a partial uninstall.`
-> 说明 `xxx` 模块是操作系统自带的组件，无法直接升级，可以尝试重新下发指令安装：
->
-> ```bash
-> pip3 install -r <安装路径>/mxRag/requirements.txt --ignore-installed
-> ```
+    > [!NOTE]
+    > 安装 RAG SDK 时可能出现报错信息：
+    > `ERROR: Cannot uninstall 'xxx'. It is a distutils installed project and thus we cannot accurately determine which files belong to it which would lead to only a partial uninstall.`
+    > 说明 `xxx` 模块是操作系统自带的组件，无法直接升级，可以尝试重新下发指令安装：
+    >
+    > ```bash
+    > pip3 install -r <安装路径>/mxRag/requirements.txt --ignore-installed
+    > ```
 
-1. 设置 RAG SDK 运行环境变量：
+11. 设置 RAG SDK 运行环境变量：
 
    用 vim 打开文件 `~/.bashrc`，在文件最后添加如下内容。
 
@@ -320,7 +320,7 @@ RAG SDK 提供三种安装方式：离线安装（run 包 / Wheel 包）、源�
 1. 使用<b>--upgrade</b>命令升级。
 
     ```bash
-    bash Ascend-mindxsdk-mxrag_<version>_linux-<arch>.run --upgrade --install-path=<安装路径> --platform=<npu_type>
+    bash Ascend-mindxsdk-mxrag_<version>_linux-<arch>.run --upgrade --install-path=<安装路径>
     ```
 
     <i><version\></i>为版本号，<i><arch\></i>为操作系统架构，<i><npu\_type\></i>为芯片类型。

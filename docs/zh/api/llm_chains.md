@@ -560,7 +560,7 @@ def query(text: str, llm_config, *args, **kwargs)
 
 |数据类型|说明|
 |--|--|
-|Union[Dict, Iterator[Dict]]|返回字典或者迭代器，stream设置成True表示返回迭代器，否则返回字典。其中Dict内容为：<li>带知识来源：{"prompt": prompt, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}</li><li>不带知识来源：{"prompt": prompt, "result": data}</li>|
+|Union[Dict, Iterator[Dict]]|返回字典或者迭代器，stream设置成True表示返回迭代器，否则返回字典。其中Dict内容为：<li>带知识来源：{"query": query, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}</li><li>不带知识来源：{"query": query, "result": data}</li>|
 
 **调用示例<a name="section352434893611"></a>**
 
