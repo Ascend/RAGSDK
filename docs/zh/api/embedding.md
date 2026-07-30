@@ -196,7 +196,7 @@ print(embed.embed_query('abc'))
 
 **功能描述<a name="section118111227123016"></a>**
 
-创建并返回一个TextEmbedding对象。
+创建并返回一个SparseEmbedding对象。
 
 **函数原型<a name="section544124513018"></a>**
 
@@ -672,7 +672,7 @@ def embed_images(images, batch_size)
 
 **功能描述<a name="section957011509130"></a>**
 
-embedding的工厂方法类，用于生产RAG SDK的embedding。
+embedding的工厂方法类，用于生成RAG SDK的embedding。
 
 **函数原型<a name="section12411139493"></a>**
 

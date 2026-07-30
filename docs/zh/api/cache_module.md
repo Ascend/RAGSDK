@@ -73,7 +73,7 @@ CacheConfig(cache_size, eviction_policy, auto_flush, data_save_folder, min_free_
 |cache_size|int|必选|缓存大小，配置缓存条目数。<br>cache_size不能小于等于0。<br>取值范围(0, 100000]|
 |eviction_policy|EvictPolicy|可选|缓存老化策略。<br>默认值为LRU，具体可参考[EvictPolicy](#evictpolicy)。|
 |auto_flush|int|可选|数据落盘频度，即缓存多少条条目之后，进行一次落盘操作。<br>默认值：20<br>取值范围(0, cache_size]|
-|data_save_folder|str|可选|缓存落盘路径，路径长度不能超过1024，不能为软链接和相对路径。<li>目录下的各文件大小不能超过100GB、深度不超过64，且文件总个数不超过512。</li><li>运行用户的属组，以及非运行用户不能有该目录下文件的写权限。</li><li>目录下的文件以及文件的上一级目录的属组必须是运行用户。</li><br>默认值为当前用户家目+"/Ascend/mxRag/cache_save_folder"，若不存在需要用户创建。存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
+|data_save_folder|str|可选|缓存落盘路径，路径长度不能超过1024，不能为软链接和相对路径。<li>目录下的各文件大小不能超过100GB、深度不超过64，且文件总个数不超过512。</li><li>运行用户的属组，以及非运行用户不能有该目录下文件的写权限。</li><li>目录下的文件以及文件的上一级目录的属组必须是运行用户。</li><br>默认值为当前用户家目录+"/Ascend/mxRag/cache_save_folder"，若不存在需要用户创建。存放路径不能在路径列表中：["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]。|
 |min_free_space|int|可选|用于检查落盘路径的可用空间，单位字节，默认值为1GB。<br>取值范围[20MB, 100GB]|
 |similarity_threshold|float|可选|相似度计算阈值<br>默认值：0.8<br>取值范围[0.0, 1.0]|
 |disable_report|bool|可选|是否需要支持维测数据功能<br>默认值：False<br>取值范围：True表示不支持；False表示支持。|
@@ -319,7 +319,7 @@ similarity_config = SimilarityCacheConfig(
     vector_config={
         "vector_type": "milvus_db",
         "x_dim": dim,
-        "client": MilvusClient("https://x.x.x.x:port", user="xxx", password=getpass.getpass(), secure=True,   client_pem_path="path_to/client.pem", client_key_path="path_to/client.key", ca_pem_path="path_to/ca.pem", server_name="localhost")
+        "client": MilvusClient("https://x.x.x.x:port", user="xxx", password=getpass.getpass(), secure=True,   client_pem_path="path_to/client.pem", client_key_path="path_to/client.key", ca_pem_path="path_to/ca.pem", server_name="localhost"),
         "collection_name": "mxrag_cache_123",  # milvus db的标签
         "use_http": False,
         "param": None

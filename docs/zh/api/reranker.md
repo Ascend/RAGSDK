@@ -282,7 +282,7 @@ def rerank(query, texts, batch_size)
 
 **功能描述<a name="section53998444524"></a>**
 
-reranker的工厂方法类，用于生产RAG SDK的reranker。
+reranker的工厂方法类，用于生成RAG SDK的reranker。
 
 **函数原型<a name="section18789201331417"></a>**
 
@@ -309,7 +309,7 @@ print(local_scores)
 tei_reranker = RerankerFactory.create_reranker(similarity_type="tei_reranker",
                                                url="https://ip:port/rerank",
                                                client_param=ClientParam(ca_file="/path/to/ca.crt"))
-tei_scores = local_reranker.rerank('你好', docs)
+tei_scores = tei_reranker.rerank('你好', docs)
 print(tei_scores)
 ```
 
@@ -330,7 +330,7 @@ def create_reranker(cls, **kwargs):
 
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
-|similarity_type|str|必选|该参数在kwargs中，reranker的类型。<br>可取值：<li>local_reranker</li><li>tei_reranker</li>|
+|similarity_type|str|必选|该参数在kwargs中，表示reranker的类型。<br>可取值：<li>local_reranker</li><li>tei_reranker</li>|
 |**kwargs|Any|可选|除去similarity_type，其余参数为构造reranker的参数。<li>如果是local_reranker，请参见[类功能](#ZH-CN_TOPIC_0000002419262724)。</li><li>如果是tei_reranker，请参见[类功能](#ZH-CN_TOPIC_0000002419262728)。</li>|
 
 ## MixRetrieveReranker<a name="ZH-CN_TOPIC_0000002419102832"></a>

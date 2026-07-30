@@ -129,7 +129,7 @@ def evaluate(metrics, dataset, language, prompts_path, show_progress)
 |参数名|数据类型|可选/必选|说明|
 |--|--|--|--|
 |metrics|list[str]|必选|评估指标集合，评估指标见[表1](#table1226085519551)。集合中指标个数限制为(0, 14]；并且每个metrics的名字字符数范围在[1,50]；metrics参数不能重复。当指标为answer_similarity时，返回的得分中其key为semantic_similarity。|
-|dataset|Dict[str, Any]|必选|用户评估数据集，字典长度范围[1, 4]，字典格式如下：<li>user_input：List[str]格式，列表长度范围[0, 128]，字符范围[1, 1000000]。</li><li>response：List[str]格式，列表长度范围[0, 128]，字符范围[1, 1000000]。</li><li>retrieved_contexts：List[List[str]]格式，外层列表长度范围[1, 128]，内层列表长度范围[0, 128]，字符范围[1, 1000000]。</li><li>reference：List[str]格式，列表长度范围[0, 128]，字符范围[1, 1000000]。</li><br>其中user_input，response和reference的列表长度以及retrieved_contexts的外层列表长度要保持一致。|
+|dataset|Dict[str, Any]|必选|用户评估数据集，字典长度范围[1, 4]，字典格式如下：<li>user_input：List[str]格式，列表长度范围[1, 128]，字符范围[1, 1000000]。</li><li>response：List[str]格式，列表长度范围[1, 128]，字符范围[1, 1000000]。</li><li>retrieved_contexts：List[List[str]]格式，外层列表长度范围[1, 128]，内层列表长度范围[1, 128]，字符范围[1, 1000000]。</li><li>reference：List[str]格式，列表长度范围[1, 128]，字符范围[1, 1000000]。</li><br>其中user_input，response和reference的列表长度以及retrieved_contexts的外层列表长度要保持一致。|
 |language|str|可选|本地化语言参数，如果指定将按照指定的语言进行评测。<br>默认值为None。如果不设置值，提示词将采用ragas自带的默认提示词。<br>支持的取值为"chinese"和"english"。|
 |prompts_path|str|可选|本地化提示词参数，如果指定将结合language在prompt_dir目录寻找对应的提示词文件，如果找到则可以加速评估过程。目录下的各文件大小不能超过4MB、深度不超过64，且文件总个数不超过512。<br>默认值为None。<br>字符串长度限制[1, 255]。|
 |show_progress|bool|可选|在评估期间是否显示进度条，默认不显示。|

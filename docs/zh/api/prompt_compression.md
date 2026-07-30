@@ -89,7 +89,7 @@ print(res)
 **函数原型<a name="section18789201331417"></a>**
 
 ```python
-def compress_texts(context, question, compress_rate, context_reorder)
+def compress_texts(context, question, compress_rate, context_reorder);
 ```
 
 **输入参数说明<a name="section19434210583"></a>**
@@ -170,7 +170,7 @@ print(res)
 **函数原型<a name="section18789201331417"></a>**
 
 ```python
-def compress_texts(context, question, compress_rate)
+def compress_texts(context, question, compress_rate);
 ```
 
 **输入参数说明<a name="section19434210583"></a>**
