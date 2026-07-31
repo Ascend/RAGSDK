@@ -136,7 +136,8 @@
 
 |特性名称|特性描述|配套产品型号|
 |--|--|--|
-|RAG SDK|<ul><li>bge系列embedding和reranker加速，bge-reranker-v2-m3和bge-m3模型性能优化。</li></ul>|Atlas 300I Duo 推理卡<br>Atlas 800I A2 推理服务器|
+|OCR模型性能提升|<ul><li>OCR (mineru)模型推理加速性能提升30%+，Ascendhub上提供服务化镜像。</li></ul>|Atlas 300I Duo 推理卡<br>Atlas 800I A2 推理服务器|
+|提供知识增强SKILL|<ul><li>一体机场景，支持知识增强Skill，上库到昇腾Agent Skill仓库里面</li></ul>|Atlas 300I Duo 推理卡<br>Atlas 800I A2 推理服务器|
 
 ### 业务接口变更
 
