@@ -35,6 +35,7 @@ class MultimodalConfig:
     vlm_servers: List[List[str]]
     vlm_model_name: str
     vlm_headers: Dict[str, str] = field(default_factory=lambda: {"Content-Type": "application/json"})
+    emb_model_path: Optional[str] = None
     emb_server_url: Optional[str] = None
     emb_model_name: Optional[str] = None
     filter_type: int = 4
