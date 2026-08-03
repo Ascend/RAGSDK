@@ -18,7 +18,8 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
-__all__ = ["MultimodalConfig"]
+__all__ = ["MultimodalConfig", "MultimodalPrepare"]
 
 from paddle.base import libpaddle  # noqa: F401
 from mx_rag.graphrag.multimodal.multimodal_config import MultimodalConfig
+from mx_rag.graphrag.multimodal.extractor import MultimodalPrepare
