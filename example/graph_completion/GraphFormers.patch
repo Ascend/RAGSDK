@@ -1,0 +1,483 @@
+diff --git a/src/data_handler.py b/src/data_handler.py
+index 04e35cc..d62282b 100644
+--- a/src/data_handler.py
++++ b/src/data_handler.py
+@@ -0,0 +1 @@
++import random
+@@ -9,2 +10,2 @@ import torch.distributed as dist
+-from torch.utils.data.dataset import IterableDataset
+-from transformers import BertTokenizerFast
++from torch.utils.data.dataset import IterableDataset, Dataset
++from transformers import BertTokenizerFast, AutoTokenizer
+@@ -13 +14 @@ from transformers import BertTokenizerFast
+-class DatasetForMatching(IterableDataset):
++class DatasetForMatching(Dataset):
+@@ -20 +21,3 @@ class DatasetForMatching(IterableDataset):
+-        self.data_file = open(file_path, "r", encoding="utf-8")
++        with open(file_path, "r", encoding="utf-8") as f:
++            self.data_lines = f.readlines()
++
+@@ -22 +25 @@ class DatasetForMatching(IterableDataset):
+-            self.tokenizer = BertTokenizerFast.from_pretrained(tokenizer)
++            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer, model_max_length=512, truncation=True)
+@@ -26 +29 @@ class DatasetForMatching(IterableDataset):
+-    def process(self, input_line):
++    def process(self, input_line, negative_line):
+@@ -35 +38,3 @@ class DatasetForMatching(IterableDataset):
+-        tokens_query_and_neighbors = self.tokenizer.batch_encode_plus(query_and_neighbors, add_special_tokens=False)[
++        tokens_query_and_neighbors = self.tokenizer.batch_encode_plus(query_and_neighbors, add_special_tokens=False, truncation=True, max_length=512)[
++            'input_ids']
++        tokens_key_and_neighbors = self.tokenizer.batch_encode_plus(key_and_neighbors, add_special_tokens=False, truncation=True, max_length=512)[
+@@ -37 +42,3 @@ class DatasetForMatching(IterableDataset):
+-        tokens_key_and_neighbors = self.tokenizer.batch_encode_plus(key_and_neighbors, add_special_tokens=False)[
++        negative_and_neighbors = negative_line.strip('\n').split('\t')[0]
++        negative_and_neighbors = negative_and_neighbors.split('|\'|')
++        tokens_negative_and_neighbors = self.tokenizer.batch_encode_plus(negative_and_neighbors, add_special_tokens=False, truncation=True, max_length=512)[
+@@ -38,0 +46 @@ class DatasetForMatching(IterableDataset):
++        return query_and_neighbors[0], key_and_neighbors[0], tokens_query_and_neighbors, tokens_key_and_neighbors, tokens_negative_and_neighbors
+@@ -40 +48,3 @@ class DatasetForMatching(IterableDataset):
+-        return tokens_query_and_neighbors, tokens_key_and_neighbors
++    def __getitem__(self, idx):
++        if idx < 0 or idx >= len(self.data_lines):
++            raise IndexError(idx)
+@@ -42,3 +52,14 @@ class DatasetForMatching(IterableDataset):
+-    def __iter__(self):
+-        for line in self.data_file:
+-            yield self.process(line)
++        line = self.data_lines[idx]
++        if len(self.data_lines) <= 1:
++            return self.process(line, line)
++
++        if len(self.data_lines) == 2:
++            rand_idx = 1 - idx
++        else:
++            rand_idx = idx
++            while rand_idx == idx:
++                rand_idx = random.randrange(len(self.data_lines))
++        return self.process(line, self.data_lines[rand_idx])
++
++    def __len__(self):
++        return len(self.data_lines)
+@@ -52 +73,2 @@ class DataCollatorForMatching:
+-    tokenizer: Union[BertTokenizerFast, str] = "bert-base-uncased"
++    mode: str
++    tokenizer: str = "bert-base-uncased"
+@@ -58 +80 @@ class DataCollatorForMatching:
+-            self.tokenizer = BertTokenizerFast.from_pretrained(self.tokenizer)
++            self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer)
+@@ -67,0 +90,6 @@ class DataCollatorForMatching:
++        input_ids_negative_and_neighbors_batch = []
++        attention_mask_negative_and_neighbors_batch = []
++        mask_negative_and_neighbors_batch = []
++        query_name_batch = []
++        key_name_batch = []
++
+@@ -68,0 +97 @@ class DataCollatorForMatching:
++            query_name, key_name = sample[:2]
+@@ -70,2 +99,3 @@ class DataCollatorForMatching:
+-            input_ids_key_and_neighbors, attention_mask_key_and_neighbors, mask_key_and_neighbors = self.create_training_sample(
+-                sample)
++            input_ids_key_and_neighbors,attention_mask_key_and_neighbors,mask_key_and_neighbors,\
++            input_ids_negative_and_neighbors, attention_mask_negative_and_neighbors, mask_negative_and_neighbors = self.create_training_sample(
++                sample[2:])
+@@ -72,0 +103 @@ class DataCollatorForMatching:
++            query_name_batch.append(query_name)
+@@ -76 +107 @@ class DataCollatorForMatching:
+-
++            key_name_batch.append(key_name)
+@@ -80,0 +112,6 @@ class DataCollatorForMatching:
++            input_ids_negative_and_neighbors_batch.append(input_ids_negative_and_neighbors)
++            attention_mask_negative_and_neighbors_batch.append(attention_mask_negative_and_neighbors)
++            mask_negative_and_neighbors_batch.append(mask_negative_and_neighbors)
++
++
++
+@@ -87,0 +125,3 @@ class DataCollatorForMatching:
++            input_ids_negative_and_neighbors_batch, mlm_labels_negative_batch = self.mask_tokens(
++                self._tensorize_batch(input_ids_negative_and_neighbors_batch, self.tokenizer.pad_token_id),
++                self.tokenizer.mask_token_id)
+@@ -92,0 +133,3 @@ class DataCollatorForMatching:
++            input_ids_negative_and_neighbors_batch = self._tensorize_batch(input_ids_negative_and_neighbors_batch,
++                                                                      self.tokenizer.pad_token_id)
++
+@@ -94,0 +138 @@ class DataCollatorForMatching:
++        attention_mask_negative_and_neighbors_batch = self._tensorize_batch(attention_mask_negative_and_neighbors_batch, 0)
+@@ -96,0 +141 @@ class DataCollatorForMatching:
++        mask_negative_and_neighbors_batch = self._tensorize_batch(mask_negative_and_neighbors_batch, 0)
+@@ -98,0 +144,2 @@ class DataCollatorForMatching:
++            "query_name_batch": query_name_batch,
++            "key_name_batch": key_name_batch,
+@@ -106,0 +154,4 @@ class DataCollatorForMatching:
++            "input_ids_negative_and_neighbors_batch": input_ids_negative_and_neighbors_batch,
++            "attention_mask_negative_and_neighbors_batch": attention_mask_negative_and_neighbors_batch,
++            "mlm_labels_negative_batch": mlm_labels_negative_batch if self.mlm else None,
++            "mask_negative_and_neighbors_batch": mask_negative_and_neighbors_batch,
+@@ -152 +203 @@ class DataCollatorForMatching:
+-        tokens_query_and_neighbors, tokens_key_and_neighbors = sample
++        tokens_query_and_neighbors, tokens_key_and_neighbors, tokens_negative_and_neighbors = sample
+@@ -156,0 +208,2 @@ class DataCollatorForMatching:
++        input_ids_negative_and_neighbors, attention_mask_negative_and_neighbors, mask_negative_and_neighbors = process_node_and_neighbors(
++            tokens_negative_and_neighbors)
+@@ -159 +212,2 @@ class DataCollatorForMatching:
+-               input_ids_key_and_neighbors, attention_mask_key_and_neighbors, mask_key_and_neighbors
++               input_ids_key_and_neighbors, attention_mask_key_and_neighbors, mask_key_and_neighbors, \
++               input_ids_negative_and_neighbors, attention_mask_negative_and_neighbors, mask_negative_and_neighbors
+@@ -226 +280 @@ class MultiProcessDataLoader:
+-            if i % self.world_size != self.local_rank: continue
++            if i % self.world_size != self.local_rank:continue
+@@ -281 +335 @@ class SingleProcessDataLoader:
+-        for i, sample in enumerate(self.dataset):
++        for i, sample in enumerate(self.dataset):
+@@ -303,0 +358,3 @@ class SingleProcessDataLoader:
++
++    def __len__(self):
++        return len(self.dataset)//self.batch_size
+\ No newline at end of file
+diff --git a/src/models/modeling_graphformers.py b/src/models/modeling_graphformers.py
+index 6c30e31..b2e608a 100644
+--- a/src/models/modeling_graphformers.py
++++ b/src/models/modeling_graphformers.py
+@@ -268,0 +269,29 @@ class GraphFormers(TuringNLRv3PreTrainedModel):
++class MergeLayer(torch.nn.Module):
++    def __init__(self, dim1, dim2, dim3, dim4, non_linear=True):
++        super(MergeLayer, self).__init__()
++        self.fc1 = torch.nn.Linear(dim1 + dim2, dim3)
++        self.fc2 = torch.nn.Linear(dim3, dim4)
++        self.act = torch.nn.ReLU()
++
++        torch.nn.init.xavier_normal_(self.fc1.weight)
++        torch.nn.init.xavier_normal_(self.fc2.weight)
++
++        self.non_linear = non_linear
++
++        if not non_linear:
++            assert (dim1 == dim2)
++            self.fc = torch.nn.Linear(dim1, 1)
++            torch.nn.init.xavier_normal_(self.fc.weight)
++
++    def forward(self, x1, x2):
++        if self.non_linear:
++            x = torch.cat([x1,x2], dim = -1)
++            h = self.act(self.fc1(x))
++            z = self.fc2(h)
++        else:
++            x = torch.cat([x1, x2], dim=-2)
++            z_walk = self.fc(x).squeeze(-1)
++            z = z_walk.sum(dim=-1, keepdim=True)
++        return z.squeeze_(dim= -1)
++
++
+@@ -272,0 +302 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
++        self.affinity_score = MergeLayer(config.hidden_size,config.hidden_size,config.hidden_size, 1, non_linear=True)
+@@ -273,0 +304 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
++        self.criterion = torch.nn.BCELoss()
+@@ -287,2 +318 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
+-    def test(self, input_ids_query_and_neighbors_batch, attention_mask_query_and_neighbors_batch,
+-             mask_query_and_neighbors_batch, \
++    def val(self, input_ids_query_and_neighbors_batch, attention_mask_query_and_neighbors_batch, mask_query_and_neighbors_batch,
+@@ -289,0 +320 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
++             input_ids_negative_and_neighbors_batch, attention_mask_negative_and_neighbors_batch, mask_negative_and_neighbors_batch,
+@@ -295,2 +325,0 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
+-        scores = torch.matmul(query_embeddings, key_embeddings.transpose(0, 1))
+-        labels = torch.arange(start=0, end=scores.shape[0], dtype=torch.long, device=scores.device)
+@@ -298 +327,12 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
+-        predictions = torch.argmax(scores, dim=-1)
++        negative_embeddings = self.infer(input_ids_negative_and_neighbors_batch, attention_mask_negative_and_neighbors_batch,
++                                      mask_negative_and_neighbors_batch)
++        postive_score =self.affinity_score(query_embeddings, key_embeddings)
++        negative_score = self.affinity_score(query_embeddings, negative_embeddings)
++        postive_prob = postive_score.sigmoid()
++        negative_prob = negative_score.sigmoid()
++        pos_label = torch.ones(len(postive_prob), dtype=torch.float, device=self.device, requires_grad=False)
++        neg_label = torch.zeros(len(negative_prob), dtype=torch.float, device=self.device, requires_grad=False)
++        predictions = torch.cat([postive_prob, negative_prob], dim=0)
++        predictions = (predictions > 0.5).long()
++        labels = torch.cat([pos_label, neg_label], dim = 0).long()
++
+@@ -299,0 +340,15 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
++        scores = torch.cat([postive_score, negative_score], dim=0).cpu().numpy()
++        labels = labels.cpu().numpy()
++        try:
++            auc = roc_auc_score(labels, scores)
++        except ValueError as e:
++            if 'Only one class present' in str(e):
++                auc = 0.5
++            else:
++                raise e
++
++        ranking_lables = torch.stack([pos_label, neg_label], dim =1).cpu().numpy()
++        ranking_scores = torch.stack([postive_score, negative_score], dim=1).cpu().numpy()
++
++        mrr_all = [mrr_score(ranking_lables[i], ranking_scores[i]) for i in range(ranking_lables.shape[0])]
++        ndcg_all = [ndcg_score(ranking_lables[i],ranking_scores[i], ranking_lables.shape[1]) for i in range(ranking_lables.shape[0])]
+@@ -301,5 +355,0 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
+-        scores = scores.cpu().numpy()
+-        labels = F.one_hot(labels).cpu().numpy()
+-        auc_all = [roc_auc_score(labels[i], scores[i]) for i in range(labels.shape[0])]
+-        auc = np.mean(auc_all)
+-        mrr_all = [mrr_score(labels[i], scores[i]) for i in range(labels.shape[0])]
+@@ -307 +356,0 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
+-        ndcg_all = [ndcg_score(labels[i], scores[i], labels.shape[1]) for i in range(labels.shape[0])]
+@@ -318,2 +367,23 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
+-    def forward(self, input_ids_query_and_neighbors_batch, attention_mask_query_and_neighbors_batch,
+-                mask_query_and_neighbors_batch, \
++    def test(self, query_name_batch,key_name_batch,input_ids_query_and_neighbors_batch, attention_mask_query_and_neighbors_batch,
++            mask_query_and_neighbors_batch,
++            input_ids_key_and_neighbors_batch, attention_mask_key_and_neighbors_batch, mask_key_and_neighbors_batch,
++            **kwargs):
++        query_embeddings = self.infer(input_ids_query_and_neighbors_batch, attention_mask_query_and_neighbors_batch,
++                                      mask_query_and_neighbors_batch)
++        key_embeddings = self.infer(input_ids_key_and_neighbors_batch, attention_mask_key_and_neighbors_batch,
++                                    mask_key_and_neighbors_batch)
++        prob = self.affinity_score(query_embeddings, key_embeddings).sigmoid()
++        prob_list = prob.squeeze().tolist()
++
++        results = []
++        for query_name, key_name, score in zip(query_name_batch, key_name_batch, prob_list):
++            results.append({
++                "query_name": query_name,
++                "key_name": key_name,
++                "prob": score
++            })
++
++        return results
++
++
++    def forward(self, input_ids_query_and_neighbors_batch, attention_mask_query_and_neighbors_batch,mask_query_and_neighbors_batch,
+@@ -320,0 +391 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
++                input_ids_negative_and_neighbors_batch, attention_mask_negative_and_neighbors_batch, mask_negative_and_neighbors_batch,
+@@ -326,3 +397,10 @@ class GraphFormersForNeighborPredict(GraphTuringNLRPreTrainedModel):
+-        score = torch.matmul(query_embeddings, key_embeddings.transpose(0, 1))
+-        labels = torch.arange(start=0, end=score.shape[0], dtype=torch.long, device=score.device)
+-        loss = F.cross_entropy(score, labels)
++
++        negative_embeddings = self.infer(input_ids_negative_and_neighbors_batch, attention_mask_negative_and_neighbors_batch,
++                                         mask_negative_and_neighbors_batch)
++
++        postive_prob = self.affinity_score(query_embeddings, key_embeddings).sigmoid()
++        negative_prob = self.affinity_score(query_embeddings, negative_embeddings).sigmoid()
++        pos_label = torch.ones(len(postive_prob), dtype=torch.float, device=self.device, requires_grad=False)
++        neg_label = torch.zeros(len(negative_prob), dtype=torch.float, device=self.device, requires_grad=False)
++
++        loss = self.criterion(postive_prob, pos_label) + self.criterion(negative_prob, neg_label)
+diff --git a/src/models/tnlrv3/configuration_tnlrv3.py b/src/models/tnlrv3/configuration_tnlrv3.py
+index 3d88763..5225a6a 100644
+--- a/src/models/tnlrv3/configuration_tnlrv3.py
++++ b/src/models/tnlrv3/configuration_tnlrv3.py
+@@ -49 +49 @@ class TuringNLRv3Config(PretrainedConfig):
+-                 vocab_size=28996,
++                 vocab_size=30522,
+diff --git a/src/models/tnlrv3/convert_state_dict.py b/src/models/tnlrv3/convert_state_dict.py
+index ffdedda..5c0b039 100644
+--- a/src/models/tnlrv3/convert_state_dict.py
++++ b/src/models/tnlrv3/convert_state_dict.py
+@@ -4 +4 @@ import logging
+-from transformers.modeling_utils import cached_path, WEIGHTS_NAME, TF2_WEIGHTS_NAME, TF_WEIGHTS_NAME
++from transformers.modeling_utils import  WEIGHTS_NAME, TF2_WEIGHTS_NAME, TF_WEIGHTS_NAME#, cached_path
+diff --git a/src/models/tnlrv3/modeling.py b/src/models/tnlrv3/modeling.py
+index 097a5cb..955e57e 100644
+--- a/src/models/tnlrv3/modeling.py
++++ b/src/models/tnlrv3/modeling.py
+@@ -12 +12 @@ import torch.nn.functional as F
+-from transformers.modeling_bert import \
++from transformers.models.bert.modeling_bert import \
+diff --git a/src/run.py b/src/run.py
+index e5b63c3..0fc4b95 100644
+--- a/src/run.py
++++ b/src/run.py
+@@ -0,0 +1 @@
++import json
+@@ -11,0 +13 @@ from torch.nn.parallel import DistributedDataParallel as DDP
++from tqdm import tqdm
+@@ -13 +15 @@ from torch.nn.parallel import DistributedDataParallel as DDP
+-from src.data_handler import DatasetForMatching, DataCollatorForMatching, SingleProcessDataLoader, \
++from .data_handler import DatasetForMatching, DataCollatorForMatching, SingleProcessDataLoader, \
+@@ -15 +17,2 @@ from src.data_handler import DatasetForMatching, DataCollatorForMatching, Single
+-from src.models.tnlrv3.configuration_tnlrv3 import TuringNLRv3Config
++from .models.tnlrv3.configuration_tnlrv3 import TuringNLRv3Config
++from .models.modeling_graphformers import GraphFormersForNeighborPredict
+@@ -16,0 +20,4 @@ from src.models.tnlrv3.configuration_tnlrv3 import TuringNLRv3Config
++from torch.utils.data import DataLoader
++from .utils import setuplogging
++
++setuplogging()
+@@ -20,2 +27,2 @@ def setup(rank, args):
+-    dist.init_process_group("nccl", rank=rank, world_size=args.world_size)
+-    torch.cuda.set_device(rank)
++    dist.init_process_group("hccl", rank=rank, world_size=args.world_size)
++    torch.npu.set_device(rank)
+@@ -33,3 +40,9 @@ def load_bert(args):
+-    config = TuringNLRv3Config.from_pretrained(
+-        args.config_name if args.config_name else args.model_name_or_path,
+-        output_hidden_states=True)
++    if args.config_name or args.model_name_or_path:
++        config = TuringNLRv3Config.from_pretrained(
++            args.config_name if args.config_name else args.model_name_or_path,
++            output_hidden_states=True)
++    else:
++        config = TuringNLRv3Config()
++        config.output_hidden_states = True
++
++    config.rel_pos_bins = 0
+@@ -37 +49,0 @@ def load_bert(args):
+-        from src.models.modeling_graphformers import GraphFormersForNeighborPredict
+@@ -39,5 +51,8 @@ def load_bert(args):
+-        model.load_state_dict(torch.load(args.model_name_or_path, map_location="cpu")['model_state_dict'], strict=False)
+-        # model = GraphFormersForNeighborPredict.from_pretrained(args.model_name_or_path, config=config)
+-    elif args.model_type == "GraphSageMax":
+-        from src.models.modeling_graphsage import GraphSageMaxForNeighborPredict
+-        model = GraphSageMaxForNeighborPredict.from_pretrained(args.model_name_or_path, config=config)
++        ckpt_path = args.model_name_or_path if args.model_name_or_path and os.path.isfile(args.model_name_or_path) else args.load_ckpt_name
++        if ckpt_path and os.path.isfile(ckpt_path):
++            model.load_state_dict(torch.load(ckpt_path, map_location="cpu"), strict=False)
++
++    total_params = sum(p.numel() for p in model.parameters())
++    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
++    logging.info(f"Total Parameters: {total_params}")
++    logging.info(f"Trainable Parameters: {trainable_params}")
+@@ -49,3 +63,0 @@ def train(local_rank, args, end, load):
+-        if local_rank == 0:
+-            from src.utils import setuplogging
+-            setuplogging()
+@@ -55,2 +67,2 @@ def train(local_rank, args, end, load):
+-            from torch.cuda.amp import autocast
+-            scaler = torch.cuda.amp.GradScaler()
++            from torch.npu.amp import autocast
++            scaler = torch.amp.GradScaler()
+@@ -60 +72 @@ def train(local_rank, args, end, load):
+-        model = model.cuda()
++        model = model.to(f"npu:{args.device_id}")
+@@ -73 +85,2 @@ def train(local_rank, args, end, load):
+-        data_collator = DataCollatorForMatching(mlm=args.mlm, neighbor_num=args.neighbor_num,
++        data_collator = DataCollatorForMatching(mlm=args.mlm, neighbor_num=args.neighbor_num, mode=args.mode,
++                                                tokenizer=args.model_name_or_path,
+@@ -77 +90 @@ def train(local_rank, args, end, load):
+-        best_acc, best_count = 0.0, 0
++        best_acc, best_count = 0, 0
+@@ -81 +94 @@ def train(local_rank, args, end, load):
+-            dataset = DatasetForMatching(file_path=args.train_data_path)
++            dataset = DatasetForMatching(file_path=args.train_data_path,tokenizer=args.model_name_or_path)
+@@ -94 +107 @@ def train(local_rank, args, end, load):
+-                if args.enable_gpu:
++                if args.enable_npu:
+@@ -96,2 +109,2 @@ def train(local_rank, args, end, load):
+-                        if v is not None:
+-                            batch[k] = v.cuda(non_blocking=True)
++                        if v is not None and torch.is_tensor(v):
++                            batch[k] = v.npu(non_blocking=True)
+@@ -127,17 +140,6 @@ def train(local_rank, args, end, load):
+-                ckpt_path = os.path.join(args.model_dir, '{}-epoch-{}.pt'.format(args.savename, ep + 1))
+-                torch.save(model.state_dict(), ckpt_path)
+-                logging.info(f"Model saved to {ckpt_path}")
+-
+-                logging.info("Star validation for epoch-{}".format(ep + 1))
+-                acc = test_single_process(model, args, "valid")
+-                logging.info("validation time:{}".format(time.time() - start_time))
+-                if acc > best_acc:
+-                    ckpt_path = os.path.join(args.model_dir, '{}-best.pt'.format(args.savename))
+-                    torch.save(model.state_dict(), ckpt_path)
+-                    logging.info(f"Model saved to {ckpt_path}")
+-                    best_acc = acc
+-                    best_count = 0
+-                else:
+-                    best_count += 1
+-                    if best_count >= 2:
+-                        start_time = time.time()
++
++                if ep % 5 ==0:
++                    logging.info("Star validation for epoch-{}".format(ep + 1))
++                    acc = val_single_process(model, args, "valid")
++                    logging.info("validation time:{}".format(time.time() - start_time))
++                    if acc > best_acc:
+@@ -145,5 +147,6 @@ def train(local_rank, args, end, load):
+-                        model.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
+-                        logging.info("Star testing for best")
+-                        acc = test_single_process(model, args, "test")
+-                        logging.info("test time:{}".format(time.time() - start_time))
+-                        exit()
++                        torch.save(model.state_dict(), ckpt_path)
++                        logging.info(f"Model saved to {ckpt_path}")
++                        best_acc = acc
++                        best_count = 0
++                    else:
++                        best_count += 1
+@@ -152,7 +154,0 @@ def train(local_rank, args, end, load):
+-        if local_rank == 0:
+-            start_time = time.time()
+-            ckpt_path = os.path.join(args.model_dir, '{}-best.pt'.format(args.savename))
+-            model.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
+-            logging.info("Star testing for best")
+-            acc = test_single_process(model, args, "test")
+-            logging.info("test time:{}".format(time.time() - start_time))
+@@ -170 +166 @@ def train(local_rank, args, end, load):
+-def test_single_process(model, args, mode):
++def val_single_process(model, args, mode):
+@@ -174,2 +170,2 @@ def test_single_process(model, args, mode):
+-    data_collator = DataCollatorForMatching(mlm=args.mlm, neighbor_num=args.neighbor_num,
+-                                            token_length=args.token_length, random_seed=args.random_seed)
++    data_collator = DataCollatorForMatching(mlm=args.mlm, neighbor_num=args.neighbor_num, tokenizer=args.model_name_or_path,
++                                            token_length=args.token_length, mode=mode, random_seed=args.random_seed)
+@@ -177 +173 @@ def test_single_process(model, args, mode):
+-        dataset = DatasetForMatching(file_path=args.valid_data_path)
++        dataset = DatasetForMatching(file_path=args.valid_data_path, tokenizer=args.model_name_or_path)
+@@ -180 +176 @@ def test_single_process(model, args, mode):
+-        dataset = DatasetForMatching(file_path=args.test_data_path)
++        dataset = DatasetForMatching(file_path=args.test_data_path, tokenizer=args.model_name_or_path)
+@@ -186 +182 @@ def test_single_process(model, args, mode):
+-        if args.enable_gpu:
++        if args.enable_npu:
+@@ -188,2 +184,2 @@ def test_single_process(model, args, mode):
+-                if v is not None:
+-                    batch[k] = v.cuda(non_blocking=True)
++                if torch.is_tensor(v):
++                    batch[k] = v.npu(non_blocking=True)
+@@ -191 +187 @@ def test_single_process(model, args, mode):
+-        metrics = model.test(**batch)
++        metrics = model.val(**batch)
+@@ -201,0 +198,40 @@ def test_single_process(model, args, mode):
++
++@torch.no_grad()
++def test_single_process(model, args, mode):
++    assert mode in {"valid", "test"}
++    model.eval()
++
++    data_collator = DataCollatorForMatching(mlm=args.mlm, neighbor_num=args.neighbor_num,tokenizer=args.model_name_or_path,
++                                            token_length=args.token_length, mode='pre_test', random_seed=args.random_seed)
++    if mode == "valid":
++        dataset = DatasetForMatching(file_path=args.valid_data_path, tokenizer=args.model_name_or_path)
++        dataloader = SingleProcessDataLoader(dataset, batch_size=args.valid_batch_size, collate_fn=data_collator)
++    elif mode == "test":
++        dataset = DatasetForMatching(file_path=args.test_data_path, tokenizer=args.model_name_or_path)
++        dataloader = DataLoader(
++                                dataset,
++                                batch_size=args.test_batch_size,
++                                shuffle=False,
++                                drop_last=False,
++                                collate_fn=data_collator,
++                                num_workers=32,
++                                pin_memory=True,
++                                persistent_workers=True
++                                )
++
++    pair_all = []
++    with torch.no_grad():
++        for step, batch in enumerate(tqdm(dataloader, desc="Processing test data", ncols=100)):
++            if args.enable_npu:
++                for k, v in batch.items():
++                    if torch.is_tensor(v):
++                        batch[k] = v.npu(non_blocking=True)
++
++            pair_batch = model.test(**batch)
++            pair_all.extend(pair_batch)
++
++
++    json_file_path =args.result_path
++    with open(json_file_path, 'w', encoding="utf-8") as f:
++        json.dump(pair_all, f, ensure_ascii=False, indent=4)
++
+@@ -205 +241 @@ def test(args):
+-    model = model.cuda()
++    model = model.to(f"npu:{args.device_id}")
+@@ -208 +244 @@ def test(args):
+-    model.load_state_dict(checkpoint['model_state_dict'], strict=False)
++    model.load_state_dict(checkpoint, strict=False)
