@@ -23,12 +23,13 @@ from typing import List, Optional, Callable
 from pathlib import Path
 
 import numpy as np
-from loguru import logger
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_opengauss import openGaussAGEGraph
 from pydantic import ConfigDict
+from loguru import logger
 
 from mx_rag.storage.document_store.base_storage import StorageError
 from mx_rag.storage.vectorstore import VectorStorageFactory
@@ -181,6 +182,18 @@ class GraphRAGPipeline:
             logger.warning(f"{len(failed_files)} files failed to upload, please check: {','.join(failed_files)}")
 
     @validate_params(
+        docs=dict(
+            validator=lambda x: isinstance(x, list) and 0 < len(x) <= 1024,
+            message="docs must be list, and length range [1, 1024]",
+        )
+    )
+    def set_docs(self, docs: list[Document]):
+        self.docs = docs
+
+    def clear_docs(self):
+        self.docs = []
+
+    @validate_params(
         lang=dict(
             validator=lambda x: isinstance(x, Lang),
             message="param must be a Lang instance",
@@ -190,7 +203,7 @@ class GraphRAGPipeline:
         self,
         lang: Lang = Lang.EN,
         **kwargs,
-    ):
+    ) -> list[Document]:
         max_workers = kwargs.pop("max_workers", 5)
         top_k = kwargs.pop("top_k", 5)
         batch_size = kwargs.pop("batch_size", 32)
@@ -208,9 +221,16 @@ class GraphRAGPipeline:
                 triple_instructions=self.triple_instructions,
             )
             relations = extractor.query(self.docs)
-            self.docs = []
+
             write_to_json(self.relations_save_path, relations, self.encrypt_fn)
             logger.info(f"Relations saved: {self.relations_save_path}")
+
+            failed_docs = []
+            for i, relation in enumerate(relations):
+                if not relation["entity_relations"]:
+                    failed_docs.append(self.docs[i])
+
+            self.clear_docs()
 
             merger = GraphMerger(self.graph)
             merger.merge(relations, lang)
@@ -243,6 +263,8 @@ class GraphRAGPipeline:
             raise GraphRAGError("Graph building failed due to timeout") from e
         except Exception as e:
             raise GraphRAGError("Graph building failed") from e
+
+        return failed_docs
 
     @validate_params(
         question=dict(

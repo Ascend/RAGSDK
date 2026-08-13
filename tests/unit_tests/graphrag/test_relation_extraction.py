@@ -181,11 +181,15 @@ class TestLLMRelationExtractor(unittest.TestCase):
     def test_query(self, mock_fix_event_rel, mock_fix_entity_event, mock_fix_entity_rel):
         # Setup mocks
         extractor = LLMRelationExtractor(self.mock_llm, max_workers=1)
+        extractor._call_llm_with_retry = Mock(return_value="mock response")
         extractor._process_relations = Mock()
         extractor._process_relations.side_effect = [
-            [{"entity": "rel1"}, {"entity": "rel2"}],  # entity_relations
-            [{"event": "ent1"}, {"event": "ent2"}],  # event_entity_relations
-            [{"event": "rel1"}, {"event": "rel2"}],  # event_relations
+            [{"entity": "rel1"}],  # entity_relation, doc 0
+            [{"entity": "rel2"}],  # entity_relation, doc 1
+            [{"event": "ent1"}],  # event_entity, doc 0
+            [{"event": "ent2"}],  # event_entity, doc 1
+            [{"event": "rel1"}],  # event_relation, doc 0
+            [{"event": "rel2"}],  # event_relation, doc 1
         ]
 
         # Create test documents
@@ -210,8 +214,8 @@ class TestLLMRelationExtractor(unittest.TestCase):
         self.assertEqual(result[1]["event_entity_relations"], {"event": "ent2"})
         self.assertEqual(result[1]["event_relations"], {"event": "rel2"})
 
-        # Verify function calls
-        self.assertEqual(extractor._process_relations.call_count, 3)  # 3 relation types
+        # Verify function calls: 3 relation types × 2 docs = 6 calls
+        self.assertEqual(extractor._process_relations.call_count, 6)
 
 
 if __name__ == "__main__":
