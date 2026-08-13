@@ -21,7 +21,6 @@ See the Mulan PSL v2 for more details.
 import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, List, Optional
-from functools import partial
 
 from json_repair import repair_json
 from langchain_core.documents import Document
@@ -185,6 +184,42 @@ class LLMRelationExtractor:
             "event_relation": triple_instructions.get("event_relation"),
         }
 
+    def _call_llm_with_retry(self, prompt: str, max_retries: int = 3) -> str:
+        """Call LLM with retry logic."""
+        for attempt in range(1, max_retries + 1):
+            response = self.llm.chat(prompt)
+            if response != "":
+                return response
+            logger.warning(f"Failed to get response, retry {attempt}")
+
+        logger.warning(f'No response from LLM after {max_retries} attempts.')
+        return ""
+
+    def extract_and_repair_info(self, prompt: str, key: str):
+        llm_response = self._call_llm_with_retry(prompt)
+        if llm_response == "":
+            return llm_response, []
+
+        repair_functions = {
+            "entity_relation": fix_entity_relation_json_string,
+            "event_entity": fix_entity_event_json_string,
+            "event_relation": fix_event_relation_json_string,
+        }
+
+        relations = self._process_relations([llm_response], repair_functions[key])
+        return llm_response, relations
+
+    def extract_info_retry(self, prompt: str, key: str):
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            llm_response, relations = self.extract_and_repair_info(prompt, key)
+            if llm_response != "" and len(relations[0]) > 0:
+                return llm_response, relations[0]
+            logger.warning(f"Failed to extract and modify info, retry {attempt}")
+
+        logger.warning(f'extract and modify info failed after {max_retries} attempts.')
+        return "", []
+
     @validate_params(
         docs=dict(
             validator=lambda x: isinstance(x, list)
@@ -199,30 +234,29 @@ class LLMRelationExtractor:
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             for key, user_prompt in self.user_prompts.items():
                 texts = [doc.page_content for doc in docs]
-                # 使用 partial 绑定当前的 user_prompt
-                chat_func = partial(lambda p, t: self.llm.chat(f"{p}{t}"), user_prompt)
                 outputs[key] = list(
                     tqdm(
-                        executor.map(chat_func, texts),
+                        executor.map(
+                            lambda text, _key=key, _prompt=user_prompt: self.extract_info_retry(
+                                f"{_prompt}{text}", _key
+                            ),
+                            texts,
+                        ),
                         total=len(texts),
                         desc=f"Processing {key}",
                     )
                 )
 
-        entity_relations = self._process_relations(outputs["entity_relation"], fix_entity_relation_json_string)
-        event_entity_relations = self._process_relations(outputs["event_entity"], fix_entity_event_json_string)
-        event_relations = self._process_relations(outputs["event_relation"], fix_event_relation_json_string)
-
         return [
             {
                 "raw_text": doc.page_content,
                 "file_id": doc.metadata["source"],
-                "entity_relations": entity_relations[i],
-                "event_entity_relations": event_entity_relations[i],
-                "event_relations": event_relations[i],
-                "llm_output_entity_entity": outputs["entity_relation"][i],
-                "llm_output_event_entity": outputs["event_entity"][i],
-                "llm_output_event_event": outputs["event_relation"][i],
+                "entity_relations": outputs["entity_relation"][i][1],
+                "event_entity_relations": outputs["event_entity"][i][1],
+                "event_relations": outputs["event_relation"][i][1],
+                "llm_output_entity_entity": outputs["entity_relation"][i][0],
+                "llm_output_event_entity": outputs["event_entity"][i][0],
+                "llm_output_event_event": outputs["event_relation"][i][0],
             }
             for i, doc in enumerate(docs)
         ]

@@ -237,14 +237,42 @@ class TestGraphRAGPipeline(unittest.TestCase):
 
         # Mock extractor
         mock_extractor = Mock()
-        mock_extractor.query.return_value = [{"entity1": "relation", "entity2": "data"}]
+        mock_extractor.query.return_value = [
+            {
+                "raw_text": "",
+                "file_id": "test.md",
+                "entity_relations": [
+                    {"头实体": "2024年V3", "关系": "发布", "尾实体": "2024年12月"},
+                    {"头实体": "2022年V1", "关系": "发布", "尾实体": "2022年8月31日"},
+                ],
+                "event_entity_relations": [
+                    {"事件": "运营数据中心", "实体": ["运营数据中心"]},
+                    {"事件": "2024 年 12 月", "实体": ["2024 年", "12 月"]},
+                ],
+                "event_relations": [
+                    {
+                        "头事件": "版本号:2022年V1,发布及修订日期:2022年8月31日,修订内容:首次发布,修订人:张治铧;",
+                        "关系": "在之前",
+                        "尾事件": "版本号:2023年V2,发布及修订日期:2023年9月30日,修订内容:修订完善部分内容,修订人:张治铧;",
+                    },
+                    {
+                        "头事件": "版本号:2023年V2,发布及修订日期:2023年9月30日,修订内容:修订完善部分内容,修订人:张治铧;",
+                        "关系": "在之前",
+                        "尾事件": "版本号:2024年v3,发布及修订日期:2024年12月18日,修订内容:修订完善部分内容,修订人:张洪源。",
+                    },
+                ],
+                "llm_output_entity_entity": "",
+                "llm_output_event_entity": "",
+                "llm_output_event_event": "",
+            },
+        ]
         mock_extractor_class.return_value = mock_extractor
 
         # Mock merger
         mock_merger = Mock()
         mock_graph_merger.return_value = mock_merger
 
-        pipeline.build_graph(lang=Lang.EN, conceptualize=False)
+        failed_docs = pipeline.build_graph(lang=Lang.EN, conceptualize=False)
 
         # Verify extractor was called
         mock_extractor_class.assert_called_once()
@@ -260,6 +288,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
 
         # Verify docs were cleared
         self.assertEqual(len(pipeline.docs), 0)
+        self.assertEqual(len(failed_docs), 0)
 
     @patch('mx_rag.graphrag.graphrag_pipeline.check_disk_free_space')
     @patch('mx_rag.graphrag.graphrag_pipeline.VectorStorageFactory')

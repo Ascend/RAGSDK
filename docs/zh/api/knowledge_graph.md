@@ -32,42 +32,42 @@
         {
             "头实体": "中国",
             "关系": "首都",
-            "尾实体": "北京",
+            "尾实体": "北京"
         },
         {
             "头实体": "小狗",
             "关系": "喜欢",
-            "尾实体": "骨头",
+            "尾实体": "骨头"
         },
         {
             "头实体": "毛泽东",
             "关系": "父亲",
-            "尾实体": "毛岸英",
+            "尾实体": "毛岸英"
         },
         {
             "头实体": "中国船舶工业物资云贵有限公司",
             "关系": "成立",
-            "尾实体": "1990年05月31日",
+            "尾实体": "1990年05月31日"
         },
         {
             "头实体": "公司",
             "关系": "地址",
-            "尾实体": "云南省昆明市",
+            "尾实体": "云南省昆明市"
         },
         {
             "头实体": "公司",
             "关系": "经营",
-            "尾实体": "电子器件",
+            "尾实体": "电子器件"
         },
         {
             "头实体": "1999年",
             "关系": "早于",
-            "尾实体": "2000年",
+            "尾实体": "2000年"
         },
         {
             "头实体": "2001年",
             "关系": "晚于",
-            "尾实体": "2000年",
+            "尾实体": "2000年"
         }
     ]
     ## 待分析文本
@@ -405,57 +405,52 @@ GraphRAGPipeline对象。
 **调用示例<a name="section8509453104117"></a>**
 
 ```python
-import getpass
 from paddle.base import libpaddle  # fix std::bad_alloc
-from langchain_opengauss import OpenGaussSettings, openGaussAGEGraph
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
+from pymilvus import MilvusClient
+
 from mx_rag.chain.single_text_to_text import GraphRagText2TextChain
-from mx_rag.document import LoaderMng
-from mx_rag.embedding.local import TextEmbedding
+
+from mx_rag.embedding.service import TEIEmbedding
 from mx_rag.graphrag import GraphRAGPipeline
 from mx_rag.llm import LLMParameterConfig, Text2TextLLM
-from mx_rag.reranker.local import LocalReranker
+from mx_rag.storage.vectorstore import MilvusDB
 from mx_rag.utils import ClientParam
-work_dir = "test_pipeline"
+
 llm = Text2TextLLM(
-    base_url="https://x.x.x.x:port/v1/chat/completions",
-    model_name="model_name",
-    llm_config=LLMParameterConfig(max_tokens=64 * 1024, temperature=0.6, top_p=0.9),
+    base_url="https://ip:port/v1/chat/completions",
+    model_name="Qwen3-8B",
+    llm_config=LLMParameterConfig(max_tokens= 1024, temperature=0.6, top_p=0.9),
     client_param=ClientParam(timeout=180, ca_file="/path/to/ca.crt"),
 )
-rerank_model = LocalReranker("/data/models/bge-reranker-v2-m3/", 0, 20, False)
-embedding_model = TextEmbedding.create(model_path="/data/models/bge-large-en-v1.5")
-data_load_mng = LoaderMng()
-data_load_mng.register_loader(TextLoader, [".txt"])
-data_load_mng.register_splitter(
-    RecursiveCharacterTextSplitter,
-    [".txt"],
-    dict(chunk_size=512, chunk_overlap=20)
-)
-graph_name = "hotpotqa"
-graph_type = "opengauss"
 
-conf = OpenGaussSettings(user="gaussdb",
-                         password=getpass.getpass(),
-                         host="x.x.x.x",
-                         port="x",
-                         database="postgres")
-age_graph = openGaussAGEGraph(graph_name, conf,
-                              sslmode="verify-ca",
-                              sslcert="client.crt",
-                              sslkey="client.key",
-                              sslrootcert="cacert.pem")
-pipeline = GraphRAGPipeline(work_dir, llm, embedding_model, 1024, rerank_model, graph_name=graph_name,
-                            age_graph=age_graph)
-pipeline.upload_files(["./test_graph/hotpotqa.500.txt"], data_load_mng)
-pipeline.build_graph()
+embedding_model = TEIEmbedding(url="https://ip:port/v1/embeddings",client_param=ClientParam(timeout=180, ca_file="/path/to/ca.crt"))
+
+docs = TextLoader("/home/data/test.txt").load_and_split(RecursiveCharacterTextSplitter(chunk_size=512, chunk_overlap=20))
+
+graph_name = "hotpotqa"
+dim = len(embedding_model.embed_query("Where is the capital of China?"))
+
+def get_milvus_vector(collection_name):
+    milvus_client = MilvusClient("./milvus.db")
+    vector_store = MilvusDB.create(
+        client=milvus_client,
+        x_dim=dim,
+        collection_name=collection_name
+    )
+    return vector_store
+
+work_dir = "test_pipeline"
+pipeline = GraphRAGPipeline(work_dir, llm, embedding_model, dim,
+                             graph_name=graph_name, node_vector_store=(get_milvus_vector(graph_name)))
+pipeline.set_docs(docs)
+
+failed_docs = pipeline.build_graph()
+print(f"failed_docs: {failed_docs}")
 question = "Which case was brought to court first Miller v. California or Gates v. Collier ?"
 contexts = pipeline.retrieve_graph(question)
-text2text_chain = GraphRagText2TextChain(
-    llm=llm,
-    retriever=pipeline.as_retriever(),
-    reranker=rerank_model)
+text2text_chain = GraphRagText2TextChain(llm=llm, retriever=pipeline.as_retriever())
 result = text2text_chain.query(question)
 print(f"#contexts: {len(contexts)}")
 print(contexts)
@@ -485,6 +480,48 @@ def upload_files(file_list, loader_mng)
 
 无
 
+### set\_docs<a name="ZH-CN_TOPIC_0000002306396444"></a>
+
+**功能描述<a name="section53998444524"></a>**
+
+设置待抽取知识图谱的文档列表。
+
+**函数原型<a name="section18789201331417"></a>**
+
+```python
+def set_docs(docs)
+```
+
+**输入参数说明<a name="section1054013414143"></a>**
+
+| 参数名  | 数据类型           | 是否必选 | 说明                            |
+|------|----------------|------|-------------------------------|
+| docs | list[Document] | 是    | 待构建知识图谱的文档列表，文档个数限制[1, 1024]。 |
+
+**返回值说明<a name="section11818153884917"></a>**
+
+无
+
+### clear\_docs<a name="ZH-CN_TOPIC_0000002306396444"></a>
+
+**功能描述<a name="section53998444524"></a>**
+
+清除已设置的待抽取知识图谱的文档列表。
+
+**函数原型<a name="section18789201331417"></a>**
+
+```python
+def clear_docs()
+```
+
+**输入参数说明<a name="section1054013414143"></a>**
+
+无
+
+**返回值说明<a name="section11818153884917"></a>**
+
+无
+
 ### build\_graph<a name="ZH-CN_TOPIC_0000002340395437"></a>
 
 **功能<a name="section53998444524"></a>**
@@ -506,20 +543,22 @@ def build_graph(lang, **kwargs)
 
 **返回值说明<a name="section14945144616426"></a>**
 
-无
+| 数据类型           | 说明                 |
+|----------------|--------------------|
+| list[Document] | 抽取知识图谱信息失败的文档chunk |
 
-方法执行后会在work\_dir下生成过程文件：
+调用该方法执行后会在work\_dir下生成过程文件：
 
 **表 1**
 
-|文件名|说明|
-|--|--|
-|"{graph_name}.json"|用于保存图，graph_type为"networkx"时，检索会通过该文件加载图。|
-|"{graph_name}_relations.json"|保存实体关系信息。|
-|"{graph_name}_concepts.json"|保存概念信息。|
-|"{graph_name}_synset.json"|保存概念聚类之后的类别信息。|
-|"{graph_name}_node_vectors.index"|实体的向量索引文件。|
-|"{graph_name}_concept_vectors.index"|概念的向量索引文件。|
+| 文件名                                  | 说明                                        |
+|--------------------------------------|-------------------------------------------|
+| "{graph_name}.json"                  | 用于保存图，graph_type为"networkx"时，检索会通过该文件加载图。 |
+| "{graph_name}_relations.json"        | 保存实体关系信息。                                 |
+| "{graph_name}_concepts.json"         | 保存概念信息，conceptualize参数为True时生成。           |
+| "{graph_name}_synset.json"           | 保存概念聚类之后的类别信息，conceptualize参数为True时生成。    |
+| "{graph_name}_node_vectors.index"    | 实体的向量索引文件，使用默认的向量库时生成。                    |
+| "{graph_name}_concept_vectors.index" | 概念的向量索引文件，使用默认的向量库时生成。                    |
 
 ### retrieve\_graph<a name="ZH-CN_TOPIC_0000002340515629"></a>
 
