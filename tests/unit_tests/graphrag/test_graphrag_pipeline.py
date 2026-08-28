@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -31,6 +31,7 @@ from mx_rag.graphrag.graphrag_pipeline import GraphRAGPipeline, GraphRetriever
 from mx_rag.llm.text2text import Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
 from mx_rag.document.doc_loader_mng import LoaderMng
+from mx_rag.storage.document_store import MilvusDocstore
 from mx_rag.storage.vectorstore import MilvusDB
 from mx_rag.utils.common import Lang
 from mx_rag.storage.document_store.base_storage import StorageError
@@ -108,6 +109,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
 
         self.assertEqual(pipeline.work_dir, self.temp_dir)
         self.assertEqual(pipeline.graph_name, self.test_graph_name)
+        self.assertGreater(pipeline.graph_node_document_id, 0)
         self.assertEqual(pipeline.llm, self.mock_llm)
         self.assertEqual(pipeline.embedding_model, self.mock_embedding_model)
         self.assertEqual(pipeline.rerank_model, self.mock_rerank_model)
@@ -216,20 +218,37 @@ class TestGraphRAGPipeline(unittest.TestCase):
     @patch('mx_rag.graphrag.graphrag_pipeline.GraphMerger')
     @patch('mx_rag.graphrag.graphrag_pipeline.logger')
     @patch('mx_rag.graphrag.graphrag_pipeline.VectorStoreWrapper.clear')
+    @patch('mx_rag.graphrag.graphrag_pipeline.VectorStoreWrapper.add')
+    @patch('mx_rag.graphrag.graphrag_pipeline.VectorStoreWrapper.save')
     def test_build_graph_success(
-        self, mock_clear, mock_logger, mock_graph_merger, mock_extractor_class, write_to_json, mock_check_space
+        self,
+        mock_save,
+        mock_add,
+        mock_clear,
+        mock_logger,
+        mock_graph_merger,
+        mock_extractor_class,
+        write_to_json,
+        mock_check_space,
     ):
         """Test successful graph building."""
         mock_check_space.return_value = False
         mock_clear.return_value = None
+        mock_add.return_value = None
+        mock_save.return_value = None
+        mock_document_store = Mock(spec=MilvusDocstore)
         pipeline = GraphRAGPipeline(
             work_dir=self.temp_dir,
             llm=self.mock_llm,
             embedding_model=self.mock_embedding_model,
             rerank_model=self.mock_rerank_model,
             dim=self.test_dim,
+            graph_name=self.test_graph_name,
             node_vector_store=self.node_vector_store,
+            document_store=mock_document_store,
         )
+        pipeline.graph.add_node("entity node", type="entity")
+        pipeline.graph.add_node("raw text node", type="raw_text")
 
         # Add some test documents
         docs = [Document(page_content="test content")]
@@ -290,6 +309,91 @@ class TestGraphRAGPipeline(unittest.TestCase):
         self.assertEqual(len(pipeline.docs), 0)
         self.assertEqual(len(failed_docs), 0)
 
+        mock_document_store.delete.assert_called_once_with(pipeline.graph_node_document_id)
+        stored_documents, document_id = mock_document_store.add.call_args.args
+        self.assertEqual(document_id, pipeline.graph_node_document_id)
+        self.assertEqual([document.page_content for document in stored_documents], ["entity node", "raw text node"])
+        self.assertEqual(stored_documents[0].metadata["graph_name"], self.test_graph_name)
+
+    @patch('mx_rag.graphrag.graphrag_pipeline.check_disk_free_space')
+    @patch('mx_rag.graphrag.graphrag_pipeline.write_to_json')
+    @patch('mx_rag.graphrag.graphs.networkx_graph.write_to_json')
+    @patch('mx_rag.graphrag.graphrag_pipeline.LLMRelationExtractor')
+    @patch('mx_rag.graphrag.graphrag_pipeline.VectorStoreWrapper.clear')
+    @patch('mx_rag.graphrag.graphrag_pipeline.VectorStoreWrapper.add')
+    @patch('mx_rag.graphrag.graphrag_pipeline.VectorStoreWrapper.save')
+    def test_build_graph_keeps_accumulated_nodes_in_document_store(
+        self,
+        mock_save,
+        mock_add,
+        mock_clear,
+        mock_extractor_class,
+        graph_write_to_json,
+        relations_write_to_json,
+        mock_check_space,
+    ):
+        """Test that repeated graph builds replace the docstore with the accumulated graph snapshot."""
+        mock_check_space.return_value = False
+        mock_document_store = Mock(spec=MilvusDocstore)
+        pipeline = GraphRAGPipeline(
+            work_dir=self.temp_dir,
+            llm=self.mock_llm,
+            embedding_model=self.mock_embedding_model,
+            rerank_model=self.mock_rerank_model,
+            dim=self.test_dim,
+            graph_name=self.test_graph_name,
+            node_vector_store=self.node_vector_store,
+            document_store=mock_document_store,
+        )
+
+        relations_a = [
+            {
+                "raw_text": "A-raw",
+                "file_id": "A.md",
+                "entity_relations": [{"Head": "A-head", "Relation": "rel", "Tail": "A-tail"}],
+                "event_entity_relations": [],
+                "event_relations": [],
+            }
+        ]
+        relations_b = [
+            {
+                "raw_text": "B-raw",
+                "file_id": "B.md",
+                "entity_relations": [{"Head": "B-head", "Relation": "rel", "Tail": "B-tail"}],
+                "event_entity_relations": [],
+                "event_relations": [],
+            }
+        ]
+        mock_extractor = Mock()
+        mock_extractor.query.side_effect = [relations_a, relations_b]
+        mock_extractor_class.return_value = mock_extractor
+
+        pipeline.docs = [Document(page_content="A document")]
+        pipeline.build_graph(lang=Lang.EN)
+        first_documents, first_document_id = mock_document_store.add.call_args.args
+        first_nodes = {document.page_content for document in first_documents}
+
+        pipeline.docs = [Document(page_content="B document")]
+        pipeline.build_graph(lang=Lang.EN)
+        second_documents, second_document_id = mock_document_store.add.call_args.args
+        second_nodes = {document.page_content for document in second_documents}
+
+        expected_a_nodes = {"A-raw", "A-head", "A-tail"}
+        expected_b_nodes = {"B-raw", "B-head", "B-tail"}
+        self.assertEqual(first_nodes, expected_a_nodes)
+        self.assertEqual(second_nodes, expected_a_nodes | expected_b_nodes)
+        self.assertTrue(expected_a_nodes.issubset(second_nodes))
+        self.assertEqual(first_document_id, pipeline.graph_node_document_id)
+        self.assertEqual(second_document_id, pipeline.graph_node_document_id)
+        self.assertEqual(mock_document_store.delete.call_count, 2)
+        self.assertEqual(mock_document_store.add.call_count, 2)
+        self.assertEqual(mock_extractor.query.call_count, 2)
+        self.assertEqual(graph_write_to_json.call_count, 2)
+        self.assertEqual(relations_write_to_json.call_count, 2)
+        self.assertEqual(mock_clear.call_count, 2)
+        self.assertEqual(mock_add.call_count, 2)
+        self.assertEqual(mock_save.call_count, 2)
+
     @patch('mx_rag.graphrag.graphrag_pipeline.check_disk_free_space')
     @patch('mx_rag.graphrag.graphrag_pipeline.VectorStorageFactory')
     @patch('mx_rag.graphrag.graphrag_pipeline.GraphRAGModel')
@@ -297,6 +401,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
         """Test successful as_retriever method."""
         mock_check_space.return_value = False
 
+        mock_document_store = Mock(spec=MilvusDocstore)
         pipeline = GraphRAGPipeline(
             work_dir=self.temp_dir,
             llm=self.mock_llm,
@@ -304,6 +409,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
             rerank_model=self.mock_rerank_model,
             dim=self.test_dim,
             node_vector_store=self.node_vector_store,
+            document_store=mock_document_store,
         )
 
         # Mock storage factory
@@ -315,7 +421,7 @@ class TestGraphRAGPipeline(unittest.TestCase):
         mock_rag_model = Mock(spec=GraphRAGModel)
         mock_graph_rag_model.return_value = mock_rag_model
 
-        retriever = pipeline.as_retriever()
+        retriever = pipeline.as_retriever(retrieval_mode="text")
 
         # Verify retriever was created
         self.assertIsInstance(retriever, GraphRetriever)
@@ -323,6 +429,24 @@ class TestGraphRAGPipeline(unittest.TestCase):
 
         # Verify GraphRAGModel was initialized
         mock_graph_rag_model.assert_called_once()
+        self.assertEqual(mock_graph_rag_model.call_args.kwargs["retrieval_mode"], "text")
+        self.assertEqual(mock_graph_rag_model.call_args.kwargs["document_store"], mock_document_store)
+        self.assertNotIn("graph_node_document_id", mock_graph_rag_model.call_args.kwargs)
+
+    @patch('mx_rag.graphrag.graphrag_pipeline.check_disk_free_space')
+    def test_as_retriever_text_mode_requires_document_store(self, mock_check_space):
+        mock_check_space.return_value = False
+        pipeline = GraphRAGPipeline(
+            work_dir=self.temp_dir,
+            llm=self.mock_llm,
+            embedding_model=self.mock_embedding_model,
+            rerank_model=self.mock_rerank_model,
+            dim=self.test_dim,
+            node_vector_store=self.node_vector_store,
+        )
+
+        with self.assertRaisesRegex(Exception, "document_store is required"):
+            pipeline.as_retriever(retrieval_mode="text")
 
     def test_as_retriever_invalid_parameters(self):
         """Test as_retriever with invalid parameters."""

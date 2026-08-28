@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -18,8 +18,9 @@ See the Mulan PSL v2 for more details.
 -------------------------------------------------------------------------
 """
 
+import hashlib
 import os
-from typing import List, Optional, Callable
+from typing import Callable, List, Optional
 from pathlib import Path
 
 import numpy as np
@@ -31,6 +32,7 @@ from langchain_opengauss import openGaussAGEGraph
 from pydantic import ConfigDict
 from loguru import logger
 
+from mx_rag.storage.document_store import MilvusDocstore, MxDocument, OpenGaussDocstore
 from mx_rag.storage.document_store.base_storage import StorageError
 from mx_rag.storage.vectorstore import VectorStorageFactory
 from mx_rag.storage.vectorstore.vectorstore import VectorStore
@@ -79,6 +81,11 @@ def _validate_devs_int(devs):
         raise ValueError("devs must be a list and contain one int.")
 
 
+def _build_graph_node_document_id(graph_name: str) -> int:
+    digest = hashlib.sha256(f"graphrag:{graph_name}".encode("utf-8")).digest()
+    return (int.from_bytes(digest[:4], byteorder="big") & 0x7FFFFFFF) or 1
+
+
 class GraphRAGPipeline:
     FREE_SPACE_LIMIT = 5 * 1024 * 1024 * 1024  # 5GB
 
@@ -111,6 +118,10 @@ class GraphRAGPipeline:
             validator=lambda x: x is None or isinstance(x, Callable),
             message="decrypt_fn must be None or callable function",
         ),
+        document_store=dict(
+            validator=lambda x: x is None or isinstance(x, (OpenGaussDocstore, MilvusDocstore)),
+            message="document_store must be an OpenGaussDocstore, MilvusDocstore, or None",
+        ),
     )
     def __init__(
         self,
@@ -123,6 +134,7 @@ class GraphRAGPipeline:
         graph_name: str = "graph",
         encrypt_fn=None,
         decrypt_fn=None,
+        document_store=None,
         **kwargs,
     ):
         FileCheck.check_input_path_valid(work_dir, check_blacklist=True)
@@ -131,11 +143,13 @@ class GraphRAGPipeline:
             raise StorageError("Insufficient remaining space, please clear disk space")
         self.work_dir = work_dir
         self.graph_name = graph_name
+        self.graph_node_document_id = _build_graph_node_document_id(graph_name)
         self.age_graph = None
         self._setup_save_path(self.graph_name)
         self.graph_type = graph_type
         self.encrypt_fn = encrypt_fn
         self.decrypt_fn = decrypt_fn
+        self.document_store = document_store
         self.graph = None
         self._setup_graph(**kwargs)
         self.llm = llm
@@ -243,6 +257,7 @@ class GraphRAGPipeline:
             logger.info("Building node embedding to database...")
 
             node_names = [str(node) for node in self.graph.get_nodes(with_data=False) if str(node).strip()]
+            self._store_graph_nodes(node_names)
             node_vector_store_wrapper = VectorStoreWrapper(vector_store=self.node_vector_store)
             node_vector_store_wrapper.clear()
             for start_index in range(0, len(node_names), batch_size):
@@ -266,6 +281,23 @@ class GraphRAGPipeline:
 
         return failed_docs
 
+    def _store_graph_nodes(self, node_names: List[str]) -> None:
+        if self.document_store is None or not node_names:
+            return
+
+        node_documents = [
+            MxDocument(
+                page_content=node_name,
+                metadata={"node_name": node_name, "graph_name": self.graph_name},
+                document_name=f"{self.graph_name}.graph_nodes",
+            )
+            for node_name in node_names
+        ]
+        # node_names is the complete accumulated graph snapshot. Delete the old docstore
+        # snapshot before rebuilding it to avoid duplicate BM25 records.
+        self.document_store.delete(self.graph_node_document_id)
+        self.document_store.add(node_documents, self.graph_node_document_id)
+
     @validate_params(
         question=dict(
             validator=lambda x: isinstance(x, str) and 0 < len(x) <= TEXT_MAX_LEN,
@@ -285,6 +317,9 @@ class GraphRAGPipeline:
         retrieval_top_k = kwargs.pop("retrieval_top_k", 40)
         reranker_top_k = kwargs.pop("reranker_top_k", 20)
         subgraph_depth = kwargs.pop("subgraph_depth", 2)
+        retrieval_mode = kwargs.pop("retrieval_mode", "vector")
+        if retrieval_mode in {"text", "hybrid"} and self.document_store is None:
+            raise GraphRAGError("document_store is required for text and hybrid retrieval")
         node_vector_store_wrapper = VectorStoreWrapper(vector_store=self.node_vector_store)
         if self.conceptualize:
             concept_vector_store_wrapper = VectorStoreWrapper(vector_store=self.concept_vector_store)
@@ -305,6 +340,8 @@ class GraphRAGPipeline:
             retrieval_top_k=retrieval_top_k,
             reranker_top_k=reranker_top_k,
             subgraph_depth=subgraph_depth,
+            retrieval_mode=retrieval_mode,
+            document_store=self.document_store,
         )
         return GraphRetriever(graph_rag_model=rag_model)
 

@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -24,6 +24,9 @@ from unittest.mock import Mock, patch
 from paddle.base import libpaddle
 
 from mx_rag.graphrag.graph_rag_model import GraphRAGModel
+from mx_rag.storage.document_store import MilvusDocstore, MxDocument
+
+_LIBPADDLE_IMPORTED = libpaddle is not None
 
 
 class TestGraphRAGModel(unittest.TestCase):
@@ -42,7 +45,7 @@ class TestGraphRAGModel(unittest.TestCase):
         self.mock_graph_store.get_nodes.return_value = [
             ("node1", {"type": "entity"}),
             ("node2", {"type": "raw_text"}),
-            ("node3", {"type": "entity", "concepts": ["concept1", "concept2"]})
+            ("node3", {"type": "entity", "concepts": ["concept1", "concept2"]}),
         ]
         self.mock_embed_func.return_value = [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
         # Patch the _initialize_databases method to avoid actual database building during setup
@@ -57,7 +60,7 @@ class TestGraphRAGModel(unittest.TestCase):
                 reranker=self.mock_reranker,
                 retrieval_top_k=5,
                 subgraph_depth=2,
-                use_text=True
+                use_text=True,
             )
 
     def test_init(self):
@@ -72,6 +75,8 @@ class TestGraphRAGModel(unittest.TestCase):
         self.assertEqual(self.model.retrieval_top_k, 5)
         self.assertEqual(self.model.subgraph_depth, 2)
         self.assertTrue(self.model.use_text)
+        self.assertEqual(self.model.retrieval_mode, "vector")
+        self.assertIsNone(self.model.document_store)
         self.assertIsNone(self.model.subgraph)
 
     def test_search_index(self):
@@ -127,6 +132,170 @@ class TestGraphRAGModel(unittest.TestCase):
         self.assertIsInstance(result, list)
         self.assertLessEqual(len(result), 2)
 
+    def test_retrieve_with_text_mode(self):
+        """Test text retrieval requires a configured BM25 document store."""
+        with self.assertRaisesRegex(ValueError, "document_store is required"):
+            self.model.retrieve("knowledge graph", 2, retrieval_mode="text")
+
+    def test_retrieve_with_text_mode_uses_document_store(self):
+        """Test text retrieval uses docstore BM25 when document_store is configured."""
+        document_store = Mock(spec=MilvusDocstore)
+        document_store.full_text_search.return_value = [
+            MxDocument(page_content="knowledge graph retrieval", metadata={}, document_name="graph.txt"),
+            MxDocument(page_content="knowledge graph retrieval", metadata={}, document_name="graph.txt"),
+            MxDocument(page_content="another graph node", metadata={}, document_name="graph.txt"),
+        ]
+        self.model.document_store = document_store
+        self.model.node_names = ["knowledge graph retrieval", "another graph node", "unrelated"]
+        self.mock_embed_func.reset_mock()
+
+        result = self.model.retrieve("knowledge graph", 2, retrieval_mode="text")
+
+        self.assertEqual(result, ["knowledge graph retrieval", "another graph node"])
+        document_store.full_text_search.assert_called_once_with("knowledge graph", top_k=2)
+        self.mock_embed_func.assert_not_called()
+
+    def test_retrieve_with_text_mode_uses_document_metadata_node_name(self):
+        """Test docstore text retrieval can map document metadata to graph node name."""
+        document_store = Mock(spec=MilvusDocstore)
+        document_store.full_text_search.return_value = [
+            MxDocument(
+                page_content="chunk text",
+                metadata={"node_name": "graph raw text node"},
+                document_name="graph.txt",
+            )
+        ]
+        self.model.document_store = document_store
+        self.model.node_names = ["graph raw text node", "chunk text"]
+
+        result = self.model.retrieve("graph", 2, retrieval_mode="text")
+
+        self.assertEqual(result, ["graph raw text node"])
+
+    def test_retrieve_with_text_mode_skips_non_graph_docstore_result(self):
+        """Test docstore text retrieval skips documents that are not graph nodes."""
+        document_store = Mock(spec=MilvusDocstore)
+        document_store.full_text_search.return_value = [
+            MxDocument(page_content="external chunk", metadata={}, document_name="graph.txt"),
+            MxDocument(page_content="graph raw text node", metadata={}, document_name="graph.txt"),
+        ]
+        self.model.document_store = document_store
+        self.model.node_names = ["graph raw text node"]
+
+        result = self.model.retrieve("graph", 2, retrieval_mode="text")
+
+        self.assertEqual(result, ["graph raw text node"])
+
+    def test_retrieve_with_text_mode_handles_document_store_error(self):
+        """Test text retrieval returns empty list when docstore full_text_search fails."""
+        document_store = Mock(spec=MilvusDocstore)
+        document_store.full_text_search.side_effect = RuntimeError("BM25 error")
+        self.model.document_store = document_store
+
+        result = self.model.retrieve("knowledge graph", 2, retrieval_mode="text")
+
+        self.assertEqual(result, [])
+
+    def test_retrieve_with_hybrid_mode(self):
+        """Test retrieve method merges vector and text matches."""
+        self.model.node_names = ["vector node", "secondary vector node", "graph text node"]
+        document_store = Mock(spec=MilvusDocstore)
+        document_store.full_text_search.return_value = [
+            MxDocument(page_content="graph text node", metadata={}, document_name="graph.txt")
+        ]
+        self.model.document_store = document_store
+        self.mock_embed_func.return_value = [[0.1, 0.2, 0.3]]
+        self.mock_vector_store.search.return_value = (None, [[0, 1]])
+        self.mock_vector_store_concept.search.return_value = (None, [])
+
+        result = self.model.retrieve("graph text", 3, retrieval_mode="hybrid")
+
+        self.assertEqual(result[0], "vector node")
+        self.assertIn("graph text node", result)
+        self.assertLessEqual(len(result), 3)
+
+    def test_retrieve_with_hybrid_mode_falls_back_to_text(self):
+        """Test hybrid retrieval uses text matches when vector retrieval fails."""
+        self.model.node_names = ["graph text node", "unrelated node"]
+        document_store = Mock(spec=MilvusDocstore)
+        document_store.full_text_search.return_value = [
+            MxDocument(page_content="graph text node", metadata={}, document_name="graph.txt")
+        ]
+        self.model.document_store = document_store
+        self.mock_embed_func.side_effect = Exception("Embedding error")
+
+        result = self.model.retrieve("graph text", 2, retrieval_mode="hybrid")
+
+        self.assertEqual(result, ["graph text node"])
+
+    def test_retrieve_with_hybrid_mode_falls_back_to_vector(self):
+        """Test hybrid retrieval uses vector matches when text retrieval fails."""
+        self.model.node_names = ["vector node", "unrelated node"]
+        document_store = Mock(spec=MilvusDocstore)
+        document_store.full_text_search.side_effect = RuntimeError("BM25 error")
+        self.model.document_store = document_store
+        self.mock_embed_func.return_value = [[0.1, 0.2, 0.3]]
+        self.mock_vector_store.search.return_value = (None, [[0]])
+        self.mock_vector_store_concept.search.return_value = (None, [])
+
+        result = self.model.retrieve("graph text", 2, retrieval_mode="hybrid")
+
+        self.assertEqual(result, ["vector node"])
+
+    def test_retrieve_with_hybrid_mode_uses_document_store_text_result(self):
+        """Test hybrid retrieval merges vector and docstore BM25 text results."""
+        document_store = Mock(spec=MilvusDocstore)
+        document_store.full_text_search.return_value = [
+            MxDocument(page_content="bm25 text node", metadata={}, document_name="graph.txt")
+        ]
+        self.model.document_store = document_store
+        self.model.node_names = ["vector node", "bm25 text node"]
+        self.mock_embed_func.return_value = [[0.1, 0.2, 0.3]]
+        self.mock_vector_store.search.return_value = (None, [[0]])
+        self.mock_vector_store_concept.search.return_value = (None, [])
+
+        result = self.model.retrieve("graph text", 2, retrieval_mode="hybrid")
+
+        self.assertEqual(result, ["vector node", "bm25 text node"])
+        document_store.full_text_search.assert_called_once_with("graph text", top_k=2)
+
+    def test_retrieve_uniformly_calls_vector_and_text_paths(self):
+        """Test retrieve delegates both paths and lets each path decide whether to run."""
+        self.model.document_store = Mock(spec=MilvusDocstore)
+        with (
+            patch.object(self.model, '_retrieve_vector_nodes', return_value=["vector node"]) as mock_vector,
+            patch.object(self.model, '_retrieve_text_nodes', return_value=["text node"]) as mock_text,
+        ):
+            result = self.model.retrieve("graph text", 2, retrieval_mode="hybrid")
+
+        self.assertEqual(result, ["vector node", "text node"])
+        mock_vector.assert_called_once_with("graph text", 2, "hybrid")
+        mock_text.assert_called_once_with("graph text", 2, "hybrid")
+
+    def test_retrieve_paths_skip_disabled_mode(self):
+        """Test disabled retrieval paths return empty without touching their backends."""
+        document_store = Mock(spec=MilvusDocstore)
+        self.model.document_store = document_store
+        self.mock_embed_func.reset_mock()
+
+        self.assertEqual(self.model._retrieve_vector_nodes("query", 2, "text"), [])
+        self.assertEqual(self.model._retrieve_text_nodes("query", 2, "vector"), [])
+
+        self.mock_embed_func.assert_not_called()
+        self.mock_vector_store.search.assert_not_called()
+        document_store.full_text_search.assert_not_called()
+
+    def test_merge_retrieved_nodes_returns_non_empty_path_directly(self):
+        """Test merge keeps the available path unchanged when the other path is empty."""
+        self.assertEqual(self.model._merge_retrieved_nodes(["v1", "v2"], [], 2), ["v1", "v2"])
+        self.assertEqual(self.model._merge_retrieved_nodes([], ["t1", "t2"], 1), ["t1"])
+        self.assertEqual(self.model._merge_retrieved_nodes([], [], 2), [])
+
+    def test_retrieve_with_invalid_mode(self):
+        """Test retrieve method rejects invalid retrieval modes."""
+        with self.assertRaises(ValueError):
+            self.model.retrieve("test query", 2, retrieval_mode="invalid")
+
     def test_retrieve_error_handling(self):
         """Test retrieve method error handling."""
         self.mock_embed_func.side_effect = Exception("Embedding error")
@@ -149,12 +318,14 @@ class TestGraphRAGModel(unittest.TestCase):
     def test_get_contexts_for_nodes_with_text(self):
         """Test get_contexts_for_nodes with text extraction."""
         self.model.use_text = True
-        with patch.object(self.model, '_build_neighbor_subgraph'), \
-                patch.object(self.model, '_extract_edges_with_attributes') as mock_extract:
+        with (
+            patch.object(self.model, '_build_neighbor_subgraph'),
+            patch.object(self.model, '_extract_edges_with_attributes') as mock_extract,
+        ):
             mock_extract.return_value = [
                 ("u1", "text_conclude", "text1"),
                 ("u2", "other_rel", "v2"),
-                ("u3", "text_conclude", "text2")
+                ("u3", "text_conclude", "text2"),
             ]
             result = self.model.get_contexts_for_nodes(["node1"], 1)
             self.assertEqual(result, ["text1", "text2"])
@@ -242,10 +413,11 @@ class TestGraphRAGModel(unittest.TestCase):
         """Test _build_node_database method."""
         self.mock_graph_store.get_nodes.side_effect = [
             ["node1", "node2"],  # First call for node names
-            [("node1", {"type": "entity"}), ("node2", {"type": "raw_text"})]  # Second call for text nodes
+            [("node1", {"type": "entity"}), ("node2", {"type": "raw_text"})],  # Second call for text nodes
         ]
         self.mock_vector_store.ntotal.return_value = 0  # Force rebuild
         self.mock_embed_func.return_value = [[0.1, 0.2], [0.3, 0.4]]
+        self.model.text_nodes = ["stale_text"]
         self.model._build_node_database()
         self.assertEqual(self.model.node_names, ["node1", "node2"])
         self.assertEqual(self.model.text_nodes, ["node2"])
@@ -258,7 +430,7 @@ class TestGraphRAGModel(unittest.TestCase):
         self.mock_graph_store.get_nodes.return_value = [
             ("node1", {"concepts": ["concept1", "concept2"]}),
             ("node2", {"concepts": "concept3"}),
-            ("node3", {})
+            ("node3", {}),
         ]
         self.mock_vector_store_concept.ntotal.return_value = 0  # Force rebuild
         self.mock_embed_func.return_value = [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]
@@ -285,7 +457,7 @@ class TestGraphRAGModel(unittest.TestCase):
         text_nodes = ["text1", "text2"]
         self.mock_embed_func.side_effect = [
             [[0.1, 0.2, 0.3]],  # Query embedding
-            [[0.9, 0.1, 0.1], [0.1, 0.9, 0.1]]  # Text embeddings
+            [[0.9, 0.1, 0.1], [0.1, 0.9, 0.1]],  # Text embeddings
         ]
         result = self.model._rerank(text_nodes, "query")
         self.assertIsInstance(result, list)
@@ -326,7 +498,7 @@ class TestGraphRAGModel(unittest.TestCase):
         self.model.subgraph = Mock()
         self.model.subgraph.get_edges.return_value = [
             ("u1", "v1", {"relation": "knows"}),
-            ("u2", "v2", {"relation": "likes"})
+            ("u2", "v2", {"relation": "likes"}),
         ]
         result = self.model._extract_edges_with_attributes()
         self.assertEqual(result, [("u1", "knows", "v1"), ("u2", "likes", "v2")])
