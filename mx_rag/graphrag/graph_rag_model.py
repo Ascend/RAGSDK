@@ -3,7 +3,7 @@
 """
 -------------------------------------------------------------------------
 This file is part of the RAGSDK project.
-Copyright (c) 2025 Huawei Technologies Co.,Ltd.
+Copyright (c) 2026 Huawei Technologies Co.,Ltd.
 
 RAGSDK is licensed under Mulan PSL v2.
 You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -34,7 +34,10 @@ from mx_rag.graphrag.qa_base_model import QABaseModel
 from mx_rag.graphrag.vector_stores.vector_store_wrapper import VectorStoreWrapper
 from mx_rag.llm import LLMParameterConfig, Text2TextLLM
 from mx_rag.reranker.reranker import Reranker
+from mx_rag.storage.document_store import MilvusDocstore, OpenGaussDocstore
 from mx_rag.utils.common import validate_params
+
+RETRIEVAL_MODES = {"vector", "text", "hybrid"}
 
 
 class GraphRAGModel(QABaseModel):
@@ -45,22 +48,30 @@ class GraphRAGModel(QABaseModel):
 
     @validate_params(
         reranker_top_k=dict(
-            validator=lambda x: isinstance(x, int) and 0 < x <= 1000, 
-            message="param must be an integer, value range [1, 1000]"
+            validator=lambda x: isinstance(x, int) and 0 < x <= 1000,
+            message="param must be an integer, value range [1, 1000]",
         ),
         retrieval_top_k=dict(
             validator=lambda x: isinstance(x, int) and 0 < x <= 1000,
-            message="param must be an integer, value range [1, 1000]"
+            message="param must be an integer, value range [1, 1000]",
         ),
         subgraph_depth=dict(
-            validator=lambda x: isinstance(x, int) and 1 <= x < 6, 
-            message="param must be an integer, value range [1, 5]"
+            validator=lambda x: isinstance(x, int) and 1 <= x < 6,
+            message="param must be an integer, value range [1, 5]",
         ),
         similarity_tail_threshold=dict(
-            validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 1.0, 
-            message="param must be float or int and value range [0.0, 1.0]"
+            validator=lambda x: isinstance(x, (float, int)) and 0.0 <= x <= 1.0,
+            message="param must be float or int and value range [0.0, 1.0]",
         ),
-        use_text=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean")
+        use_text=dict(validator=lambda x: isinstance(x, bool), message="param must be a boolean"),
+        retrieval_mode=dict(
+            validator=lambda x: isinstance(x, str) and x in RETRIEVAL_MODES,
+            message="param must be one of: vector, text, hybrid",
+        ),
+        document_store=dict(
+            validator=lambda x: x is None or isinstance(x, (OpenGaussDocstore, MilvusDocstore)),
+            message="document_store must be an OpenGaussDocstore, MilvusDocstore, or None",
+        ),
     )
     def __init__(
         self,
@@ -78,7 +89,9 @@ class GraphRAGModel(QABaseModel):
         use_text: bool = False,
         batch_size=4,
         similarity_tail_threshold=0.3,
-        min_number_texts=3
+        min_number_texts=3,
+        retrieval_mode: str = "vector",
+        document_store: Optional[Any] = None,
     ):
         """
         Initialize the GraphRAGModel with required components and configuration.
@@ -97,6 +110,8 @@ class GraphRAGModel(QABaseModel):
         self.batch_size = batch_size
         self.similarity_tail_threshold = similarity_tail_threshold
         self.min_number_text = min_number_texts
+        self.retrieval_mode = retrieval_mode
+        self.document_store = document_store
         self.node_names: List[str] = []
         self.text_nodes: List[str] = []
         self.concepts: List[str] = []
@@ -119,17 +134,17 @@ class GraphRAGModel(QABaseModel):
     def _safe_embed_func(self, *args, **kwargs):
         embeddings = self.embed_func(*args, **kwargs)
         if not (isinstance(embeddings, (List, np.ndarray)) and len(embeddings) > 0):
-            raise ValueError(f"callback function {self.embed_func.__name__}"
-                             f" returned invalid result, should be List[Any]")
+            raise ValueError(
+                f"callback function {self.embed_func.__name__} returned invalid result, should be List[Any]"
+            )
         return embeddings
 
     def search_index(self, query, top_k) -> List[str]:
         try:
-
             query_embedding = np.asarray(self._safe_embed_func([query]))
             _, idx = self.vector_store.search(query_embedding, top_k)
             idx = idx[0] if idx is not None and len(idx) > 0 else []
-            
+
             text_nodes_set = set(self.text_nodes)
             retrieved = [self.node_names[i] for i in idx if self.node_names[i] in text_nodes_set]
             return retrieved
@@ -142,50 +157,136 @@ class GraphRAGModel(QABaseModel):
         except Exception as e:
             logger.error(f"search_index error: {e}")
             raise
-    
-    @validate_params(top_k=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 1000,
-                                message="top_k must be an integer, value range in [1, 1000]"))
-    def retrieve(self, query: str, top_k: int = 5) -> List[str]:
+
+    def _retrieve_text_nodes(self, query: str, top_k: int, retrieval_mode: str) -> List[str]:
+        if retrieval_mode not in {"text", "hybrid"}:
+            return []
+
+        try:
+            documents = self.document_store.full_text_search(query, top_k=top_k)
+        except TypeError as e:
+            logger.error(f"Type error in full_text_search: {e}")
+            return []
+        except ValueError as e:
+            logger.error(f"Value error in full_text_search: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"full_text_search error: {e}")
+            return []
+
+        node_names_set = set(self.node_names)
+        retrieved_nodes = []
+        seen_nodes = set()
+        for document in documents:
+            node = getattr(document, "page_content", "")
+            if not isinstance(node, str) or not node.strip():
+                continue
+
+            metadata = getattr(document, "metadata", {}) or {}
+            for key in ("node_name", "raw_text", "node"):
+                metadata_node = metadata.get(key)
+                if isinstance(metadata_node, str) and metadata_node in node_names_set:
+                    node = metadata_node
+                    break
+
+            if node_names_set and node not in node_names_set:
+                continue
+
+            if node not in seen_nodes:
+                seen_nodes.add(node)
+                retrieved_nodes.append(node)
+
+        return retrieved_nodes[:top_k]
+
+    def _retrieve_vector_nodes(self, query: str, top_k: int, retrieval_mode: str) -> List[str]:
+        if retrieval_mode not in {"vector", "hybrid"}:
+            return []
+
+        try:
+            query_embedding = np.asarray(self._safe_embed_func([query]))
+            _, idx = self.vector_store.search(query_embedding, top_k)
+            retrieved = (
+                [self.node_names[i] for i in idx[0] if i != -1 and i < len(self.node_names)]
+                if idx is not None and len(idx) > 0 and len(idx[0]) > 0
+                else []
+            )
+
+            if self.vector_store_concept is None:
+                return retrieved
+
+            _, idx_concept = self.vector_store_concept.search(query_embedding, top_k)
+            concept_nodes = (
+                [self.node_names[i] for i in idx_concept[0] if i != -1 and i < len(self.node_names)]
+                if idx_concept is not None and len(idx_concept) > 0 and len(idx_concept[0]) > 0
+                else []
+            )
+            all_nodes = retrieved + concept_nodes
+            return [item for item, _ in Counter(all_nodes).most_common(top_k)]
+        except TypeError as e:
+            logger.error(f"Type error in vector retrieval: {e}")
+            return []
+        except ValueError as e:
+            logger.error(f"Value error in vector retrieval: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Vector retrieval error: {e}")
+            return []
+
+    @staticmethod
+    def _merge_retrieved_nodes(vector_nodes: List[str], text_nodes: List[str], top_k: int) -> List[str]:
+        if not vector_nodes:
+            return text_nodes[:top_k]
+        if not text_nodes:
+            return vector_nodes[:top_k]
+
+        scores = {}
+        first_seen = {}
+        order = 0
+        for nodes in (vector_nodes, text_nodes):
+            for rank, node in enumerate(nodes):
+                if node not in scores:
+                    scores[node] = 0.0
+                    first_seen[node] = order
+                    order += 1
+                scores[node] += 1.0 / (rank + 1)
+        return [node for node, _ in sorted(scores.items(), key=lambda item: (-item[1], first_seen[item[0]]))[:top_k]]
+
+    @validate_params(
+        top_k=dict(
+            validator=lambda x: isinstance(x, int) and 0 < x <= 1000,
+            message="top_k must be an integer, value range in [1, 1000]",
+        ),
+        retrieval_mode=dict(
+            validator=lambda x: x is None or (isinstance(x, str) and x in RETRIEVAL_MODES),
+            message="retrieval_mode must be one of: vector, text, hybrid",
+        ),
+    )
+    def retrieve(self, query: str, top_k: int = 5, retrieval_mode: Optional[str] = None) -> List[str]:
         """
-        Retrieves top-k relevant node names for a given query using node and concept embeddings.
+        Retrieves top-k relevant node names for a given query.
 
         Args:
             query: The input query string.
             top_k: Number of top nodes to retrieve.
+            retrieval_mode: Retrieval mode, supports vector, text, and hybrid.
 
         Returns:
             List of retrieved node names.
         """
-        try:
-            query_embedding = np.asarray(self._safe_embed_func([query]))
-            _, idx = self.vector_store.search(query_embedding, top_k)
-            retrieved = [self.node_names[i] for i in idx[0] if i != -1] if idx and len(idx[0]) > 0 else []
+        mode = retrieval_mode or self.retrieval_mode
+        if mode in {"text", "hybrid"} and self.document_store is None:
+            raise ValueError("document_store is required for text and hybrid retrieval")
+        vector_nodes = self._retrieve_vector_nodes(query, top_k, mode)
+        text_nodes = self._retrieve_text_nodes(query, top_k, mode)
+        return self._merge_retrieved_nodes(vector_nodes, text_nodes, top_k)
 
-            if self.vector_store_concept is not None:
-                _, idx_concept = self.vector_store_concept.search(query_embedding, top_k)
-                concept_nodes = (
-                    [self.node_names[i] for i in idx_concept[0] if i != -1] 
-                    if idx_concept and len(idx_concept[0]) > 0 else []
-                )
-                # Merge and deduplicate, preserving order and prioritizing most frequent
-                all_nodes = retrieved + concept_nodes
-                return [item for item, _ in Counter(all_nodes).most_common(top_k)]
-
-            return retrieved
-        except TypeError as e:
-            logger.error(f"Type error in retrieve: {e}")
-            return []
-        except ValueError as e:
-            logger.error(f"Value error in retrieve: {e}")
-            return []
-        except Exception as e:
-            logger.error(f"Error: {e}")
-            return []
-
-    @validate_params(nodes=dict(validator=lambda x: isinstance(x, list) and len(x) < 100000,
-                                message="nodes must be a list and its length less than 100000"),
-                     n=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 5,
-                            message="n must be an integer between 1 and 5"))
+    @validate_params(
+        nodes=dict(
+            validator=lambda x: isinstance(x, list) and len(x) < 100000,
+            message="nodes must be a list and its length less than 100000",
+        ),
+        n=dict(validator=lambda x: isinstance(x, int) and 0 < x <= 5, message="n must be an integer between 1 and 5"),
+    )
     def get_contexts_for_nodes(self, nodes: List[str], n: int) -> List[str]:
         """
         Extracts contexts for the given nodes up to n-order neighbors.
@@ -214,9 +315,9 @@ class GraphRAGModel(QABaseModel):
 
         if not text_nodes:
             return []
-        
+
         return text_nodes
-    
+
     def reset_subgraph(self) -> None:
         """
         Resets the current subgraph.
@@ -224,8 +325,12 @@ class GraphRAGModel(QABaseModel):
         del self.subgraph
         self.subgraph = None
 
-    @validate_params(questions=dict(validator=lambda x: isinstance(x, list) and len(x) < 10000,
-                                    message="questions must be a list and its length less than 10000"))
+    @validate_params(
+        questions=dict(
+            validator=lambda x: isinstance(x, list) and len(x) < 10000,
+            message="questions must be a list and its length less than 10000",
+        )
+    )
     def generate(self, questions: List[str], max_triples: int = 150, retrieve_only: bool = True) -> List[str]:
         """
         Generates answers for a list of questions using graph-based retrieval and LLM.
@@ -238,98 +343,85 @@ class GraphRAGModel(QABaseModel):
             List of generated responses.
         """
         logger.info("Generating using graph...")
-        
+
         # Step 1: Extract entities from all questions
         entities_list = self._extract_entities_batch(questions)
-        
+
         # Step 2: Retrieve nodes for all unique entities
         entity_to_nodes = self._retrieve_nodes_batch(entities_list)
-        
+
         # Step 3: Prepare prompts for all questions
         prompts, all_contexts = self._prepare_prompts_batch(questions, entities_list, entity_to_nodes, max_triples)
-        
+
         # Step 4: Generate answers in parallel
         return all_contexts if retrieve_only else self._generate_answers_batch(prompts)
 
     def _extract_entities_batch(self, questions: List[str]) -> List[List[str]]:
         """Extract entities from all questions in parallel."""
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            return list(tqdm(
-                executor.map(self._extract_entities_from_question, questions),
-                total=len(questions),
-                desc="Extracting entities"
-            ))
+            return list(
+                tqdm(
+                    executor.map(self._extract_entities_from_question, questions),
+                    total=len(questions),
+                    desc="Extracting entities",
+                )
+            )
 
     def _retrieve_nodes_batch(self, entities_list: List[List[str]]) -> dict:
         """Retrieve nodes for all unique entities."""
         all_entities = set(entity for entities in entities_list for entity in entities)
-        
+
         def retrieve_entity(entity):
             return entity, self.retrieve(entity, top_k=self.retrieval_top_k)
-        
-        return dict(tqdm(
-            map(retrieve_entity, all_entities),
-            total=len(all_entities),
-            desc="Retrieving nodes"
-        ))
+
+        return dict(tqdm(map(retrieve_entity, all_entities), total=len(all_entities), desc="Retrieving nodes"))
 
     def _prepare_prompts_batch(
-        self, 
-        questions: List[str], 
-        entities_list: List[List[str]], 
-        entity_to_nodes: dict, 
-        max_triples: int
+        self, questions: List[str], entities_list: List[List[str]], entity_to_nodes: dict, max_triples: int
     ) -> Tuple[List[str], List[List[str]]]:
         """Prepare prompts for all questions."""
         prompts = []
         all_contexts = []
-        
-        for question, entities in tqdm(
-            zip(questions, entities_list), 
-            total=len(questions), 
-            desc="Preparing prompts"
-        ):
+
+        for question, entities in tqdm(zip(questions, entities_list), total=len(questions), desc="Preparing prompts"):
             # Gather and deduplicate nodes for current question
             retrieved_nodes = self._gather_nodes_for_question(entities, entity_to_nodes)
-            
+
             # Get and rerank contexts
             contexts = self._get_and_rerank_contexts(retrieved_nodes, question, max_triples)
             all_contexts.append(contexts)
-            
+
             # Create prompt
             prompt = TEXT_RAG_TEMPLATE.format(context=contexts, question=question)
             prompts.append(prompt)
-        
+
         return prompts, all_contexts
 
-    def _get_and_rerank_contexts(
-        self, 
-        retrieved_nodes: List[str], 
-        question: str, 
-        max_triples: int
-    ) -> List[str]:
+    def _get_and_rerank_contexts(self, retrieved_nodes: List[str], question: str, max_triples: int) -> List[str]:
         """Get graph contexts and rerank them."""
         logger.debug(f"Retrieved nodes count: {len(retrieved_nodes)}")
-        
+
         # Get graph contexts with timing
         start_time = time.time()
         contexts = self.get_contexts_for_nodes(retrieved_nodes, self.subgraph_depth)[:max_triples]
         context_time = (time.time() - start_time) * 1000
-        
+
         if context_time > 100:  # Only log timing if it's slow(>100ms)
             logger.debug(f"Context retrieval: {context_time:.4f}ms for {len(contexts)} contexts")
-        
+
         # Rerank contexts
         return self._rerank(contexts, question) if contexts else []
 
     def _generate_answers_batch(self, prompts: List[str]) -> List[str]:
         """Generate answers for all prompts in parallel."""
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            return list(tqdm(
-                executor.map(self._call_llm_with_retry, prompts),
-                total=len(prompts),
-                desc="Generating answers (parallel)"
-            ))
+            return list(
+                tqdm(
+                    executor.map(self._call_llm_with_retry, prompts),
+                    total=len(prompts),
+                    desc="Generating answers (parallel)",
+                )
+            )
 
     def _call_llm_with_retry(self, prompt: str, max_retries: int = 3) -> str:
         """Call LLM with retry logic."""
@@ -338,7 +430,7 @@ class GraphRAGModel(QABaseModel):
             if response.strip():
                 return response
             logger.warning(f"Failed to get response, retry {attempt}")
-        
+
         logger.warning(f'No response from LLM after {max_retries} attempts.')
         return ""
 
@@ -354,8 +446,9 @@ class GraphRAGModel(QABaseModel):
         """
         # Get all unique, non-empty node names as strings
         self.node_names = [str(node) for node in self.graph.get_nodes(with_data=False) if str(node).strip()]
+        self.text_nodes = []
         for node, data in self.graph.get_nodes():
-            if str(node).strip() and data["type"] == "raw_text":
+            if str(node).strip() and data.get("type") == "raw_text":
                 self.text_nodes.append(str(node))
         node_count = len(self.node_names)
         # Only rebuild if counts mismatch
@@ -402,11 +495,7 @@ class GraphRAGModel(QABaseModel):
         return items
 
     def _add_neighbors_to_subgraph(
-        self,
-        current_node: Any,
-        visited: Set[Any],
-        queue: List[Tuple[Any, int]],
-        current_distance: int
+        self, current_node: Any, visited: Set[Any], queue: List[Tuple[Any, int]], current_distance: int
     ) -> None:
         """
         Adds neighbors and predecessors of the current node to the subgraph and queue.
@@ -420,20 +509,14 @@ class GraphRAGModel(QABaseModel):
         for neighbor in self.graph.successors(current_node):
             if neighbor not in visited:
                 self.subgraph.add_node(neighbor)
-                self.subgraph.add_edge(
-                    current_node, 
-                    neighbor, 
-                    **self.graph.get_edge_attributes(current_node, neighbor)
-                )
+                self.subgraph.add_edge(current_node, neighbor, **self.graph.get_edge_attributes(current_node, neighbor))
                 visited.add(neighbor)
                 queue.append((neighbor, current_distance + 1))
         for predecessor in self.graph.predecessors(current_node):
             if predecessor not in visited:
                 self.subgraph.add_node(predecessor)
                 self.subgraph.add_edge(
-                    predecessor,
-                    current_node, 
-                    **self.graph.get_edge_attributes(predecessor, current_node)
+                    predecessor, current_node, **self.graph.get_edge_attributes(predecessor, current_node)
                 )
                 visited.add(predecessor)
                 queue.append((predecessor, current_distance + 1))
@@ -460,10 +543,7 @@ class GraphRAGModel(QABaseModel):
         """
         Efficiently extracts (source, relation, target) triples from the current subgraph.
         """
-        return [
-            (u, data.get('relation'), v)
-            for u, v, data in self.subgraph.get_edges()
-        ]
+        return [(u, data.get('relation'), v) for u, v, data in self.subgraph.get_edges()]
 
     def _extract_entities_from_question(self, question: str) -> List[str]:
         """

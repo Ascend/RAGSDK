@@ -380,7 +380,7 @@
 ```python
 from mx_rag.graphrag import GraphRAGPipeline
 
-GraphRAGPipeline(work_dir, llm, embedding_model, dim, rerank_model, graph_type,graph_name, encrypt_fn,decrypt_fn,kwargs)
+GraphRAGPipeline(work_dir, llm, embedding_model, dim, rerank_model, graph_type,graph_name, encrypt_fn,decrypt_fn,document_store,kwargs)
 ```
 
 **输入参数说明<a name="section1054013414143"></a>**
@@ -396,6 +396,7 @@ GraphRAGPipeline(work_dir, llm, embedding_model, dim, rerank_model, graph_type,g
 | graph_name      | str          | 可选    | 知识图谱名称，默认为“graph”，其取值范围为[1, 255]，只能由标识符组成。                                                                                                                                                                                                                                                                                                                                                                                                 |
 | encrypt_fn      | Callable     | 可选    | 回调方法，对调用[build_graph](#build_graph)产生的json文件内容加密。请注意提供正确加密方法并保证安全性，返回值是加密后的字符串。<br>如果上传的文档涉及银行卡号、身份证号、护照号、口令等个人数据，请配置该参数保证个人数据安全。                                                                                                                                                                                                                                                                                                          |
 | decrypt_fn      | Callable     | 可选    | 回调方法，在graph_type为"networkx"时，在检索时会对"{graph_name}.json"解密读取。请注意提供正确解密方法并保证安全性，返回值是解密后的字符串。                                                                                                                                                                                                                                                                                                                                                  |
+| document_store  | OpenGaussDocstore或MilvusDocstore | 可选 | 图节点文本存储对象，默认为None。配置后，[build_graph](#build_graph)会将全部图节点字符串写入该对象，并由其BM25能力支持`text`和`hybrid`检索模式。文本检索默认不附加document_id过滤条件，建议为图节点使用独立的表或collection。未配置时仍可使用默认`vector`模式，原有向量检索功能不受影响。 |
 | kwargs          | Dict         | 可选    | 扩展参数列表：<li>age_graph：当图数据库类型为openGauss时，需要指定该参数，类型为openGaussAGEGraph，为openGauss图数据库连接实例。</li><li>devs：指定NPU设备，为一个只包含一个元素的list，类型list[int]。</li><li>node_vector_store: 用于存储向量化节点以实现相似节点搜索的向量数据库。默认为None，此时将使用MindFAISS作为向量数据库。</li><li>conceptualize: 是否进行概念聚类，默认为False，不聚类时参数concept_vector_store不生效。</li><li>concept_vector_store: 在对概念进行聚类时，用于存储向量化概念以实现相似概念搜索的向量数据库。默认为None，此时将使用MindFAISS作为向量数据库。</li><br>age_graph由用户控制传入，请使用安全的连接方式。 |
 
 **返回值说明<a name="section53998444524"></a>**
@@ -526,7 +527,7 @@ def clear_docs()
 
 **功能<a name="section53998444524"></a>**
 
-调用此函数创建文本节点索引以及生成对应文本的知识图谱。
+调用此函数创建文本节点索引以及生成对应文本的知识图谱。初始化GraphRAGPipeline时配置`document_store`后，本函数还会将全部图节点字符串转换为MxDocument，并通过OpenGaussDocstore或MilvusDocstore的`add`接口写入BM25文本索引；重复构建同名图时会替换该图已有的节点文本记录。
 
 **函数原型<a name="section18789201331417"></a>**
 
@@ -577,7 +578,7 @@ def retrieve_graph(question, **kwargs)
 |参数名|数据类型|是否必选|说明|
 |--|--|--|--|
 |question|str|是|用户问题，字符串长度范围[1, 1000*1000]|
-|kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。</li><li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。</li><li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。</li><li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。</li><li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。</li><li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。</li>|
+|kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。</li><li>retrieval_mode：字符串类型，默认为"vector"，表示图节点召回方式。取值支持"vector"、"text"、"hybrid"，分别表示仅使用向量检索、仅使用GraphRAGPipeline初始化时传入的document_store进行BM25文本检索、融合向量与BM25文本检索结果。使用"text"或"hybrid"时必须配置document_store。"hybrid"模式会独立执行向量检索和文本检索：任一路径无结果或发生异常时返回另一路径的结果，仅在两路均有结果时执行融合。</li><li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。</li><li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。</li><li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。</li><li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。</li><li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。</li>|
 
 **返回值说明<a name="section14945144616426"></a>**
 
@@ -601,7 +602,7 @@ def as_retriever(**kwargs)
 
 |参数名|数据类型|是否必选|说明|
 |--|--|--|--|
-|kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。</li><li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。</li><li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。</li><li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。</li><li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。</li><li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。</li>|
+|kwargs|dict|否|扩展参数列表：<li>use_text：布尔类型，默认为True，表示在检索子图时仅使用文本类型的节点包含的文本构建上下文。</li><li>retrieval_mode：字符串类型，默认为"vector"，表示图节点召回方式。取值支持"vector"、"text"、"hybrid"，分别表示仅使用向量检索、仅使用GraphRAGPipeline初始化时传入的document_store进行BM25文本检索、融合向量与BM25文本检索结果。使用"text"或"hybrid"时必须配置document_store。"hybrid"模式会独立执行向量检索和文本检索：任一路径无结果或发生异常时返回另一路径的结果，仅在两路均有结果时执行融合。</li><li>batch_size：整数类型，默认为4，表示在对节点向量化时的批次大小，其范围为[1, 1024]。</li><li>similarity_tail_threshold：向量相似阈值，默认为0.0，低于该值将被过滤，其范围为[0.0, 1.0]。</li><li>retrieval_top_k：整数类型，默认为40，根据实体从节点向量数据库检索相似节点时的topk，其范围为[1, 1000]。</li><li>reranker_top_k：reranker需要的topk，默认为20，其范围为[1， 1000]。</li><li>subgraph_depth：整数类型，默认为2，图检索最大探索的深度，其取值范围为[1, 5]。</li>|
 
 **返回值说明<a name="section14945144616426"></a>**
 
