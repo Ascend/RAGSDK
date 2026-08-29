@@ -1,8 +1,10 @@
 # RAG SDK
 
-- [简介](introduction.md)
-- [安装部署](installation_guide.md)
-- [开发流程](user_guide.md)
+- [产品介绍](01-introduction.md)
+- [前置知识](02-prerequisites.md)
+- [快速入门](03-quickstart.md)
+- [安装部署](04-installation_guide.md)
+- [特性介绍&使用](05-user_guide.md)
 - [接口参考]()
   - [使用说明](./api/README.md)
   - [通用](./api/universal_api.md)
@@ -22,7 +24,7 @@
   - [知识图谱](./api/knowledge_graph.md)
   - [corag模块](./api/corag_module.md)
 
-- [常用操作](common_operations.md)
-- [安全加固](security_hardening.md)
-- [FAQ](faq.md)
-- [附录](appendix.md)
+- [常用操作](06-common_operations.md)
+- [安全加固](07-security_hardening.md)
+- [FAQ](08-faq.md)
+- [附录](09-appendix.md)

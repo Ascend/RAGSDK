@@ -47,11 +47,11 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
     内容如下：
 
     ```bash
-    [openEuler] 
-    name=openEuler repository 
+    [openEuler]
+    name=openEuler repository
     baseurl=https://mirrors.aliyun.com/openeuler/openEuler-24.03-LTS/OS/x86_64/
-    gpgcheck=1 
-    enabled=1 
+    gpgcheck=1
+    enabled=1
     gpgkey=https://repo.openeuler.org/openEuler-24.03-LTS/OS/x86_64/RPM-GPG-KEY-openEuler
     ```
 
@@ -91,7 +91,7 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
         ```bash
         # 安装过程中遇到：
         # 选择1
-        Do you accept the license? [y/n]: 
+        Do you accept the license? [y/n]:
         # 输入 y
         # 选择2
         By default the CMake will be installed in:
@@ -129,7 +129,7 @@ export LD_LIBRARY_PATH=/opt/OpenBLAS/lib:$LD_LIBRARY_PATH
         ```bash
         # 安装过程中遇到：
         # 选择1
-        Do you accept the license? [y/n]: 
+        Do you accept the license? [y/n]:
         # 输入 y
         # 选择2
         By default the CMake will be installed in:

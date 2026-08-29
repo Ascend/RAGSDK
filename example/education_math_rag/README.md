@@ -15,7 +15,7 @@
 
 本地验证仅需 Python 3.9 及以上版本，不依赖外部模型服务。
 
-生产环境部署时，请先阅读仓库内 26.0.0 配套文档[《RAG SDK 用户指南》](../../docs/zh/user_guide.md)和[《安装部署》](../../docs/zh/installation_guide.md)，完成 RAGSDK、LLM、embedding、reranker、OCR/VLM 等服务部署。
+生产环境部署时，请先阅读仓库内 26.0.0 配套文档[《RAG SDK 用户指南》](../../docs/zh/05-user_guide.md)和[《安装部署》](../../docs/zh/04-installation_guide.md)，完成 RAGSDK、LLM、embedding、reranker、OCR/VLM 等服务部署。
 
 ## 最佳实践流程
 
