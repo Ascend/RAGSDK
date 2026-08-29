@@ -1,4 +1,4 @@
-# 开发流程<a name="ZH-CN_TOPIC_0000001989074198"></a>
+# 特性介绍与使用<a name="ZH-CN_TOPIC_0000001989074198"></a>
 
 RAG SDK的完整开发流程如[图1](#fig1495610311102)所示。用户可参见以下步骤完成接口调用。
 
@@ -172,7 +172,7 @@ python3 rag_demo_query.py \
 
 **前提条件<a name="section1734316490"></a>**
 
-已经完成[安装RAG SDK](./installation_guide.md#安装方式)。
+已经完成[安装RAG SDK](./04-installation_guide.md#安装方式)。
 
 **样例流程介绍<a name="section1281432091612"></a>**
 
@@ -247,7 +247,7 @@ python3 rag_demo_query.py \
 
 **前提条件<a name="section1736555225910"></a>**
 
-- 已经完成[安装RAG SDK](./installation_guide.md#安装方式)。
+- 已经完成[安装RAG SDK](./04-installation_guide.md#安装方式)。
 - 已经参考[Qwen3-Dense文档](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen3-Dense.html)部署好LLM模型Qwen3-4B。
 
 **操作步骤<a name="section599518311318"></a>**

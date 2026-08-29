@@ -10,7 +10,7 @@
 
 ## 部署流程
 
-1. 参考[快速入门](../../docs/zh/quickstart.md)部署RAG SDK容器。
+1. 参考[快速入门](../../docs/zh/03-quickstart.md)部署RAG SDK容器。
 2. 在graph_completion目录下克隆GraphFormers 项目。
 
     ```bash
