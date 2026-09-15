@@ -31,6 +31,13 @@ RUN cd /tmp && git clone https://github.com/OpenMathLib/OpenBLAS.git && \
 	make PREFIX=${OPENBLAS_INSTALL_PATH} install
 ENV LD_LIBRARY_PATH=${OPENBLAS_INSTALL_PATH}/lib:$LD_LIBRARY_PATH
 
+# 安装 torch 系列依赖：torch 2.10.0 系列未发布到公共 PyPI，需从 PyTorch 官方 CPU 源安装 +cpu 变体；
+# torch-npu 官方 wheel 按架构发布（x86_64 依赖 torch==2.10.0+cpu，aarch64 依赖 torch==2.10.0），直接安装官方 wheel
+RUN ARCH=$(uname -m) && \
+    pip3 install torch==2.10.0+cpu torchvision==0.25.0+cpu \
+        --index-url https://download.pytorch.org/whl/cpu && \
+    pip3 install https://gitcode.com/Ascend/pytorch/releases/download/v26.0.0-pytorch2.10.0/torch_npu-2.10.0-cp311-cp311-manylinux_2_28_${ARCH}.whl
+
 # 安装 RAGSDK Python 依赖（替代 .run 包安装，开发模式下只需 pip deps）
 COPY requirements.txt /tmp/rag_requirements.txt
 RUN pip3 install -r /tmp/rag_requirements.txt
