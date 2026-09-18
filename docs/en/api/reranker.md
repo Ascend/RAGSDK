@@ -79,7 +79,7 @@ def rerank_top_k(objs, scores)
 
 ## `LocalReranker`
 
-### Class Functionality<a id="ZH-CN_TOPIC_0000002419262724"></a>
+### Class Functionality<a id="en-us_TOPIC_0000002419262724"></a>
 
 **Description**
 
@@ -116,16 +116,16 @@ from langchain_core.documents import Document
 from mx_rag.reranker.local import LocalReranker
 # Same as LocalReranker(model_path="path to model", dev_id=0)
 doc_1 = Document(
-                page_content="我是小红",
+                page_content="I am Xiaohong",
                 metadata={"source": ""}
             )
 doc_2 = Document(
-                page_content="我是小明",
+                page_content="I am Xiaoming",
                 metadata={"source": ""}
             )
 docs = [doc_1, doc_2]
 rerank = LocalReranker.create(model_path="path to model", dev_id=0)
-scores = rerank.rerank('你好', [doc.page_content for doc in docs])
+scores = rerank.rerank('Hi', [doc.page_content for doc in docs])
 res = rerank.rerank_top_k(docs, scores)
 print(res)
 ```
@@ -147,7 +147,7 @@ def create(**kwargs)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|kwargs|dict|Required|Keyword arguments. See the inputs in [Class Functionality](#ZH-CN_TOPIC_0000002419262724). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
+|kwargs|dict|Required|Keyword arguments. See the inputs in [Class Functionality](#en-us_TOPIC_0000002419262724). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
 
 **Return Values**
 
@@ -183,7 +183,7 @@ def rerank(query, texts, batch_size)
 
 ## `TEIReranker`
 
-### Class Functionality<a id="ZH-CN_TOPIC_0000002419262728"></a>
+### Class Functionality<a id="en-us_TOPIC_0000002419262728"></a>
 
 **Description**
 
@@ -217,8 +217,8 @@ from mx_rag.utils import ClientParam
 # Same as LocalReranker(url="https://ip:port/rerank", client_param=ClientParam(xxx))
 rerank = TEIReranker.create(url="https://ip:port/rerank",
                             client_param=ClientParam(ca_file="/path/to/ca.crt"))
-docs = ['我是小红', '我是小明']
-scores = rerank.rerank('你好', docs)
+docs = ['I am Xiaohong', 'I am Xiaoming']
+scores = rerank.rerank('Hi', docs)
 res = rerank.rerank_top_k(docs, scores)
 print(res)
 ```
@@ -240,7 +240,7 @@ def create(**kwargs)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|kwargs|dict|Required|Keyword arguments. See the inputs in [Class Functionality](#ZH-CN_TOPIC_0000002419262728). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
+|kwargs|dict|Required|Keyword arguments. See the inputs in [Class Functionality](#en-us_TOPIC_0000002419262728). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
 
 **Return Values**
 
@@ -299,15 +299,15 @@ class RerankerFactory(ABC):
 from paddle.base import libpaddle
 from mx_rag.reranker import RerankerFactory
 from mx_rag.utils import ClientParam
-docs = ['我是小红', '我是小明']
+docs = ['I am Xiaohong', 'I am Xiaoming']
 local_reranker = RerankerFactory.create_reranker(similarity_type="local_reranker", model_path="path to model", dev_id=0)
-local_scores = local_reranker.rerank('你好', docs)
+local_scores = local_reranker.rerank('Hi', docs)
 print(local_scores)
 # Modify the parameters based on the actual situation
 tei_reranker = RerankerFactory.create_reranker(similarity_type="tei_reranker",
                                                url="https://ip:port/rerank",
                                                client_param=ClientParam(ca_file="/path/to/ca.crt"))
-tei_scores = local_reranker.rerank('你好', docs)
+tei_scores = local_reranker.rerank('Hi', docs)
 print(tei_scores)
 ```
 
@@ -329,7 +329,7 @@ def create_reranker(cls, **kwargs):
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |similarity_type|str|Required|The reranker type in `kwargs`.<br>Possible values:<li>local_reranker</li><li>tei_reranker</li>|
-|**kwargs|Any|Optional|All parameters other than `similarity_type` are used to construct the reranker.<li>If it is `local_reranker`, see [Class Functionality](#ZH-CN_TOPIC_0000002419262724).</li><li>If it is `tei_reranker`, see [Class Functionality](#ZH-CN_TOPIC_0000002419262728).</li>|
+|**kwargs|Any|Optional|All parameters other than `similarity_type` are used to construct the reranker.<li>If it is `local_reranker`, see [Class Functionality](#en-us_TOPIC_0000002419262724).</li><li>If it is `tei_reranker`, see [Class Functionality](#en-us_TOPIC_0000002419262728).</li>|
 
 ## `MixRetrieveReranker`
 
@@ -358,7 +358,7 @@ MixRetrieveReranker(k, baseline, amplitude, slope, midpoint)
 
 Note: The weight is calculated by the formula shown below. Ensure that the result is in `[0, 1]`.
 
-![](../figures/zh-cn_image_0000002470591530.png)
+![](../figures/en-us_image_0000002470591530.png)
 
 **Return Values**
 

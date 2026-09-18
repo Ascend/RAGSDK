@@ -4,7 +4,7 @@ The `Chain` definition implements integration with LLM clients.
 
 ## `Chain` Abstract Class
 
-### Class Description
+### Class Functionality
 
 **Description**
 
@@ -40,7 +40,7 @@ def query(text, llm_config, *args, **kwargs)
 
 ## `Text2ImgChain`
 
-### Class Description
+### Class Functionality
 
 **Description**
 
@@ -87,7 +87,7 @@ def query(text, llm_config, *args, **kwargs)
 |--|--|
 |Dict,{<br>"prompt": prompt, "result": data}|Where `data` is the image data encoded in base64.|
 
-**Examples**
+**Example**
 
 ```python
 from mx_rag.chain import Text2ImgChain
@@ -102,7 +102,7 @@ print(llm_data)
 
 ## `Img2ImgChain`
 
-### Class Description
+### Class Functionality
 
 **Description**
 
@@ -150,7 +150,7 @@ def query(text, llm_config, *args, **kwargs)
 |--|--|
 |Dict,{"prompt": prompt, "result": data}|Where `data` is the image data encoded in base64.|
 
-**Examples**
+**Example**
 
 ```python
 # This example retrieves relevant images from images uploaded to the knowledge base, combines them with the prompt, and sends them to the LLM to generate an image
@@ -176,13 +176,13 @@ multi_model = Img2ImgMultiModel(model_name="sd",
                                 client_param=ClientParam(ca_file="/path/to/ca.crt"))
 img2img_chain = Img2ImgChain(multi_model=multi_model, retriever=img_retriever)
 llm_data = img2img_chain.query("Find a picture of a little boy",
-                               prompt="He is a knight, wearing armor, with a big sword in his right hand. Blur the background and focus on the knight.")
+                               prompt="he is a knight, wearing armor, big sword in right hand. Blur the background, focus on the knight")
 print(llm_data)
 ```
 
 ## `SingleText2TextChain`
 
-### Class Description
+### Class Functionality
 
 **Description**
 
@@ -205,7 +205,7 @@ SingleText2TextChain(llm, retriever, reranker, prompt, sys_messages, source, use
 |prompt|str|Optional|You can add a system prompt while adding knowledge retrieval content to control the LLM more precisely. The default value is: "Based on the preceding known information, answer the user's question concisely and professionally. If the answer cannot be derived from the known information, answer based on your own experience." If you need a custom prompt, add it according to the LLM prompt engineering guidance. Length range: `[1, 1024 * 1024]`.|
 |sys_messages|List[dict]|Optional|System messages. The default is `None`. The list can contain at most 16 items. Each dictionary can contain at most 16 key-value pairs. Each dictionary key string can be at most 16 characters. Each value string can be at most `4 * 1024 * 1024` characters. Example: `[{"role": "system", "content": "You are a friendly assistant"}]`.|
 |source|bool|Optional|Whether to return the related documents retrieved during the conversation. The `source_documents` key in the Chain return dictionary is `True` by default.|
-|user_content_builder|Callable|Optional|Callback function. The return value must be a string with a maximum length of `4 * 1024 * 1024`. The default function is `_user_content_builder`. Its purpose is to combine the three types of information, the original question, the retrieved document list, and the user prompt, and generate text that can directly serve as the `content` field of the `user` role message in the LLM conversation, that is, `{"role": "user", "content": generated result}`.|
+|user_content_builder|Callable|Optional|Callback function. The return value must be a string with a maximum length of `4 * 1024 * 1024`. The default function is `_user_content_builder`. Its purpose is to combine the three types of information — the original question, the retrieved document list, and the user prompt — and generate text that can directly serve as the `content` field of the `user` role message in the LLM conversation, that is, `{"role": "user", "content": generated result}`.|
 
 - Default function for `user_content_builder`:
 
@@ -272,34 +272,9 @@ def query(text, llm_config, *args, **kwargs)
 |--|--|
 |Union[Dict, Iterator[Dict]]|The LLM return result. In the Dict, with knowledge source: `{"query": query, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}`. Without knowledge source: `{"query": query, "result": data}`.|
 
-**Examples**
+**Example<a id="section175571825169"></a>**
 
-```python
-from mx_rag.chain import SingleText2TextChain
-from mx_rag.llm import Text2TextLLM
-from mx_rag.embedding.local import TextEmbedding
-from mx_rag.storage.vectorstore import MindFAISS
-from mx_rag.storage.document_store import SQLiteDocstore
-from mx_rag.retrievers import Retriever
-from mx_rag.utils import ClientParam
-dev = 0
-emb = TextEmbedding("/path/to/bge-large-zh-v1.5", dev_id=dev)
-client_param = ClientParam(ca_file="/path/to/ca.crt")
-llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct",
-                   base_url="https://x.x.x.x:port/v1/chat/completions",
-                   client_param=client_param)
-vector_store = MindFAISS(x_dim=1024,  devs=[dev],
-                                 load_local_index="/path/to/faiss.index",
-                                 auto_save=True)
-chunk_store = SQLiteDocstore(db_path="/path/to/sql.db")
-retriever = Retriever(vector_store=vector_store, document_store=chunk_store, embed_func=emb.embed_documents, k=1, score_threshold=0.6)
-rag = SingleText2TextChain(retriever=r, llm=llm)
-response = rag.query("What modules does the mxVision software architecture include?", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
-print(response)
-
-```
-
-- **Basic dialogue function<a id="section175571825169"></a>**
+- **Basic dialogue function**
 
 ```python
 from paddle.base import libpaddle
@@ -360,7 +335,7 @@ llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct",
                    client_param=client_param)
 r = Retriever(vector_store=vector_store, document_store=chunk_store, embed_func=emb.embed_documents, k=1, score_threshold=0.6)
 rag = SingleText2TextChain(retriever=r, llm=llm)
-response = rag.query("What modules does the mxVision software architecture include?", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
+response = rag.query("mxVision software architecture contains which modules?", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
 print(response)
 
 ```
@@ -433,14 +408,10 @@ upload_files(knowledge_db, ["/path/to/file1", "/path/to/file2"], loader_mng, emb
 def user_content_builder(query: str, docs: List[Document], *args, **kwargs):
        """
        Parameters:
-       ----------
-       query : str
-           The user's original question. For example: "Please summarize the key points from the following material."
-       docs : List[Document]
-           The list of document objects returned by the retriever.
+       query : str. The user's original question. For example: "Please summarize the key points from the following material."
+       docs : List[Document]. The list of document objects returned by the retriever.
            Each `Document` usually contains: `page_content` for the document text and `metadata` for metadata such as source, title, and score.
        Returns:
-       -----
        str : The concatenated full prompt text, used as the LLM input.
        """
     text_docs = [doc for doc in docs if doc.metadata.get("type", "") == "text"]
@@ -452,7 +423,7 @@ def user_content_builder(query: str, docs: List[Document], *args, **kwargs):
         for i, doc in enumerate(text_docs):
             user_message.append(f"\n[{i + 1}] {doc.page_content}")
     if len(img_docs) > 0:
-        # 3. Add image quotes, vlm-text or ocr-text
+        # 3. Add image quotes vlm-text or ocr-text
         user_message.append("\nImage Quotes are:")
         for i, doc in enumerate(img_docs):
             user_message.append(f"\nimage{i + 1} is described as: {doc.page_content}")
@@ -494,14 +465,14 @@ llm = Text2TextLLM(model_name="Meta-Llama-3-8B-Instruct",
 sys_messages=[{"role": "system", "content": TEXT_INFER_PROMPT}]
 r = Retriever(vector_store=vector_store, document_store=chunk_store, embed_func=emb.embed_documents, k=1, score_threshold=0.6)
 rag = SingleText2TextChain(retriever=r, llm=llm, sys_messages=sys_messages, user_content_builder=user_content_builder)
-response = rag.query("What modules does the mxVision software architecture include?", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
+response = rag.query("mxVision software architecture contains which modules?", LLMParameterConfig(max_tokens=1024, temperature=1.0, top_p=0.1))
 # The source_documents in the response may contain images. You can obtain the image base64 encoding from the `metadata` field in the dictionary
 print(response)
 ```
 
 ## `ParallelText2TextChain`
 
-### Class Description
+### Class Functionality
 
 **Description**
 
@@ -524,7 +495,7 @@ class ParallelText2TextChain(SingleText2TextChain)
 |prompt|str|Optional|You can add a system prompt while adding knowledge retrieval content to control the LLM more precisely. The default value is: "Based on the preceding known information, answer the user's question concisely and professionally. If the answer cannot be derived from the known information, answer based on your own experience." If you need a custom prompt, add it according to the LLM prompt engineering guidance. Length range: `[1, 1024 * 1024]`.|
 |sys_messages|List[dict]|Optional|System messages. The default is `None`. The list can contain at most 16 items. Each dictionary can contain at most 16 key-value pairs. Each dictionary key string can be at most 16 characters. Each value string can be at most `4 * 1024 * 1024` characters. Example: `[{"role": "system", "content": "You are a friendly assistant"}]`.|
 |source|bool|Optional|Whether to return the related documents retrieved during the conversation. The `source_documents` key in the Chain return dictionary is `True` by default.|
-|user_content_builder|Callable|Optional|Callback function. The return value must be a string with a maximum length of `4*1024*1024`. The default function is `_user_content_builder`. Its purpose is to combine the three types of information, the original question, the retrieved document list, and the user prompt, and generate text that can directly serve as the `content` field of the `user` role message in the LLM conversation, that is, `{"role": "user", "content": generated result}`.|
+|user_content_builder|Callable|Optional|Callback function. The return value must be a string with a maximum length of `4 * 1024 * 1024`. The default function is `_user_content_builder`. Its purpose is to combine the three types of information — the original question, the retrieved document list, and the user prompt — and generate text that can directly serve as the `content` field of the `user` role message in the LLM conversation, that is, `{"role": "user", "content": generated result}`.|
 
 - Default function for `user_content_builder`:
 
@@ -591,7 +562,7 @@ def query(text: str, llm_config, *args, **kwargs)
 |--|--|
 |Union[Dict, Iterator[Dict]]|Returns a dictionary or an iterator. When `stream` is set to `True`, it returns an iterator. Otherwise, it returns a dictionary. The Dict contains:<li>With knowledge source: `{"prompt": prompt, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}`</li><li>Without knowledge source: `{"prompt": prompt, "result": data}`</li>|
 
-**Examples**
+**Example**
 
 ```python
 from mx_rag.chain import ParallelText2TextChain
@@ -619,11 +590,11 @@ print(answer)
 
 ## `GraphRagText2TextChain`
 
-### Class Description
+### Class Functionality
 
 **Description**
 
-A knowledge graph chain that inherits from [SingleText2TextChain](#singletext2textchain). For usage examples, see [Usage Example](./knowledge_graph.md#section8509453104117).
+A knowledge graph chain that inherits from [SingleText2TextChain](#singletext2textchain). For usage examples, see [Usage Example](./knowledge_graph.md#class-functionality).
 
 **Prototype**
 
@@ -667,4 +638,4 @@ def query(text, llm_config, *args, **kwargs)
 
 |Data Type|Description|
 |--|--|
-|dict|Returns the LLM answer in the format `{'query': "who are Teutberga's parents?", 'result': "Teutberga's parents are Bosonid Boso the Elder and an unknown mother."}`.|
+|dict|Returns the LLM answer in the format `{'query': "who is Teutberga's parents?", 'result': "Teutberga's parents are Bosonid Boso the Elder and an unknown mother."}`.|

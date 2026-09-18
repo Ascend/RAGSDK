@@ -356,7 +356,7 @@ knowledge_db.add_file(file=file_path,
                       texts=["test1", "test2"],
                       embed_func={"dense": embed_func.embed_documents},
                       metadatas=[{"source": "./gaokao.txt"}, {"source": "./gaokao.txt"}])
-documents =[document.document_name for document in knowledge_db.get_all_documents()]
+documents = [document.document_name for document in knowledge_db.get_all_documents()]
 print(documents)
 print(knowledge_db.check_document_exist(doc_name=file_path.name))
 
@@ -756,7 +756,6 @@ loader_mng.unregister_splitter(RecursiveCharacterTextSplitter)
 #### Dependencies
 
 **Figure 1** Dependencies
-
 ![](../figures/dependencies.png "Dependencies")
 
 Objects that implement the abstract `BaseLoader` and `TextSplitter` base classes can be registered in `LoaderMng`.
@@ -1110,7 +1109,7 @@ def lazy_load()
 
 ### `BaseLoader`
 
-#### Class Functionality
+**Class Functionality**
 
 Base class for document loaders. For `.xlsx`, `.docx`, `.pptx`, and similar files, it performs ZIP bomb validation. The validation criteria are: the uncompressed file size must not exceed 500 MB, the number of uncompressed files must not exceed 5120, and the remaining disk space after decompression must be greater than 200 MB.
 
@@ -1155,7 +1154,7 @@ ImageLoader(file_path)
 ```python
 from mx_rag.document.loader import ImageLoader
 loader = ImageLoader("test.png")
-docs= loader.lazy_load()
+docs = loader.lazy_load()
 print(list(docs))
 ```
 
@@ -1284,8 +1283,8 @@ docs = loader.lazy_load()
 
 splitter = MarkdownTextSplitter(chunk_size=1000, chunk_overlap=50, header_level=3)
 for doc in docs:
-     chunks = splitter.split_text(doc.page_content)
-     print(chunks)
+    chunks = splitter.split_text(doc.page_content)
+    print(chunks)
 ```
 
 #### `split_text`

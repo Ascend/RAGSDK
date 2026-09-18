@@ -4,7 +4,7 @@
 
 ### `Text2TextLLM`
 
-#### Class Overview
+#### Class Functionality
 
 **Description**
 
@@ -101,7 +101,7 @@ def chat_streamly(query, sys_messages, role, llm_config)
 
 ### `Text2ImgMultiModel`
 
-#### Class Overview
+#### Class Functionality
 
 **Description**
 
@@ -178,7 +178,7 @@ def text2img(prompt, output_format, size)
 
 ### `Img2ImgMultiModel`
 
-#### Class Overview
+#### Class Functionality
 
 **Description**
 
@@ -205,7 +205,7 @@ Img2ImgMultiModel(url, model_name, client_param)
 
 Img2ImgMultiModel object.
 
-**Example<a name="section175571825169"></a>**
+**Example**
 
 ```python
 
@@ -269,7 +269,7 @@ def img2img(prompt, image_content, size)
 
 ### `LLMParameterConfig`
 
-#### Class Overview
+#### Class Functionality
 
 **Description**
 
@@ -315,7 +315,7 @@ for res in llm.chat_streamly("Please introduce Beijing."):
 
 ### `Img2TextLLM`
 
-#### Class Overview
+#### Class Functionality
 
 **Description**
 

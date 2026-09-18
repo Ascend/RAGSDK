@@ -50,12 +50,13 @@ RAGEvaluator(llm: LLM, embeddings: Embeddings)
 **Example**
 
 ```python
+
 from datasets import Dataset
 
 from mx_rag.embedding.service import TEIEmbedding
-from mx_rag.evaluate import RAGEvaluator
-from mx_rag.llm import LLMParameterConfig, Text2TextLLM
+from mx_rag.llm import Text2TextLLM, LLMParameterConfig
 from mx_rag.utils import ClientParam
+from mx_rag.evaluate import RAGEvaluator
 
 llm = Text2TextLLM(
     base_url="https://ip:port/v1/chat/completions",
@@ -63,10 +64,7 @@ llm = Text2TextLLM(
     llm_config=LLMParameterConfig(temperature=0.1, top_p=0.8),
     client_param=ClientParam(ca_file="/path/to/ca.crt"),
 )
-embeddings = TEIEmbedding(
-    url="https://ip:port/embed",
-    client_param=ClientParam(ca_file="/path/to/ca.crt"),
-)
+embeddings = TEIEmbedding(url="https://ip:port/embed", client_param=ClientParam(ca_file="/path/to/ca.crt"),)
 
 sample_queries = [
     "Who proposed the theory of relativity?",
@@ -78,37 +76,28 @@ expected_responses = [
     "Marie Curie was a physicist and chemist who conducted groundbreaking research on radioactivity and won the Nobel Prize twice.",
     "Isaac Newton formulated the laws of motion and universal gravitation, laying the foundation for classical mechanics.",
 ]
-retrieved_contexts = [
-    [
-        "Albert Einstein's theory of relativity revolutionized our understanding of time, space, and gravity.",
-        "The theory of relativity was proposed by Albert Einstein, revolutionizing our understanding of time, space, and gravity.",
-        "By proposing the theory of relativity, Albert Einstein redefined our view of time, space, and gravity.",
-    ],
-    [
-        "Marie Curie was an outstanding physicist and chemist who made groundbreaking contributions to radioactivity research and won the Nobel Prize twice.",
-        "As a physicist and chemist, Marie Curie's research in radioactivity was groundbreaking, earning her the Nobel Prize twice.",
-        "Marie Curie was a renowned physicist and chemist who won the Nobel Prize twice for her pioneering work in radioactivity research.",
-    ],
-    [
-        "Isaac Newton proposed the laws of motion and universal gravitation, laying the foundation for classical mechanics.",
-        "By formulating the laws of motion and universal gravitation, Isaac Newton made foundational contributions to classical mechanics.",
-        "Isaac Newton's laws of motion and universal gravitation laid the cornerstone for classical mechanics.",
-    ],
+retrieved_contexts = [["Albert Einstein's theory of relativity revolutionized our understanding of time, space, and gravity.",
+                       "The theory of relativity was proposed by Albert Einstein, revolutionizing our understanding of time, space, and gravity.",
+                       "By proposing the theory of relativity, Albert Einstein redefined our view of time, space, and gravity.",],
+                       ["Marie Curie was an outstanding physicist and chemist who made groundbreaking contributions to radioactivity research and won the Nobel Prize twice.",
+                       "As a physicist and chemist, Marie Curie's research in radioactivity was groundbreaking, earning her the Nobel Prize twice.",
+                       "Marie Curie was a renowned physicist and chemist who won the Nobel Prize twice for her pioneering work in radioactivity research.",],
+                       ["Isaac Newton proposed the laws of motion and universal gravitation, laying the foundation for classical mechanics.",
+                        "By formulating the laws of motion and universal gravitation, Isaac Newton made foundational contributions to classical mechanics.",
+                       "Isaac Newton's laws of motion and universal gravitation laid the cornerstone for classical mechanics.",],
 ]
 # LLM responses
-responses = [
-    "Albert Einstein proposed the theory of relativity",
-    "Marie Curie",
-    "Formulated the laws of motion and universal gravitation, laying the foundation for classical mechanics.",
-]
+responses = ["Albert Einstein proposed the theory of relativity",
+             "Marie Curie",
+             "Formulated the laws of motion and universal gravitation, laying the foundation for classical mechanics.",]
 dataset = []
 for query, contexts, response, reference in zip(sample_queries, retrieved_contexts, responses, expected_responses):
     dataset.append(
         {
-            "user_input": query,
-            "response": response,
-            "retrieved_contexts": contexts,
-            "reference": reference,
+            'user_input': query,
+            'response': response,
+            'retrieved_contexts': contexts,
+            'reference': reference
         }
     )
 evaluation_dataset = Dataset.from_list(dataset)
@@ -120,6 +109,7 @@ result = evaluator.evaluate(
     language="chinese"
 )
 print(result)
+
 ```
 
 ### `evaluate`

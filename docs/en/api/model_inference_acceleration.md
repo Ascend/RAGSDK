@@ -2,7 +2,7 @@
 
 **Model Inference Acceleration Configuration Instructions**
 
-The `TextEmbedding` model currently supports vector inference acceleration for `bert`, `roberta`, and `xlm_roberta` embedding models, and only the `float16` data type is supported. To use this feature, install the operator module together with RAG SDK package, and ensure that you have enabled this feature. It is disabled by default. For a specific example, see the [example of enabling inference acceleration](./embedding.md#class-description).
+The `TextEmbedding` model currently supports vector inference acceleration for `bert`, `roberta`, and `xlm_roberta` embedding models, and only the `float16` data type is supported. To use this feature, install the operator module together with RAG SDK package, and ensure that you have enabled this feature. It is disabled by default. For a specific example, see the [example of enabling inference acceleration](./embedding.md#class-functionality).
 
 CLIP model acceleration supports only ViT-B-16, ViT-L-14, ViT-L-14-336, and ViT-H-14. For the download <https://github.com/OFA-Sys/Chinese-CLIP>, see the model download instructions. After you enable acceleration, the first inference triggers graph compilation and is expected to take 1 to 2 minutes.
 
@@ -51,7 +51,7 @@ If the device is a Kunpeng server, you can bind CPU cores with `numactl` when yo
 
 1. Run the **npu-smi info** command to obtain the _\<bus-id>_ of the corresponding NPU.
 
-    ![](../figures/zh-cn_image_0000002419102924.png)
+    ![](../figures/en-us_image_0000002419102924.png)
 
 2. Run the **lspci -vs** _**\<bus-id>**_ command to query the NUMA node corresponding to the NPU.
 
@@ -59,7 +59,7 @@ If the device is a Kunpeng server, you can bind CPU cores with `numactl` when yo
     lspci -vs 0000:83:00.0
     ```
 
-    ![](../figures/zh-cn_image_0000002452821689.png)
+    ![](../figures/en-us_image_0000002452821689.png)
 
 3. Use `lscpu` to obtain the number of CPU cores corresponding to the NUMA node.
 
@@ -67,7 +67,7 @@ If the device is a Kunpeng server, you can bind CPU cores with `numactl` when yo
     lscpu | grep NUMA
     ```
 
-    ![](../figures/zh-cn_image_0000002419262800.png)
+    ![](../figures/en-us_image_0000002419262800.png)
 
 4. Add **numactl -C** _**\<CPU core count>**_ before the program runs.
 

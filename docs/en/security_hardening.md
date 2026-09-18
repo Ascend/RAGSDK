@@ -20,7 +20,7 @@ After the operating system is installed, if common users are configured, you can
 
 You are advised to set the umask on the host and in containers to `027` or a more restrictive value to tighten file permissions.
 
-To set umask to `027`:
+To set umask to `027`, perform the following steps:
 
 1. Log in to the server as the root user and edit the `/etc/profile` file.
 
@@ -39,7 +39,7 @@ To set umask to `027`:
 
 Because official Docker images differ from the operating system on the physical machine, system users may not correspond one to one. Therefore, files created on the physical machine or in containers can become ownerless.
 
-You can run `find / -nouser -o -nogroup` to locate ownerless files in a container or on the physical machine. Create corresponding users and groups based on the file UID and GID, or adjust existing user UIDs and group GIDs to match them. Then assign ownership to the files and prevent ownerless files from creating security risks for the system.
+You can run `find / -nouser -o -nogroup` to locate ownerless files in a container or on the physical machine. Create corresponding users and groups based on the file UID and GID, or adjust existing user UIDs and group GIDs to match them. Then assign ownership to the files to prevent ownerless files from creating security risks for the system.
 
 ### Port Scanning
 

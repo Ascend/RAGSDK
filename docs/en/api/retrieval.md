@@ -2,7 +2,7 @@
 
 ## `Retriever`
 
-### Class Overview
+### Class Functionality
 
 **Description**
 
@@ -119,7 +119,7 @@ def set_filter(filter_dict)
 
 ## `MultiQueryRetriever`
 
-### Class Overview
+### Class Functionality
 
 **Description**
 
@@ -168,7 +168,7 @@ print(res)
 
 ## `BMRetriever`
 
-### Class Overview
+### Class Functionality
 
 **Description**
 
@@ -214,7 +214,7 @@ print(res)
 
 ## `FullTextRetriever`
 
-### Class Overview
+### Class Functionality
 
 **Description**
 
