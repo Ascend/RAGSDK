@@ -51,7 +51,7 @@ This chapter mainly describes the configuration data that users can provide.
 
 ### `CacheConfig`
 
-#### Class Function<a id="ZH-CN_TOPIC_0000002020105781"></a>
+#### Class Function<a id="en-us_TOPIC_0000002020105781"></a>
 
 **Description**
 
@@ -66,23 +66,23 @@ from mx_rag.cache import CacheConfig
 CacheConfig(cache_size, eviction_policy, auto_flush, data_save_folder, min_free_space, similarity_threshold, disable_report, lock)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|cache_size|int|Required|Cache size. This configures the number of cache entries. <br>`cache_size` cannot be less than or equal to 0. <br>Value range: `(0, 100000]`.|
-|eviction_policy|EvictPolicy|Optional|Cache aging policy. <br>The default value is LRU. See [EvictPolicy](#evictpolicy) for details.|
-|auto_flush|int|Optional|Frequency for persisting data to disk. This is the number of cache entries after which the system performs one disk write. <br>Default value: `20` <br>Value range: `(0, cache_size]`.|
-|data_save_folder|str|Optional|Path for persisting cache data. The path length cannot exceed 1024, and the path cannot be a symbolic link or a relative path. <li>The size of each file in the directory cannot exceed 100 GB, the directory depth cannot exceed 64, and the total number of files cannot exceed 512.</li><li>The running user's group and users other than the running user must not have write permission to files in that directory.</li><li>The group of the files in the directory and the group of the parent directory of those files must belong to the running user.</li><br>Default value: the current user's home directory + `"/Ascend/mxRag/cache_save_folder"`. If the path does not exist, you must create it. The storage path cannot be in the following path list: [`/etc`, `/usr/bin`, `/usr/lib`, `/usr/lib64`, `/sys/`, `/dev/`, `/sbin`, `/tmp`].|
-|min_free_space|int|Optional|Available space check for the disk persistence path, in bytes. Default value: `1 GB`. <br>Value range: `[20 MB, 100 GB]`.|
-|similarity_threshold|float|Optional|Similarity calculation threshold. <br>Default value: `0.8` <br>Value range: `[0.0, 1.0]`.|
-|disable_report|bool|Optional|Whether to support telemetry data. <br>Default value: `False` <br>Value range: `True` means not supported, and `False` means supported.|
-|lock|multiprocessing.synchronize.Lock, _thread.LockType|Optional|`CacheConfig` does not support multithreaded or multiprocess processing. If you need to call this interface from multiple processes or threads, you must acquire a lock. Default value: `None`. <br>Possible values: <br>`None`: Do not use a lock. In this case, the interface does not support concurrency. <br>`multiprocessing.Lock()`: Process lock. In this case, the interface supports multiprocess calls. <br>`threading.Lock()`: Thread lock. In this case, the interface supports multithreaded calls.|
+|cache_size|int|Required|Cache size. This configures the number of cache entries.<br>`cache_size` cannot be less than or equal to 0.<br>Value range: `(0, 100000]`.|
+|eviction_policy|EvictPolicy|Optional|Cache aging policy.<br>The default value is LRU. See [EvictPolicy](#evictpolicy) for details.|
+|auto_flush|int|Optional|Frequency for persisting data to disk. This is the number of cache entries after which the system performs one disk write.<br>Default value: `20`<br>Value range: `(0, cache_size]`.|
+|data_save_folder|str|Optional|Path for persisting cache data. The path length cannot exceed 1024, and the path cannot be a symbolic link or a relative path.<li>The size of each file in the directory cannot exceed 100 GB, the directory depth cannot exceed 64, and the total number of files cannot exceed 512.</li><li>The running user's group and users other than the running user must not have write permission to files in that directory.</li><li>The group of the files in the directory and the group of the parent directory of those files must belong to the running user.</li><br>Default value: the current user's home directory + `"/Ascend/mxRag/cache_save_folder"`. If the path does not exist, you must create it. The storage path cannot be in the following path list: `["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]`.|
+|min_free_space|int|Optional|Available space check for the disk persistence path, in bytes. Default value: `1 GB`.<br>Value range: `[20 MB, 100 GB]`.|
+|similarity_threshold|float|Optional|Similarity calculation threshold.<br>Default value: `0.8`<br>Value range: `[0.0, 1.0]`.|
+|disable_report|bool|Optional|Whether to support telemetry data.<br>Default value: `False`<br>Value range: `True` means not supported, and `False` means supported.|
+|lock|multiprocessing.synchronize.Lock, _thread.LockType|Optional|`CacheConfig` does not support multithreaded or multiprocess processing. If you need to call this interface from multiple processes or threads, you must acquire a lock. Default value: `None`.<br>Possible values:<br>`None`: Do not use a lock. In this case, the interface does not support concurrency.<br>`multiprocessing.Lock()`: Process lock. In this case, the interface supports multiprocess calls.<br>`threading.Lock()`: Thread lock. In this case, the interface supports multithreaded calls.|
 
 > [!NOTE]
 >
->- This interface uses the pickle module internally, which has the risk of being attacked by maliciously crafted data during unpickling. You must ensure that the persisted data loaded from `data_save_folder` is stored securely and that you load only trusted persisted data.
->- For memory cache, the persisted file size cannot exceed 100 MB.
+> - This interface uses the pickle module internally, which has the risk of being attacked by maliciously crafted data during unpickling. You must ensure that the persisted data loaded from `data_save_folder` is stored securely and that you load only trusted persisted data.
+> - For memory cache, the persisted file size cannot exceed 100 MB.
 
 **Example**
 
@@ -114,7 +114,7 @@ from mx_rag.cache import SimilarityCacheConfig
 SimilarityCacheConfig(vector_config, cache_config, emb_config, similarity_config, retrieval_top_k, clean_size, **kwargs)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -128,9 +128,9 @@ SimilarityCacheConfig(vector_config, cache_config, emb_config, similarity_config
 
 > [!NOTE]
 >
->- This interface uses the pickle module internally, which has the risk of being attacked by maliciously crafted data during unpickle. You must ensure that the persisted data loaded from `data_save_folder` is stored securely and that you load only trusted persisted data.
->- `vector_config` and `cache_config` must both be `None` or both be not `None`. If both `vector_config` and `cache_config` are `None`, the configuration is equivalent to memory cache.
->- For the SQLite database, the persisted file cannot exceed 30 GB. For the vector database, the persisted file cannot exceed 20 GB.
+> - This interface uses the pickle module internally, which has the risk of being attacked by maliciously crafted data during unpickle. You must ensure that the persisted data loaded from `data_save_folder` is stored securely and that you load only trusted persisted data.
+> - `vector_config` and `cache_config` must both be `None` or both be not `None`. If both `vector_config` and `cache_config` are `None`, the configuration is equivalent to memory cache.
+> - For the SQLite database, the persisted file cannot exceed 30 GB. For the vector database, the persisted file cannot exceed 20 GB.
 
 **Table 1** `vector_config`<a id="vector_config"></a>
 
@@ -146,15 +146,15 @@ SimilarityCacheConfig(vector_config, cache_config, emb_config, similarity_config
 |--|--|--|--|
 |x_dim|int|Optional|Dimension of the embedding model. Default value: `0`.|
 |skip_emb|bool|Optional|Whether to skip embedding. Default value: `False`.|
-|**kwargs|Dict[str, Any]|Required|See `create_embedding` for details.|
+|**kwargs|Dict[str, Any]|Required|See [create_embedding](./embedding.md#create_embedding) for details.|
 
 **Table 3** `similarity_config` Parameters<a id="similarity_config"></a>
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|score_min|float|Optional|Minimum possible value of the similarity score. Default value: `0.0`. <br>Value range: `[0.0, 100.0]`.|
-|score_max|float|Optional|Maximum possible value of the similarity score. Default value: `1`. <br>Value range: `[1.0, 100.0]`. `"score_max"` must be greater than or equal to `"score_min"`.|
-|reverse|bool|Optional|Relationship between the similarity score and the similarity value. Default value: `False`. <li>`False`: A higher similarity score means higher similarity.</li><li>`True`: A higher similarity score means lower similarity.</li>|
+|score_min|float|Optional|Minimum possible value of the similarity score. Default value: `0.0`.<br>Value range: `[0.0, 100.0]`.|
+|score_max|float|Optional|Maximum possible value of the similarity score. Default value: `1`.<br>Value range: `[1.0, 100.0]`. `"score_max"` must be greater than or equal to `"score_min"`.|
+|reverse|bool|Optional|Relationship between the similarity score and the similarity value. Default value: `False`.<li>`False`: A higher similarity score means higher similarity.</li><li>`True`: A higher similarity score means lower similarity.</li>|
 |**kwargs|Dict[str, Any]|Required|See [create_reranker](./reranker.md#create_reranker) for details.|
 
 **Example**
@@ -178,19 +178,19 @@ similarity_config = SimilarityCacheConfig(
         emb_config={
             "embedding_type": "local_text_embedding",
             "x_dim": dim,
-            "model_path": "path_to_embedding_model", # emb model path.
+            "model_path": "path_to_embedding_model", # emb model path
             "dev_id": dev
         },
         similarity_config={
             "similarity_type": "local_reranker",
-            "model_path": "path_to_reranker_model",  # reranker model path.
+            "model_path": "path_to_reranker_model",  # reranker model path
             "dev_id": dev
         },
         retrieval_top_k=1,
         cache_size=1000,
         clean_size=20,
         similarity_threshold=0.86,
-        data_save_folder="path_to_cache_save_folder", # Persisted path.
+        data_save_folder="path_to_cache_save_folder", # Persisted path
         disable_report=True
     )
 similarity_cache = MxRAGCache("similarity_cache", similarity_config)
@@ -214,18 +214,18 @@ similarity_config = SimilarityCacheConfig(
         "client": client,
         "vector_type": "milvus_db",
         "x_dim": dim,
-        "collection_name": "mxrag_cache_123",  # milvus DB label.
+        "collection_name": "mxrag_cache_123",  # milvus DB label
         "param": None
     },
     cache_config="sqlite",
     emb_config={
         "embedding_type": "tei_embedding",
-        "url": "https://<ip>:<port>/embed",  # IP address and listening port of the tei_embedding service.
+        "url": "https://<ip>:<port>/embed",  # IP address and listening port of the tei_embedding service
         "client_param": ClientParam(ca_file="/path/to/ca.crt")
     },
     similarity_config={
         "similarity_type": "tei_reranker",
-        "url": "https://<ip>:<port>/rerank",  # IP address and listening port of the tei_reranker service.
+        "url": "https://<ip>:<port>/rerank",  # IP address and listening port of the tei_reranker service
         "client_param": ClientParam(ca_file="/path/to/ca.crt")
     },
     retrieval_top_k=1,
@@ -241,7 +241,7 @@ similarity_cache = MxRAGCache("similarity_cache", similarity_config)
 
 ### `EvictPolicy`
 
-#### Class Function
+#### Class Function<a id="en-us_TOPIC_0000002020225309"></a>
 
 **Description**
 
@@ -254,7 +254,7 @@ from mx_rag.cache import EvictPolicy
 class EvictPolicy(Enum)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Attribute|Data Type|Description|
 |--|--|--|
@@ -284,7 +284,7 @@ from mx_rag.cache import MxRAGCache
 MxRAGCache(cache_name, config)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -320,19 +320,19 @@ similarity_config = SimilarityCacheConfig(
         "vector_type": "milvus_db",
         "x_dim": dim,
         "client": MilvusClient("https://x.x.x.x:port", user="xxx", password=getpass.getpass(), secure=True,   client_pem_path="path_to/client.pem", client_key_path="path_to/client.key", ca_pem_path="path_to/ca.pem", server_name="localhost")
-        "collection_name": "mxrag_cache_123",  # milvus DB label.
+        "collection_name": "mxrag_cache_123",  # milvus DB label
         "use_http": False,
         "param": None
     },
     cache_config="sqlite",
     emb_config={
         "embedding_type": "tei_embedding",
-        "url": "https://<ip>:<port>/embed",  # IP address and listening port of the tei_embedding service.
+        "url": "https://<ip>:<port>/embed",  # IP address and listening port of the tei_embedding service
         "client_param": ClientParam(ca_file="/path/to/ca.crt")
     },
     similarity_config={
         "similarity_type": "tei_reranker",
-        "url": "https://<ip>:<port>/rerank",  # IP address and listening port of the tei_reranker service.
+        "url": "https://<ip>:<port>/rerank",  # IP address and listening port of the tei_reranker service
         "client_param": ClientParam(ca_file="/path/to/ca.crt")
     },
     retrieval_top_k=1,
@@ -351,12 +351,12 @@ cache.set_cache_limit(4000)
 # Set whether to display the cache process in detail
 cache.set_verbose(False)
 # Update the cache manually
-cache.update("小明的爸爸是谁?", json.dumps({"小明的爸爸是谁?": "小明的爸爸名字是大明"}))
+cache.update("Who is Xiaoming's father?", json.dumps({"Who is Xiaoming's father?": "Xiaoming's father is Big ming"}))
 # Exact-match result
-res = cache.search("小明的爸爸是谁?")
+res = cache.search("Who is Xiaoming's father?")
 print(f"memory match res: {res}")
 # Semantic similarity result
-res = cache.search("小明的爸爸叫什么名字")
+res = cache.search("What is the name of Xiaoming's father?")
 print(f"similarity match res: {res}")
 # Call flush manually to persist the cache to disk. The cache also persists automatically according to the `auto_flush` configuration
 cache.flush()
@@ -380,7 +380,7 @@ def clear()
 
 **Description**
 
-This function forces the user's cache data from memory to disk. The target path is the `data_save_folder` configuration parameter in [Class Function](#ZH-CN_TOPIC_0000002020105781).
+This function forces the user's cache data from memory to disk. The target path is the `data_save_folder` configuration parameter in [Class Function](#en-us_TOPIC_0000002020105781).
 
 You must call it after initialization.
 
@@ -420,7 +420,7 @@ Chains two caches together to achieve multi-level caching.
 def join(next_cache)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -438,7 +438,7 @@ This function mainly finds the corresponding answer based on the user's question
 def search(query)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -463,7 +463,7 @@ Sets the character limit for answers returned by the LLM when caching. If the st
 def set_cache_limit(cache_limit: int)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -482,11 +482,11 @@ Sets whether to enable logging.
 def set_verbose(verbose: bool)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|verbose|bool|Required|Whether to enable detailed logging. Default value: `False`. <li>`True`: Logs cache hits and misses.</li><li>`False`: Does not log cache hits and misses.</li>|
+|verbose|bool|Required|Whether to enable detailed logging. Default value: `False`.<li>`True`: Logs cache hits and misses.</li><li>`False`: Does not log cache hits and misses.</li>|
 
 #### `update`
 
@@ -500,7 +500,7 @@ This function mainly stores user questions and answers. You must call it after i
 def update(query, answer)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -528,14 +528,14 @@ from mx_rag.cache import CacheChainChat
 CacheChainChat(cache,chain,convert_data_to_cache,convert_data_to_user)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |cache|MxRAGCache|Required|RAG SDK cache.|
 |chain|Chain|Required|RAG SDK chain used to access the LLM.|
-|convert_data_to_cache|Callable[[Any], Dict]|Optional|This callback function is mainly used when user data cannot be converted to a string. In that case, the user provides a conversion function. <br>Default: no conversion.|
-|convert_data_to_user|Callable[[Dict], Any]|Optional|This callback function is mainly used together with `convert_data_to_cache`. When a user question hits the cache, it converts the stored cache format to the user's format. <br>Default: no conversion.|
+|convert_data_to_cache|Callable[[Any], Dict]|Optional|This callback function is mainly used when user data cannot be converted to a string. In that case, the user provides a conversion function.<br>Default: no conversion.|
+|convert_data_to_user|Callable[[Dict], Any]|Optional|This callback function is mainly used together with `convert_data_to_cache`. When a user question hits the cache, it converts the stored cache format to the user's format.<br>Default: no conversion.|
 
 **Example**
 
@@ -572,12 +572,12 @@ similarity_config = SimilarityCacheConfig(
     emb_config={
         "embedding_type": "local_text_embedding",
         "x_dim": dim,
-        "model_path": "/path to emb",  # emb model path.
+        "model_path": "/path to emb",  # emb model path
         "dev_id": dev
     },
     similarity_config={
         "similarity_type": "local_reranker",
-        "model_path": "/path to reranker",  # reranker model path.
+        "model_path": "/path to reranker",  # reranker model path
         "dev_id": dev
     },
 
@@ -585,7 +585,7 @@ similarity_config = SimilarityCacheConfig(
     cache_size=1000,
     clean_size=20,
     similarity_threshold=0.86,
-    data_save_folder="/save path",  # Persisted path.
+    data_save_folder="/save path",  # Persisted path
     disable_report=True
 )
 similarity_cache = MxRAGCache("similarity_cache", similarity_config)
@@ -639,12 +639,12 @@ llm = Text2TextLLM(base_url="https://<ip>:<port>",
 text2text_chain = SingleText2TextChain(llm=llm, retriever=retriever)
 cache_chain = CacheChainChat(chain=text2text_chain, cache=cache)
 start_time = time.time()
-res = cache_chain.query("请描述2024年高考作文题目")
+res = cache_chain.query("Describe the 2024 National College Entrance Examination essay prompt.")
 end_time = time.time()
 print(f"no cache query time cost:{(end_time - start_time) * 1000}ms")
 print(f"no cache answer {res}")
 start_time = time.time()
-res = cache_chain.query("2024年的高考题目是什么", )
+res = cache_chain.query("What is the essay question for the 2024 National College Entrance Examination?", )
 end_time = time.time()
 print(f"cache query time cost:{(end_time - start_time) * 1000}ms")
 print(f"cache answer {res}")
@@ -663,7 +663,7 @@ Provides an interface for querying the cache. When the cache cannot answer the q
 def query(text, *args, **kwargs) -> Union[Dict, Iterator[Dict]]
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -675,7 +675,7 @@ def query(text, *args, **kwargs) -> Union[Dict, Iterator[Dict]]
 
 |Data Type|Description|
 |--|--|
-|Union[Dict, Iterator[Dict]]|Returns the question-answer result. The content of `Dict` is: <li>With knowledge source: `{"query": query, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}`</li><li>Without knowledge source: `{"query": query, "result": data}`</li>|
+|Union[Dict, Iterator[Dict]]|Returns the question-answer result. The content of `Dict` is:<li>With knowledge source: `{"query": query, "result": data, "source_documents": [{'metadata': xxx, 'page_content': xxx}]}`</li><li>Without knowledge source: `{"query": query, "result": data}`</li>|
 
 ## Automatic Generation of QA as Cache
 
@@ -702,7 +702,7 @@ QAGenerate(config: QAGenerationConfig)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|config|QAGenerationConfig|Required|`QAGenerationConfig` object. It contains the parameters related to QA generation. <br>See [QAGenerationConfig](#qagenerationconfig) for the prototype description.|
+|config|QAGenerationConfig|Required|`QAGenerationConfig` object. It contains the parameters related to QA generation.<br>See [QAGenerationConfig](#qagenerationconfig) for the prototype description.|
 
 **Example**
 
@@ -717,11 +717,11 @@ llm = Text2TextLLM(base_url="https://ip:port/v1/chat/completions", model_name="l
 # Use the model tokenizer and pass in the model path
 tokenizer = AutoTokenizer.from_pretrained("/home/model/Llama3-8B-Chinese-Chat/", local_files_only=True)
 # You can call MarkDownParser to generate titles and contents
-titles = ["2024年高考语文作文题目"]
-contents = ['2024年高考语文作文试题\n新课标I卷\n阅读下面的材料，根据要求写作。（60分）\n'
-            '随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？\n'
-            '以上材料引发了你怎样的联想和思考？请写一篇文章。'
-            '要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。']
+titles = ["2024 National College Entrance Examination Chinese Language and Literature Essay Prompt"]
+contents = ['2024 National College Entrance Examination Chinese Language and Literature Essay Prompt\nNew Curriculum Standards Paper I\nRead the following material and write an essay as instructed. (60 points)\n'
+            'With the widespread adoption of the Internet and the application of artificial intelligence, more and more questions can be answered quickly. So, will we have fewer and fewer questions?\n'
+            'What associations and reflections does the material above inspire in you? Write an essay.
+            'Requirements: Choose an appropriate perspective, develop a clear thesis, specify the genre, and create your own title; do not use formulaic compositions or plagiarize; do not disclose personal information; write at least 800 words.']
 config = QAGenerationConfig(titles, contents, tokenizer, llm, qas_num=1)
 qa_generate = QAGenerate(config)
 qas = qa_generate.generate_qa()
@@ -737,12 +737,12 @@ Passes the title and body to `QAGenerationConfig`. The system truncates the body
 If the QA pairs returned by the LLM do not meet the format and quantity requirements, the system skips them. For example, the following text generates three required QAs:
 
 ```text
-Q1：如何查询成都火车站的停运列车？
-参考段落：'查询方式：铁路12306网页首页。查询流程：第一步：进入铁路12306app首页，点击【车站大屏】；第二步：左上角车站名下拉选择成都东站；第三步：搜索框输入车次即可查询车次情况。'
-Q2：四川省将洪水灾害防御响应提升至哪个级别？
-参考段落：四川将洪水灾害防御四级响应提升至三级。
-Q3：在7月14日，四川省气象台发布了哪种天气预警？
-参考段落：7月14日15时30分，四川省气象台继续发布暴雨蓝色预警。
+Q1: How to check train cancellations at Chengdu Railway Station?
+Reference paragraph: 'Check method: Railway 12306 website homepage. Check process: Step 1: Go to the Railway 12306 app homepage and click [Station Screen]; Step 2: Select Chengdu East Station from the station name dropdown in the top-left corner; Step 3: Enter the train number in the search box to check the train status.'
+Q2: To which level did Sichuan Province raise the flood disaster defense response?
+Reference paragraph: Sichuan raised the flood disaster defense response from Level 4 to Level 3.
+Q3: What weather warning did the Sichuan Meteorological Observatory issue on July 14?
+Reference paragraph: At 15:30 on July 14, the Sichuan Meteorological Observatory continued to issue a blue rainstorm warning.
 ```
 
 **Function Prototype**
@@ -761,7 +761,7 @@ def generate_qa(llm_config)
 
 |Data Type|Description|
 |--|--|
-|Dict|Returns the generated QA pair list in the following format: <br>`{"从成都到重庆要多久？ : 乘坐高铁1个小时"，...}`|
+|Dict|Returns the generated QA pair list in the following format:<br>`{"How long does it take from Chengdu to Chongqing? : Taking the high-speed train takes 1 hour"，...}`|
 
 ### `QAGenerationConfig`
 
@@ -800,11 +800,11 @@ llm = Text2TextLLM(base_url="https://ip:port/v1/chat/completions", model_name="l
 # Use the model tokenizer and pass in the model path
 tokenizer = AutoTokenizer.from_pretrained("/home/model/Llama3-8B-Chinese-Chat/", local_files_only=True)
 # You can call MarkDownParser to generate titles and contents
-titles = ["2024年高考语文作文题目"]
-contents = ['2024年高考语文作文试题\n新课标I卷\n阅读下面的材料，根据要求写作。（60分）\n'
-            '随着互联网的普及、人工智能的应用，越来越多的问题能很快得到答案。那么，我们的问题是否会越来越少？\n'
-            '以上材料引发了你怎样的联想和思考？请写一篇文章。'
-            '要求：选准角度，确定立意，明确文体，自拟标题；不要套作，不得抄袭；不得泄露个人信息；不少于800字。']
+titles = ["2024 National College Entrance Examination Chinese Language and Literature Essay Prompt"]
+contents = ['2024 National College Entrance Examination Chinese Language and Literature Essay Prompt\nNew Curriculum Standards Paper I\nRead the following material and write an essay as instructed. (60 points)\n'
+            'With the widespread adoption of the Internet and the application of artificial intelligence, more and more questions can be answered quickly. So, will we have fewer and fewer questions?\n'
+            'What associations and reflections does the material above inspire in you? Write an essay.'
+            'Requirements: Choose an appropriate perspective, develop a clear thesis, specify the genre, and create your own title; do not use formulaic compositions or plagiarize; do not disclose personal information; write at least 800 words.']
 config = QAGenerationConfig(titles, contents, tokenizer, llm, qas_num=1)
 qa_generate = QAGenerate(config)
 qas = qa_generate.generate_qa()
@@ -830,7 +830,7 @@ MarkDownParser(file_path, max_file_num)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|file_path|str|Required|Path to the folder that contains the Markdown files. The path length cannot exceed 1024. When you call `parse`, the system checks the following conditions: the path cannot be a symbolic link or a relative path, the size of each `.md` file in the folder cannot exceed 10 MB, and the number of `.md` files cannot exceed `max_file_num`. The path cannot be in the following list: [`/etc`, `/usr/bin`, `/usr/lib`, `/usr/lib64`, `/sys/`, `/dev/`, `/sbin`, `/tmp`].|
+|file_path|str|Required|Path to the folder that contains the Markdown files. The path length cannot exceed 1024. When you call `parse`, the system checks the following conditions: the path cannot be a symbolic link or a relative path, the size of each `.md` file in the folder cannot exceed 10 MB, and the number of `.md` files cannot exceed `max_file_num`. The path cannot be in the following list: `["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]`.|
 |max_file_num|int|Optional|Maximum number of Markdown files to parse. Default value: `1000`. Value range: `[1, 10000]`.|
 
 **Return Values**

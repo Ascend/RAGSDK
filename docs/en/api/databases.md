@@ -186,12 +186,12 @@ from mx_rag.storage.document_store import OpenGaussDocstore
 OpenGaussDocstore(engine, encrypt_fn, decrypt_fn, enable_bm25, index_name)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|engine|Engine|Required|An `Engine` instance. For details, see <a href="https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine">Engine</a>. Only the OpenGauss dialect is supported.<br>>[!NOTE] The `Engine` instance comes from the user. Therefore, ensure that you use a secure connection method.|
-|encrypt_fn|Callable[[str], str]|Optional|A callback that returns a string no longer than `128 * 1024 * 1024` characters. It encrypts the `chunk` content of the [ChunkModel class](#chunkmodel-class) and returns a string. When `add` saves data, the database stores the data processed by `encrypt_fn` in the `chunk` field. <br>If the uploaded document involves personal data such as bank card numbers, ID card numbers, passport numbers, or passwords, configure this parameter to ensure data security.|
+|engine|Engine|Required|An `Engine` instance. For details, see <a href="https://docs.sqlalchemy.org/en/20/core/connections.html#sqlalchemy.engine.Engine">Engine</a>. Only the OpenGauss dialect is supported.<br>> [!NOTE] The `Engine` instance comes from the user. Therefore, ensure that you use a secure connection method.|
+|encrypt_fn|Callable[[str], str]|Optional|A callback that returns a string no longer than `128 * 1024 * 1024` characters. It encrypts the `chunk` content of the [ChunkModel class](#chunkmodel-class) and returns a string. When `add` saves data, the database stores the data processed by `encrypt_fn` in the `chunk` field.<br>If the uploaded document involves personal data such as bank card numbers, ID card numbers, passport numbers, or passwords, configure this parameter to ensure data security.|
 |decrypt_fn|Callable[[str], str]|Optional|A callback that returns a string no longer than `16 * 1024 * 1024` characters. It decrypts the `chunk` content of the `ChunkModel` class and returns a string. When `search` returns data, it returns the data processed by `decrypt_fn` in the `chunk` field.|
 |enable_bm25|bool|Optional|Specifies whether the database supports BM25 sparse retrieval. If you set this parameter to `False`, full-text search is unavailable and `full_text_search` always returns `[]`. The default value is `True`.|
 |index_name|str|Optional|The name of the created BM25 index. It must match the regular expression `^[a-zA-Z0-9_-]{6,64}$`, which means it can contain only uppercase letters, lowercase letters, numbers, underscores, and hyphens, and its length must be from 6 to 64 characters. The default value is `"chunks_content_bm25"`.|
@@ -257,11 +257,11 @@ Stores document fragment information in the relational database.
 def add(documents, document_id)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|documents|List[MxDocument]. See [MxDocument](#mxdocument).|Required|A list of document fragment objects. The list cannot be empty and its length cannot exceed `1000 * 1000`.|
+|documents|List[MxDocument], see [MxDocument](#mxdocument)|Required|A list of document fragment objects. The list cannot be empty and its length cannot exceed `1000 * 1000`.|
 |document_id|int|Required|The document ID. See the database model [DocumentModel class](#documentmodel-class).|
 
 **Return Values**
@@ -282,7 +282,7 @@ Deletes document fragment information from the relational database.
 def delete(document_id)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -306,7 +306,7 @@ Searches for document information in the relational database.
 def search(chunk_id)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -322,7 +322,553 @@ def search(chunk_id)
 
 **Description**
 
-Queries the IDs of all document fragments.
+Queries the IDs of all knowledge chunks. When one document is split into multiple chunks, one `document_id` corresponds to multiple `chunk_id` values when the data is stored.
+
+**Function Prototype**
+
+```python
+def get_all_chunk_id()
+```
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[int]|A list that contains all document fragment IDs in the relational database.|
+
+#### `get_all_document_id`
+
+**Description**
+
+Queries the IDs of all documents. When one document is split into multiple chunks, one `document_id` corresponds to multiple `chunk_id` values when the data is stored.
+
+**Function Prototype**
+
+```python
+def get_all_document_id()
+```
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[int]|A list that contains all document IDs in the relational database.|
+
+#### `full_text_search`
+
+**Description**
+
+Searches for document information in the relational database. If you set the `enable_bm25` parameter to `False` when creating the `OpenGaussDocstore` instance, this API is unavailable and returns an empty list.
+
+**Function Prototype**
+
+```python
+def full_text_search(query, top_k, filter_dict) -> List[MxDocument]
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|query|str|Required|The text to search. The length range is `(0, 1000 * 1000]`.|
+|top_k|int|Optional|The number of best-matching chunks to return. The default value is 3. If this value is greater than the number of valid chunks found, only valid chunks are returned. The value range is `(0, 10000]`.|
+|filter_dict|Dict|Required|A dictionary of search conditions. Currently, only filtering by `document_id` is supported. Pass the filtered document IDs as a list, and the list length cannot exceed `1000 * 1000`. For example, to filter among documents with `document_id` values 1, 2, and 4, pass `{"document_id": [1, 2, 4]}`.|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[MxDocument]|Returns a list of `MxDocument` instances when results are found. Returns an empty list when no result is found. See [MxDocument](#mxdocument). When `enable_bm25` is `False`, the return value is `[]`.|
+
+#### `drop`
+
+**Description**
+
+Deletes the database managed by the current instance.
+
+**Function Prototype**
+
+```python
+def drop()
+```
+
+#### `search_by_document_id`
+
+**Description**
+
+Gets the document fragments that correspond to `document_id`.
+
+**Function Prototype**
+
+```python
+def search_by_document_id(document_id: int)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|document_id|int|Required|The document index. The value range is greater than or equal to 0.|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[MxDocument]|Returns a list of `MxDocument` instances when results are found. Returns an empty list when no result is found. See [MxDocument](#mxdocument).|
+
+#### `update`
+
+**Description**
+
+Updates document fragments in the relational database.
+
+**Function Prototype**
+
+```python
+def update(chunk_ids: List[int], texts: List[str])
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|chunk_ids|List[int]|Required|A list of document IDs to update. The list length range is `(0, 1000000]`.|
+|texts|List[str]|Required|A list of updated document content. The list length range is `(0, 1000000]`, and the string length range is `[1, 128 * 1024 * 1024]`. The `chunk_ids` list and the `texts` list correspond one to one.|
+
+### `MilvusDocstore`
+
+#### Class Functionality
+
+**Description**
+
+Provides a knowledge database based on Milvus that mainly stores split chunk information.
+
+**Function Prototype**
+
+```python
+from mx_rag.storage.document_store import MilvusDocstore
+MilvusDocstore(client, collection_name, enable_bm25, bm25_k1, bm25_b, auto_flush)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|client|MilvusClient|Required|A `MilvusClient` instance. It supports <a href="https://milvus.io/docs/zh/connect-to-milvus-server.md">server mode</a> and <a href="https://milvus.io/docs/zh/milvus_lite.md">Lite mode</a>.<br>> [!NOTE] The `MilvusClient` instance comes from the user. Therefore, ensure that you use a secure connection method.|
+|collection_name|str|Optional|The collection name cannot be empty. The maximum length is 1024. The default value is `doc_store`.|
+|enable_bm25|bool|Optional|Specifies whether to enable BM25 sparse vector retrieval. The default value is `True`. If you set this parameter to `False`, full-text search is unavailable and `full_text_search` always returns `[]`.|
+|bm25_k1|float|Optional|Controls the term frequency saturation in BM25 sparse vector retrieval. A larger value gives more importance to term frequency in document ranking. The value range is `[1.2, 2.0]`. The default value is 1.2. For details, see <a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus Full-Text Search</a>.|
+|bm25_b|float|Optional|Controls the degree of document length normalization in BM25 sparse vector retrieval. The value range is `[0, 1]`. The default value is 0.75. For details, see <a href="https://milvus.io/docs/zh/full-text-search.md#Full-Text-Search">Milvus Full-Text Search</a>.|
+|auto_flush|bool|Optional|Specifies whether to automatically flush in-memory data when data changes. The default value is `True`.|
+|encrypt_fn|Callable[[str], str]|Optional|A callback that returns a string no longer than `128 * 1024 * 1024` characters. This parameter takes effect only when `enable_bm25` is `False`. When `add` or `update` is called, this method encrypts the document `page_content` before storing it.<br>If the uploaded document involves personal data such as bank card numbers, ID card numbers, passport numbers, or passwords, configure this parameter to ensure data security.|
+|decrypt_fn|Callable[[str], str]|Optional|A callback that returns a string no longer than `16 * 1024 * 1024` characters. This parameter takes effect only when `enable_bm25` is `False`. When a query API is called, this method decrypts `page_content` before returning it.|
+
+**Example**
+
+```python
+import getpass
+from pymilvus import MilvusClient
+from mx_rag.storage.document_store import MxDocument, MilvusDocstore
+# Server mode
+client = MilvusClient("https://x.x.x.x:port", user="xxx", password=getpass.getpass(), secure=True,   client_pem_path="path_to/client.pem",   client_key_path="path_to/client.key",   ca_pem_path="path_to/ca.pem",   server_name="localhost")
+
+# You can also use Lite mode, as shown below:
+# client = MilvusClient("./milvus_demo.db")
+
+chunk_store = MilvusDocstore(client)
+text = ["Example", "text"]
+metadata_list = [{} for _ in text]
+doc = [MxDocument(page_content=t, metadata=m, document_name="1.docx") for t, m in zip(text, metadata_list)]
+document_id = 1
+chunk_store.add(doc, document_id)
+ids = chunk_store.get_all_chunk_id()
+document = chunk_store.search(ids[0])
+print(document.page_content)
+print(chunk_store.full_text_search("text", filter_dict={"document_id": [0]}))
+print(chunk_store.full_text_search("text", filter_dict={"document_id": [document_id]}))
+chunk_store.update([0, 1], ["text1", "text2"])
+print(chunk_store.delete(document_id))
+chunk_store.search_by_document_id(document_id)
+```
+
+#### `add`
+
+**Description**
+
+Stores document fragment information in the database.
+
+**Function Prototype**
+
+```python
+def add(documents, document_id)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|documents|List[MxDocument], see [MxDocument](#mxdocument)|Required|A list of document fragment objects. The list cannot be empty and its length cannot exceed `1000 * 1000`.|
+|document_id|int|Required|The document ID. See the database model [DocumentModel class](#documentmodel-class).|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[int]|A list of stored document IDs.|
+
+#### `delete`
+
+**Description**
+
+Deletes document fragment information from the database.
+
+**Function Prototype**
+
+```python
+def delete(document_id)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|document_id|int|Required|The document ID. See the database model [DocumentModel class](#documentmodel-class).|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|int|The number of deleted documents.|
+
+#### `search`
+
+**Description**
+
+Searches for document information in the database.
+
+**Function Prototype**
+
+```python
+def search(chunk_id)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|chunk_id|int|Required|The document index. The value range is greater than or equal to 0.|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|Optional[MxDocument]|Returns an `MxDocument` instance when a result is found. Returns `None` when no result is found. See [MxDocument](#mxdocument).|
+
+#### `get_all_chunk_id`
+
+**Description**
+
+Queries the IDs of all document fragments in the relational database.
+
+**Function Prototype**
+
+```python
+def get_all_chunk_id()
+```
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[int]|A list that contains all document fragment IDs in the relational database.|
+
+#### `get_all_document_id`
+
+**Description**
+
+Queries the IDs of all documents. When one document is split into multiple chunks, one `document_id` corresponds to multiple `chunk_id` values when the data is stored.
+
+**Function Prototype**
+
+```python
+def get_all_document_id()
+```
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[int]|A list that contains all document IDs in the relational database.|
+
+#### `full_text_search`
+
+**Description**
+
+Searches for text information in the database using BM25 sparse vector retrieval. If you set the `enable_bm25` parameter to `False` when creating the `MilvusDocstore` instance, this API is unavailable and returns an empty list.
+
+**Function Prototype**
+
+```python
+def full_text_search(query, top_k, drop_ratio_search, filter_dict)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|query|str|Required|The text to search. The length range is `(0, 1000 * 1000]`.|
+|top_k|int|Optional|The number of best-matching chunks to return. The default value is 3. If this value is greater than the number of valid chunks found, only valid chunks are returned. The value range is `(0, 10000]`.|
+|drop_ratio_search|float|Optional|The proportion of small vector values to exclude during BM25 sparse vector search. This option fine-tunes the search process by specifying the proportion of smallest values in the query vector to ignore, helping balance search precision and performance. A smaller value of `drop_ratio_search` means that these small values contribute less to the final score. By ignoring some small values, you can improve search performance while minimizing the impact on precision. The value range is `[0, 1)`. The default value is 0.2. For details, see <a href="https://milvus.io/docs/zh/index.md?tab=sparse">Milvus Sparse Embedding</a>.|
+|filter_dict|Dict|Required|A dictionary of search conditions. Currently, only filtering by `document_id` is supported. Pass the filtered document IDs as a list, and the list length cannot exceed `1000 * 1000`. For example, to filter among documents with `document_id` values 1, 2, and 4, pass `{"document_id": [1, 2, 4]}`.|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[MxDocument]|Returns a list of `MxDocument` instances when results are found. Returns an empty list when no result is found. See [MxDocument](#mxdocument).|
+
+#### `client`
+
+**Description**
+
+Gets the instance's Milvus proxy.
+
+**Function Prototype**
+
+```python
+@property
+def client()
+```
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|MilvusClient|The instance's Milvus proxy.|
+
+#### `collection_name`
+
+**Description**
+
+Gets the name of the instance's Milvus service collection.
+
+**Function Prototype**
+
+```python
+@property
+def collection_name()
+```
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|str|The collection name of the instance's Milvus server.|
+
+#### `drop_collection`
+
+**Description**
+
+Deletes the instance's Milvus service collection data.
+
+**Function Prototype**
+
+```python
+def drop_collection()
+```
+
+#### `search_by_document_id`
+
+**Description**
+
+Gets the document fragments that correspond to `document_id`.
+
+**Function Prototype**
+
+```python
+def search_by_document_id(document_id: int)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|document_id|int|Required|The document index. The value range is greater than or equal to 0.|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[MxDocument]|Returns a list of `MxDocument` instances when results are found. Returns an empty list when no result is found. See [MxDocument](#mxdocument).|
+
+#### `update`
+
+**Description**
+
+Updates document fragments in the relational database.
+
+**Function Prototype**
+
+```python
+def update(chunk_ids: List[int], texts: List[str])
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|chunk_ids|List[int]|Required|A list of document IDs to update. The list length range is `(0, 1000000]`.|
+|texts|List[str]|Required|A list of updated document content. The list length range is `(0, 1000000]`, and the string length range is `[1, 128 * 1024 * 1024]`. The `chunk_ids` list and the `texts` list correspond one to one.|
+
+**Return Values**
+
+None.
+
+#### `flush`
+
+**Description**
+
+Flushes unloaded data to memory. After you change data by using operations such as `add`, `delete`, and `update`, call this API to refresh the in-memory data.
+
+**Function Prototype**
+
+```python
+def flush()
+```
+
+**Input Parameters**
+
+None.
+
+**Return Values**
+
+None.
+
+### `SQLiteDocstore`
+
+#### Class Functionality
+
+**Description**
+
+Provides an SQLite knowledge database that mainly stores split chunk information.
+
+**Function Prototype**
+
+```python
+from mx_rag.storage.document_store import SQLiteDocstore
+SQLiteDocstore(db_path, encrypt_fn, decrypt_fn)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|db_path|str|Required|The storage path for the relational database. The path must be valid. The path length cannot exceed 1024 characters, the file name length cannot exceed 200 characters, the path cannot contain `..`, and the storage path cannot be in any of the following locations: `["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]`.|
+|encrypt_fn|Callable[[str], str]|Optional|A callback that returns a string no longer than `128 * 1024 * 1024` characters. It encrypts the `chunk` content of the [ChunkModel class](#chunkmodel-class) and returns a string. When `add` saves data, the database stores the data processed by `encrypt_fn` in the `chunk` field.<br><br/>**Caution:** If the uploaded document involves personal data such as bank card numbers, ID card numbers, passport numbers, or passwords, configure this parameter to ensure data security.|
+|decrypt_fn|Callable[[str], str]|Optional|A callback that returns a string no longer than `16 * 1024 * 1024` characters. It decrypts the `chunk` content of the [ChunkModel class](#chunkmodel-class) and returns a string. When `search` returns data, it returns the data processed by `decrypt_fn` in the `chunk` field.|
+
+**Example**
+
+```python
+from mx_rag.storage.document_store import MxDocument, SQLiteDocstore
+def encrypt_fn(value):
+    # Secure encryption method
+    return value
+def decrypt_fn(value):
+    # Secure decryption method
+    return value
+chunk_store = SQLiteDocstore(db_path="./sql.db", encrypt_fn=encrypt_fn, decrypt_fn=decrypt_fn)
+text = ["Example", "text"]
+metadata = [{} for _ in text]
+doc = [MxDocument(page_content=t, metadata=m, document_name="1.docx") for t, m in zip(text, metadata)]
+document_id = 1
+chunk_store.add(doc, document_id)
+idx = chunk_store.get_all_chunk_id()
+document = chunk_store.search(idx[0])
+print(document.page_content)
+chunk_store.update(idx[:2], ["text1", "text2"])
+print(chunk_store.delete(document_id))
+chunk_store.search_by_document_id(document_id)
+```
+
+#### `add`
+
+**Description**
+
+Stores document fragment information in the relational database.
+
+**Function Prototype**
+
+```python
+def add(documents, document_id)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|documents|List[MxDocument], see [MxDocument](#mxdocument)|Required|A list of document fragment objects. The list cannot be empty and its length cannot exceed `1000 * 1000`.|
+|document_id|int|Required|The document ID. See the database model [DocumentModel class](#documentmodel-class).|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[int]|A list of stored document IDs.|
+
+#### `delete`
+
+**Description**
+
+Deletes document fragment information from the relational database.
+
+**Function Prototype**
+
+```python
+def delete(document_id)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|document_id|int|Required|The document ID. See the database model [DocumentModel class](#documentmodel-class).|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|List[int]|A list of deleted document IDs.|
+
+#### `search`
+
+**Description**
+
+Searches for document information in the relational database.
+
+**Function Prototype**
+
+```python
+def search(chunk_id)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|chunk_id|int|Required|The document index. The value range is greater than or equal to 0.|
+
+**Return Values**
+
+|Data Type|Description|
+|--|--|
+|Optional[MxDocument]|Returns an `MxDocument` instance when a result is found. Returns `None` when no result is found. See [MxDocument](#mxdocument).|
+
+#### `get_all_chunk_id`
+
+**Description**
+
+Queries the IDs of all knowledge chunks. When one document is split into multiple chunks, one `document_id` corresponds to multiple `chunk_id` values when the data is stored.
 
 **Function Prototype**
 
@@ -366,7 +912,7 @@ Gets the document fragments that correspond to `document_id`.
 def search_by_document_id(document_id: int)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -390,7 +936,7 @@ Updates document fragments in the relational database.
 def update(chunk_ids: List[int], texts: List[str])
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
@@ -415,11 +961,11 @@ class MxDocument(BaseModel):
     document_name: str
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|page_content|str|Required|The split text. The length range is [0, 16 MB].|
+|page_content|str|Required|The split text. The length range is `[0, 16 MB]`.|
 |metadata|dict|Optional|Metadata, for example `{'source': '/workspace/gaokao.txt'}`. The dictionary length cannot exceed 1024, the string length in the dictionary cannot exceed `128 * 1024 * 1024`, and the nested depth of the dictionary cannot exceed 1.|
 |document_name|str|Required|The file name. The length range is `[0, 1024]`.|
 
@@ -514,7 +1060,7 @@ def add(ids, embeddings, document_id)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is `[0, 10 million)`.|
 |embeddings|ndarray|Required|A NumPy array object.|
 |document_id|int|Optional|The ID of the document to which the vectors to add belong.|
 
@@ -535,7 +1081,7 @@ def add_sparse(ids, sparse_embeddings)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is `[0, 10 million)`.|
 |sparse_embeddings|List[Dict[int, float]]|Required|Sparse vector objects.|
 
 #### `add_dense_and_sparse`
@@ -555,7 +1101,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is `[0, 10 million)`.|
 |dense_embeddings|ndarray|Required|A NumPy array object.|
 |sparse_embeddings|List[Dict[int, float]]|Required|Sparse vector objects.|
 
@@ -576,7 +1122,7 @@ def delete(ids)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to delete. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to delete. The `ids` length range is `[0, 10 million)`.|
 
 #### `search`
 
@@ -642,7 +1188,7 @@ def as_retriever(**kwargs):
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|**kwargs|Dict[str, Any]|Required|See [Class Functionality](./retrieval.md#class-overview).|
+|**kwargs|Dict[str, Any]|Required|See [Parameter Description](./retrieval.md#class-functionality).|
 
 **Return Values**
 
@@ -681,9 +1227,13 @@ def update(ids: List[int], dense: Optional[np.ndarray] = None,
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of IDs to update in the vector database. The ID list and the vector list must correspond one to one. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of IDs to update in the vector database. The ID list and the vector list must correspond one to one. The `ids` length range is `[0, 10 million)`.|
 |dense|Optional[np.ndarray]|Optional|The dense vector returned by `embed_documents`. `dense` and `sparse` cannot both be `None`.|
 |sparse|Optional[List[Dict[int, float]]]|Optional|The sparse vector returned by `embed_documents`. `dense` and `sparse` cannot both be `None`.|
+
+**Return Values**
+
+None.
 
 ### `VectorStorageFactory`
 
@@ -722,7 +1272,7 @@ def create_storage(cls, **kwargs) -> Optional[VectorStore]
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|**kwargs|Dict[str, Any]|Required|If `vector_type` is `npu_faiss_db`, see [create](#ZH-CN_TOPIC_0000001982155260). If `vector_type` is `milvus_db`, see [create](#ZH-CN_TOPIC_0000002009270488). If `vector_type` is `opengauss_db`, see [create](#ZH-CN_TOPIC_0000002177266524).|
+|**kwargs|Dict[str, Any]|Required|If `vector_type` is `npu_faiss_db`, see [create](#en-us_TOPIC_0000001982155260).<br>If `vector_type` is `milvus_db`, see [create](#en-us_TOPIC_0000002009270488).<br>If `vector_type` is `opengauss_db`, see [create](#en-us_TOPIC_0000002177266524).|
 
 **Return Values**
 
@@ -773,7 +1323,7 @@ OpenGaussDB(engine, collection_name, search_mode, index_type, metric_type)
 |index_type|str|Optional|The vector retrieval type. IVFFLAT and HNSW are currently supported. The default value is HNSW. This field is valid for dense vectors in dense retrieval and hybrid retrieval modes. Sparse vector retrieval uses HNSW and does not support configuration.|
 |metric_type|str|Optional|The vector distance calculation method. IP, L2, and COSINE are supported. The default value is IP.|
 
-**Returns**
+**Return Type**
 
 |Data Type|Description|
 |--|--|
@@ -843,7 +1393,7 @@ dense_store.update([1], dense_embeddings[:1])
 dense_store.drop_collection()
 ```
 
-#### `create`<a id="ZH-CN_TOPIC_0000002177266524"></a>
+#### `create`<a id="en-us_TOPIC_0000002177266524"></a>
 
 **Description**
 
@@ -856,10 +1406,9 @@ Creates an `OpenGaussDB` object.
 def create(**kwargs)
 ```
 
-**Input parameter description**
+**Input Parameters**
 
 >[!NOTE]
->
 >All parameters for this method must be passed as keyword arguments.
 
 |Parameter|Data Type|Optional/Required|Description|
@@ -927,7 +1476,7 @@ def add(ids: List[int], embeddings: np.ndarray, document_id)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is `[0, 10 million)`.|
 |embeddings|ndarray|Required|A NumPy array object.|
 |document_id|int|Optional|The ID of the document to which the vectors to add belong.|
 
@@ -950,7 +1499,7 @@ def add_sparse(ids, sparse_embeddings, document_id)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is `[0, 10 million)`.|
 |sparse_embeddings|List[Dict[int, float]]|Required|Sparse vector objects.|
 |document_id|int|Optional|The ID of the document to which the vectors to add belong.|
 
@@ -973,7 +1522,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, document_id)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is `[0, 10 million)`.|
 |dense_embeddings|ndarray|Required|A NumPy array object.|
 |sparse_embeddings|List[Dict[int, float]]|Required|Sparse vector objects.|
 |document_id|int|Optional|The ID of the document to which the vectors to add belong.|
@@ -999,7 +1548,7 @@ def delete(ids)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to delete. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to delete. The `ids` length range is `[0, 10 million)`.|
 
 **Return Values**
 
@@ -1067,7 +1616,7 @@ def update(ids, dense, sparse)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of IDs to update in the vector database. The ID list and the vector list must correspond one to one. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of IDs to update in the vector database. The ID list and the vector list must correspond one to one. The `ids` length range is `[0, 10 million)`.|
 |dense|Optional[np.ndarray]|Optional|The dense vector returned by `embed_documents`. `dense` and `sparse` cannot both be `None`.|
 |sparse|Optional[List[Dict[int, float]]]|Optional|The sparse vector returned by `embed_documents`. `dense` and `sparse` cannot both be `None`.|
 
@@ -1098,7 +1647,7 @@ MilvusDB(client, collection_name, search_mode, auto_id, index_type, metric_type,
 |metric_type|str|Optional|The vector distance calculation method. IP, L2, and COSINE are supported. The default value is L2. This field is valid for dense vectors in dense retrieval and hybrid retrieval modes. Sparse vector distance calculation uses IP and does not support configuration.|
 |auto_flush|bool|Optional|Specifies whether to automatically flush in-memory data when data changes. The default value is `True`.|
 
-**Returns**
+**Return Type**
 
 |Data Type|Description|
 |--|--|
@@ -1128,7 +1677,7 @@ vector_store.update([0], vecs[:1])
 vector_store.drop_collection()
 ```
 
-#### `create`<a id="ZH-CN_TOPIC_0000002009270488"></a>
+#### `create`<a id="en-us_TOPIC_0000002009270488"></a>
 
 **Description**
 
@@ -1141,7 +1690,7 @@ Creates a `MilvusDB` object.
 def create(**kwargs)
 ```
 
-**Input parameter description**
+**Input Parameters**
 
 >[!NOTE]
 >All parameters for this method must be passed as keyword arguments.
@@ -1311,7 +1860,7 @@ def add_sparse(ids, sparse_embeddings, document_id, docs, metadatas)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is `[0, 10 million)`.|
 |sparse_embeddings|List[Dict[int, float]]|Required|Sparse vector objects.|
 |document_id|int|Optional|The ID of the document to which the vectors to add belong.|
 |docs|List[str]|Optional|The text for the vectors to add.|
@@ -1336,7 +1885,7 @@ def add_dense_and_sparse(ids, dense_embeddings, sparse_embeddings, docs, metadat
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to add. The `ids` length range is `[0, 10 million)`.|
 |dense_embeddings|ndarray|Required|A NumPy array object.|
 |sparse_embeddings|List[Dict[int, float]]|Required|Sparse vector objects.|
 |docs|List[str]|Optional|The text for the vectors to add.|
@@ -1362,7 +1911,7 @@ def delete(ids)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of index IDs for the vectors to delete. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of index IDs for the vectors to delete. The `ids` length range is `[0, 10 million)`.|
 
 **Return Values**
 
@@ -1431,7 +1980,7 @@ def update(ids, dense, sparse)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of IDs to update in the vector database. The ID list and the vector list must correspond one to one. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of IDs to update in the vector database. The ID list and the vector list must correspond one to one. The `ids` length range is `[0, 10 million)`.|
 |dense|Optional[np.ndarray]|Optional|The dense vector returned by `embed_documents`. `dense` and `sparse` cannot both be `None`.|
 |sparse|Optional[List[Dict[int, float]]]|Optional|The sparse vector returned by `embed_documents`. `dense` and `sparse` cannot both be `None`.|
 
@@ -1475,7 +2024,7 @@ Flushes unloaded data to memory. After you change data by using operations such 
 def flush()
 ```
 
-**Input parameter description**
+**Input Parameters**
 
 None.
 
@@ -1485,7 +2034,7 @@ None.
 
 ### `MindFAISS`
 
-#### Class Functionality<a id="ZH-CN_TOPIC_0000002018595453"></a>
+#### Class Functionality<a id="en-us_TOPIC_0000002018595453"></a>
 
 **Description**
 
@@ -1498,19 +2047,19 @@ from mx_rag.storage.vectorstore import MindFAISS
 MindFAISS(x_dim, devs, load_local_index, index_type, metric_type, auto_save)
 ```
 
-**Parameters**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |x_dim|int|Required|The vector dimension. The value range is greater than 0 and less than or equal to `1024 * 1024`.|
 |devs|List[int]|Required|The device list. Currently, only one device is supported.|
-|load_local_index|str|Required|The local index path. The path length cannot exceed 1024 characters, the file name length cannot exceed 255 characters, the path cannot be a symbolic link, `..` is not allowed, and the path cannot be in any of the following locations: ["/etc", "/`usr`/bin", "/`usr`/lib", "/`usr`/lib64", "/`sys`/", "/`dev`/", "/sbin", "/tmp"].|
+|load_local_index|str|Required|The local index path. The path length cannot exceed 1024 characters, the file name length cannot exceed 255 characters, the path cannot be a symbolic link, `..` is not allowed, and the path cannot be in any of the following locations: `["/etc", "/usr/bin", "/usr/lib", "/usr/lib64", "/sys/", "/dev/", "/sbin", "/tmp"]`.|
 |index_type|str|Optional|The vector retrieval type. Only FLAT is currently supported. The default value is FLAT.|
 |metric_type|str|Optional|The vector distance calculation method. IP, L2, and COSINE are supported. The default value is L2.|
 |auto_save|bool|Optional|Specifies whether to automatically save the index. The value can be `True` or `False`. The default value is `True`.|
 
 >[!NOTE]
->If `auto_save` is set to `False`, `MindFAISS` does not automatically save vectors to the offline knowledge base. You need to call [save_local()](#ZH-CN_TOPIC_000000995468) manually to save the vector database to the offline knowledge base. Otherwise, unsaved vectors are lost after the program exits. This may cause data inconsistency between the relational database and the vector database, which may cause the program to fail.
+>If `auto_save` is set to `False`, `MindFAISS` does not automatically save vectors to the offline knowledge base. You need to call [save_local()](#en-us_TOPIC_000000995468) manually to save the vector database to the offline knowledge base. Otherwise, unsaved vectors are lost after the program exits. This may cause data inconsistency between the relational database and the vector database, which may cause the program to fail.
 
 **Example**
 
@@ -1531,7 +2080,7 @@ vector_store.get_save_file()
 vector_store.update([1], vecs[:1])
 ```
 
-#### `create`<a id="ZH-CN_TOPIC_0000001982155260"></a>
+#### `create`<a id="en-us_TOPIC_0000001982155260"></a>
 
 **Description**
 
@@ -1544,11 +2093,11 @@ Creates a `MindFAISS` object.
 def create(**kwargs)
 ```
 
-**Input parameter description**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|kwargs|dict|Required|Keyword arguments. See the parameters for [Class Functionality](#ZH-CN_TOPIC_0000002018595453). You must pass this required parameter, or the method raises a `KeyError`.|
+|kwargs|dict|Required|Keyword arguments. See the parameters for [Class Functionality](#en-us_TOPIC_0000002018595453). You must pass this required parameter, or the method raises a `KeyError`.|
 
 **Return Values**
 
@@ -1556,7 +2105,7 @@ def create(**kwargs)
 |--|--|
 |MindFAISS|`MindFAISS` object.|
 
-#### `save_local`<a id="ZH-CN_TOPIC_000000995468"></a>
+#### `save_local`<a id="en-us_TOPIC_000000995468"></a>
 
 **Description**
 
@@ -1616,11 +2165,11 @@ Stores vectors in the vector database.
 def add(ids, embeddings, document_id)
 ```
 
-**Input parameter description**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of IDs for the vectors. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of IDs for the vectors. The `ids` length range is `[0, 10 million)`.|
 |embeddings|np.ndarray|Required|The text vectors to store.|
 |document_id|int|Optional|Inherited from the base class. `MindFAISS` does not support this parameter.|
 
@@ -1663,11 +2212,11 @@ Deletes data from the vector database by vector ID list.
 def delete(ids)
 ```
 
-**Input parameter description**
+**Input Parameters**
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of vector IDs to delete. The `ids` length range is [0, 10 million). The list can be empty.|
+|ids|List[int]|Required|A list of vector IDs to delete. The `ids` length range is `[0, 10 million)`. The list can be empty.|
 
 #### `search`
 
@@ -1729,7 +2278,7 @@ def update(ids, dense, sparse)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|ids|List[int]|Required|A list of IDs to update in the vector database. The ID list and the vector list must correspond one to one. The `ids` length range is [0, 10 million).|
+|ids|List[int]|Required|A list of IDs to update in the vector database. The ID list and the vector list must correspond one to one. The `ids` length range is `[0, 10 million)`.|
 |dense|Optional[np.ndarray]|Required|The dense vector returned by `embed_documents`. `dense` cannot be `None`.|
 |sparse|Optional[List[Dict[int, float]]]|Optional|Inherited from the base class. Sparse vectors are not supported.|
 
@@ -1753,4 +2302,3 @@ class SearchMode(Enum):
     DENSE = 0
     SPARSE = 1
     HYBRID = 2
-```

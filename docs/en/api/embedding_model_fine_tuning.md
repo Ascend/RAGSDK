@@ -11,11 +11,11 @@ Because general embedding models are usually trained on general-purpose datasets
 
 When you use the embedding model fine-tuning method, you can refer to the following process.
 
-![](../figures/zh-cn_image_0000002452701797.png "zh-cn_image_0000002452701797")
+![](../figures/en-us_image_0000002452701797.png "en-us_image_0000002452701797")
 
 ## Automatic Generation of Fine-Tuning Synthetic Data
 
-### Class Functionality<a id="ZH-CN_TOPIC_0000002419102888"></a>
+### Class Functionality<a id="en-us_TOPIC_0000002419102888"></a>
 
 **Function Description**
 
@@ -51,7 +51,7 @@ A class for automatically generating fine-tuning synthetic data. It provides doc
 
 Parameters of the fine-tuning synthetic data configuration class `DataProcessConfig`:
 
-|Parameter|Data Type|Optional/Optional/Required|Description|
+|Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |generate_qd_prompt|str|Optional|The prompt used to automatically generate fine-tuning synthetic data. You can modify it according to the target domain for better fine-tuning results. The default value is `GENERATE_QD_PROMPT`. The string length must be in the range `(0, 1 * 1024 * 1024]`.|
 |llm_preferred_prompt|str|Optional|The prompt used in the fine-tuning synthetic data filtering process. You can modify it according to the target domain for better fine-tuning results. The default value is `SCORING_QD_PROMPT`. The string length must be in the range `(0, 1 * 1024 * 1024]`.|
@@ -97,7 +97,7 @@ Document: {doc}
 
 Parameters of the fine-tuning synthetic data method class `TrainDataGenerator`:
 
-|Parameter|Data Type|Optional/Optional/Required|Description|
+|Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |llm|Text2TextLLM|Required|The LLM used to generate and filter fine-tuning synthetic data. For details, see [Text2TextLLM](./llm_client.md#text2textllm).|
 |dataset_path|str|Required|The directory used to store the automatically generated and filtered fine-tuning synthetic dataset. The path length must be in the range `[1, 1024]`. The path cannot contain symlinks, and `..` is not allowed. <br>The storage path cannot be one of the following paths: [`/etc`, `/usr/bin`, `/usr/lib`, `/usr/lib64`, `/sys/`, `/dev/`, `/sbin`, `/tmp`].|
@@ -193,7 +193,7 @@ def generate_train_data(split_doc_list: list[str], data_process_config: DataProc
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |split_doc_list|list[str]|Required|The list of original text documents. The list length range is `[1, 1000 * 1000]`, and the string length range is `[1, 128 * 1024 * 1024]`.|
-|data_process_config|DataProcessConfig|Required|The configuration options for the fine-tuning synthetic data method. For details, see the `DataProcessConfig` class description in [Class Functionality](#ZH-CN_TOPIC_0000002419102888).|
+|data_process_config|DataProcessConfig|Required|The configuration options for the fine-tuning synthetic data method. For details, see the `DataProcessConfig` class description in [Class Functionality](#en-us_TOPIC_0000002419102888).|
 |batch_size|int|Optional|The number of concurrent requests during fine-tuning data generation. The default value is 8. The value range is `(0, 1024]`.|
 
 ## Evaluation Data-Assisted Generation Method
@@ -213,7 +213,7 @@ EvalDataGenerator(llm: Text2TextLLM, dataset_path: str, encrypt_fn, decrypt_fn)
 
 **Parameters**
 
-|Parameter|Data Type|Optional/Optional/Required|Description|
+|Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
 |llm|Text2TextLLM|Required|The LLM used to generate the evaluation dataset. For details, see [Text2TextLLM](./llm_client.md#text2textllm).|
 |dataset_path|str|Required|The directory used to store the evaluation dataset. The path length must be in the range `[1, 1024]`. The path cannot contain symlinks, and `..` is not allowed. <br>The storage path cannot be in the following list: [`/etc`, `/usr/bin`, `/usr/lib`, `/usr/lib64`, `/sys/`, `/dev/`, `/sbin`, `/tmp`].|

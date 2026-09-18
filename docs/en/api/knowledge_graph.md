@@ -16,58 +16,47 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
     请从以下文本中提取所有重要实体及其关系，并严格遵守以下规则：
     ## 要求
     1. 实体必须为名词，尽量简洁；
-    2. 关系必须为一个动词，准确描述“头实体”与“尾实体”之间的具体联系，且不得重复头、尾实体的字面信息；
+    2. 关系应简明地概括“头实体”与“尾实体”之间的联系，且不得重复头、尾实体的字面信息；
     3. 头实体与尾实体均不得为“是”，不得使用代词；
     4. 实体和关系不能为空字符串，不能为仅包含标点符号的字符串；
     5. 输出必须采用下列 JSON 格式，禁止添加、删除或修改任何字段：
-    [
-        {
-            "头实体": "{名词}",
-            "关系": "{动词}",
-            "尾实体": "{名词}"
-        }
-    ]
+
     ## 示例
     [
         {
             "头实体": "中国",
             "关系": "首都",
-            "尾实体": "北京",
+            "尾实体": "北京"
         },
         {
             "头实体": "小狗",
             "关系": "喜欢",
-            "尾实体": "骨头",
-        },
-        {
-            "头实体": "毛泽东",
-            "关系": "父亲",
-            "尾实体": "毛岸英",
+            "尾实体": "骨头"
         },
         {
             "头实体": "中国船舶工业物资云贵有限公司",
             "关系": "成立",
-            "尾实体": "1990月05月31日",
+            "尾实体": "1990年05月31日"
         },
         {
             "头实体": "公司",
             "关系": "地址",
-            "尾实体": "云南省昆明市",
+            "尾实体": "云南省昆明市"
         },
         {
             "头实体": "公司",
             "关系": "经营",
-            "尾实体": "电子器件",
+            "尾实体": "电子器件"
         },
         {
             "头实体": "1999年",
             "关系": "早于",
-            "尾实体": "2000年",
+            "尾实体": "2000年"
         },
         {
             "头实体": "2001年",
             "关系": "晚于",
-            "尾实体": "2000年",
+            "尾实体": "2000年"
         }
     ]
     ## 待分析文本
@@ -94,8 +83,8 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
     ## 要求
     1. 一句视为一个独立事件，保留原句，不做任何省略。
     2. 仅使用指定关系类型：在之前、在之后、同时、因为、结果。
-    3. 每个三元组中的"头事件"与"尾事件"均须为段落中完整原句，且语义对应具体、可独立理解。
-    4. "头事件"和"尾事件"不能为空字符串，且不能重叠；
+    3. 每个三元组中的“头事件”与“尾事件”均须为段落中完整原句，且语义对应具体、可独立理解。
+    4. “头事件”和“尾事件”不能为空字符串，且不能重叠；
     5. 关系不能为空字符串；
     6. 输出严格使用下方 JSON 格式，不允许添加、删减或省略任何字段。
     ## JSON 格式
@@ -232,11 +221,6 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
                 "Tail": "bone"
             },
             {
-                "Head": "Mao Zedong",
-                "Relation": "Father",
-                "Tail": "Mao Anying"
-            },
-            {
                 "Head": "China Shipbuilding Materials Yungui Co., Ltd.",
                 "Relation": "Established",
                 "Tail": "May 31, 1990"
@@ -369,7 +353,7 @@ The knowledge graph uses an LLM and structured prompts to perform relation extra
 
 ## `GraphRAGPipeline`
 
-### Class Description
+### Class Functionality
 
 **Description**
 
@@ -402,7 +386,7 @@ GraphRAGPipeline(work_dir, llm, embedding_model, dim, rerank_model, graph_type,g
 
 `GraphRAGPipeline` object.
 
-**Usage Example<a name="section8509453104117"></a>**
+**Usage Example**
 
 ```python
 import getpass
@@ -572,7 +556,7 @@ def as_retriever(**kwargs)
 
 ## `GraphEvaluator`
 
-### Class Description
+### Class Functionality
 
 **Description**
 

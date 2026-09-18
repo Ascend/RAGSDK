@@ -157,7 +157,7 @@ Install CMake 3.24.0 or later. The following example uses CMake 3.24.0.
 
 When you build and install `ascendfaiss`, the following error appears.
 
-![](figures/zh-cn_image_0000002472943017.png)
+![](figures/en-us_image_0000002472943017.png)
 
 **Cause**
 
@@ -181,7 +181,7 @@ Rebuild and install Python. The following example shows the build parameters.
 
 Import error example: `ImportError: xxxxx cannot allocate memory in static TLS block`.
 
-![](figures/zh-cn_image_0000002400152005.png)
+![](figures/en-us_image_0000002400152005.png)
 
 **Cause**
 
@@ -207,7 +207,7 @@ Different components report a conflict when they reference a `.so` file.
 
 The following error appears when Python imports a package.
 
-![](figures/zh-cn_image_0000002013770348.png)
+![](figures/en-us_image_0000002013770348.png)
 
 **Cause**
 

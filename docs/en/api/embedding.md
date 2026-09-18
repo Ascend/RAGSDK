@@ -2,7 +2,7 @@
 
 ## `TextEmbedding`
 
-### Class Description<a name="ZH-CN_TOPIC_0000002452701717"></a>
+### Class Functionality<a id="en-us_TOPIC_0000002452701717"></a>
 
 **Description**
 
@@ -98,7 +98,7 @@ def create(**kwargs)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Description](#ZH-CN_TOPIC_0000002452701717). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
+|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Functionality](#en-us_TOPIC_0000002452701717). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
 
 **Returns**
 
@@ -157,7 +157,7 @@ def embed_query(text)
 
 ## `SparseEmbedding`
 
-### Class Description<a id="ZH-CN_TOPIC_0000002419102844"></a>
+### Class Functionality<a id="en-us_TOPIC_0000002419102844"></a>
 
 **Description**
 
@@ -209,7 +209,7 @@ def create(**kwargs)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Description](#ZH-CN_TOPIC_0000002419102844). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
+|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Functionality](#en-us_TOPIC_0000002419102844). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
 
 **Returns**
 
@@ -268,7 +268,7 @@ def embed_query(text)
 
 ## `TEIEmbedding`
 
-### Class Description<a id="ZH-CN_TOPIC_0000002452821613"></a>
+### Class Functionality<a id="en-us_TOPIC_0000002452821613"></a>
 
 **Description**
 
@@ -323,7 +323,7 @@ def create(**kwargs)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Description](#ZH-CN_TOPIC_0000002452821613). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
+|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Functionality](#en-us_TOPIC_0000002452821613). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
 
 **Returns**
 
@@ -382,7 +382,7 @@ def embed_query(text)
 
 ## `CLIPEmbedding`
 
-### Class Description<a id="ZH-CN_TOPIC_0000002419262704"></a>
+### Class Functionality<a id="en-us_TOPIC_0000002419262704"></a>
 
 **Description**
 
@@ -435,7 +435,7 @@ def create(**kwargs)
 
 |Parameter|Data Type|Optional/Required|Description|
 |--|--|--|--|
-|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Description](#ZH-CN_TOPIC_0000002419262704). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
+|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Functionality](#en-us_TOPIC_0000002419262704). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
 
 **Returns**
 
@@ -496,3 +496,232 @@ def embed_images(images, batch_size)
 ### `embed_query`
 
 **Description**
+
+Calls the CLIP service to convert the text provided by the user into a vector.
+
+**Prototype**
+
+```python
+def embed_query(text)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|text|str|Required|The text to convert to a vector. The length range is `[1, 128 * 1024 * 1024]`.|
+
+**Returns**
+
+|Data Type|Description|
+|--|--|
+|List[float]|The vector converted from `text`. If the embedding model output is a 512-dimensional vector, the final output is a list of 512 floating-point numbers.|
+
+## `ImageEmbedding`
+
+### Class Functionality<a id="en-us_TOPIC_0000002419102860"></a>
+
+**Description**
+
+Starts the model locally with cn_clip and provides image and text embedding functionality. This class inherits from the `langchain_core.embeddings.Embeddings` interface.
+
+> [!NOTE]
+> cn_clip uses `torch.load` to load weight files. Ensure that the weight files are secure and trustworthy to prevent command injection and other security risks during weight loading.
+
+**Prototype**
+
+```python
+from mx_rag.embedding.local import ImageEmbedding
+ImageEmbedding(model_name, model_path, dev_id)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|model_name|str|Required|The model name. It must be one of [`ViT-B-16`, `ViT-L-14`, `ViT-L-14-336`, `ViT-H-14`, `RN50`]. For model download links, see the webpage instructions.|
+|model_path|str|Required|Directory of the model weight files. The path length cannot exceed 1024 characters. It cannot be a symbolic link or a relative path.<li>Each file in the directory must be no larger than 10 GB, the directory depth cannot exceed 64, and the total number of files cannot exceed 512.</li><li>The group of the running user, as well as users other than the running user, must not have write permission for files in the directory.</li><li>The files in the directory and the group of the parent directory for those files must belong to the running user.<br>The storage path cannot be in the following path list: [`/etc`, `/usr/bin`, `/usr/lib`, `/usr/lib64`, `/sys/`, `/dev/`, `/sbin`, `/tmp`].</li>|
+|dev_id|int|Optional|The NPU ID where the model runs. Valid values are `[0, 63]`. The default is 0.|
+
+**Returns**
+
+`ImageEmbedding` object.
+
+**Usage Example**
+
+```python
+import sys
+from paddle.base import libpaddle
+from mx_rag.document.loader import ImageLoader
+from mx_rag.embedding.local import ImageEmbedding
+embed = ImageEmbedding.create(model_name="ViT-B-16", model_path="/data/chinese-clip-vit-base-patch16")
+print(embed.embed_documents(['abc', 'bcd']))
+print(embed.embed_query('abc'))
+
+loader = ImageLoader("image path")
+docs = loader.load()
+if len(docs) < 1:
+    print("load image failed")
+    sys.exit(1)
+
+print(embed.embed_images([docs[0].page_content]))
+```
+
+### `Create`
+
+**Description**
+
+Creates and return an `ImageEmbedding` object.
+
+**Prototype**
+
+```python
+@staticmethod
+def create(**kwargs)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|kwargs|dict|Required|Keyword arguments. Refer to the input parameters in [Class Functionality](#en-us_TOPIC_0000002419102860). Required parameters must be passed. Otherwise, a `KeyError` is raised.|
+
+**Returns**
+
+|Data Type|Description|
+|--|--|
+|ImageEmbedding|`ImageEmbedding` object.|
+
+### `embed_documents`
+
+**Description**
+
+Vectorizes a list of texts.
+
+**Prototype**
+
+```python
+def embed_documents(texts, batch_size)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|texts|List[str]|Required|A list of texts. The list length must be in the range `[1, 1000 * 1000]`. The length of each text must be in the range `[1, 256]`.|
+|batch_size|int|Optional|The batch size. The method groups `batch_size` texts for each embedding operation. The value range is `[1, 1024]`. The default value is 32. The configurable value depends on the device memory.|
+
+**Returns**
+
+|Data Type|Description|
+|--|--|
+|List[List[float]]|The vector array converted from `texts`. If `texts` is an array of length 4 and the embedding model output is a 512-dimensional vector, the final output is an array with the shape of `(4, 512)`.|
+
+### `embed_query`
+
+**Description**
+
+Vectorizes a single text.
+
+**Prototype**
+
+```python
+def embed_query(text)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|text|str|Required|The text to convert to a vector. The length range is `[1, 256]`.|
+
+**Returns**
+
+|Data Type|Description|
+|--|--|
+|List[float]|The vector converted from `text`. If the embedding model output is a 512-dimensional vector, the final output is a list of 512 floating-point numbers.|
+
+### `embed_images`
+
+**Description**
+
+Vectorizes the given images.
+
+**Prototype**
+
+```python
+def embed_images(images, batch_size)
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|images|Union[List[str], List[Image.Image]]|Required|When the input type is `List[str]`, each element in the list is a base64-encoded string of an image. The total list length must be in the range `[1, 1000]`, and the length of each element must be in the range `[1, 10 * 1024 * 1024]`. When the input type is `List[Image.Image]`, the input data type is `PIL.Image.Image`.|
+|batch_size|int|Optional|The batch size. The method groups `batch_size` images for each embedding operation. The value range is `[1, 1024]`. The default value is 32. The configurable value depends on the device memory.|
+
+**Returns**
+
+|Data Type|Description|
+|--|--|
+|List[List[float]]|The vector array converted from `images`. If `images` is an array of length 4 and the embedding model output is a 512-dimensional vector, the final output is an array with the shape of `(4, 512)`.|
+
+## `EmbeddingFactory`
+
+### Class Functionality
+
+**Description**
+
+A factory class for generating RAG SDK embeddings.
+
+**Prototype**
+
+```python
+from mx_rag.embedding import EmbeddingFactory
+class EmbeddingFactory(ABC)
+```
+
+**Usage Example**
+
+```python
+from paddle.base import libpaddle
+from mx_rag.embedding import EmbeddingFactory
+from mx_rag.utils import ClientParam
+txt_embed = EmbeddingFactory.create_embedding(embedding_type="local_text_embedding",
+                                              model_path="path to model", dev_id=0)
+print(txt_embed.embed_query("abc"))
+# Adjust the parameters according to the actual situation
+tei_embed = EmbeddingFactory.create_embedding(embedding_type="tei_embedding",
+                                              url="https://ip:port/embed",
+                                              client_param=ClientParam(ca_file="/path/to/ca.crt"))
+print(tei_embed.embed_query("abc"))
+img_embed = EmbeddingFactory.create_embedding(embedding_type="local_images_embedding", model_name="model_name",
+                                              model_path="path to model", dev_id=0)
+print(img_embed.embed_query("abc"))
+```
+
+### `create_embedding`
+
+**Description**
+
+Constructs an embedding instance. This method calls the static `create` methods of the `TextEmbedding`, `ImageEmbedding`, and `TEIEmbedding` classes to create class instances.
+
+**Prototype**
+
+```python
+@classmethod
+def create_embedding(**kwargs):
+```
+
+**Input Parameters**
+
+|Parameter|Data Type|Optional/Required|Description|
+|--|--|--|--|
+|embedding_type|str|Required|This parameter is in `kwargs` and specifies the type of embedding to create. It must be passed as a keyword argument.<br>Valid values:<li>`local_text_embedding`</li><li>`local_images_embedding`</li><li>`tei_embedding`</li>|
+|**kwargs|Any|Optional|Except for `embedding_type`, the remaining parameters are construction parameters for the embedding. The corresponding class's static `create` method is called to return the instance.<li>For `local_text_embedding`, see [Class Functionality](#class-functionality).</li><li>For `local_images_embedding`, see [Class Functionality](#en-us_TOPIC_0000002419102860).</li><li>For `tei_embedding`, see [Class Functionality](#en-us_TOPIC_0000002452821613).</li>|
+
+**Returns**
+
+|Data Type|Description|
+|--|--|
+|langchain_core.embeddings.Embeddings|Returns an `Embeddings` instance object.|

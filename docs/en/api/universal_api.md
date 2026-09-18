@@ -38,9 +38,9 @@ llm = Text2TextLLM(base_url="https://{ip}:{port}/v1/chat/completions",
                    llm_config=LLMParameterConfig(max_tokens=512),
                    client_param=ClientParam(ca_file="/path/to/ca.crt")
                    )
-res = llm.chat("请介绍下北京")
+res = llm.chat("Please tell me about Beijing.")
 print(res)
-for res in llm.chat_streamly("请介绍下北京"):
+for res in llm.chat_streamly("Please tell me about Beijing."):
     print(res)
 ```
 

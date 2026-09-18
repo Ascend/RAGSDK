@@ -6,7 +6,7 @@ CoRAG (Chain of Retrieval-Augmented Generation) is a multi-turn question-answeri
 
 ## `CoRagBaseConfig`
 
-### Class Overview
+### Class Functionality
 
 **Function Description**
 
@@ -138,7 +138,7 @@ The API supports multiple response formats. Common examples are as follows.
 
 ## `ReasoningPath`
 
-### Class Overview
+### Class Functionality
 
 **Function Description**
 
@@ -164,7 +164,7 @@ ReasoningPath(original_query, subqueries, subanswers, document_ids, reasoning_st
 
 ## `CoRagAgent`
 
-### Class Overview
+### Class Functionality
 
 **Function Description**
 
@@ -280,7 +280,7 @@ def generate_final_answer(self, rag_path, task_description)
 
 ## `SampleGenerator`
 
-### Class Overview
+### Class Functionality
 
 **Function Description**
 
@@ -367,7 +367,7 @@ def generate(self, input_file, output_file, n_samples)
 
 ### `FineTuneArguments`
 
-#### Class Overview
+#### Class Functionality
 
 **Function Description**
 
@@ -390,7 +390,7 @@ FineTuneArguments(model_name_or_path, train_file, max_len)
 
 ### `SubqueryFineTuner`
 
-#### Class Overview
+#### Class Functionality
 
 **Function Description**
 
@@ -473,7 +473,7 @@ tuner.train()
 
 ## `CoRagEvaluator`
 
-### Class Overview
+### Class Functionality
 
 **Function Description**
 
