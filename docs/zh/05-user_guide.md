@@ -32,7 +32,7 @@ RAG SDK的完整开发流程如[图1](#fig1495610311102)所示。用户可参见
 
 开始之前，请确认：
 
-- **硬件**：Atlas 300I Duo 推理卡或Atlas 800I A2/A3 推理服务器，并安装对应的驱动、依赖和固件
+- **硬件**：Atlas 300I Duo 推理卡、Atlas 800I A2 推理服务器或Atlas 800I A3 超节点服务器，并安装对应的驱动、依赖和固件
 - **Docker**：已安装 Docker，且当前用户可运行容器
 - **向量模型服务**：参考[mis-tei文档](https://www.hiascend.com/developer/ascendhub/detail/07a016975cc341f3a5ae131f2b52399d)部署好embedding模型bge-large-zh-v1.5
 - **大模型服务**：参考[Qwen3-Dense文档](https://docs.vllm.ai/projects/ascend/en/latest/tutorials/models/Qwen3-Dense.html)部署好LLM模型Qwen3-4B
