@@ -16,7 +16,7 @@
 
 使用 RAG SDK 前，请确保您已了解以下环境信息：
 
-- **昇腾 NPU 硬件**：Atlas 300I Duo 推理卡、Atlas 800I A2/A3 推理服务器等
+- **昇腾 NPU 硬件**：Atlas 300I Duo 推理卡、Atlas 800I A2 推理服务器或Atlas 800I A3 超节点服务器等
   - 了解 NPU 驱动和固件的安装与版本管理
   - 参见：[固件与驱动](https://www.hiascend.com/hardware/firmware-drivers/community)
 - **操作系统**：支持 Ubuntu、openEuler、KylinOS 等 Linux 发行版
