@@ -1,0 +1,93 @@
+on:
+  workflow_call:
+    inputs:
+      REMOTE_URL:
+        required: false
+        type: string
+        default: ${{ atomgit.repositoryurl }}
+      pr_id:
+        required: false
+        type: string
+        default: ${{ atomgit.event.pull_request.number }}
+      IMAGE_FLAG:
+        required: true
+        type: string
+        description: "Full SWR image URL, e.g. swr.<region>.<org>/mindx_arm:tag"
+      TARGET_BRANCH:
+        required: false
+        type: string
+        default: ${{ atomgit.event.pull_request.base.ref }}
+      runs_on_arch:
+        required: true
+        type: string
+        description: "x86 or arm"
+      servicename:
+        required: false
+        type: string
+        default: $(echo "${{ atomgit.repository }}" | cut -d '/' -f 2)
+      DEFAULT_BRANCH:
+        required: false
+        type: string
+        default: "master"
+
+jobs:
+  JOB_compile:
+    name: JOB_compile
+    select: selected_by_default
+    runs-on: [ self-hosted, "${{ inputs.runs_on_arch }}", cpu=32 ]
+    container:
+      image: ${{ inputs.IMAGE_FLAG }}
+      options: --user root
+    steps:
+      - name: clone repo and merge PR
+        run: |
+          set -x
+          artifact_directory="${ATOMGIT_WORKSPACE}/artifacts"
+          mkdir -p "${artifact_directory}"
+          touch "${artifact_directory}/empty.run"
+
+          git clone --no-tags --single-branch -b ${{ inputs.TARGET_BRANCH }} ${{ inputs.REMOTE_URL }} ${{ inputs.servicename }}
+          cd ${{ inputs.servicename }}
+
+          git fetch --no-tags origin refs/merge-requests/${{ inputs.pr_id }}/head:pr_${{ inputs.pr_id }}
+          git reset --hard "origin/${{ inputs.TARGET_BRANCH }}"
+          git checkout -b new_${{ inputs.TARGET_BRANCH }}
+          git config --global user.name AtlasAccount
+          git config --global user.email AtlasAccount@noreply.gitcode.com
+          git merge --no-edit pr_${{ inputs.pr_id }}
+          git diff-tree -r --name-only --no-commit-id origin/${{ inputs.TARGET_BRANCH }} HEAD > ${ATOMGIT_WORKSPACE}/change.txt
+          cat ${ATOMGIT_WORKSPACE}/change.txt
+
+          if [ "${{ inputs.TARGET_BRANCH }}" != "${{ inputs.DEFAULT_BRANCH }}" ]; then
+              mkdir -p .gitcode/workflows
+              git clone --no-tags --single-branch --depth 1 -b ${{ inputs.DEFAULT_BRANCH }} ${{ inputs.REMOTE_URL }} ${ATOMGIT_WORKSPACE}/tempdir
+              cp -fr ${ATOMGIT_WORKSPACE}/tempdir/.gitcode/workflows/scripts .gitcode/workflows/ 2>/dev/null || true
+              cp -fr ${ATOMGIT_WORKSPACE}/tempdir/.gitcode/workflows/config .gitcode/workflows/ 2>/dev/null || true
+              rm -fr ${ATOMGIT_WORKSPACE}/tempdir
+          fi
+
+      - name: compile
+        run: |
+          set -ex
+          cd ${ATOMGIT_WORKSPACE}/${{ inputs.servicename }}/
+          chown -R root:root mx_rag
+          chown -R root:root tests
+          ls -al mx_rag/evaluate/prompts/
+          pip3 list | grep torch
+          apt update
+          apt-get -y install libpq-dev libglib2.0-0 python3-dev libgl1-mesa-glx
+          pip3 install opengauss_sqlalchemy==2.3.1
+          pip3 install PyMuPDF==1.21.0
+          pip3 install pymilvus==2.5.0
+          pip3 install pysbd==0.3.4
+          pip3 install langchain_opengauss==0.1.3
+          pip3 install pytest pytest-cov pytest-html pytest-metadata pytest-mock coverage
+          pip3 install torch==2.1.0+cpu --index-url https://download.pytorch.org/whl/cpu
+          pip3 uninstall -y torch_npu
+          export PATH=/opt/buildtools/python-3.11.4/bin:$PATH
+          source /usr/local/Ascend/ascend-toolkit/set_env.sh
+          source /usr/local/Ascend/nnal/atb/set_env.sh
+          export LD_LIBRARY_PATH=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux/devlib/linux/x86_64/:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux/lib64/:$LD_LIBRARY_PATH
+          cd ${ATOMGIT_WORKSPACE}/${{ inputs.servicename }}/tests
+          bash run_py_test.sh
