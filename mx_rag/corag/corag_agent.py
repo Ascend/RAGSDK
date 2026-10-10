@@ -23,15 +23,16 @@ import threading
 import json
 from typing import Optional, List, Tuple
 from dataclasses import dataclass, field
+from loguru import logger
 
 from mx_rag.llm.text2text import Text2TextLLM
 from mx_rag.corag.utils import normalize_retrieve_api_results, truncate_long_text_by_char
 from mx_rag.utils.url import RequestUtils
 from mx_rag.utils import ClientParam
 from mx_rag.corag.prompts import (
-    get_generate_subquery_prompt, 
-    get_generate_intermediate_answer_prompt, 
-    get_generate_final_answer_prompt
+    get_generate_subquery_prompt,
+    get_generate_intermediate_answer_prompt,
+    get_generate_final_answer_prompt,
 )
 
 
@@ -39,7 +40,7 @@ def _process_subquery(input_subquery: str) -> Tuple[str, Optional[str]]:
     # 限制输入长度，防止ReDoS攻击
     if len(input_subquery) > 10000:
         return input_subquery.strip(), None
-    
+
     # Extract reasoning blocks from the subquery
     # 使用更严格的模式，避免过度回溯
     reasoning_pattern = r'<reasoning>([^<]*)</reasoning>'
@@ -76,30 +77,27 @@ class ReasoningPath:
 
 
 class CoRagAgent:
-
     def __init__(
-            self, base_llm: Text2TextLLM,
-            retrieve_api_url: str,
-            final_llm: Optional[Text2TextLLM] = None,
-            sub_answer_llm: Optional[Text2TextLLM] = None,
-            retrieve_top_k: int = 5,
-            client_param: ClientParam = ClientParam()
+        self,
+        base_llm: Text2TextLLM,
+        retrieve_api_url: str,
+        final_llm: Optional[Text2TextLLM] = None,
+        sub_answer_llm: Optional[Text2TextLLM] = None,
+        retrieve_top_k: int = 5,
+        client_param: ClientParam = ClientParam(),
     ):
         self.base_llm = base_llm
         self.final_llm = final_llm
         self.sub_answer_llm = sub_answer_llm
         self.retrieve_api_url = retrieve_api_url
         self.retrieve_top_k = retrieve_top_k
-        self.client_param=client_param
+        self.client_param = client_param
 
         self._client = RequestUtils(client_param=self.client_param)
 
         self.lock = threading.Lock()
 
-    def sample_path(
-            self, query: str, task_desc: str,
-            max_path_length: int = 3
-    ) -> ReasoningPath:
+    def sample_path(self, query: str, task_desc: str, max_path_length: int = 3) -> ReasoningPath:
         """
         生成CoRAG推理路径，通过迭代生成子查询，收集子答案和相关文档，构建完整的推理过程。
         通过控制LLM调用次数和子查询数量，确保生成的路径在合理范围内。
@@ -110,16 +108,16 @@ class CoRagAgent:
         retrieved_doc_ids: List[List[str]] = []
         retrieved_docs: List[List[str]] = []
         thought_process: List[str] = []
-    
+
         # Configure LLM parameters and call limits
         original_temp = self.base_llm.llm_config.temperature
         llm_call_count = 0
         max_allowed_calls = 4 * max_path_length
-        
+
         # Generate additional subqueries until reaching max path length or call limit
         while len(interaction_queries) < max_path_length and llm_call_count < max_allowed_calls:
             llm_call_count += 1
-            
+
             # Generate follow-up query prompt
             followup_prompt = get_generate_subquery_prompt(
                 query=query,
@@ -127,10 +125,12 @@ class CoRagAgent:
                 past_subanswers=interaction_answers,
                 task_desc=task_desc,
             )
-            
+
             # Ensure prompt fits within token limits
-            followup_prompt = truncate_long_text_by_char(followup_prompt, max_token_length=self.base_llm.llm_config.max_tokens)
-            
+            followup_prompt = truncate_long_text_by_char(
+                followup_prompt, max_token_length=self.base_llm.llm_config.max_tokens
+            )
+
             # Generate and process subquery
             generated_subquery = self.base_llm.chat(query=followup_prompt)
             processed_query, step_reasoning = _process_subquery(generated_subquery)
@@ -139,17 +139,15 @@ class CoRagAgent:
             with self.lock:
                 # Always reset to original temperature first
                 self.base_llm.llm_config.temperature = original_temp
-                
+
                 if processed_query in interaction_queries:
                     # Increase temperature for more diverse results if duplicate found
                     self.base_llm.llm_config.temperature = max(original_temp, 0.7)
                     continue
-            
+
             # Get answer and related documents for the new subquery
-            query_answer, current_doc_ids, current_docs = self._get_subanswer_and_doc_ids(
-                subquery=processed_query
-            )
-            
+            query_answer, current_doc_ids, current_docs = self._get_subanswer_and_doc_ids(subquery=processed_query)
+
             # Update interaction history
             interaction_queries.append(processed_query)
             interaction_answers.append(query_answer)
@@ -168,19 +166,17 @@ class CoRagAgent:
         )
         return complete_path
 
-    def generate_final_answer(
-            self, rag_path: ReasoningPath, task_description: str
-    ) -> str:
+    def generate_final_answer(self, rag_path: ReasoningPath, task_description: str) -> str:
         """
         基于完整的推理路径生成最终答案。
-        
+
         该方法接收一个包含完整查询和推理历史的 ReasoningPath 对象，
         结合任务描述和可选的参考文档，通过 LLM 生成最终的综合答案。
-        
+
         Args:
             rag_path: 包含查询和推理历史的 ReasoningPath 对象
             task_description: 任务的详细描述
-            
+
         Returns:
             生成的最终答案字符串
         """
@@ -195,32 +191,29 @@ class CoRagAgent:
 
         # Determine which LLM to use for final answer generation
         answer_llm = self.final_llm if self.final_llm is not None else self.base_llm
-        
+
         # Ensure the prompt fits within the token limits of the selected LLM
         final_prompt = truncate_long_text_by_char(final_prompt, max_token_length=answer_llm.llm_config.max_tokens)
-        
+
         # Generate and return the final comprehensive answer
         return answer_llm.chat(query=final_prompt)
 
-
-    def _get_subanswer_and_doc_ids(
-            self, subquery: str
-    ) -> Tuple[str, List, List[str]]:
+    def _get_subanswer_and_doc_ids(self, subquery: str) -> Tuple[str, List, List[str]]:
         """这段代码的主要功能是根据子查询从数据源检索相关文档，并生成一个子答案。
-        它还处理了消息的截断和聊天客户端的调用，最终返回子答案和相关的文档信息。"""
+        它还处理了消息的截断和聊天客户端的调用，最终返回子答案和相关的文档信息。
+        """
         documents = []
         doc_ids = []
+        retriever_results = []
         if self.retrieve_api_url:
-            request_body = {
-                "query": subquery,
-                "top_k": self.retrieve_top_k
-            }
+            request_body = {"query": subquery, "top_k": self.retrieve_top_k}
             request_body["stream"] = False
-            response = self._client.post(url=self.retrieve_api_url, body=json.dumps(request_body),
-                                         headers={"Content-Type": "application/json"})
+            response = self._client.post(
+                url=self.retrieve_api_url, body=json.dumps(request_body), headers={"Content-Type": "application/json"}
+            )
             if response.success:
                 try:
-                    data = json.loads(response.data)    
+                    data = json.loads(response.data)
                     retriever_results = normalize_retrieve_api_results(data)
                 except json.JSONDecodeError as e:
                     logger.error(f"response content cannot convert to json format: {e}")
