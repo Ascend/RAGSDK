@@ -7,9 +7,9 @@
 - Where to get help
   - [Issue Feedback](https://gitcode.com/Ascend/RAGSDK/issues)
   - [RAG SDK Code](https://gitcode.com/Ascend/RAGSDK)
-  - [RAG SDK API Reference](https://gitcode.com/Ascend/RAGSDK/blob/master/docs/zh/api/README.md)
-  - [RAG SDK Documentation](https://www.hiascend.com/document/detail/zh/mindsdk/730/rag/ragug/mxragug_0001.html)
-  - [Image Repository](https://www.hiascend.com/developer/ascendhub/detail/ragsdk)
+  - [RAG SDK API Reference](https://gitcode.com/Ascend/RAGSDK/blob/master/docs/en/api/README.md)
+  - [RAG SDK Documentation](https://www.hiascend.com/document/detail/en/mindsdk/730/rag/ragug/mxragug_0001.html)
+  - [Image Repository](https://www.hiascend.com/en/developer/ascendhub/detail/ragsdk)
 
 ## RAG SDK
 
