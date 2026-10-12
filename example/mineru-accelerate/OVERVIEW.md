@@ -7,7 +7,7 @@
 - Where to get help
   - [Issue Feedback](https://gitcode.com/Ascend/RAGSDK/issues)
   - [RAG SDK Code](https://gitcode.com/Ascend/RAGSDK)
-  - [Image Repository](https://www.hiascend.com/developer/ascendhub/detail/mineru)
+  - [Image Repository](https://www.hiascend.com/en/developer/ascendhub/detail/mineru)
 
 ## MinerU Acceleration Image
 
@@ -83,7 +83,7 @@ docker exec -it mineru-accelerate bash
 
 ## Quick Start
 
-After entering the container, you can refer to [MinerU Quick Start](https://opendatalab.github.io/MinerU/zh/quick_start/).
+After entering the container, you can refer to [MinerU Quick Start](https://opendatalab.github.io/MinerU/quick_start/).
 
 ## How to Build
 
