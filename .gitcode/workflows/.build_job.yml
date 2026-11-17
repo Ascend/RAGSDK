@@ -1,4 +1,4 @@
-﻿on:
+on:
   workflow_call:
     inputs:
       REMOTE_URL:
@@ -74,7 +74,6 @@ jobs:
           cd opensource
           apt-get -y install dos2unix
           pip3 list
-          pip3 install torch-npu==2.1.0.post12
           git clone https://gitcode.com/cann-src-third-party/makeself.git
           cp makeself/makeself-2.5.0.patch ./
           rm -rf makeself
@@ -91,11 +90,6 @@ jobs:
           touch "${artifact_directory}/empty.whl"
 
           cd ${ATOMGIT_WORKSPACE}/${{ inputs.servicename }}/build && chmod +x *.sh
-          export CC=/opt/rh/devtoolset-index/root/usr/bin/gcc
-          export CXX=/opt/rh/devtoolset-index/root/usr/bin/g++
-          export GCC_HOME=/opt/rh/devtoolset-index/root/usr/
-          source /usr/local/Ascend/ascend-toolkit/set_env.sh
-          source /usr/local/Ascend/nnal/atb/set_env.sh
           ./build.sh
 
           cp -p -f -r ${ATOMGIT_WORKSPACE}/${{ inputs.servicename }}/output/Ascend-mindxsdk-mxrag*.run "${artifact_directory}/"

@@ -40,7 +40,8 @@ function run_test_cases() {
 pip3 install pytest pytest-cov pytest-html
 
 wget https://mindcluster.obs.cn-north-4.myhuaweicloud.com/blueImageDependency/torch-2.10.0%2Bcpu-cp311-cp311-manylinux_2_28_x86_64.whl && pip3 install torch*.whl --no-deps
-pip3.11 install -r ../requirements.txt --exists-action i
+# setuptools>=82 已移除 pkg_resources，而 pymilvus 仍依赖它，钉住上限避免被 requirements 解析升级
+pip3.11 install "setuptools<82" -r ../requirements.txt --exists-action i
 pip3 list |grep trans
 pip3 uninstall -y torch_npu  torchvision
 
