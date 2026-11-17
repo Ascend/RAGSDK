@@ -5,7 +5,10 @@ transformers>=4.41.2
 sentence_transformers>=5.0.0
 accelerate>=0.30.1
 cn_clip>=1.5.1
-numpy>=1.26.4
+# 锚定 numpy 1.x 世代：pandas>=3 要求 numpy>=2.0.2、pyarrow>=26 运行期强制 numpy>=2，
+# 与 310P 环境（build/run_presmoke.sh 强装 numpy<2）冲突，故在此显式封顶
+numpy>=1.26.4, <2
+pyarrow<26
 urllib3>=2.4.0
 pydantic>=2.11.7
 sqlalchemy>=2.0.23
